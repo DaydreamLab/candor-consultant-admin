@@ -1,7 +1,7 @@
 # 坦見／Candor 顧問後台
 
-- **線上示範**：[https://rezta20.github.io/candor-consultant-admin/](https://rezta20.github.io/candor-consultant-admin/)
-- **GitHub 原始碼**：[https://github.com/Rezta20/candor-consultant-admin](https://github.com/Rezta20/candor-consultant-admin)
+- **線上示範**：[https://daydreamlab.github.io/candor-consultant-admin/](https://daydreamlab.github.io/candor-consultant-admin/)
+- **GitHub 原始碼**：[https://github.com/DaydreamLab/candor-consultant-admin](https://github.com/DaydreamLab/candor-consultant-admin)
 
 路徑：`~/Projects/candor-consultant-admin`
 
