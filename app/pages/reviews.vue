@@ -2,11 +2,26 @@
 import type { ReviewRow, ReviewStatus } from '~/types/admin'
 
 const { t } = useI18n()
-const toast = useToast()
 const ops = useOpsStore()
+const feedback = useOpsFeedback()
 const { scoped, orgLabel, showOrg, writable, platform } = useOrgScope()
 
-const rows = computed(() => scoped(ops.reviews))
+const selectedId = ref<string | null>(null)
+
+const rows = computed(() => {
+  const list = [...scoped(ops.reviews)]
+  return list.sort((a, b) => {
+    if (a.status === 'pending' && b.status !== 'pending') {
+      return -1
+    }
+    if (a.status !== 'pending' && b.status === 'pending') {
+      return 1
+    }
+    return b.updatedAt.localeCompare(a.updatedAt)
+  })
+})
+
+const selected = computed(() => rows.value.find(row => row.id === selectedId.value) ?? null)
 
 const colorForStatus: Record<ReviewStatus, 'warning' | 'success' | 'error'> = {
   pending: 'warning',
@@ -28,17 +43,27 @@ function statusLabel(status: ReviewStatus) {
   return t('reviews.statusRejected')
 }
 
+function kindHint(kind: ReviewRow['kind']) {
+  return kind === 'manual' ? t('reviews.manualHint') : t('reviews.clinicalHint')
+}
+
 function setStatus(row: ReviewRow, status: ReviewStatus) {
   if (!writable.value) {
     return
   }
   ops.setReviewStatus(row.id, status)
-  toast.add({
+  feedback.notify({
     title: statusLabel(status),
     description: row.caseId,
     color: colorForStatus[status]
   })
 }
+
+watch(rows, (list) => {
+  if (selectedId.value && !list.some(row => row.id === selectedId.value)) {
+    selectedId.value = null
+  }
+})
 </script>
 
 <template>
@@ -69,79 +94,113 @@ function setStatus(row: ReviewRow, status: ReviewStatus) {
       {{ platform ? $t('reviews.notePlatform') : $t('reviews.noteFirm') }}
     </p>
 
-    <AdminTable :empty="!rows.length">
-      <template #head>
-        <tr>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('reviews.colCase') }}
-          </th>
-          <th
-            v-if="showOrg"
-            class="px-4 py-3 font-medium"
-          >
-            {{ $t('reviews.colOrg') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('reviews.colType') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('reviews.colStatus') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('reviews.colUpdated') }}
-          </th>
-          <th class="px-4 py-3 font-medium" />
-        </tr>
-      </template>
-      <tr
-        v-for="row in rows"
-        :key="row.id"
-        class="border-b border-default last:border-0"
+    <SplitDetail>
+      <AdminTable
+        compact
+        :empty="!rows.length"
       >
-        <td class="px-4 py-3 font-medium text-highlighted">
-          {{ row.caseId }}
-        </td>
-        <td
-          v-if="showOrg"
-          class="px-4 py-3 text-muted"
-        >
-          {{ orgLabel(row.orgId) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ kindLabel(row.kind) }}
-        </td>
-        <td class="px-4 py-3">
-          <StatusBadge
-            :label="statusLabel(row.status)"
-            :color="colorForStatus[row.status]"
-          />
-        </td>
-        <td class="px-4 py-3 text-muted">
-          {{ row.updatedAt }}
-        </td>
-        <td class="px-4 py-3">
-          <div class="flex justify-end gap-2">
-            <UButton
-              size="xs"
-              color="success"
-              variant="outline"
-              :disabled="!writable || row.status === 'approved'"
-              @click="setStatus(row, 'approved')"
+        <template #head>
+          <tr>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('reviews.colCase') }}
+            </th>
+            <th
+              v-if="showOrg"
+              class="px-4 py-3 font-medium"
             >
-              {{ $t('reviews.approve') }}
-            </UButton>
+              {{ $t('reviews.colOrg') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('reviews.colType') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('reviews.colStatus') }}
+            </th>
+          </tr>
+        </template>
+        <tr
+          v-for="row in rows"
+          :key="row.id"
+          class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+          :class="row.id === selectedId ? 'bg-primary/5' : ''"
+          @click="selectedId = row.id"
+        >
+          <td class="px-4 py-3 font-medium text-highlighted">
+            {{ row.caseId }}
+          </td>
+          <td
+            v-if="showOrg"
+            class="px-4 py-3 text-muted"
+          >
+            {{ orgLabel(row.orgId) }}
+          </td>
+          <td class="px-4 py-3">
+            {{ kindLabel(row.kind) }}
+          </td>
+          <td class="px-4 py-3">
+            <StatusBadge
+              :label="statusLabel(row.status)"
+              :color="colorForStatus[row.status]"
+            />
+          </td>
+        </tr>
+      </AdminTable>
+
+      <template #detail>
+        <div
+          v-if="!selected"
+          class="flex min-h-72 flex-col items-center justify-center p-6 text-center text-sm text-muted"
+        >
+          <UIcon
+            name="i-lucide-badge-check"
+            class="mb-2 size-8 text-dimmed"
+          />
+          {{ $t('reviews.emptyDetail') }}
+        </div>
+        <div
+          v-else
+          class="flex flex-col p-4"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-medium text-highlighted">
+                {{ selected.caseId }}
+              </p>
+              <p class="mt-1 text-sm text-muted">
+                {{ kindLabel(selected.kind) }}
+                <span v-if="showOrg"> · {{ orgLabel(selected.orgId) }}</span>
+              </p>
+            </div>
+            <StatusBadge
+              :label="statusLabel(selected.status)"
+              :color="colorForStatus[selected.status]"
+            />
+          </div>
+          <p class="mt-4 text-sm text-muted">
+            {{ kindHint(selected.kind) }}
+          </p>
+          <p class="mt-2 text-xs text-dimmed">
+            {{ $t('reviews.colUpdated') }} · {{ selected.updatedAt }}
+          </p>
+          <div class="mt-6 flex justify-end gap-2">
             <UButton
-              size="xs"
               color="error"
               variant="ghost"
-              :disabled="!writable || row.status === 'rejected'"
-              @click="setStatus(row, 'rejected')"
+              :disabled="!writable || selected.status === 'rejected'"
+              @click="setStatus(selected, 'rejected')"
             >
               {{ $t('reviews.reject') }}
             </UButton>
+            <UButton
+              color="success"
+              :disabled="!writable || selected.status === 'approved'"
+              @click="setStatus(selected, 'approved')"
+            >
+              {{ $t('reviews.approve') }}
+            </UButton>
           </div>
-        </td>
-      </tr>
-    </AdminTable>
+        </div>
+      </template>
+    </SplitDetail>
   </PageHeader>
 </template>

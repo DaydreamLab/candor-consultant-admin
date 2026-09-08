@@ -116,7 +116,8 @@
     "colUpdated": "Updated",
     "approve": "Approve",
     "reject": "Return",
-    "readOnly": "This role is read-only."
+    "readOnly": "This role is read-only.",
+    "emptyDetail": "Select a review on the left to approve or return it."
   },
   "table": {
     "empty": "No records yet",
@@ -225,7 +226,13 @@
     "selection": "Selected",
     "label": "Candor label on",
     "ship": "Shipped",
-    "tickHint": "Tick only the required stages. Keep LINE / video consult notes off this admin."
+    "tickHint": "Tick only the required stages. Keep LINE / video consult notes off this admin.",
+    "edit": "Edit progress",
+    "save": "Save progress",
+    "changed": "{n} change(s)",
+    "savedCount": "Saved {n} change(s)",
+    "done": "Done",
+    "open": "Not done"
   },
   "reports": {
     "shippedSkus": "SKUs shipped",
@@ -271,8 +278,14 @@
     "siteEn": "Lab site (EN)",
     "nameEn": "Product name (EN)",
     "aLabelEn": "Candor label (EN)",
-    "caseIds": "Case IDs (comma-separated)",
-    "orgRequired": "Consultant firm"
+    "caseIds": "Cases",
+    "orgRequired": "Consultant firm",
+    "identity": "Product details",
+    "stockPrice": "Stock and pricing",
+    "pickCases": "Select cases to invoice",
+    "noDueCases": "No invoice-due cases for this firm.",
+    "emptyDetail": "Select a row on the left to view or edit.",
+    "back": "Back to list"
   },
   "audit": {
     "title": "Audit log",

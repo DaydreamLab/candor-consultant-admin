@@ -226,10 +226,11 @@ const activeOrgId = computed(() => {
       </section>
     </div>
 
-    <USlideover
+    <UModal
       v-model:open="drawerOpen"
       :title="editingId ? $t('actions.edit') : $t('selections.addLine')"
       :description="$t('form.lineTitle')"
+      :ui="{ footer: 'justify-end' }"
     >
       <template #body>
         <UForm
@@ -277,7 +278,7 @@ const activeOrgId = computed(() => {
           {{ $t('actions.save') }}
         </UButton>
       </template>
-    </USlideover>
+    </UModal>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"

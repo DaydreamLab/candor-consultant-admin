@@ -6,6 +6,7 @@ import type { InvoiceRow } from '~/types/admin'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { serviceFeeForPlan } from '~/utils/demo'
 
+const { locale } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { scoped, orgLabel, showOrg, writable, orgOptions } = useOrgScope()
 const ops = useOpsStore()
@@ -15,22 +16,73 @@ const { invoiceStatusOptions } = useSelectOptions()
 const drawerOpen = ref(false)
 const editingId = ref<string | null>(null)
 const deleteId = ref<string | null>(null)
-const state = reactive<Partial<InvoiceForm>>({})
+const state = reactive<Partial<InvoiceForm>>({
+  caseIds: []
+})
 
 const rows = computed(() => scoped(ops.invoices))
 
+function goodsForCases(caseIds: string[]) {
+  return caseIds.reduce((sum, caseId) => {
+    const shipped = ops.shipments
+      .filter(row => row.caseId === caseId)
+      .flatMap(row => row.items)
+    const fromShip = shipped.reduce((total, item) => {
+      return total + (ops.productOf(item.sku)?.cost ?? 0) * item.qty
+    }, 0)
+    if (fromShip) {
+      return sum + fromShip
+    }
+    return sum + ops.keyIn
+      .filter(row => row.caseId === caseId)
+      .reduce((total, line) => total + (ops.productOf(line.sku)?.cost ?? 0) * line.qty, 0)
+  }, 0)
+}
+
+function recalc() {
+  const ids = state.caseIds ?? []
+  const cases = ids
+    .map(id => ops.cases.find(row => row.id === id))
+    .filter(Boolean)
+  state.serviceFee = cases.reduce((sum, row) => sum + serviceFeeForPlan(row!.planId), 0)
+  state.goodsAmount = goodsForCases(ids)
+}
+
+const eligibleCases = computed(() => {
+  const orgId = state.orgId ?? ops.defaultOrgId()
+  const locked = new Set(editingId.value
+    ? (ops.invoices.find(row => row.id === editingId.value)?.caseIds ?? [])
+    : [])
+  return scoped(ops.cases).filter(row =>
+    row.orgId === orgId && (row.status === 'invoice_due' || locked.has(row.id))
+  )
+})
+
+function isSelected(id: string) {
+  return (state.caseIds ?? []).includes(id)
+}
+
+function toggleCase(id: string, checked: boolean | 'indeterminate') {
+  const selected = new Set(state.caseIds ?? [])
+  if (checked) {
+    selected.add(id)
+  } else {
+    selected.delete(id)
+  }
+  state.caseIds = [...selected]
+  recalc()
+}
+
 function openCreate() {
   editingId.value = null
-  const due = scoped(ops.cases).filter(row => row.status === 'invoice_due')
-  const orgId = due[0]?.orgId ?? ops.defaultOrgId()
-  const serviceFee = due.reduce((sum, row) => sum + serviceFeeForPlan(row.planId), 0)
+  const orgId = ops.defaultOrgId()
+  const due = scoped(ops.cases).filter(row => row.status === 'invoice_due' && row.orgId === orgId)
   Object.assign(state, {
     orgId,
-    caseIdsText: due.filter(row => row.orgId === orgId).map(row => row.id).join(', '),
-    serviceFee,
-    goodsAmount: 0,
+    caseIds: due.map(row => row.id),
     status: 'draft'
   })
+  recalc()
   drawerOpen.value = true
 }
 
@@ -38,7 +90,7 @@ function openEdit(row: InvoiceRow) {
   editingId.value = row.id
   Object.assign(state, {
     orgId: row.orgId,
-    caseIdsText: row.caseIds.join(', '),
+    caseIds: [...row.caseIds],
     serviceFee: row.serviceFee,
     goodsAmount: row.goodsAmount,
     status: row.status
@@ -48,17 +100,16 @@ function openEdit(row: InvoiceRow) {
 
 function onSubmit(event: FormSubmitEvent<InvoiceForm>) {
   const data = event.data
-  const caseIds = data.caseIdsText.split(/[,\s]+/).filter(Boolean)
   ops.saveInvoice({
     id: editingId.value ?? undefined,
     orgId: data.orgId,
-    caseIds,
+    caseIds: data.caseIds,
     serviceFee: data.serviceFee,
     goodsAmount: data.goodsAmount,
     status: data.status
   })
   drawerOpen.value = false
-  feedback.saved(editingId.value ?? caseIds[0])
+  feedback.saved(editingId.value ?? data.caseIds[0])
 }
 
 function confirmDelete() {
@@ -69,6 +120,15 @@ function confirmDelete() {
   feedback.deleted(deleteId.value)
   deleteId.value = null
 }
+
+watch(() => state.orgId, (orgId, previous) => {
+  if (!drawerOpen.value || orgId === previous) {
+    return
+  }
+  const allowed = new Set(eligibleCases.value.map(row => row.id))
+  state.caseIds = (state.caseIds ?? []).filter(id => allowed.has(id))
+  recalc()
+})
 </script>
 
 <template>
@@ -166,10 +226,11 @@ function confirmDelete() {
       </tr>
     </AdminTable>
 
-    <USlideover
+    <UModal
       v-model:open="drawerOpen"
       :title="editingId ? $t('actions.edit') : $t('actions.add')"
       :description="$t('form.invoiceTitle')"
+      :ui="{ footer: 'justify-end' }"
     >
       <template #body>
         <UForm
@@ -192,21 +253,45 @@ function confirmDelete() {
             />
           </UFormField>
           <UFormField
-            name="caseIdsText"
-            :label="$t('form.caseIds')"
+            name="caseIds"
+            :label="$t('form.pickCases')"
           >
-            <UInput
-              v-model="state.caseIdsText"
-              class="w-full"
-            />
+            <div
+              v-if="eligibleCases.length"
+              class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-default p-3"
+            >
+              <label
+                v-for="row in eligibleCases"
+                :key="row.id"
+                class="flex cursor-pointer items-start gap-2 text-sm"
+              >
+                <UCheckbox
+                  :model-value="isSelected(row.id)"
+                  @update:model-value="toggleCase(row.id, $event)"
+                />
+                <span>
+                  <span class="font-medium text-highlighted">{{ row.id }}</span>
+                  <span class="text-muted">
+                    · {{ locale === 'en' ? row.customerEn : row.customer }} · {{ $t(`plan.${row.planId}`) }}
+                  </span>
+                </span>
+              </label>
+            </div>
+            <p
+              v-else
+              class="text-sm text-muted"
+            >
+              {{ $t('form.noDueCases') }}
+            </p>
           </UFormField>
           <UFormField
             name="serviceFee"
             :label="$t('col.service')"
           >
             <UInput
-              v-model="state.serviceFee"
+              :model-value="state.serviceFee"
               type="number"
+              disabled
               class="w-full"
             />
           </UFormField>
@@ -215,8 +300,9 @@ function confirmDelete() {
             :label="$t('col.goods')"
           >
             <UInput
-              v-model="state.goodsAmount"
+              :model-value="state.goodsAmount"
               type="number"
+              disabled
               class="w-full"
             />
           </UFormField>
@@ -248,7 +334,7 @@ function confirmDelete() {
           {{ $t('actions.save') }}
         </UButton>
       </template>
-    </USlideover>
+    </UModal>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"

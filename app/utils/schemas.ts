@@ -61,7 +61,7 @@ export const shipmentSchema = z.object({
 
 export const invoiceSchema = z.object({
   orgId: z.string().min(1),
-  caseIdsText: z.string().min(1),
+  caseIds: z.array(z.string()).min(1),
   serviceFee: z.coerce.number().min(0),
   goodsAmount: z.coerce.number().min(0),
   status: z.enum(['draft', 'sent', 'paid'])

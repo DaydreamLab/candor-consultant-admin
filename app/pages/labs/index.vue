@@ -175,10 +175,11 @@ function confirmDelete() {
       </tr>
     </AdminTable>
 
-    <USlideover
+    <UModal
       v-model:open="drawerOpen"
       :title="editingId ? $t('actions.edit') : $t('actions.add')"
       :description="$t('form.labTitle')"
+      :ui="{ footer: 'justify-end' }"
     >
       <template #body>
         <UForm
@@ -254,7 +255,7 @@ function confirmDelete() {
           {{ $t('actions.save') }}
         </UButton>
       </template>
-    </USlideover>
+    </UModal>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"

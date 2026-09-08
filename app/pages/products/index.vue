@@ -1,20 +1,13 @@
 <script setup lang="ts">
-import { productSchema } from '~/utils/schemas'
-import type { ProductForm } from '~/utils/schemas'
-import type { FormSubmitEvent } from '@nuxt/ui'
-import { DEMO_LABELS } from '~/utils/demo'
-
+const localePath = useLocalePath()
 const { locale, t } = useI18n()
 const { moduleDesc } = usePageCopy()
-const { scoped, orgLabel, showOrg, writable, orgOptions } = useOrgScope()
+const { scoped, orgLabel, showOrg, writable } = useOrgScope()
 const ops = useOpsStore()
 const feedback = useOpsFeedback()
 
 const query = ref('')
-const drawerOpen = ref(false)
-const editingSku = ref<string | null>(null)
 const deleteSku = ref<string | null>(null)
-const state = reactive<Partial<ProductForm>>({})
 
 const rows = computed(() => {
   const list = scoped(ops.products).map((product) => {
@@ -43,8 +36,6 @@ const rows = computed(() => {
   })
 })
 
-const labelOptions = DEMO_LABELS.map(row => ({ label: row.id, value: row.id }))
-
 function yName(row: (typeof rows.value)[number]) {
   return locale.value === 'en' ? row.nameEn : row.name
 }
@@ -53,71 +44,17 @@ function aName(row: (typeof rows.value)[number]) {
   return locale.value === 'en' ? row.aLabelEn : row.aLabel
 }
 
-function openCreate() {
-  editingSku.value = null
-  Object.assign(state, {
-    sku: '',
-    orgId: ops.defaultOrgId(),
-    name: '',
-    nameEn: '',
-    aLabel: '',
-    aLabelEn: '',
-    spec: '',
-    cost: 0,
-    priceToA: 0,
-    labelVersion: DEMO_LABELS.find(row => row.current)?.id ?? DEMO_LABELS[0]?.id,
-    onHand: 0,
-    reserved: 0,
-    reorderAt: 0
-  })
-  drawerOpen.value = true
-}
-
-function openEdit(row: (typeof rows.value)[number]) {
-  editingSku.value = row.sku
-  Object.assign(state, {
-    sku: row.sku,
-    orgId: row.orgId,
-    name: row.name,
-    nameEn: row.nameEn,
-    aLabel: row.aLabel,
-    aLabelEn: row.aLabelEn,
-    spec: row.spec,
-    cost: row.cost,
-    priceToA: row.priceToA,
-    labelVersion: row.labelVersion,
-    onHand: row.onHand,
-    reserved: row.reserved,
-    reorderAt: row.reorderAt
-  })
-  drawerOpen.value = true
-}
-
-function onSubmit(event: FormSubmitEvent<ProductForm>) {
-  const saved = ops.saveProduct(event.data, editingSku.value ?? undefined)
-  if (!saved) {
-    feedback.warned(event.data.sku)
-    return
-  }
-  drawerOpen.value = false
-  feedback.saved(event.data.sku)
-}
-
 function confirmDelete() {
   if (!deleteSku.value) {
     return
   }
   const ok = ops.removeProduct(deleteSku.value)
   if (!ok) {
-    feedback.warned(tInUse())
+    feedback.warned(t('actions.inUse'))
   } else {
     feedback.deleted(deleteSku.value)
   }
   deleteSku.value = null
-}
-
-function tInUse() {
-  return t('actions.inUse')
 }
 </script>
 
@@ -136,7 +73,7 @@ function tInUse() {
       <UButton
         icon="i-lucide-plus"
         :disabled="!writable"
-        @click="openCreate"
+        :to="localePath('/products/new')"
       >
         {{ $t('actions.add') }}
       </UButton>
@@ -227,171 +164,12 @@ function tInUse() {
         <td class="px-4 py-3">
           <RowActions
             :disabled="!writable"
-            @edit="openEdit(row)"
+            @edit="navigateTo(localePath(`/products/${encodeURIComponent(row.sku)}`))"
             @remove="deleteSku = row.sku"
           />
         </td>
       </tr>
     </AdminTable>
-
-    <USlideover
-      v-model:open="drawerOpen"
-      :title="editingSku ? $t('actions.edit') : $t('actions.add')"
-      :description="$t('form.productTitle')"
-    >
-      <template #body>
-        <UForm
-          id="product-form"
-          :schema="productSchema"
-          :state="state"
-          class="space-y-4"
-          @submit="onSubmit"
-        >
-          <UFormField
-            v-if="showOrg"
-            name="orgId"
-            :label="$t('form.orgRequired')"
-          >
-            <USelect
-              v-model="state.orgId"
-              :items="orgOptions()"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="sku"
-            :label="$t('col.sku')"
-          >
-            <UInput
-              v-model="state.sku"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="name"
-            :label="$t('col.yName')"
-          >
-            <UInput
-              v-model="state.name"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="nameEn"
-            :label="$t('form.nameEn')"
-          >
-            <UInput
-              v-model="state.nameEn"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="aLabel"
-            :label="$t('col.aLabel')"
-          >
-            <UInput
-              v-model="state.aLabel"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="aLabelEn"
-            :label="$t('form.aLabelEn')"
-          >
-            <UInput
-              v-model="state.aLabelEn"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="spec"
-            :label="$t('col.spec')"
-          >
-            <UInput
-              v-model="state.spec"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="cost"
-            :label="$t('col.cost')"
-          >
-            <UInput
-              v-model="state.cost"
-              type="number"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="priceToA"
-            :label="$t('col.priceToA')"
-          >
-            <UInput
-              v-model="state.priceToA"
-              type="number"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="labelVersion"
-            :label="$t('col.labelVer')"
-          >
-            <USelect
-              v-model="state.labelVersion"
-              :items="labelOptions"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="onHand"
-            :label="$t('col.onHand')"
-          >
-            <UInput
-              v-model="state.onHand"
-              type="number"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="reserved"
-            :label="$t('col.reserved')"
-          >
-            <UInput
-              v-model="state.reserved"
-              type="number"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="reorderAt"
-            :label="$t('col.reorder')"
-          >
-            <UInput
-              v-model="state.reorderAt"
-              type="number"
-              class="w-full"
-            />
-          </UFormField>
-        </UForm>
-      </template>
-      <template #footer="{ close }">
-        <UButton
-          color="neutral"
-          variant="outline"
-          @click="close"
-        >
-          {{ $t('actions.cancel') }}
-        </UButton>
-        <UButton
-          type="submit"
-          form="product-form"
-        >
-          {{ $t('actions.save') }}
-        </UButton>
-      </template>
-    </USlideover>
 
     <ConfirmDelete
       :open="Boolean(deleteSku)"

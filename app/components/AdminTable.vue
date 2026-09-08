@@ -1,6 +1,9 @@
 <template>
   <div class="overflow-x-auto rounded-xl border border-default bg-elevated">
-    <table class="w-full min-w-[880px] text-left text-sm">
+    <table
+      class="w-full text-left text-sm"
+      :class="compact ? '' : 'min-w-[880px]'"
+    >
       <thead class="border-b border-default bg-muted/40 text-xs text-muted">
         <slot name="head" />
       </thead>
@@ -18,7 +21,10 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+withDefaults(defineProps<{
   empty?: boolean
-}>()
+  compact?: boolean
+}>(), {
+  compact: false
+})
 </script>

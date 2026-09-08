@@ -216,16 +216,41 @@ export const useOpsStore = defineStore('ops', () => {
   }
 
   function setProgressFlag(caseId: string, key: 'labScheduled' | 'reportBack' | 'consultDone' | 'keyedIn' | 'labeled' | 'shipped', value: boolean) {
-    if (!writable()) {
-      return
+    applyProgressFlags([{ caseId, patch: { [key]: value } }])
+  }
+
+  function applyProgressFlags(updates: Array<{
+    caseId: string
+    patch: Partial<Pick<ProgressRow, 'labScheduled' | 'reportBack' | 'consultDone' | 'keyedIn' | 'labeled' | 'shipped'>>
+  }>) {
+    if (!writable() || !updates.length) {
+      return 0
     }
-    const row = progressFor(caseId)
-    if (!row || row[key] === null) {
-      return
+    let changed = 0
+    const targets: string[] = []
+    for (const update of updates) {
+      const row = progressFor(update.caseId)
+      if (!row) {
+        continue
+      }
+      let dirty = false
+      for (const [key, value] of Object.entries(update.patch) as Array<[keyof typeof update.patch, boolean | null | undefined]>) {
+        if (value === undefined || row[key] === null || row[key] === value) {
+          continue
+        }
+        row[key] = value as never
+        dirty = true
+      }
+      if (dirty) {
+        refreshProgress(row)
+        changed += 1
+        targets.push(update.caseId)
+      }
     }
-    row[key] = value
-    refreshProgress(row)
-    log('勾選進度', `${caseId} ${key}`)
+    if (changed) {
+      log('更新進度', targets.join(', '))
+    }
+    return changed
   }
 
   function saveProduct(input: ProductRow & InventoryRow, previousSku?: string) {
@@ -555,6 +580,7 @@ export const useOpsStore = defineStore('ops', () => {
     upsertLab,
     removeLab,
     setProgressFlag,
+    applyProgressFlags,
     saveProduct,
     removeProduct,
     addKeyInLine,
