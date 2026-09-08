@@ -270,7 +270,8 @@ export const useOpsStore = defineStore('ops', () => {
       spec: input.spec,
       cost: input.cost,
       priceToA: input.priceToA,
-      labelVersion: input.labelVersion
+      labelVersion: input.labelVersion,
+      image: input.image ?? null
     }
     const stockFields: InventoryRow = {
       sku: input.sku,

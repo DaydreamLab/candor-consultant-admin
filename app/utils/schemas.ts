@@ -42,6 +42,7 @@ export const productSchema = z.object({
   cost: z.coerce.number().min(0),
   priceToA: z.coerce.number().min(0),
   labelVersion: z.string().min(1),
+  image: z.string().nullable().optional(),
   onHand: z.coerce.number().int().min(0),
   reserved: z.coerce.number().int().min(0),
   reorderAt: z.coerce.number().int().min(0)

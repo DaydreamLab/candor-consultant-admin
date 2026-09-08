@@ -275,12 +275,16 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
+    "back": "Back",
     "close": "Close",
     "saved": "Saved",
     "deleted": "Deleted",
     "readOnly": "This role is read-only.",
     "confirmTitle": "Delete this record?",
     "confirmBody": "It will be removed from this demo list.",
+    "confirmAgainTitle": "Confirm again",
+    "confirmAgainBody": "This cannot be undone. Press delete once more to remove it.",
+    "confirmNext": "Continue",
     "inUse": "This SKU is used in a selection or shipment, so it cannot be deleted.",
     "selfDelete": "You cannot delete your own account.",
     "filterAll": "All",
@@ -320,7 +324,14 @@
     "lowStock": "Low stock",
     "inStock": "In stock",
     "costHint": "Consultant cost",
-    "priceHint": "Unit price billed to Candor"
+    "priceHint": "Unit price billed to Candor",
+    "image": "Preview image",
+    "imageHint": "Shown in the list and shipping. Demo images stay in the browser and reset on refresh.",
+    "uploadImage": "Upload preview",
+    "replaceImage": "Replace image",
+    "removeImage": "Remove",
+    "imageType": "Please upload JPG, PNG, or WebP.",
+    "imageTooLarge": "Please keep the image under 2MB."
   },
   "shipping": {
     "expandHint": "Expand a case to see its shipping timeline. Item thumbnails stay at the top."

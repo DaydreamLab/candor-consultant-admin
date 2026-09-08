@@ -23,6 +23,7 @@ const lines = computed(() =>
         name: product
           ? (locale.value === 'en' ? product.aLabelEn : product.aLabel)
           : item.sku,
+        image: product?.image ?? null,
         cost: (product?.cost ?? 0) * item.qty,
         billable: (product?.priceToA ?? 0) * item.qty,
         shippedAt: row.shippedAt
@@ -164,6 +165,7 @@ const summary = computed(() => {
             <ProductThumb
               :seed="row.sku"
               :label="row.name"
+              :src="row.image"
               size="sm"
             />
             {{ row.name }}

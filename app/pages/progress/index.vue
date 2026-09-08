@@ -132,9 +132,13 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
     <AdminTable :empty="!rows.length">
       <template #head>
         <tr>
-          <th>{{ $t('col.case') }}</th>
+          <th class="whitespace-nowrap">
+            {{ $t('col.case') }}
+          </th>
           <th>{{ $t('col.customer') }}</th>
-          <th>{{ $t('col.plan') }}</th>
+          <th class="whitespace-nowrap">
+            {{ $t('col.plan') }}
+          </th>
           <th>{{ $t('progress.lab') }}</th>
           <th>{{ $t('progress.report') }}</th>
           <th>{{ $t('progress.consult') }}</th>
@@ -150,7 +154,7 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
         class="border-b border-default last:border-0"
         :class="editing && dirtyUpdates.some(item => item.caseId === row.caseId) ? 'bg-primary/5' : ''"
       >
-        <td class="font-medium text-highlighted">
+        <td class="whitespace-nowrap font-medium text-highlighted">
           <div>{{ row.caseId }}</div>
           <div
             v-if="showOrg"
@@ -162,7 +166,7 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
         <td>
           {{ row.customer }}
         </td>
-        <td>
+        <td class="whitespace-nowrap">
           {{ $t(`plan.${row.planId}`) }}
         </td>
         <td

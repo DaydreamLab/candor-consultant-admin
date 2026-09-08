@@ -136,22 +136,22 @@ export const DEMO_PROGRESS: ProgressRow[] = [
 ]
 
 export const DEMO_PRODUCTS: ProductRow[] = [
-  { sku: 'YG-MAG-500', orgId: ORG_YOUNGER, name: '鎂複方膠囊', nameEn: 'Magnesium complex', aLabel: '坦見 鎂複方', aLabelEn: 'Candor Magnesium', spec: '500mg × 60', cost: 186, priceToA: 260, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'YG-OMG-1000', orgId: ORG_YOUNGER, name: '魚油軟膠囊', nameEn: 'Fish oil softgel', aLabel: '坦見 Omega-3', aLabelEn: 'Candor Omega-3', spec: '1000mg × 90', cost: 320, priceToA: 450, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'YG-VTD-2000', orgId: ORG_YOUNGER, name: '維生素 D3', nameEn: 'Vitamin D3', aLabel: '坦見 維生素 D', aLabelEn: 'Candor Vitamin D', spec: '2000IU × 60', cost: 95, priceToA: 140, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'YG-PRB-30', orgId: ORG_YOUNGER, name: '益生菌粉包', nameEn: 'Probiotic sachets', aLabel: '坦見 益生菌', aLabelEn: 'Candor Probiotic', spec: '30 包', cost: 210, priceToA: 295, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'YG-ZNC-15', orgId: ORG_YOUNGER, name: '鋅錠', nameEn: 'Zinc tablets', aLabel: '坦見 鋅', aLabelEn: 'Candor Zinc', spec: '15mg × 60', cost: 72, priceToA: 110, labelVersion: 'A-LBL-2026-03' },
-  { sku: 'YG-IRM-25', orgId: ORG_YOUNGER, name: '鐵劑', nameEn: 'Iron supplement', aLabel: '坦見 鐵', aLabelEn: 'Candor Iron', spec: '25mg × 30', cost: 128, priceToA: 180, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'DS-MAG-400', orgId: ORG_DASHU, name: '甘胺酸鎂', nameEn: 'Magnesium glycinate', aLabel: '坦見 鎂複方', aLabelEn: 'Candor Magnesium', spec: '400mg × 60', cost: 198, priceToA: 275, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'DS-OMG-800', orgId: ORG_DASHU, name: 'rTG 魚油', nameEn: 'rTG fish oil', aLabel: '坦見 Omega-3', aLabelEn: 'Candor Omega-3', spec: '800mg × 60', cost: 360, priceToA: 510, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'DS-VTD-1000', orgId: ORG_DASHU, name: '維生素 D3 滴劑', nameEn: 'Vitamin D3 drops', aLabel: '坦見 維生素 D', aLabelEn: 'Candor Vitamin D', spec: '10ml', cost: 140, priceToA: 198, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'DS-PRB-20', orgId: ORG_DASHU, name: '孢子型益生菌', nameEn: 'Spore probiotic', aLabel: '坦見 益生菌', aLabelEn: 'Candor Probiotic', spec: '20 粒', cost: 240, priceToA: 330, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'DS-COL-5', orgId: ORG_DASHU, name: '膠原蛋白肽', nameEn: 'Collagen peptides', aLabel: '坦見 膠原', aLabelEn: 'Candor Collagen', spec: '5g × 30', cost: 275, priceToA: 380, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'LN-MAG-500', orgId: ORG_LION, name: '鎂複方錠', nameEn: 'Magnesium tablets', aLabel: '坦見 鎂複方', aLabelEn: 'Candor Magnesium', spec: '500mg × 60', cost: 175, priceToA: 248, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'LN-OMG-900', orgId: ORG_LION, name: '魚油膠囊', nameEn: 'Fish oil capsules', aLabel: '坦見 Omega-3', aLabelEn: 'Candor Omega-3', spec: '900mg × 60', cost: 305, priceToA: 430, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'LN-VTD-2000', orgId: ORG_LION, name: '維生素 D3', nameEn: 'Vitamin D3', aLabel: '坦見 維生素 D', aLabelEn: 'Candor Vitamin D', spec: '2000IU × 60', cost: 88, priceToA: 132, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'LN-PRB-30', orgId: ORG_LION, name: '益生菌粉', nameEn: 'Probiotic powder', aLabel: '坦見 益生菌', aLabelEn: 'Candor Probiotic', spec: '30 包', cost: 198, priceToA: 280, labelVersion: 'A-LBL-2026-08' },
-  { sku: 'LN-ZNC-15', orgId: ORG_LION, name: '鋅錠', nameEn: 'Zinc tablets', aLabel: '坦見 鋅', aLabelEn: 'Candor Zinc', spec: '15mg × 60', cost: 68, priceToA: 105, labelVersion: 'A-LBL-2026-03' }
+  { sku: 'YG-MAG-500', orgId: ORG_YOUNGER, name: '鎂複方膠囊', nameEn: 'Magnesium complex', aLabel: '坦見 鎂複方', aLabelEn: 'Candor Magnesium', spec: '500mg × 60', cost: 186, priceToA: 260, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'YG-OMG-1000', orgId: ORG_YOUNGER, name: '魚油軟膠囊', nameEn: 'Fish oil softgel', aLabel: '坦見 Omega-3', aLabelEn: 'Candor Omega-3', spec: '1000mg × 90', cost: 320, priceToA: 450, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'YG-VTD-2000', orgId: ORG_YOUNGER, name: '維生素 D3', nameEn: 'Vitamin D3', aLabel: '坦見 維生素 D', aLabelEn: 'Candor Vitamin D', spec: '2000IU × 60', cost: 95, priceToA: 140, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'YG-PRB-30', orgId: ORG_YOUNGER, name: '益生菌粉包', nameEn: 'Probiotic sachets', aLabel: '坦見 益生菌', aLabelEn: 'Candor Probiotic', spec: '30 包', cost: 210, priceToA: 295, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'YG-ZNC-15', orgId: ORG_YOUNGER, name: '鋅錠', nameEn: 'Zinc tablets', aLabel: '坦見 鋅', aLabelEn: 'Candor Zinc', spec: '15mg × 60', cost: 72, priceToA: 110, labelVersion: 'A-LBL-2026-03', image: null },
+  { sku: 'YG-IRM-25', orgId: ORG_YOUNGER, name: '鐵劑', nameEn: 'Iron supplement', aLabel: '坦見 鐵', aLabelEn: 'Candor Iron', spec: '25mg × 30', cost: 128, priceToA: 180, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'DS-MAG-400', orgId: ORG_DASHU, name: '甘胺酸鎂', nameEn: 'Magnesium glycinate', aLabel: '坦見 鎂複方', aLabelEn: 'Candor Magnesium', spec: '400mg × 60', cost: 198, priceToA: 275, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'DS-OMG-800', orgId: ORG_DASHU, name: 'rTG 魚油', nameEn: 'rTG fish oil', aLabel: '坦見 Omega-3', aLabelEn: 'Candor Omega-3', spec: '800mg × 60', cost: 360, priceToA: 510, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'DS-VTD-1000', orgId: ORG_DASHU, name: '維生素 D3 滴劑', nameEn: 'Vitamin D3 drops', aLabel: '坦見 維生素 D', aLabelEn: 'Candor Vitamin D', spec: '10ml', cost: 140, priceToA: 198, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'DS-PRB-20', orgId: ORG_DASHU, name: '孢子型益生菌', nameEn: 'Spore probiotic', aLabel: '坦見 益生菌', aLabelEn: 'Candor Probiotic', spec: '20 粒', cost: 240, priceToA: 330, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'DS-COL-5', orgId: ORG_DASHU, name: '膠原蛋白肽', nameEn: 'Collagen peptides', aLabel: '坦見 膠原', aLabelEn: 'Candor Collagen', spec: '5g × 30', cost: 275, priceToA: 380, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'LN-MAG-500', orgId: ORG_LION, name: '鎂複方錠', nameEn: 'Magnesium tablets', aLabel: '坦見 鎂複方', aLabelEn: 'Candor Magnesium', spec: '500mg × 60', cost: 175, priceToA: 248, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'LN-OMG-900', orgId: ORG_LION, name: '魚油膠囊', nameEn: 'Fish oil capsules', aLabel: '坦見 Omega-3', aLabelEn: 'Candor Omega-3', spec: '900mg × 60', cost: 305, priceToA: 430, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'LN-VTD-2000', orgId: ORG_LION, name: '維生素 D3', nameEn: 'Vitamin D3', aLabel: '坦見 維生素 D', aLabelEn: 'Candor Vitamin D', spec: '2000IU × 60', cost: 88, priceToA: 132, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'LN-PRB-30', orgId: ORG_LION, name: '益生菌粉', nameEn: 'Probiotic powder', aLabel: '坦見 益生菌', aLabelEn: 'Candor Probiotic', spec: '30 包', cost: 198, priceToA: 280, labelVersion: 'A-LBL-2026-08', image: null },
+  { sku: 'LN-ZNC-15', orgId: ORG_LION, name: '鋅錠', nameEn: 'Zinc tablets', aLabel: '坦見 鋅', aLabelEn: 'Candor Zinc', spec: '15mg × 60', cost: 68, priceToA: 105, labelVersion: 'A-LBL-2026-03', image: null }
 ]
 
 export const DEMO_INVENTORY: InventoryRow[] = [

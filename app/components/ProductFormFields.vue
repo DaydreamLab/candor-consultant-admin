@@ -13,10 +13,44 @@ const emit = defineEmits<{
   submit: [event: FormSubmitEvent<ProductForm>]
 }>()
 
-const { showOrg, orgOptions } = useOrgScope()
+const { showOrg, orgOptions, writable } = useOrgScope()
+const { t } = useI18n()
+const feedback = useOpsFeedback()
 const state = defineModel<Partial<ProductForm>>('state', { required: true })
 
 const labelOptions = DEMO_LABELS.map(row => ({ label: row.id, value: row.id }))
+const fileInput = ref<HTMLInputElement | null>(null)
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+
+function openPicker() {
+  fileInput.value?.click()
+}
+
+function onPick(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) {
+    return
+  }
+  if (!file.type.startsWith('image/')) {
+    feedback.warned(t('products.imageType'))
+    return
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    feedback.warned(t('products.imageTooLarge'))
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    state.value.image = typeof reader.result === 'string' ? reader.result : null
+  }
+  reader.readAsDataURL(file)
+}
+
+function clearImage() {
+  state.value.image = null
+}
 </script>
 
 <template>
@@ -31,6 +65,51 @@ const labelOptions = DEMO_LABELS.map(row => ({ label: row.id, value: row.id }))
       <h2 class="text-base font-semibold text-highlighted">
         {{ $t('form.identity') }}
       </h2>
+      <UFormField
+        name="image"
+        :label="$t('products.image')"
+      >
+        <div class="flex flex-wrap items-start gap-4">
+          <ProductThumb
+            :seed="state.sku || 'new'"
+            :label="state.aLabel || state.name || '?'"
+            :src="state.image"
+            size="lg"
+          />
+          <div class="min-w-0 flex-1 space-y-2">
+            <p class="text-sm text-muted">
+              {{ $t('products.imageHint') }}
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-image-plus"
+                :disabled="!writable"
+                @click="openPicker"
+              >
+                {{ state.image ? $t('products.replaceImage') : $t('products.uploadImage') }}
+              </UButton>
+              <UButton
+                v-if="state.image"
+                color="neutral"
+                variant="ghost"
+                :disabled="!writable"
+                @click="clearImage"
+              >
+                {{ $t('products.removeImage') }}
+              </UButton>
+            </div>
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="sr-only"
+              @change="onPick"
+            >
+          </div>
+        </div>
+      </UFormField>
       <UFormField
         v-if="showOrg"
         name="orgId"

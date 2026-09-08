@@ -29,6 +29,7 @@ const groups = computed(() => {
         ...line,
         yName: product ? (locale.value === 'en' ? product.nameEn : product.name) : line.sku,
         aLabel: product ? (locale.value === 'en' ? product.aLabelEn : product.aLabel) : line.sku,
+        image: product?.image ?? null,
         amount: (product?.cost ?? 0) * line.qty
       }
     })
@@ -257,7 +258,9 @@ const detailTitle = computed(() => creating.value ? t('selections.addLine') : t(
                     <th>{{ $t('col.yName') }}</th>
                     <th>{{ $t('col.qty') }}</th>
                     <th>{{ $t('col.cost') }}</th>
-                    <th>{{ $t('col.actions') }}</th>
+                    <th class="whitespace-nowrap">
+                      {{ $t('col.actions') }}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -273,6 +276,7 @@ const detailTitle = computed(() => creating.value ? t('selections.addLine') : t(
                         <ProductThumb
                           :seed="item.sku"
                           :label="item.aLabel"
+                          :src="item.image"
                           size="sm"
                         />
                         {{ item.aLabel }}
@@ -287,10 +291,13 @@ const detailTitle = computed(() => creating.value ? t('selections.addLine') : t(
                     <td class="tabular-money">
                       {{ money(item.amount) }}
                     </td>
-                    <td @click.stop>
+                    <td
+                      class="whitespace-nowrap"
+                      @click.stop
+                    >
                       <RowActions
+                        :edit="false"
                         :disabled="!writable || group.listStatus === 'confirmed'"
-                        @edit="openEdit(item)"
                         @remove="deleteId = item.id"
                       />
                     </td>

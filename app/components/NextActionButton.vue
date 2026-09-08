@@ -5,6 +5,7 @@
     color="primary"
     variant="soft"
     size="md"
+    class="whitespace-nowrap"
     trailing-icon="i-lucide-arrow-right"
   >
     {{ label }}

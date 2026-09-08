@@ -176,17 +176,25 @@ watch(rows, (list) => {
       >
         <template #head>
           <tr>
-            <th>{{ $t('col.case') }}</th>
+            <th class="whitespace-nowrap">
+              {{ $t('col.case') }}
+            </th>
             <th>{{ $t('col.customer') }}</th>
-            <th>{{ $t('col.plan') }}</th>
+            <th class="whitespace-nowrap">
+              {{ $t('col.plan') }}
+            </th>
             <th
               v-if="showOrg"
             >
               {{ $t('col.org') }}
             </th>
             <th>{{ $t('col.appointment') }}</th>
-            <th>{{ $t('col.status') }}</th>
-            <th>{{ $t('col.next') }}</th>
+            <th class="whitespace-nowrap">
+              {{ $t('col.status') }}
+            </th>
+            <th class="whitespace-nowrap">
+              {{ $t('col.next') }}
+            </th>
           </tr>
         </template>
         <tr
@@ -196,7 +204,7 @@ watch(rows, (list) => {
           :class="row.id === selectedId ? 'bg-primary/5' : ''"
           @click="selectRow(row)"
         >
-          <td class="font-medium text-highlighted">
+          <td class="whitespace-nowrap font-medium text-highlighted">
             {{ row.id }}
           </td>
           <td>
@@ -205,7 +213,7 @@ watch(rows, (list) => {
               {{ row.email }}
             </div>
           </td>
-          <td>
+          <td class="whitespace-nowrap">
             {{ $t(`plan.${row.planId}`) }}
           </td>
           <td
@@ -220,13 +228,16 @@ watch(rows, (list) => {
               {{ $t('col.paidAt') }} {{ row.paidAt }}
             </div>
           </td>
-          <td>
+          <td class="whitespace-nowrap">
             <StatusBadge
               :label="$t(`status.${row.status}`)"
               :color="CASE_STATUS_COLOR[row.status]"
             />
           </td>
-          <td @click.stop>
+          <td
+            class="whitespace-nowrap"
+            @click.stop
+          >
             <NextActionButton
               :to="nextTo(row.status)"
               :label="nextLabel(row.status)"

@@ -1,15 +1,16 @@
 <template>
-  <div class="flex justify-end gap-1.5">
+  <div class="flex flex-wrap items-center justify-end gap-2">
     <UButton
       v-if="edit"
       size="md"
       color="neutral"
-      variant="ghost"
+      variant="outline"
       icon="i-lucide-pencil"
       :disabled="disabled"
-      :aria-label="$t('actions.edit')"
       @click.stop="emit('edit')"
-    />
+    >
+      {{ $t('actions.edit') }}
+    </UButton>
     <UButton
       v-if="remove"
       size="md"
@@ -17,9 +18,10 @@
       variant="ghost"
       icon="i-lucide-trash"
       :disabled="disabled"
-      :aria-label="$t('actions.delete')"
       @click.stop="emit('remove')"
-    />
+    >
+      {{ $t('actions.delete') }}
+    </UButton>
   </div>
 </template>
 

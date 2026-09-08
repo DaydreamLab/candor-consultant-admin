@@ -117,16 +117,24 @@ function nextTo(status: CaseRow['status']) {
     <AdminTable :empty="!queue.length">
       <template #head>
         <tr>
-          <th>{{ $t('col.case') }}</th>
+          <th class="whitespace-nowrap">
+            {{ $t('col.case') }}
+          </th>
           <th>{{ $t('col.customer') }}</th>
-          <th>{{ $t('col.plan') }}</th>
+          <th class="whitespace-nowrap">
+            {{ $t('col.plan') }}
+          </th>
           <th
             v-if="showOrg"
           >
             {{ $t('col.org') }}
           </th>
-          <th>{{ $t('col.status') }}</th>
-          <th>{{ $t('col.next') }}</th>
+          <th class="whitespace-nowrap">
+            {{ $t('col.status') }}
+          </th>
+          <th class="whitespace-nowrap">
+            {{ $t('col.next') }}
+          </th>
         </tr>
       </template>
       <tr
@@ -134,7 +142,7 @@ function nextTo(status: CaseRow['status']) {
         :key="row.id"
         class="border-b border-default last:border-0"
       >
-        <td class="font-medium text-highlighted">
+        <td class="whitespace-nowrap font-medium text-highlighted">
           {{ row.id }}
         </td>
         <td>
@@ -143,7 +151,7 @@ function nextTo(status: CaseRow['status']) {
             {{ row.appointmentAt }}
           </div>
         </td>
-        <td>
+        <td class="whitespace-nowrap">
           {{ $t(`plan.${row.planId}`) }}
         </td>
         <td
@@ -152,13 +160,13 @@ function nextTo(status: CaseRow['status']) {
         >
           {{ orgLabel(row.orgId) }}
         </td>
-        <td>
+        <td class="whitespace-nowrap">
           <StatusBadge
             :label="$t(`status.${row.status}`)"
             :color="CASE_STATUS_COLOR[row.status]"
           />
         </td>
-        <td>
+        <td class="whitespace-nowrap">
           <NextActionButton
             :to="nextTo(row.status)"
             :label="nextLabel(row.status)"

@@ -1,5 +1,5 @@
 <template>
-  <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
+  <div class="grid items-start gap-5 lg:grid-cols-[minmax(28rem,1fr)_minmax(22rem,26rem)]">
     <div class="min-w-0">
       <slot />
     </div>

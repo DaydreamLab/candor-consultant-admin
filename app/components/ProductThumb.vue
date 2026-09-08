@@ -1,5 +1,13 @@
 <template>
+  <img
+    v-if="src"
+    :src="src"
+    :alt="label"
+    class="shrink-0 rounded-lg object-cover"
+    :class="sizeClass"
+  >
   <span
+    v-else
     class="inline-flex shrink-0 items-center justify-center rounded-lg font-semibold text-white"
     :class="sizeClass"
     :style="{ backgroundColor: tone }"
@@ -13,8 +21,10 @@
 const props = withDefaults(defineProps<{
   seed: string
   label: string
+  src?: string | null
   size?: 'sm' | 'md' | 'lg'
 }>(), {
+  src: null,
   size: 'md'
 })
 

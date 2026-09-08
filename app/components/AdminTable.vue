@@ -1,8 +1,8 @@
 <template>
   <div class="overflow-x-auto rounded-xl border border-default bg-elevated">
     <table
-      class="app-table w-full text-left text-base"
-      :class="compact ? '' : 'min-w-[880px]'"
+      class="app-table w-full min-w-[52rem] text-left text-base"
+      :class="compact ? '' : 'min-w-[60rem]'"
     >
       <thead class="border-b border-default bg-muted/40 text-sm text-muted">
         <slot name="head" />

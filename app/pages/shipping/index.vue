@@ -215,6 +215,7 @@ watch(rows, (list) => {
                 :key="`${row.id}-${item.sku}`"
                 :seed="item.sku"
                 :label="itemLabel(item.sku)"
+                :src="ops.productOf(item.sku)?.image"
                 size="sm"
               />
             </div>
@@ -237,6 +238,7 @@ watch(rows, (list) => {
                 <ProductThumb
                   :seed="item.sku"
                   :label="itemLabel(item.sku)"
+                  :src="ops.productOf(item.sku)?.image"
                   size="sm"
                 />
                 {{ itemLabel(item.sku) }} ×{{ item.qty }}

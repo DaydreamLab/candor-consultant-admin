@@ -1,6 +1,7 @@
 <template>
   <UBadge
     variant="subtle"
+    class="whitespace-nowrap"
     :color="color"
   >
     {{ label }}

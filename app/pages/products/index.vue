@@ -92,11 +92,14 @@ function confirmDelete() {
       <article
         v-for="row in rows"
         :key="row.sku"
-        class="flex flex-wrap items-center gap-5 border-b border-default px-5 py-5 last:border-0"
+        class="flex flex-wrap items-center gap-5 border-b border-default px-5 py-5 last:border-0 hover:bg-muted/30"
+        role="link"
+        @click="navigateTo(localePath(`/products/${encodeURIComponent(row.sku)}`))"
       >
         <ProductThumb
           :seed="row.sku"
           :label="aName(row)"
+          :src="row.image"
           size="lg"
         />
         <div class="min-w-48 flex-1">
@@ -138,8 +141,8 @@ function confirmDelete() {
           :color="row.low ? 'error' : 'success'"
         />
         <RowActions
+          :edit="false"
           :disabled="!writable"
-          @edit="navigateTo(localePath(`/products/${encodeURIComponent(row.sku)}`))"
           @remove="deleteSku = row.sku"
         />
       </article>

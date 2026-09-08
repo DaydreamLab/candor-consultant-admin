@@ -22,6 +22,7 @@ export function useProductEditor(editingSku: MaybeRefOrGetter<string | null>) {
       cost: 0,
       priceToA: 0,
       labelVersion: DEMO_LABELS.find(row => row.current)?.id ?? DEMO_LABELS[0]?.id ?? '',
+      image: null,
       onHand: 0,
       reserved: 0,
       reorderAt: 0
@@ -50,6 +51,7 @@ export function useProductEditor(editingSku: MaybeRefOrGetter<string | null>) {
       cost: product.cost,
       priceToA: product.priceToA,
       labelVersion: product.labelVersion,
+      image: product.image ?? null,
       onHand: stock.onHand,
       reserved: stock.reserved,
       reorderAt: stock.reorderAt

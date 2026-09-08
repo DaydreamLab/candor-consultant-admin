@@ -275,12 +275,16 @@
     "delete": "刪除",
     "save": "儲存",
     "cancel": "取消",
+    "back": "返回",
     "close": "關閉",
     "saved": "已儲存",
     "deleted": "已刪除",
     "readOnly": "目前角色為唯讀，無法修改。",
     "confirmTitle": "確定刪除？",
     "confirmBody": "刪除後此筆示範資料會從列表移除。",
+    "confirmAgainTitle": "再確認一次",
+    "confirmAgainBody": "刪除後無法復原。若確定要移除，請再按一次。",
+    "confirmNext": "下一步確認",
     "inUse": "此商品已用在選品或出貨，無法刪除。",
     "selfDelete": "不能刪除自己的帳號。",
     "filterAll": "全部",
@@ -320,7 +324,14 @@
     "lowStock": "低庫存",
     "inStock": "庫存正常",
     "costHint": "顧問進貨成本",
-    "priceHint": "向坦見請款單價"
+    "priceHint": "向坦見請款單價",
+    "image": "預覽圖",
+    "imageHint": "列表與出貨會顯示這張圖。示範環境存在瀏覽器裡，重新整理後會還原。",
+    "uploadImage": "上傳預覽圖",
+    "replaceImage": "更換圖片",
+    "removeImage": "移除",
+    "imageType": "請上傳 JPG、PNG 或 WebP。",
+    "imageTooLarge": "圖片請小於 2MB。"
   },
   "shipping": {
     "expandHint": "點開案件可看出貨時間軸。上方仍是這筆的品項縮圖。"

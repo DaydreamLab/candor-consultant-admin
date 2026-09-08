@@ -105,6 +105,7 @@ export interface ProductRow {
   cost: number
   priceToA: number
   labelVersion: string
+  image: string | null
 }
 
 export interface InventoryRow {
