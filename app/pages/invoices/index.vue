@@ -13,14 +13,16 @@ const ops = useOpsStore()
 const feedback = useOpsFeedback()
 const { invoiceStatusOptions } = useSelectOptions()
 
-const drawerOpen = ref(false)
-const editingId = ref<string | null>(null)
+const selectedId = ref<string | null>(null)
+const creating = ref(false)
 const deleteId = ref<string | null>(null)
 const state = reactive<Partial<InvoiceForm>>({
   caseIds: []
 })
 
 const rows = computed(() => scoped(ops.invoices))
+const selected = computed(() => rows.value.find(row => row.id === selectedId.value) ?? null)
+const detailOpen = computed(() => creating.value || Boolean(selected.value))
 
 function goodsForCases(caseIds: string[]) {
   return caseIds.reduce((sum, caseId) => {
@@ -50,8 +52,8 @@ function recalc() {
 
 const eligibleCases = computed(() => {
   const orgId = state.orgId ?? ops.defaultOrgId()
-  const locked = new Set(editingId.value
-    ? (ops.invoices.find(row => row.id === editingId.value)?.caseIds ?? [])
+  const locked = new Set(selectedId.value
+    ? (ops.invoices.find(row => row.id === selectedId.value)?.caseIds ?? [])
     : [])
   return scoped(ops.cases).filter(row =>
     row.orgId === orgId && (row.status === 'invoice_due' || locked.has(row.id))
@@ -63,18 +65,17 @@ function isSelected(id: string) {
 }
 
 function toggleCase(id: string, checked: boolean | 'indeterminate') {
-  const selected = new Set(state.caseIds ?? [])
+  const selectedCases = new Set(state.caseIds ?? [])
   if (checked) {
-    selected.add(id)
+    selectedCases.add(id)
   } else {
-    selected.delete(id)
+    selectedCases.delete(id)
   }
-  state.caseIds = [...selected]
+  state.caseIds = [...selectedCases]
   recalc()
 }
 
-function openCreate() {
-  editingId.value = null
+function fillCreate() {
   const orgId = ops.defaultOrgId()
   const due = scoped(ops.cases).filter(row => row.status === 'invoice_due' && row.orgId === orgId)
   Object.assign(state, {
@@ -83,11 +84,9 @@ function openCreate() {
     status: 'draft'
   })
   recalc()
-  drawerOpen.value = true
 }
 
-function openEdit(row: InvoiceRow) {
-  editingId.value = row.id
+function fillEdit(row: InvoiceRow) {
   Object.assign(state, {
     orgId: row.orgId,
     caseIds: [...row.caseIds],
@@ -95,21 +94,44 @@ function openEdit(row: InvoiceRow) {
     goodsAmount: row.goodsAmount,
     status: row.status
   })
-  drawerOpen.value = true
+}
+
+function openCreate() {
+  if (!writable.value) {
+    return
+  }
+  selectedId.value = null
+  creating.value = true
+  fillCreate()
+}
+
+function selectRow(row: InvoiceRow) {
+  creating.value = false
+  selectedId.value = row.id
+  fillEdit(row)
+}
+
+function closeDetail() {
+  creating.value = false
+  selectedId.value = null
 }
 
 function onSubmit(event: FormSubmitEvent<InvoiceForm>) {
   const data = event.data
-  ops.saveInvoice({
-    id: editingId.value ?? undefined,
+  const saved = ops.saveInvoice({
+    id: selectedId.value ?? undefined,
     orgId: data.orgId,
     caseIds: data.caseIds,
     serviceFee: data.serviceFee,
     goodsAmount: data.goodsAmount,
     status: data.status
   })
-  drawerOpen.value = false
-  feedback.saved(editingId.value ?? data.caseIds[0])
+  feedback.saved(selectedId.value ?? data.caseIds[0])
+  creating.value = false
+  if (saved) {
+    selectedId.value = saved.id
+    fillEdit(saved)
+  }
 }
 
 function confirmDelete() {
@@ -118,16 +140,25 @@ function confirmDelete() {
   }
   ops.removeInvoice(deleteId.value)
   feedback.deleted(deleteId.value)
+  if (selectedId.value === deleteId.value) {
+    closeDetail()
+  }
   deleteId.value = null
 }
 
 watch(() => state.orgId, (orgId, previous) => {
-  if (!drawerOpen.value || orgId === previous) {
+  if (!detailOpen.value || orgId === previous) {
     return
   }
   const allowed = new Set(eligibleCases.value.map(row => row.id))
   state.caseIds = (state.caseIds ?? []).filter(id => allowed.has(id))
   recalc()
+})
+
+watch(rows, (list) => {
+  if (selectedId.value && !list.some(row => row.id === selectedId.value)) {
+    selectedId.value = null
+  }
 })
 </script>
 
@@ -146,195 +177,182 @@ watch(() => state.orgId, (orgId, previous) => {
       </UButton>
     </template>
 
-    <AdminTable :empty="!rows.length">
-      <template #head>
-        <tr>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.invoice') }}
-          </th>
-          <th
-            v-if="showOrg"
-            class="px-4 py-3 font-medium"
-          >
-            {{ $t('col.org') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.case') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.service') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.goods') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.total') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.issued') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.status') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.actions') }}
-          </th>
-        </tr>
-      </template>
-      <tr
-        v-for="row in rows"
-        :key="row.id"
-        class="border-b border-default last:border-0"
+    <SplitDetail>
+      <AdminTable
+        compact
+        :empty="!rows.length"
       >
-        <td class="px-4 py-3 font-medium text-highlighted">
-          {{ row.id }}
-        </td>
-        <td
-          v-if="showOrg"
-          class="px-4 py-3 text-muted"
+        <template #head>
+          <tr>
+            <th>{{ $t('col.invoice') }}</th>
+            <th
+              v-if="showOrg"
+            >
+              {{ $t('col.org') }}
+            </th>
+            <th>{{ $t('col.case') }}</th>
+            <th>{{ $t('col.service') }}</th>
+            <th>{{ $t('col.goods') }}</th>
+            <th>{{ $t('col.total') }}</th>
+            <th>{{ $t('col.issued') }}</th>
+            <th>{{ $t('col.status') }}</th>
+          </tr>
+        </template>
+        <tr
+          v-for="row in rows"
+          :key="row.id"
+          class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+          :class="row.id === selectedId ? 'bg-primary/5' : ''"
+          @click="selectRow(row)"
         >
-          {{ orgLabel(row.orgId) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ row.caseIds.join('、') }}
-        </td>
-        <td class="px-4 py-3">
-          {{ money(row.serviceFee) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ money(row.goodsAmount) }}
-        </td>
-        <td class="px-4 py-3 font-medium">
-          {{ money(row.serviceFee + row.goodsAmount) }}
-        </td>
-        <td class="px-4 py-3 text-muted">
-          {{ row.issuedAt }}
-        </td>
-        <td class="px-4 py-3">
-          <StatusBadge
-            :label="$t(`status.${row.status}`)"
-            :color="INVOICE_STATUS_COLOR[row.status]"
-          />
-        </td>
-        <td class="px-4 py-3">
-          <RowActions
-            :disabled="!writable"
-            @edit="openEdit(row)"
-            @remove="deleteId = row.id"
-          />
-        </td>
-      </tr>
-    </AdminTable>
-
-    <UModal
-      v-model:open="drawerOpen"
-      :title="editingId ? $t('actions.edit') : $t('actions.add')"
-      :description="$t('form.invoiceTitle')"
-      :ui="{ footer: 'justify-end' }"
-    >
-      <template #body>
-        <UForm
-          id="invoice-form"
-          :schema="invoiceSchema"
-          :state="state"
-          class="space-y-4"
-          @submit="onSubmit"
-        >
-          <UFormField
+          <td class="font-medium text-highlighted">
+            {{ row.id }}
+          </td>
+          <td
             v-if="showOrg"
-            name="orgId"
-            :label="$t('form.orgRequired')"
+            class="text-muted"
           >
-            <USelect
-              v-model="state.orgId"
-              :items="orgOptions()"
-              value-key="value"
-              class="w-full"
+            {{ orgLabel(row.orgId) }}
+          </td>
+          <td>
+            {{ row.caseIds.join('、') }}
+          </td>
+          <td class="tabular-money">
+            {{ money(row.serviceFee) }}
+          </td>
+          <td class="tabular-money">
+            {{ money(row.goodsAmount) }}
+          </td>
+          <td class="tabular-money font-semibold">
+            {{ money(row.serviceFee + row.goodsAmount) }}
+          </td>
+          <td class="text-muted">
+            {{ row.issuedAt }}
+          </td>
+          <td>
+            <StatusBadge
+              :label="$t(`status.${row.status}`)"
+              :color="INVOICE_STATUS_COLOR[row.status]"
             />
-          </UFormField>
-          <UFormField
-            name="caseIds"
-            :label="$t('form.pickCases')"
+          </td>
+        </tr>
+      </AdminTable>
+
+      <template #detail>
+        <DetailPanel
+          :open="detailOpen"
+          :title="creating ? $t('actions.add') : selected?.id"
+          :subtitle="$t('form.invoiceTitle')"
+          :empty="$t('form.emptyDetail')"
+          icon="i-lucide-receipt"
+          @close="closeDetail"
+        >
+          <UForm
+            id="invoice-form"
+            :schema="invoiceSchema"
+            :state="state"
+            class="space-y-4"
+            @submit="onSubmit"
           >
-            <div
-              v-if="eligibleCases.length"
-              class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-default p-3"
+            <UFormField
+              v-if="showOrg"
+              name="orgId"
+              :label="$t('form.orgRequired')"
             >
-              <label
-                v-for="row in eligibleCases"
-                :key="row.id"
-                class="flex cursor-pointer items-start gap-2 text-sm"
+              <USelect
+                v-model="state.orgId"
+                :items="orgOptions()"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="caseIds"
+              :label="$t('form.pickCases')"
+            >
+              <div
+                v-if="eligibleCases.length"
+                class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-default p-3"
               >
-                <UCheckbox
-                  :model-value="isSelected(row.id)"
-                  @update:model-value="toggleCase(row.id, $event)"
-                />
-                <span>
-                  <span class="font-medium text-highlighted">{{ row.id }}</span>
-                  <span class="text-muted">
-                    · {{ locale === 'en' ? row.customerEn : row.customer }} · {{ $t(`plan.${row.planId}`) }}
+                <label
+                  v-for="row in eligibleCases"
+                  :key="row.id"
+                  class="flex cursor-pointer items-start gap-2 text-base"
+                >
+                  <UCheckbox
+                    :model-value="isSelected(row.id)"
+                    @update:model-value="toggleCase(row.id, $event)"
+                  />
+                  <span>
+                    <span class="font-medium text-highlighted">{{ row.id }}</span>
+                    <span class="text-muted">
+                      · {{ locale === 'en' ? row.customerEn : row.customer }} · {{ $t(`plan.${row.planId}`) }}
+                    </span>
                   </span>
-                </span>
-              </label>
-            </div>
-            <p
-              v-else
-              class="text-sm text-muted"
+                </label>
+              </div>
+              <p
+                v-else
+                class="text-base text-muted"
+              >
+                {{ $t('form.noDueCases') }}
+              </p>
+            </UFormField>
+            <UFormField
+              name="serviceFee"
+              :label="$t('col.service')"
             >
-              {{ $t('form.noDueCases') }}
-            </p>
-          </UFormField>
-          <UFormField
-            name="serviceFee"
-            :label="$t('col.service')"
-          >
-            <UInput
-              :model-value="state.serviceFee"
-              type="number"
-              disabled
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="goodsAmount"
-            :label="$t('col.goods')"
-          >
-            <UInput
-              :model-value="state.goodsAmount"
-              type="number"
-              disabled
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="status"
-            :label="$t('col.status')"
-          >
-            <USelect
-              v-model="state.status"
-              :items="invoiceStatusOptions"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-        </UForm>
+              <UInput
+                :model-value="state.serviceFee"
+                type="number"
+                disabled
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="goodsAmount"
+              :label="$t('col.goods')"
+            >
+              <UInput
+                :model-value="state.goodsAmount"
+                type="number"
+                disabled
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="status"
+              :label="$t('col.status')"
+            >
+              <USelect
+                v-model="state.status"
+                :items="invoiceStatusOptions"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+          </UForm>
+          <template #footer>
+            <UButton
+              v-if="selected"
+              color="error"
+              variant="ghost"
+              :disabled="!writable"
+              @click="deleteId = selected.id"
+            >
+              {{ $t('actions.delete') }}
+            </UButton>
+            <UButton
+              type="submit"
+              form="invoice-form"
+              :disabled="!writable"
+            >
+              {{ $t('actions.save') }}
+            </UButton>
+          </template>
+        </DetailPanel>
       </template>
-      <template #footer="{ close }">
-        <UButton
-          color="neutral"
-          variant="outline"
-          @click="close"
-        >
-          {{ $t('actions.cancel') }}
-        </UButton>
-        <UButton
-          type="submit"
-          form="invoice-form"
-        >
-          {{ $t('actions.save') }}
-        </UButton>
-      </template>
-    </UModal>
+    </SplitDetail>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"

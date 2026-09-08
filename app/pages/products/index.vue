@@ -68,7 +68,7 @@ function confirmDelete() {
         v-model="query"
         icon="i-lucide-search"
         :placeholder="$t('table.search')"
-        class="w-44"
+        class="w-52"
       />
       <UButton
         icon="i-lucide-plus"
@@ -79,97 +79,71 @@ function confirmDelete() {
       </UButton>
     </template>
 
-    <AdminTable :empty="!rows.length">
-      <template #head>
-        <tr>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.sku') }}
-          </th>
-          <th
-            v-if="showOrg"
-            class="px-4 py-3 font-medium"
-          >
-            {{ $t('col.org') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.yName') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.aLabel') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.spec') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.onHand') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.available') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.cost') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.priceToA') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.status') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.actions') }}
-          </th>
-        </tr>
-      </template>
-      <tr
+    <div
+      v-if="!rows.length"
+      class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
+    >
+      {{ $t('table.empty') }}
+    </div>
+    <div
+      v-else
+      class="overflow-hidden rounded-xl border border-default bg-elevated"
+    >
+      <article
         v-for="row in rows"
         :key="row.sku"
-        class="border-b border-default last:border-0"
+        class="flex flex-wrap items-center gap-5 border-b border-default px-5 py-5 last:border-0"
       >
-        <td class="px-4 py-3 font-medium text-highlighted">
-          {{ row.sku }}
-        </td>
-        <td
-          v-if="showOrg"
-          class="px-4 py-3 text-muted"
-        >
-          {{ orgLabel(row.orgId) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ yName(row) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ aName(row) }}
-        </td>
-        <td class="px-4 py-3 text-muted">
-          {{ row.spec }}
-        </td>
-        <td class="px-4 py-3">
-          {{ row.onHand }}
-        </td>
-        <td class="px-4 py-3">
-          {{ row.available }}
-        </td>
-        <td class="px-4 py-3">
-          {{ money(row.cost) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ money(row.priceToA) }}
-        </td>
-        <td class="px-4 py-3">
-          <StatusBadge
-            :label="row.low ? $t('workbench.lowStock') : $t('status.active')"
-            :color="row.low ? 'error' : 'success'"
-          />
-        </td>
-        <td class="px-4 py-3">
-          <RowActions
-            :disabled="!writable"
-            @edit="navigateTo(localePath(`/products/${encodeURIComponent(row.sku)}`))"
-            @remove="deleteSku = row.sku"
-          />
-        </td>
-      </tr>
-    </AdminTable>
+        <ProductThumb
+          :seed="row.sku"
+          :label="aName(row)"
+          size="lg"
+        />
+        <div class="min-w-48 flex-1">
+          <p class="text-base font-semibold text-highlighted">
+            {{ aName(row) }}
+          </p>
+          <p class="mt-1 text-sm text-muted">
+            {{ yName(row) }} · {{ row.sku }}
+          </p>
+          <p class="mt-1 text-sm text-dimmed">
+            {{ row.spec }}
+            <span v-if="showOrg"> · {{ orgLabel(row.orgId) }}</span>
+          </p>
+        </div>
+        <div class="grid min-w-44 grid-cols-2 gap-x-6 gap-y-1">
+          <p class="text-sm text-muted">
+            {{ $t('products.costHint') }}
+          </p>
+          <p class="tabular-money text-right text-base font-semibold text-highlighted">
+            {{ money(row.cost) }}
+          </p>
+          <p class="text-sm text-muted">
+            {{ $t('products.priceHint') }}
+          </p>
+          <p class="tabular-money text-right text-base font-semibold text-highlighted">
+            {{ money(row.priceToA) }}
+          </p>
+        </div>
+        <div class="min-w-28 text-base">
+          <p class="text-sm text-muted">
+            {{ $t('col.onHand') }} {{ row.onHand }}
+          </p>
+          <p class="mt-1 font-medium text-highlighted">
+            {{ $t('col.available') }} {{ row.available }}
+          </p>
+        </div>
+        <StatusBadge
+          :label="row.low ? $t('products.lowStock') : $t('products.inStock')"
+          :color="row.low ? 'error' : 'success'"
+        />
+        <RowActions
+          :disabled="!writable"
+          @edit="navigateTo(localePath(`/products/${encodeURIComponent(row.sku)}`))"
+          @remove="deleteSku = row.sku"
+        />
+      </article>
+    </div>
 
     <ConfirmDelete
       :open="Boolean(deleteSku)"

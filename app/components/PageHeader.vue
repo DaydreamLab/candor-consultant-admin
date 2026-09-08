@@ -4,16 +4,16 @@
       <div class="min-w-0 max-w-3xl">
         <p
           v-if="description"
-          class="text-sm text-muted"
+          class="text-base text-muted"
         >
           {{ description }}
         </p>
-        <p class="mt-2 text-xs text-dimmed">
+        <p class="mt-2 text-sm text-dimmed">
           {{ hint }}
         </p>
         <p
           v-if="showLock"
-          class="mt-2 text-sm text-warning"
+          class="mt-2 text-base text-warning"
         >
           {{ $t('actions.readOnly') }}
         </p>

@@ -80,7 +80,7 @@
       "reports": "Shipped items, qty, and cost for reconciliation.",
       "orgs": "Company profile.",
       "users": "Colleague accounts and access. Admins can invite or adjust.",
-      "settings": "Company profile and Candor shipping-label versions."
+      "settings": "Notification inbox, warehouse, and Candor label versions. Fulfillment work is not here."
     },
     "platform": {
       "cases": "Paid and booked handoffs from Candor. Filter by consultant firm and plan.",
@@ -93,7 +93,7 @@
       "reports": "Shipped items, qty, and cost. Candor sees all firms; each firm sees only itself.",
       "orgs": "Current partners: Younger, Dashu Pharmacy, Young Lion Pharmacy. Firm staff never see this list.",
       "users": "Candor platform accounts and people at each consultant firm. Roles decide view vs edit.",
-      "settings": "Platform notices and Candor label versions."
+      "settings": "Platform notices and Candor label versions. Fulfillment work lives in the left-hand flow."
     }
   },
   "reviews": {
@@ -117,12 +117,15 @@
     "approve": "Approve",
     "reject": "Return",
     "readOnly": "This role is read-only.",
-    "emptyDetail": "Select a review on the left to approve or return it."
+    "emptyDetail": "Select a review on the left to approve or return it.",
+    "filterAll": "All",
+    "pendingCount": "{n} pending"
   },
   "table": {
     "empty": "No records yet",
     "queue": "Needs action",
-    "search": "Search"
+    "search": "Search",
+    "showing": "{from}–{to} of {total}"
   },
   "plan": {
     "basic": "Report reading",
@@ -149,7 +152,7 @@
     "delivered": "Delivered",
     "draft": "Draft",
     "confirmed": "Confirmed",
-    "sent": "Sent",
+    "sent": "Invoiced",
     "paid": "Paid by Candor",
     "active": "Active",
     "onboarding": "Onboarding",
@@ -217,7 +220,15 @@
     "lineTotal": "Subtotal",
     "addLine": "Add item",
     "confirm": "Confirm selection",
-    "confirmHint": "After confirm, the case can move to shipping. Adjust qty before confirming."
+    "confirmHint": "Expand a case to pick items. Confirm stores the time and moves the case to shipping. You can still return it before it is sent.",
+    "confirmTitle": "Confirm this selection?",
+    "confirmBody": "The case will move to shipping. You can still return it before it is in transit.",
+    "unconfirm": "Return to draft",
+    "unconfirmTitle": "Return this selection?",
+    "unconfirmBody": "Confirmation will be cleared and the case goes back to selection. In-transit cases cannot be returned.",
+    "locked": "Already shipped, cannot return",
+    "confirmedAt": "Confirmed at {time}",
+    "notConfirmed": "Not confirmed yet — items and qty can still change"
   },
   "progress": {
     "lab": "Lab booked",
@@ -232,21 +243,31 @@
     "changed": "{n} change(s)",
     "savedCount": "Saved {n} change(s)",
     "done": "Done",
-    "open": "Not done"
+    "open": "Not done",
+    "missingOpen": "Missing",
+    "complete": "Complete"
   },
   "reports": {
     "shippedSkus": "SKUs shipped",
     "shippedQty": "Units shipped",
     "cogs": "COGS total",
-    "billable": "Bill-to-Candor total"
+    "billable": "Bill-to-Candor total",
+    "month": "Month",
+    "monthHint": "Includes historical demo shipments for reconciliation preview.",
+    "casesShipped": "Shipped cases",
+    "thisMonth": "This month (demo)",
+    "history": "Last 3 months"
   },
   "settings": {
-    "labels": "Candor shipping-label versions",
-    "labelsHintFirm": "Apply the Candor label before shipping.",
-    "labelsHintPlatform": "Goods belong to the consultant firm; Candor labels are applied before shipping.",
+    "intro": "Settings cover notification email, the default warehouse, and which Candor label version to apply. Fulfillment work lives in the left-hand flow.",
     "notice": "Notices",
+    "noticeHint": "Missing items, low stock, and invoice status go to this inbox (demo — no real email yet).",
     "noticeEmail": "Notification email",
-    "warehouse": "Default warehouse"
+    "warehouse": "Default warehouse",
+    "warehouseHint": "Picking and shipping start from this warehouse.",
+    "labels": "Candor shipping-label versions",
+    "labelsHintFirm": "Apply the Candor label before shipping. “Current” is the version to use now.",
+    "labelsHintPlatform": "Goods belong to the consultant firm; Candor labels are applied before shipping. “Current” is the version to use now."
   },
   "actions": {
     "add": "Add",
@@ -264,7 +285,9 @@
     "selfDelete": "You cannot delete your own account.",
     "filterAll": "All",
     "filterOpen": "Open",
-    "invite": "Invite"
+    "invite": "Invite",
+    "confirmAction": "Confirm",
+    "unconfirm": "Return"
   },
   "form": {
     "caseTitle": "Case",
@@ -285,7 +308,22 @@
     "pickCases": "Select cases to invoice",
     "noDueCases": "No invoice-due cases for this firm.",
     "emptyDetail": "Select a row on the left to view or edit.",
-    "back": "Back to list"
+    "back": "Back to list",
+    "breadcrumb": "Breadcrumb",
+    "pendingCount": "{n} pending"
+  },
+  "users": {
+    "inviteHint": "Invite a colleague by email and choose a role. Select someone on the left to edit on the right.",
+    "emptyDetail": "Select a person on the left, or invite someone."
+  },
+  "products": {
+    "lowStock": "Low stock",
+    "inStock": "In stock",
+    "costHint": "Consultant cost",
+    "priceHint": "Unit price billed to Candor"
+  },
+  "shipping": {
+    "expandHint": "Expand a case to see its shipping timeline. Item thumbnails stay at the top."
   },
   "audit": {
     "title": "Audit log",

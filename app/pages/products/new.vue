@@ -1,10 +1,16 @@
 <script setup lang="ts">
 const localePath = useLocalePath()
+const { t } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { state, load, goList, onSubmit } = useProductEditor(null)
 const { writable } = useOrgScope()
 
 load()
+
+const crumbs = computed(() => [
+  { label: t('nav.products'), to: localePath('/products') },
+  { label: t('actions.add') }
+])
 </script>
 
 <template>
@@ -21,18 +27,9 @@ load()
       >
         {{ $t('form.back') }}
       </UButton>
-    </template>
-
-    <ProductFormFields
-      v-model:state="state"
-      form-id="product-form"
-      @submit="onSubmit"
-    />
-
-    <div class="mt-6 flex justify-end gap-2">
       <UButton
         color="neutral"
-        variant="outline"
+        variant="ghost"
         @click="goList"
       >
         {{ $t('actions.cancel') }}
@@ -40,10 +37,19 @@ load()
       <UButton
         type="submit"
         form="product-form"
+        size="lg"
         :disabled="!writable"
       >
         {{ $t('actions.save') }}
       </UButton>
-    </div>
+    </template>
+
+    <AppBreadcrumb :items="crumbs" />
+
+    <ProductFormFields
+      v-model:state="state"
+      form-id="product-form"
+      @submit="onSubmit"
+    />
   </PageHeader>
 </template>

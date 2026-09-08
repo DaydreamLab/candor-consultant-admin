@@ -10,6 +10,7 @@ import type {
   ProgressRow,
   ReviewRow,
   SessionUser,
+  ShipStatus,
   ShipmentRow,
   StaffRow
 } from '~/types/admin'
@@ -86,7 +87,15 @@ export const DEMO_CASES: CaseRow[] = [
   { id: 'C-24093', customer: '簡大為', customerEn: 'Ta-Wei Chien', email: 'tawei@example.com', aUserId: 'mock-user-093', planId: 'mid', hasReport: false, orgId: ORG_LION, paidAt: '2026-09-06 16:12', appointmentAt: '2026-09-19 09:00', status: 'lab_pending' },
   { id: 'C-24090', customer: '蘇庭語', customerEn: 'Ting-Yu Su', email: 'tingyu@example.com', aUserId: 'mock-user-090', planId: 'basic', hasReport: true, orgId: ORG_LION, paidAt: '2026-08-29 13:08', appointmentAt: '2026-09-04 15:00', status: 'invoice_due' },
   { id: 'C-24087', customer: '高子傑', customerEn: 'Tzu-Chieh Kao', email: 'tzuchieh@example.com', aUserId: 'mock-user-087', planId: 'premium', hasReport: true, orgId: ORG_LION, paidAt: '2026-08-27 09:55', appointmentAt: '2026-09-03 14:00', status: 'ship_due' },
-  { id: 'C-24080', customer: '羅心怡', customerEn: 'Hsin-Yi Lo', email: 'hsinyilo@example.com', aUserId: 'mock-user-080', planId: 'premium', hasReport: true, orgId: ORG_LION, paidAt: '2026-09-04 18:20', appointmentAt: '2026-09-13 11:00', status: 'keyin_due' }
+  { id: 'C-24080', customer: '羅心怡', customerEn: 'Hsin-Yi Lo', email: 'hsinyilo@example.com', aUserId: 'mock-user-080', planId: 'premium', hasReport: true, orgId: ORG_LION, paidAt: '2026-09-04 18:20', appointmentAt: '2026-09-13 11:00', status: 'keyin_due' },
+  { id: 'C-24101', customer: '葉承翰', customerEn: 'Cheng-Han Yeh', email: 'chenghan@example.com', aUserId: 'mock-user-101', planId: 'premium', hasReport: true, orgId: ORG_YOUNGER, paidAt: '2026-09-05 10:12', appointmentAt: '2026-09-14 09:30', status: 'keyin_due' },
+  { id: 'C-24102', customer: '邱婉婷', customerEn: 'Wan-Ting Chiu', email: 'wanting@example.com', aUserId: 'mock-user-102', planId: 'premium', hasReport: true, orgId: ORG_YOUNGER, paidAt: '2026-09-06 15:40', appointmentAt: '2026-09-16 14:00', status: 'keyin_due' },
+  { id: 'C-24103', customer: '馮柏宇', customerEn: 'Po-Yu Feng', email: 'poyu@example.com', aUserId: 'mock-user-103', planId: 'premium', hasReport: true, orgId: ORG_DASHU, paidAt: '2026-09-04 08:22', appointmentAt: '2026-09-12 11:00', status: 'keyin_due' },
+  { id: 'C-24104', customer: '韓雨萱', customerEn: 'Yu-Hsuan Han', email: 'yuhsuanhan@example.com', aUserId: 'mock-user-104', planId: 'premium', hasReport: true, orgId: ORG_DASHU, paidAt: '2026-09-07 19:05', appointmentAt: '2026-09-18 10:00', status: 'progress_due' },
+  { id: 'C-24105', customer: '潘冠霖', customerEn: 'Kuan-Lin Pan', email: 'kuanlin@example.com', aUserId: 'mock-user-105', planId: 'premium', hasReport: true, orgId: ORG_LION, paidAt: '2026-09-03 13:48', appointmentAt: '2026-09-11 16:00', status: 'keyin_due' },
+  { id: 'C-24106', customer: '施佳蓉', customerEn: 'Chia-Jung Shih', email: 'chiarung@example.com', aUserId: 'mock-user-106', planId: 'premium', hasReport: true, orgId: ORG_LION, paidAt: '2026-08-29 09:10', appointmentAt: '2026-09-05 10:30', status: 'ship_due' },
+  { id: 'C-24107', customer: '魏子翔', customerEn: 'Tzu-Hsiang Wei', email: 'tzuhsiang@example.com', aUserId: 'mock-user-107', planId: 'premium', hasReport: true, orgId: ORG_YOUNGER, paidAt: '2026-08-18 11:33', appointmentAt: '2026-08-25 09:00', status: 'invoice_due' },
+  { id: 'C-24108', customer: '丁雅筑', customerEn: 'Ya-Chu Ting', email: 'yachu@example.com', aUserId: 'mock-user-108', planId: 'premium', hasReport: true, orgId: ORG_DASHU, paidAt: '2026-09-08 08:40', appointmentAt: '2026-09-19 13:30', status: 'keyin_due' }
 ]
 
 export const DEMO_LABS: LabRow[] = [
@@ -115,7 +124,15 @@ export const DEMO_PROGRESS: ProgressRow[] = [
   { caseId: 'C-24093', orgId: ORG_LION, planId: 'mid', customer: '簡大為', labScheduled: false, reportBack: false, consultDone: false, keyedIn: null, labeled: null, shipped: null, missing: '尚未安排採檢', missingEn: 'Lab not scheduled' },
   { caseId: 'C-24090', orgId: ORG_LION, planId: 'basic', customer: '蘇庭語', labScheduled: null, reportBack: null, consultDone: true, keyedIn: null, labeled: null, shipped: null, missing: '可向坦見請款', missingEn: 'Ready to invoice Candor' },
   { caseId: 'C-24087', orgId: ORG_LION, planId: 'premium', customer: '高子傑', labScheduled: null, reportBack: null, consultDone: true, keyedIn: true, labeled: true, shipped: false, missing: '待出貨', missingEn: 'Ready to ship' },
-  { caseId: 'C-24080', orgId: ORG_LION, planId: 'premium', customer: '羅心怡', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' }
+  { caseId: 'C-24080', orgId: ORG_LION, planId: 'premium', customer: '羅心怡', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' },
+  { caseId: 'C-24101', orgId: ORG_YOUNGER, planId: 'premium', customer: '葉承翰', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' },
+  { caseId: 'C-24102', orgId: ORG_YOUNGER, planId: 'premium', customer: '邱婉婷', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' },
+  { caseId: 'C-24103', orgId: ORG_DASHU, planId: 'premium', customer: '馮柏宇', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' },
+  { caseId: 'C-24104', orgId: ORG_DASHU, planId: 'premium', customer: '韓雨萱', labScheduled: null, reportBack: null, consultDone: false, keyedIn: false, labeled: false, shipped: false, missing: '諮詢完成尚未勾選', missingEn: 'Consult done tick still open' },
+  { caseId: 'C-24105', orgId: ORG_LION, planId: 'premium', customer: '潘冠霖', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' },
+  { caseId: 'C-24106', orgId: ORG_LION, planId: 'premium', customer: '施佳蓉', labScheduled: null, reportBack: null, consultDone: true, keyedIn: true, labeled: true, shipped: false, missing: '待出貨', missingEn: 'Ready to ship' },
+  { caseId: 'C-24107', orgId: ORG_YOUNGER, planId: 'premium', customer: '魏子翔', labScheduled: null, reportBack: null, consultDone: true, keyedIn: true, labeled: true, shipped: true, missing: '可向坦見請款', missingEn: 'Ready to invoice Candor' },
+  { caseId: 'C-24108', orgId: ORG_DASHU, planId: 'premium', customer: '丁雅筑', labScheduled: null, reportBack: null, consultDone: true, keyedIn: false, labeled: false, shipped: false, missing: '待選品', missingEn: 'Product selection still due' }
 ]
 
 export const DEMO_PRODUCTS: ProductRow[] = [
@@ -157,17 +174,28 @@ export const DEMO_INVENTORY: InventoryRow[] = [
 ]
 
 export const DEMO_KEYIN: KeyInLine[] = [
-  { id: 'ki-091-1', caseId: 'C-24091', orgId: ORG_YOUNGER, sku: 'YG-MAG-500', qty: 2, status: 'draft' },
-  { id: 'ki-091-2', caseId: 'C-24091', orgId: ORG_YOUNGER, sku: 'YG-VTD-2000', qty: 1, status: 'draft' },
-  { id: 'ki-076-1', caseId: 'C-24076', orgId: ORG_DASHU, sku: 'DS-OMG-800', qty: 2, status: 'confirmed' },
-  { id: 'ki-076-2', caseId: 'C-24076', orgId: ORG_DASHU, sku: 'DS-MAG-400', qty: 1, status: 'confirmed' },
-  { id: 'ki-076-3', caseId: 'C-24076', orgId: ORG_DASHU, sku: 'DS-PRB-20', qty: 1, status: 'confirmed' },
-  { id: 'ki-070-1', caseId: 'C-24070', orgId: ORG_DASHU, sku: 'DS-COL-5', qty: 2, status: 'confirmed' },
-  { id: 'ki-070-2', caseId: 'C-24070', orgId: ORG_DASHU, sku: 'DS-VTD-1000', qty: 1, status: 'confirmed' },
-  { id: 'ki-049-1', caseId: 'C-24049', orgId: ORG_DASHU, sku: 'DS-MAG-400', qty: 1, status: 'draft' },
-  { id: 'ki-087-1', caseId: 'C-24087', orgId: ORG_LION, sku: 'LN-OMG-900', qty: 2, status: 'confirmed' },
-  { id: 'ki-087-2', caseId: 'C-24087', orgId: ORG_LION, sku: 'LN-MAG-500', qty: 1, status: 'confirmed' },
-  { id: 'ki-080-1', caseId: 'C-24080', orgId: ORG_LION, sku: 'LN-PRB-30', qty: 2, status: 'draft' }
+  { id: 'ki-091-1', caseId: 'C-24091', orgId: ORG_YOUNGER, sku: 'YG-MAG-500', qty: 2, status: 'draft', confirmedAt: null },
+  { id: 'ki-091-2', caseId: 'C-24091', orgId: ORG_YOUNGER, sku: 'YG-VTD-2000', qty: 1, status: 'draft', confirmedAt: null },
+  { id: 'ki-076-1', caseId: 'C-24076', orgId: ORG_DASHU, sku: 'DS-OMG-800', qty: 2, status: 'confirmed', confirmedAt: '2026-09-06 16:20' },
+  { id: 'ki-076-2', caseId: 'C-24076', orgId: ORG_DASHU, sku: 'DS-MAG-400', qty: 1, status: 'confirmed', confirmedAt: '2026-09-06 16:20' },
+  { id: 'ki-076-3', caseId: 'C-24076', orgId: ORG_DASHU, sku: 'DS-PRB-20', qty: 1, status: 'confirmed', confirmedAt: '2026-09-06 16:20' },
+  { id: 'ki-070-1', caseId: 'C-24070', orgId: ORG_DASHU, sku: 'DS-COL-5', qty: 2, status: 'confirmed', confirmedAt: '2026-08-28 11:05' },
+  { id: 'ki-070-2', caseId: 'C-24070', orgId: ORG_DASHU, sku: 'DS-VTD-1000', qty: 1, status: 'confirmed', confirmedAt: '2026-08-28 11:05' },
+  { id: 'ki-049-1', caseId: 'C-24049', orgId: ORG_DASHU, sku: 'DS-MAG-400', qty: 1, status: 'draft', confirmedAt: null },
+  { id: 'ki-087-1', caseId: 'C-24087', orgId: ORG_LION, sku: 'LN-OMG-900', qty: 2, status: 'confirmed', confirmedAt: '2026-09-04 09:40' },
+  { id: 'ki-087-2', caseId: 'C-24087', orgId: ORG_LION, sku: 'LN-MAG-500', qty: 1, status: 'confirmed', confirmedAt: '2026-09-04 09:40' },
+  { id: 'ki-080-1', caseId: 'C-24080', orgId: ORG_LION, sku: 'LN-PRB-30', qty: 2, status: 'draft', confirmedAt: null },
+  { id: 'ki-101-1', caseId: 'C-24101', orgId: ORG_YOUNGER, sku: 'YG-OMG-1000', qty: 1, status: 'draft', confirmedAt: null },
+  { id: 'ki-101-2', caseId: 'C-24101', orgId: ORG_YOUNGER, sku: 'YG-PRB-30', qty: 2, status: 'draft', confirmedAt: null },
+  { id: 'ki-102-1', caseId: 'C-24102', orgId: ORG_YOUNGER, sku: 'YG-IRM-25', qty: 1, status: 'draft', confirmedAt: null },
+  { id: 'ki-103-1', caseId: 'C-24103', orgId: ORG_DASHU, sku: 'DS-COL-5', qty: 1, status: 'draft', confirmedAt: null },
+  { id: 'ki-103-2', caseId: 'C-24103', orgId: ORG_DASHU, sku: 'DS-VTD-1000', qty: 1, status: 'draft', confirmedAt: null },
+  { id: 'ki-105-1', caseId: 'C-24105', orgId: ORG_LION, sku: 'LN-VTD-2000', qty: 2, status: 'draft', confirmedAt: null },
+  { id: 'ki-106-1', caseId: 'C-24106', orgId: ORG_LION, sku: 'LN-PRB-30', qty: 1, status: 'confirmed', confirmedAt: '2026-09-07 14:18' },
+  { id: 'ki-106-2', caseId: 'C-24106', orgId: ORG_LION, sku: 'LN-ZNC-15', qty: 1, status: 'confirmed', confirmedAt: '2026-09-07 14:18' },
+  { id: 'ki-107-1', caseId: 'C-24107', orgId: ORG_YOUNGER, sku: 'YG-OMG-1000', qty: 2, status: 'confirmed', confirmedAt: '2026-08-26 10:02' },
+  { id: 'ki-107-2', caseId: 'C-24107', orgId: ORG_YOUNGER, sku: 'YG-ZNC-15', qty: 1, status: 'confirmed', confirmedAt: '2026-08-26 10:02' },
+  { id: 'ki-108-1', caseId: 'C-24108', orgId: ORG_DASHU, sku: 'DS-PRB-20', qty: 2, status: 'draft', confirmedAt: null }
 ]
 
 export const DEMO_SHIPMENTS: ShipmentRow[] = [
@@ -183,6 +211,10 @@ export const DEMO_SHIPMENTS: ShipmentRow[] = [
       { sku: 'DS-OMG-800', qty: 2 },
       { sku: 'DS-MAG-400', qty: 1 },
       { sku: 'DS-PRB-20', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-09-07 09:10' },
+      { status: 'labeling', at: '2026-09-07 15:42' }
     ]
   },
   {
@@ -196,6 +228,12 @@ export const DEMO_SHIPMENTS: ShipmentRow[] = [
     items: [
       { sku: 'DS-COL-5', qty: 2 },
       { sku: 'DS-VTD-1000', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-08-29 10:00' },
+      { status: 'labeling', at: '2026-08-30 11:20' },
+      { status: 'in_transit', at: '2026-09-01 08:15' },
+      { status: 'delivered', at: '2026-09-02 16:40' }
     ]
   },
   {
@@ -209,6 +247,9 @@ export const DEMO_SHIPMENTS: ShipmentRow[] = [
     items: [
       { sku: 'YG-MAG-500', qty: 2 },
       { sku: 'YG-VTD-2000', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-09-08 09:30' }
     ]
   },
   {
@@ -222,6 +263,140 @@ export const DEMO_SHIPMENTS: ShipmentRow[] = [
     items: [
       { sku: 'LN-OMG-900', qty: 2 },
       { sku: 'LN-MAG-500', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-09-05 13:00' },
+      { status: 'labeling', at: '2026-09-06 10:18' }
+    ]
+  },
+  {
+    id: 'SH-24106',
+    caseId: 'C-24106',
+    orgId: ORG_LION,
+    customer: '施佳蓉',
+    status: 'picking',
+    tracking: null,
+    shippedAt: null,
+    items: [
+      { sku: 'LN-PRB-30', qty: 1 },
+      { sku: 'LN-ZNC-15', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-09-08 08:05' }
+    ]
+  },
+  {
+    id: 'SH-24107',
+    caseId: 'C-24107',
+    orgId: ORG_YOUNGER,
+    customer: '魏子翔',
+    status: 'delivered',
+    tracking: 'SF124110733TW',
+    shippedAt: '2026-08-28',
+    items: [
+      { sku: 'YG-OMG-1000', qty: 2 },
+      { sku: 'YG-ZNC-15', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-08-26 14:00' },
+      { status: 'labeling', at: '2026-08-27 09:40' },
+      { status: 'in_transit', at: '2026-08-28 08:20' },
+      { status: 'delivered', at: '2026-08-29 17:10' }
+    ]
+  },
+  {
+    id: 'SH-24040',
+    caseId: 'C-24040',
+    orgId: ORG_YOUNGER,
+    customer: '江晨安',
+    status: 'delivered',
+    tracking: 'SF123880401TW',
+    shippedAt: '2026-08-12',
+    items: [
+      { sku: 'YG-PRB-30', qty: 2 },
+      { sku: 'YG-MAG-500', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-08-10 09:00' },
+      { status: 'labeling', at: '2026-08-11 10:30' },
+      { status: 'in_transit', at: '2026-08-12 08:00' },
+      { status: 'delivered', at: '2026-08-13 15:22' }
+    ]
+  },
+  {
+    id: 'SH-24033',
+    caseId: 'C-24033',
+    orgId: ORG_YOUNGER,
+    customer: '盧品妍',
+    status: 'delivered',
+    tracking: 'SF123770332TW',
+    shippedAt: '2026-08-08',
+    items: [
+      { sku: 'YG-VTD-2000', qty: 2 },
+      { sku: 'YG-IRM-25', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-08-06 11:20' },
+      { status: 'labeling', at: '2026-08-07 09:15' },
+      { status: 'in_transit', at: '2026-08-08 08:40' },
+      { status: 'delivered', at: '2026-08-09 18:05' }
+    ]
+  },
+  {
+    id: 'SH-24022',
+    caseId: 'C-24022',
+    orgId: ORG_DASHU,
+    customer: '宋柏毅',
+    status: 'delivered',
+    tracking: 'SF123660221TW',
+    shippedAt: '2026-08-04',
+    items: [
+      { sku: 'DS-OMG-800', qty: 1 },
+      { sku: 'DS-MAG-400', qty: 2 },
+      { sku: 'DS-COL-5', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-08-02 10:10' },
+      { status: 'labeling', at: '2026-08-03 14:00' },
+      { status: 'in_transit', at: '2026-08-04 09:00' },
+      { status: 'delivered', at: '2026-08-05 16:48' }
+    ]
+  },
+  {
+    id: 'SH-24018',
+    caseId: 'C-24018',
+    orgId: ORG_LION,
+    customer: '古欣穎',
+    status: 'in_transit',
+    tracking: 'SF124180188TW',
+    shippedAt: '2026-09-06',
+    items: [
+      { sku: 'LN-OMG-900', qty: 1 },
+      { sku: 'LN-VTD-2000', qty: 2 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-09-04 09:50' },
+      { status: 'labeling', at: '2026-09-05 11:05' },
+      { status: 'in_transit', at: '2026-09-06 08:30' }
+    ]
+  },
+  {
+    id: 'SH-24015',
+    caseId: 'C-24015',
+    orgId: ORG_DASHU,
+    customer: '藍子晴',
+    status: 'delivered',
+    tracking: 'SF123550155TW',
+    shippedAt: '2026-07-28',
+    items: [
+      { sku: 'DS-PRB-20', qty: 2 },
+      { sku: 'DS-VTD-1000', qty: 1 }
+    ],
+    events: [
+      { status: 'picking', at: '2026-07-26 13:40' },
+      { status: 'labeling', at: '2026-07-27 10:00' },
+      { status: 'in_transit', at: '2026-07-28 08:20' },
+      { status: 'delivered', at: '2026-07-29 17:55' }
     ]
   }
 ]
@@ -231,7 +406,10 @@ export const DEMO_INVOICES: InvoiceRow[] = [
   { id: 'INV-2026-011', orgId: ORG_DASHU, caseIds: ['C-24070'], serviceFee: 3200, goodsAmount: 958, status: 'sent', issuedAt: '2026-09-03' },
   { id: 'INV-2026-008', orgId: ORG_YOUNGER, caseIds: ['C-24040', 'C-24033'], serviceFee: 3600, goodsAmount: 0, status: 'paid', issuedAt: '2026-08-18' },
   { id: 'INV-2026-016', orgId: ORG_DASHU, caseIds: ['C-24076'], serviceFee: 3200, goodsAmount: 1570, status: 'draft', issuedAt: '2026-09-08' },
-  { id: 'INV-2026-018', orgId: ORG_LION, caseIds: ['C-24090'], serviceFee: 1800, goodsAmount: 0, status: 'sent', issuedAt: '2026-09-07' }
+  { id: 'INV-2026-018', orgId: ORG_LION, caseIds: ['C-24090'], serviceFee: 1800, goodsAmount: 0, status: 'sent', issuedAt: '2026-09-07' },
+  { id: 'INV-2026-021', orgId: ORG_YOUNGER, caseIds: ['C-24107'], serviceFee: 3200, goodsAmount: 712, status: 'draft', issuedAt: '2026-09-08' },
+  { id: 'INV-2026-006', orgId: ORG_LION, caseIds: ['C-24018'], serviceFee: 3200, goodsAmount: 694, status: 'paid', issuedAt: '2026-08-22' },
+  { id: 'INV-2026-004', orgId: ORG_DASHU, caseIds: ['C-24022', 'C-24015'], serviceFee: 6400, goodsAmount: 1918, status: 'paid', issuedAt: '2026-08-10' }
 ]
 
 export const DEMO_REVIEWS: ReviewRow[] = [
@@ -295,6 +473,14 @@ export function serviceFeeForPlan(planId: CaseRow['planId']) {
   }
   return 1800
 }
+
+export const SHIP_FLOW: ShipStatus[] = ['picking', 'labeling', 'in_transit', 'delivered']
+
+export const DEMO_REPORT_MONTHS = [
+  { id: '2026-07', shippedQty: 38, cogs: 9860, billable: 13840, cases: 9 },
+  { id: '2026-08', shippedQty: 52, cogs: 14210, billable: 19880, cases: 12 },
+  { id: '2026-09', shippedQty: 29, cogs: 8040, billable: 11260, cases: 7 }
+]
 
 export function nowStamp() {
   const date = new Date()

@@ -1,24 +1,24 @@
 <template>
-  <div class="flex justify-end gap-1">
+  <div class="flex justify-end gap-1.5">
     <UButton
       v-if="edit"
-      size="xs"
+      size="md"
       color="neutral"
       variant="ghost"
       icon="i-lucide-pencil"
       :disabled="disabled"
       :aria-label="$t('actions.edit')"
-      @click="emit('edit')"
+      @click.stop="emit('edit')"
     />
     <UButton
       v-if="remove"
-      size="xs"
+      size="md"
       color="error"
       variant="ghost"
       icon="i-lucide-trash"
       :disabled="disabled"
       :aria-label="$t('actions.delete')"
-      @click="emit('remove')"
+      @click.stop="emit('remove')"
     />
   </div>
 </template>

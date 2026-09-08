@@ -24,72 +24,76 @@ function warehouseName() {
     :title="$t('nav.settings')"
     :description="moduleDesc('settings')"
   >
-    <div class="mb-6 grid gap-3 md:grid-cols-2">
-      <div class="rounded-xl border border-default bg-elevated p-4">
-        <p class="font-medium text-highlighted">
+    <p class="mb-6 max-w-3xl text-base text-muted">
+      {{ $t('settings.intro') }}
+    </p>
+
+    <div class="mb-6 grid gap-4 md:grid-cols-2">
+      <section class="rounded-xl border border-default bg-elevated p-5">
+        <h2 class="text-base font-semibold text-highlighted">
           {{ $t('settings.notice') }}
+        </h2>
+        <p class="mt-2 text-sm text-muted">
+          {{ $t('settings.noticeHint') }}
         </p>
-        <p class="mt-3 text-sm text-muted">
+        <p class="mt-4 text-sm text-dimmed">
           {{ $t('settings.noticeEmail') }}
         </p>
-        <p class="mt-1 text-sm text-highlighted">
+        <p class="mt-1 text-base font-medium text-highlighted">
           {{ platform ? 'owner@candor.local' : (org?.contact ?? '—') }}
         </p>
-        <p class="mt-3 text-sm text-muted">
+      </section>
+      <section class="rounded-xl border border-default bg-elevated p-5">
+        <h2 class="text-base font-semibold text-highlighted">
           {{ $t('settings.warehouse') }}
+        </h2>
+        <p class="mt-2 text-sm text-muted">
+          {{ $t('settings.warehouseHint') }}
         </p>
-        <p class="mt-1 text-sm text-highlighted">
+        <p class="mt-4 text-base font-medium text-highlighted">
           {{ warehouseName() }}
         </p>
-      </div>
-      <div class="rounded-xl border border-default bg-elevated p-4">
-        <p class="font-medium text-highlighted">
-          {{ $t('settings.labels') }}
-        </p>
-        <p class="mt-1 text-sm text-muted">
-          {{ platform ? $t('settings.labelsHintPlatform') : $t('settings.labelsHintFirm') }}
-        </p>
-      </div>
+      </section>
     </div>
 
-    <AdminTable :empty="!DEMO_LABELS.length">
-      <template #head>
-        <tr>
-          <th class="px-4 py-3 font-medium">
-            ID
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.name') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.effective') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.current') }}
-          </th>
+    <section class="rounded-xl border border-default bg-elevated p-5">
+      <h2 class="text-base font-semibold text-highlighted">
+        {{ $t('settings.labels') }}
+      </h2>
+      <p class="mt-2 mb-4 text-sm text-muted">
+        {{ platform ? $t('settings.labelsHintPlatform') : $t('settings.labelsHintFirm') }}
+      </p>
+      <AdminTable :empty="!DEMO_LABELS.length">
+        <template #head>
+          <tr>
+            <th>ID</th>
+            <th>{{ $t('col.name') }}</th>
+            <th>{{ $t('col.effective') }}</th>
+            <th>{{ $t('col.current') }}</th>
+          </tr>
+        </template>
+        <tr
+          v-for="row in DEMO_LABELS"
+          :key="row.id"
+          class="border-b border-default last:border-0"
+        >
+          <td class="font-medium text-highlighted">
+            {{ row.id }}
+          </td>
+          <td>
+            {{ labelName(row) }}
+          </td>
+          <td class="text-muted">
+            {{ row.effective }}
+          </td>
+          <td>
+            <StatusBadge
+              :label="row.current ? $t('status.yes') : $t('status.no')"
+              :color="row.current ? 'success' : 'neutral'"
+            />
+          </td>
         </tr>
-      </template>
-      <tr
-        v-for="row in DEMO_LABELS"
-        :key="row.id"
-        class="border-b border-default last:border-0"
-      >
-        <td class="px-4 py-3 font-medium text-highlighted">
-          {{ row.id }}
-        </td>
-        <td class="px-4 py-3">
-          {{ labelName(row) }}
-        </td>
-        <td class="px-4 py-3 text-muted">
-          {{ row.effective }}
-        </td>
-        <td class="px-4 py-3">
-          <StatusBadge
-            :label="row.current ? $t('status.yes') : $t('status.no')"
-            :color="row.current ? 'success' : 'neutral'"
-          />
-        </td>
-      </tr>
-    </AdminTable>
+      </AdminTable>
+    </section>
   </PageHeader>
 </template>

@@ -117,6 +117,23 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+.app-table th,
+.app-table td {
+  padding: 1rem;
+  vertical-align: middle;
+}
+
+.app-table thead th {
+  padding-block: 0.875rem;
+  font-weight: 500;
+}
+
+.tabular-money {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
 a:focus:not(:focus-visible),

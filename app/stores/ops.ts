@@ -322,13 +322,14 @@ export const useOpsStore = defineStore('ops', () => {
     return true
   }
 
-  function addKeyInLine(input: Omit<KeyInLine, 'id' | 'status'> & { status?: KeyInLine['status'] }) {
+  function addKeyInLine(input: Omit<KeyInLine, 'id' | 'status' | 'confirmedAt'> & { status?: KeyInLine['status'], confirmedAt?: string | null }) {
     if (!writable()) {
       return null
     }
     const row: KeyInLine = {
       ...input,
       status: input.status ?? 'draft',
+      confirmedAt: input.confirmedAt ?? null,
       id: nextId('ki-', keyIn.value.map(item => item.id))
     }
     keyIn.value.push(row)
@@ -367,8 +368,10 @@ export const useOpsStore = defineStore('ops', () => {
     if (!lines.length) {
       return
     }
+    const at = nowStamp()
     lines.forEach((row) => {
       row.status = 'confirmed'
+      row.confirmedAt = at
     })
     const flag = progressFor(caseId)
     if (flag && flag.keyedIn !== null) {
@@ -382,7 +385,38 @@ export const useOpsStore = defineStore('ops', () => {
     log('確認選品', caseId)
   }
 
-  function saveShipment(input: Omit<ShipmentRow, 'id' | 'items' | 'customer' | 'orgId'> & { id?: string, items?: ShipmentRow['items'] }) {
+  function unconfirmSelection(caseId: string) {
+    if (!writable()) {
+      return false
+    }
+    const locked = shipments.value.some(row =>
+      row.caseId === caseId && ['in_transit', 'delivered'].includes(row.status)
+    )
+    if (locked) {
+      return false
+    }
+    const lines = keyIn.value.filter(row => row.caseId === caseId)
+    if (!lines.length) {
+      return false
+    }
+    lines.forEach((row) => {
+      row.status = 'draft'
+      row.confirmedAt = null
+    })
+    const flag = progressFor(caseId)
+    if (flag && flag.keyedIn !== null) {
+      flag.keyedIn = false
+      refreshProgress(flag)
+    }
+    const row = cases.value.find(item => item.id === caseId)
+    if (row && row.status === 'ship_due') {
+      row.status = 'keyin_due'
+    }
+    log('退回選品', caseId)
+    return true
+  }
+
+  function saveShipment(input: Omit<ShipmentRow, 'id' | 'items' | 'customer' | 'orgId' | 'events'> & { id?: string, items?: ShipmentRow['items'], events?: ShipmentRow['events'] }) {
     if (!writable()) {
       return null
     }
@@ -396,6 +430,13 @@ export const useOpsStore = defineStore('ops', () => {
       ? (input.shippedAt ?? todayStamp())
       : null
     const existing = input.id ? shipments.value.find(row => row.id === input.id) : undefined
+    const stamp = nowStamp()
+    const events = existing
+      ? [...(existing.events ?? [])]
+      : [{ status: input.status, at: stamp }]
+    if (existing && existing.status !== input.status) {
+      events.push({ status: input.status, at: stamp })
+    }
     const row: ShipmentRow = existing ?? {
       id: nextId('SH-', shipments.value.map(item => item.id)),
       caseId: input.caseId,
@@ -404,14 +445,16 @@ export const useOpsStore = defineStore('ops', () => {
       status: input.status,
       tracking: input.tracking ?? null,
       shippedAt,
-      items
+      items,
+      events
     }
     if (existing) {
       Object.assign(existing, {
         status: input.status,
         tracking: input.tracking || null,
         shippedAt,
-        items: existing.items
+        items: existing.items,
+        events
       })
     } else {
       shipments.value.unshift(row)
@@ -587,6 +630,7 @@ export const useOpsStore = defineStore('ops', () => {
     updateKeyInLine,
     removeKeyInLine,
     confirmSelection,
+    unconfirmSelection,
     saveShipment,
     removeShipment,
     saveInvoice,

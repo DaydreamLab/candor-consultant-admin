@@ -61,7 +61,7 @@
     "pendingProgress": "待填表單",
     "pendingSelection": "待選品",
     "pendingShip": "待貼標／出貨",
-    "lowStock": "庫存預警",
+    "lowStock": "低庫存",
     "pendingInvoice": "待請款",
     "pendingReview": "待簽核",
     "flowTitle": "履約流程"
@@ -79,8 +79,8 @@
       "invoices": "履約完成後向坦見請款。",
       "reports": "出貨項目、數量與成本，用來對帳。",
       "orgs": "公司資料。",
-      "users": "同事帳號與權限。管理員可邀請或調整。",
-      "settings": "公司資料與坦見出貨標籤版本。"
+      "users": "同事帳號與權限。管理員可邀請或調整角色。",
+      "settings": "通知信箱、出貨倉與坦見標籤版本。履約作業不在這裡。"
     },
     "platform": {
       "cases": "客人在坦見付款並預約後轉入的名單。可依顧問公司與方案查看。",
@@ -93,7 +93,7 @@
       "reports": "出貨項目、數量、成本。坦見可看全部，各顧問公司只看自家。",
       "orgs": "目前合作：Younger、大樹藥局、幼獅藥局。顧問員工登入後看不到這份名單。",
       "users": "坦見平台帳號，以及各顧問公司人員。權限決定能看還是能改。",
-      "settings": "平台通知與坦見標籤版本。"
+      "settings": "平台通知信箱與坦見標籤版本。履約作業請走左側工作流程。"
     }
   },
   "reviews": {
@@ -117,12 +117,15 @@
     "approve": "通過",
     "reject": "退回",
     "readOnly": "目前角色為唯讀，只能看不能改。",
-    "emptyDetail": "從左側選一筆，在這裡通過或退回。"
+    "emptyDetail": "從左側選一筆，在這裡通過或退回。",
+    "filterAll": "全部",
+    "pendingCount": "{n} 待簽核"
   },
   "table": {
     "empty": "目前沒有資料",
     "queue": "待處理",
-    "search": "搜尋"
+    "search": "搜尋",
+    "showing": "第 {from}–{to} 筆，共 {total} 筆"
   },
   "plan": {
     "basic": "一般解讀",
@@ -149,7 +152,7 @@
     "delivered": "已送達",
     "draft": "草稿",
     "confirmed": "已確認",
-    "sent": "已送出",
+    "sent": "已請款",
     "paid": "坦見已付",
     "active": "使用中",
     "onboarding": "導入中",
@@ -217,7 +220,15 @@
     "lineTotal": "小計",
     "addLine": "新增品項",
     "confirm": "確認選品",
-    "confirmHint": "確認後即可進入出貨。數量仍可在確認前調整。"
+    "confirmHint": "點開案件後再選品。確認後會記下時間並進入出貨；尚未寄出前仍可退回。",
+    "confirmTitle": "確認這筆選品？",
+    "confirmBody": "確認後案件會進入出貨。尚未寄出前，仍可按「退回選品」再改。",
+    "unconfirm": "退回選品",
+    "unconfirmTitle": "退回選品？",
+    "unconfirmBody": "確認狀態會取消，案件回到待選品。已寄出的案件不能退回。",
+    "locked": "已寄出，無法退回選品",
+    "confirmedAt": "已於 {time} 確認選品",
+    "notConfirmed": "尚未確認，品項與數量都還可以改"
   },
   "progress": {
     "lab": "採檢已約",
@@ -232,21 +243,31 @@
     "changed": "已變更 {n} 項",
     "savedCount": "已儲存 {n} 項變更",
     "done": "已完成",
-    "open": "未完成"
+    "open": "未完成",
+    "missingOpen": "缺件",
+    "complete": "齊全"
   },
   "reports": {
     "shippedSkus": "已出 SKU 數",
     "shippedQty": "已出件數",
     "cogs": "出貨成本合計",
-    "billable": "向坦見計價合計"
+    "billable": "向坦見計價合計",
+    "month": "月份",
+    "monthHint": "含歷史出貨示範資料，方便對帳預覽。",
+    "casesShipped": "出貨案件",
+    "thisMonth": "本月（示範）",
+    "history": "近三個月"
   },
   "settings": {
-    "labels": "坦見出貨標籤版本",
-    "labelsHintFirm": "出貨前請套用坦見標籤。",
-    "labelsHintPlatform": "商品屬顧問公司；出貨前改貼坦見標籤。",
+    "intro": "設定只處理公司通知、預設出貨倉，以及出貨時要貼的坦見標籤版本。履約、選品、出貨請走左側工作流程。",
     "notice": "通知",
+    "noticeHint": "缺件、低庫存與請款狀態會寄到這個信箱（示範，尚未真正寄信）。",
     "noticeEmail": "通知信箱",
-    "warehouse": "預設出貨倉"
+    "warehouse": "預設出貨倉",
+    "warehouseHint": "揀貨與出貨預設從這個倉出去。",
+    "labels": "坦見出貨標籤版本",
+    "labelsHintFirm": "商品屬顧問公司；出貨前請改貼坦見標籤。下面「現行」是現在要套用的版本。",
+    "labelsHintPlatform": "商品屬各顧問公司；出貨前改貼坦見標籤。下面「現行」是現在要套用的版本。"
   },
   "actions": {
     "add": "新增",
@@ -264,7 +285,9 @@
     "selfDelete": "不能刪除自己的帳號。",
     "filterAll": "全部",
     "filterOpen": "待處理",
-    "invite": "邀請帳號"
+    "invite": "邀請帳號",
+    "confirmAction": "確定",
+    "unconfirm": "退回"
   },
   "form": {
     "caseTitle": "案件",
@@ -285,7 +308,22 @@
     "pickCases": "選擇待請款案件",
     "noDueCases": "這個公司目前沒有待請款案件。",
     "emptyDetail": "從左側選一筆查看或編輯。",
-    "back": "返回列表"
+    "back": "返回列表",
+    "breadcrumb": "目前位置",
+    "pendingCount": "{n} 件待處理"
+  },
+  "users": {
+    "inviteHint": "用 Email 邀請同事，並指定角色。點左邊的人可在右側改資料。",
+    "emptyDetail": "從左側選一位同事，或按邀請加入。"
+  },
+  "products": {
+    "lowStock": "低庫存",
+    "inStock": "庫存正常",
+    "costHint": "顧問進貨成本",
+    "priceHint": "向坦見請款單價"
+  },
+  "shipping": {
+    "expandHint": "點開案件可看出貨時間軸。上方仍是這筆的品項縮圖。"
   },
   "audit": {
     "title": "操作紀錄",

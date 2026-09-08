@@ -36,6 +36,7 @@ const rows = computed(() => {
 })
 
 const selected = computed(() => rows.value.find(row => row.id === selectedId.value) ?? null)
+const detailOpen = computed(() => creating.value || Boolean(selected.value))
 
 function customerName(row: CaseRow) {
   return locale.value === 'en' ? row.customerEn : row.customer
@@ -148,7 +149,7 @@ watch(rows, (list) => {
         v-model="query"
         icon="i-lucide-search"
         :placeholder="$t('table.search')"
-        class="w-44"
+        class="w-52"
       />
       <USelect
         v-model="filter"
@@ -157,7 +158,7 @@ watch(rows, (list) => {
           { label: $t('actions.filterAll'), value: 'all' }
         ]"
         value-key="value"
-        class="w-32"
+        class="w-36"
       />
       <UButton
         icon="i-lucide-plus"
@@ -175,24 +176,17 @@ watch(rows, (list) => {
       >
         <template #head>
           <tr>
-            <th class="px-4 py-3 font-medium">
-              {{ $t('col.case') }}
-            </th>
-            <th class="px-4 py-3 font-medium">
-              {{ $t('col.customer') }}
-            </th>
-            <th class="px-4 py-3 font-medium">
-              {{ $t('col.plan') }}
-            </th>
+            <th>{{ $t('col.case') }}</th>
+            <th>{{ $t('col.customer') }}</th>
+            <th>{{ $t('col.plan') }}</th>
             <th
               v-if="showOrg"
-              class="px-4 py-3 font-medium"
             >
               {{ $t('col.org') }}
             </th>
-            <th class="px-4 py-3 font-medium">
-              {{ $t('col.status') }}
-            </th>
+            <th>{{ $t('col.appointment') }}</th>
+            <th>{{ $t('col.status') }}</th>
+            <th>{{ $t('col.next') }}</th>
           </tr>
         </template>
         <tr
@@ -202,74 +196,58 @@ watch(rows, (list) => {
           :class="row.id === selectedId ? 'bg-primary/5' : ''"
           @click="selectRow(row)"
         >
-          <td class="px-4 py-3 font-medium text-highlighted">
+          <td class="font-medium text-highlighted">
             {{ row.id }}
           </td>
-          <td class="px-4 py-3">
+          <td>
             <div>{{ customerName(row) }}</div>
-            <div class="text-xs text-dimmed">
+            <div class="text-sm text-dimmed">
               {{ row.email }}
             </div>
           </td>
-          <td class="px-4 py-3">
+          <td>
             {{ $t(`plan.${row.planId}`) }}
           </td>
           <td
             v-if="showOrg"
-            class="px-4 py-3 text-muted"
+            class="text-muted"
           >
             {{ orgLabel(row.orgId) }}
           </td>
-          <td class="px-4 py-3">
+          <td class="text-muted">
+            <div>{{ row.appointmentAt }}</div>
+            <div class="text-sm text-dimmed">
+              {{ $t('col.paidAt') }} {{ row.paidAt }}
+            </div>
+          </td>
+          <td>
             <StatusBadge
               :label="$t(`status.${row.status}`)"
               :color="CASE_STATUS_COLOR[row.status]"
+            />
+          </td>
+          <td @click.stop>
+            <NextActionButton
+              :to="nextTo(row.status)"
+              :label="nextLabel(row.status)"
             />
           </td>
         </tr>
       </AdminTable>
 
       <template #detail>
-        <div
-          v-if="!creating && !selected"
-          class="flex min-h-72 flex-col items-center justify-center p-6 text-center text-sm text-muted"
+        <DetailPanel
+          :open="detailOpen"
+          :title="creating ? $t('actions.add') : selected?.id"
+          :subtitle="selected ? customerName(selected) : ''"
+          :empty="$t('form.emptyDetail')"
+          @close="closeDetail"
         >
-          <UIcon
-            name="i-lucide-panel-right"
-            class="mb-2 size-8 text-dimmed"
-          />
-          {{ $t('form.emptyDetail') }}
-        </div>
-        <div
-          v-else
-          class="flex flex-col"
-        >
-          <header class="flex items-start justify-between gap-3 border-b border-default px-4 py-3">
-            <div class="min-w-0">
-              <p class="font-medium text-highlighted">
-                {{ creating ? $t('actions.add') : selected?.id }}
-              </p>
-              <p
-                v-if="selected"
-                class="mt-1 text-xs text-muted"
-              >
-                {{ customerName(selected) }}
-              </p>
-            </div>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-x"
-              square
-              @click="closeDetail"
-            />
-          </header>
-
           <UForm
             id="case-form"
             :schema="caseSchema"
             :state="state"
-            class="space-y-4 p-4"
+            class="space-y-4"
             @submit="onSubmit"
           >
             <UFormField
@@ -360,14 +338,16 @@ watch(rows, (list) => {
             </UFormField>
           </UForm>
 
-          <footer class="flex flex-wrap items-center justify-end gap-2 border-t border-default px-4 py-3">
-            <NuxtLink
+          <template #footer>
+            <div
               v-if="selected && nextTo(selected.status)"
-              :to="nextTo(selected.status)"
-              class="mr-auto text-sm font-medium text-primary hover:underline"
+              class="mr-auto"
             >
-              {{ nextLabel(selected.status) }}
-            </NuxtLink>
+              <NextActionButton
+                :to="nextTo(selected.status)"
+                :label="nextLabel(selected.status)"
+              />
+            </div>
             <UButton
               v-if="selected"
               color="error"
@@ -384,8 +364,8 @@ watch(rows, (list) => {
             >
               {{ $t('actions.save') }}
             </UButton>
-          </footer>
-        </div>
+          </template>
+        </DetailPanel>
       </template>
     </SplitDetail>
 

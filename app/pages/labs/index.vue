@@ -12,12 +12,14 @@ const ops = useOpsStore()
 const feedback = useOpsFeedback()
 const { labStatusOptions } = useSelectOptions()
 
-const drawerOpen = ref(false)
-const editingId = ref<string | null>(null)
+const selectedId = ref<string | null>(null)
+const creating = ref(false)
 const deleteId = ref<string | null>(null)
 const state = reactive<Partial<LabForm>>({})
 
 const rows = computed(() => scoped(ops.labs))
+const selected = computed(() => rows.value.find(row => row.id === selectedId.value) ?? null)
+const detailOpen = computed(() => creating.value || Boolean(selected.value))
 
 const caseOptions = computed(() =>
   scoped(ops.cases)
@@ -32,8 +34,7 @@ function siteName(row: LabRow) {
   return locale.value === 'en' ? row.siteEn : row.site
 }
 
-function openCreate() {
-  editingId.value = null
+function fillCreate() {
   Object.assign(state, {
     caseId: caseOptions.value[0]?.value ?? '',
     site: '',
@@ -41,11 +42,9 @@ function openCreate() {
     scheduledAt: '',
     status: 'unscheduled'
   })
-  drawerOpen.value = true
 }
 
-function openEdit(row: LabRow) {
-  editingId.value = row.id
+function fillEdit(row: LabRow) {
   Object.assign(state, {
     caseId: row.caseId,
     site: row.site,
@@ -53,14 +52,33 @@ function openEdit(row: LabRow) {
     scheduledAt: row.scheduledAt ?? '',
     status: row.status
   })
-  drawerOpen.value = true
+}
+
+function openCreate() {
+  if (!writable.value) {
+    return
+  }
+  selectedId.value = null
+  creating.value = true
+  fillCreate()
+}
+
+function selectRow(row: LabRow) {
+  creating.value = false
+  selectedId.value = row.id
+  fillEdit(row)
+}
+
+function closeDetail() {
+  creating.value = false
+  selectedId.value = null
 }
 
 function onSubmit(event: FormSubmitEvent<LabForm>) {
   const data = event.data
   const caseRow = ops.cases.find(row => row.id === data.caseId)
-  ops.upsertLab({
-    id: editingId.value ?? undefined,
+  const saved = ops.upsertLab({
+    id: selectedId.value ?? undefined,
     caseId: data.caseId,
     orgId: caseRow?.orgId ?? ops.defaultOrgId(),
     customer: caseRow?.customer ?? data.caseId,
@@ -78,8 +96,12 @@ function onSubmit(event: FormSubmitEvent<LabForm>) {
   if (caseRow && data.status === 'report_ready' && ['lab_pending', 'lab_scheduled', 'awaiting_report'].includes(caseRow.status)) {
     ops.updateCase(caseRow.id, { status: 'progress_due', hasReport: true })
   }
-  drawerOpen.value = false
   feedback.saved(data.caseId)
+  creating.value = false
+  if (saved) {
+    selectedId.value = saved.id
+    fillEdit(saved)
+  }
 }
 
 function confirmDelete() {
@@ -88,8 +110,17 @@ function confirmDelete() {
   }
   ops.removeLab(deleteId.value)
   feedback.deleted()
+  if (selectedId.value === deleteId.value) {
+    closeDetail()
+  }
   deleteId.value = null
 }
+
+watch(rows, (list) => {
+  if (selectedId.value && !list.some(row => row.id === selectedId.value)) {
+    selectedId.value = null
+  }
+})
 </script>
 
 <template>
@@ -107,155 +138,146 @@ function confirmDelete() {
       </UButton>
     </template>
 
-    <AdminTable :empty="!rows.length">
-      <template #head>
-        <tr>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.case') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.customer') }}
-          </th>
-          <th
-            v-if="showOrg"
-            class="px-4 py-3 font-medium"
-          >
-            {{ $t('col.org') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.site') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.scheduled') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.status') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.actions') }}
-          </th>
-        </tr>
-      </template>
-      <tr
-        v-for="row in rows"
-        :key="row.id"
-        class="border-b border-default last:border-0"
+    <SplitDetail>
+      <AdminTable
+        compact
+        :empty="!rows.length"
       >
-        <td class="px-4 py-3 font-medium text-highlighted">
-          {{ row.caseId }}
-        </td>
-        <td class="px-4 py-3">
-          {{ row.customer }}
-        </td>
-        <td
-          v-if="showOrg"
-          class="px-4 py-3 text-muted"
+        <template #head>
+          <tr>
+            <th>{{ $t('col.case') }}</th>
+            <th>{{ $t('col.customer') }}</th>
+            <th
+              v-if="showOrg"
+            >
+              {{ $t('col.org') }}
+            </th>
+            <th>{{ $t('col.site') }}</th>
+            <th>{{ $t('col.scheduled') }}</th>
+            <th>{{ $t('col.status') }}</th>
+          </tr>
+        </template>
+        <tr
+          v-for="row in rows"
+          :key="row.id"
+          class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+          :class="row.id === selectedId ? 'bg-primary/5' : ''"
+          @click="selectRow(row)"
         >
-          {{ orgLabel(row.orgId) }}
-        </td>
-        <td class="px-4 py-3">
-          {{ siteName(row) }}
-        </td>
-        <td class="px-4 py-3 text-muted">
-          {{ row.scheduledAt ?? $t('status.na') }}
-        </td>
-        <td class="px-4 py-3">
-          <StatusBadge
-            :label="$t(`status.${row.status}`)"
-            :color="LAB_STATUS_COLOR[row.status]"
-          />
-        </td>
-        <td class="px-4 py-3">
-          <RowActions
-            :disabled="!writable"
-            @edit="openEdit(row)"
-            @remove="deleteId = row.id"
-          />
-        </td>
-      </tr>
-    </AdminTable>
+          <td class="font-medium text-highlighted">
+            {{ row.caseId }}
+          </td>
+          <td>
+            {{ row.customer }}
+          </td>
+          <td
+            v-if="showOrg"
+            class="text-muted"
+          >
+            {{ orgLabel(row.orgId) }}
+          </td>
+          <td>
+            {{ siteName(row) }}
+          </td>
+          <td class="text-muted">
+            {{ row.scheduledAt ?? $t('status.na') }}
+          </td>
+          <td>
+            <StatusBadge
+              :label="$t(`status.${row.status}`)"
+              :color="LAB_STATUS_COLOR[row.status]"
+            />
+          </td>
+        </tr>
+      </AdminTable>
 
-    <UModal
-      v-model:open="drawerOpen"
-      :title="editingId ? $t('actions.edit') : $t('actions.add')"
-      :description="$t('form.labTitle')"
-      :ui="{ footer: 'justify-end' }"
-    >
-      <template #body>
-        <UForm
-          id="lab-form"
-          :schema="labSchema"
-          :state="state"
-          class="space-y-4"
-          @submit="onSubmit"
+      <template #detail>
+        <DetailPanel
+          :open="detailOpen"
+          :title="creating ? $t('actions.add') : selected?.caseId"
+          :subtitle="selected ? siteName(selected) : $t('form.labTitle')"
+          :empty="$t('form.emptyDetail')"
+          icon="i-lucide-flask-conical"
+          @close="closeDetail"
         >
-          <UFormField
-            name="caseId"
-            :label="$t('col.case')"
+          <UForm
+            id="lab-form"
+            :schema="labSchema"
+            :state="state"
+            class="space-y-4"
+            @submit="onSubmit"
           >
-            <USelect
-              v-model="state.caseId"
-              :items="caseOptions"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="site"
-            :label="$t('col.site')"
-          >
-            <UInput
-              v-model="state.site"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="siteEn"
-            :label="$t('form.siteEn')"
-          >
-            <UInput
-              v-model="state.siteEn"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="scheduledAt"
-            :label="$t('col.scheduled')"
-          >
-            <UInput
-              v-model="state.scheduledAt"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="status"
-            :label="$t('col.status')"
-          >
-            <USelect
-              v-model="state.status"
-              :items="labStatusOptions"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-        </UForm>
+            <UFormField
+              name="caseId"
+              :label="$t('col.case')"
+            >
+              <USelect
+                v-model="state.caseId"
+                :items="caseOptions"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="site"
+              :label="$t('col.site')"
+            >
+              <UInput
+                v-model="state.site"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="siteEn"
+              :label="$t('form.siteEn')"
+            >
+              <UInput
+                v-model="state.siteEn"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="scheduledAt"
+              :label="$t('col.scheduled')"
+            >
+              <UInput
+                v-model="state.scheduledAt"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="status"
+              :label="$t('col.status')"
+            >
+              <USelect
+                v-model="state.status"
+                :items="labStatusOptions"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+          </UForm>
+          <template #footer>
+            <UButton
+              v-if="selected"
+              color="error"
+              variant="ghost"
+              :disabled="!writable"
+              @click="deleteId = selected.id"
+            >
+              {{ $t('actions.delete') }}
+            </UButton>
+            <UButton
+              type="submit"
+              form="lab-form"
+              :disabled="!writable"
+            >
+              {{ $t('actions.save') }}
+            </UButton>
+          </template>
+        </DetailPanel>
       </template>
-      <template #footer="{ close }">
-        <UButton
-          color="neutral"
-          variant="outline"
-          @click="close"
-        >
-          {{ $t('actions.cancel') }}
-        </UButton>
-        <UButton
-          type="submit"
-          form="lab-form"
-        >
-          {{ $t('actions.save') }}
-        </UButton>
-      </template>
-    </UModal>
+    </SplitDetail>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"

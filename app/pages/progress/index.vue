@@ -63,6 +63,11 @@ const dirtyUpdates = computed(() => {
 
 const dirtyCount = computed(() => dirtyUpdates.value.length)
 
+function isMissing(row: ProgressRow) {
+  const text = missing(row)
+  return !['可向坦見請款', 'Ready to invoice Candor'].includes(text)
+}
+
 function startEdit() {
   if (!writable.value) {
     return
@@ -112,6 +117,7 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
       <UButton
         v-if="!editing"
         icon="i-lucide-pencil"
+        size="md"
         :disabled="!writable"
         @click="startEdit"
       >
@@ -119,43 +125,23 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
       </UButton>
     </template>
 
-    <p class="mb-4 rounded-lg bg-muted px-3 py-2 text-sm text-muted">
+    <p class="mb-4 rounded-lg bg-muted px-4 py-3 text-base text-muted">
       {{ $t('progress.tickHint') }}
     </p>
 
     <AdminTable :empty="!rows.length">
       <template #head>
         <tr>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.case') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.customer') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.plan') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('progress.lab') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('progress.report') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('progress.consult') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('progress.selection') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('progress.label') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('progress.ship') }}
-          </th>
-          <th class="px-4 py-3 font-medium">
-            {{ $t('col.missing') }}
-          </th>
+          <th>{{ $t('col.case') }}</th>
+          <th>{{ $t('col.customer') }}</th>
+          <th>{{ $t('col.plan') }}</th>
+          <th>{{ $t('progress.lab') }}</th>
+          <th>{{ $t('progress.report') }}</th>
+          <th>{{ $t('progress.consult') }}</th>
+          <th>{{ $t('progress.selection') }}</th>
+          <th>{{ $t('progress.label') }}</th>
+          <th>{{ $t('progress.ship') }}</th>
+          <th>{{ $t('col.missing') }}</th>
         </tr>
       </template>
       <tr
@@ -164,29 +150,29 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
         class="border-b border-default last:border-0"
         :class="editing && dirtyUpdates.some(item => item.caseId === row.caseId) ? 'bg-primary/5' : ''"
       >
-        <td class="px-4 py-3 font-medium text-highlighted">
+        <td class="font-medium text-highlighted">
           <div>{{ row.caseId }}</div>
           <div
             v-if="showOrg"
-            class="text-xs text-dimmed"
+            class="text-sm text-dimmed"
           >
             {{ orgLabel(row.orgId) }}
           </div>
         </td>
-        <td class="px-4 py-3">
+        <td>
           {{ row.customer }}
         </td>
-        <td class="px-4 py-3">
+        <td>
           {{ $t(`plan.${row.planId}`) }}
         </td>
         <td
           v-for="key in flags"
           :key="key"
-          class="px-4 py-3"
         >
           <UCheckbox
             v-if="editing && flagValue(row, key) !== null"
             :model-value="Boolean(flagValue(row, key))"
+            size="lg"
             @update:model-value="toggle(row, key, $event as boolean)"
           />
           <span
@@ -196,33 +182,38 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
           <UIcon
             v-else
             :name="flagValue(row, key) ? 'i-lucide-circle-check' : 'i-lucide-circle'"
-            class="size-4"
-            :class="flagValue(row, key) ? 'text-success' : 'text-dimmed'"
+            class="size-7"
+            :class="flagValue(row, key) ? 'text-success' : 'text-warning'"
             :aria-label="flagValue(row, key) ? $t('progress.done') : $t('progress.open')"
           />
         </td>
-        <td class="px-4 py-3 text-muted">
-          {{ missing(row) }}
+        <td>
+          <StatusBadge
+            :label="isMissing(row) ? missing(row) : $t('progress.complete')"
+            :color="isMissing(row) ? 'warning' : 'success'"
+          />
         </td>
       </tr>
     </AdminTable>
 
     <div
       v-if="editing"
-      class="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-default bg-default/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6"
+      class="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-default bg-default/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6"
     >
       <div class="flex flex-wrap items-center justify-end gap-3">
-        <p class="mr-auto text-sm text-muted">
+        <p class="mr-auto text-base text-muted">
           {{ $t('progress.changed', { n: dirtyCount }) }}
         </p>
         <UButton
           color="neutral"
           variant="outline"
+          size="md"
           @click="cancelEdit"
         >
           {{ $t('actions.cancel') }}
         </UButton>
         <UButton
+          size="md"
           :disabled="!dirtyCount"
           @click="saveEdit"
         >

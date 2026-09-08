@@ -76,7 +76,7 @@ async function logout() {
         >
           <p
             v-if="!collapsed"
-            class="px-2 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-dimmed"
+            class="px-2 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-dimmed"
           >
             {{ group.label }}
           </p>
@@ -138,7 +138,7 @@ async function logout() {
       </template>
 
       <template #body>
-        <div class="p-4 sm:p-6">
+        <div class="p-5 sm:p-7">
           <slot />
         </div>
       </template>

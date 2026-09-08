@@ -1,10 +1,10 @@
 <template>
   <div class="overflow-x-auto rounded-xl border border-default bg-elevated">
     <table
-      class="w-full text-left text-sm"
+      class="app-table w-full text-left text-base"
       :class="compact ? '' : 'min-w-[880px]'"
     >
-      <thead class="border-b border-default bg-muted/40 text-xs text-muted">
+      <thead class="border-b border-default bg-muted/40 text-sm text-muted">
         <slot name="head" />
       </thead>
       <tbody>
@@ -13,7 +13,7 @@
     </table>
     <p
       v-if="empty"
-      class="px-4 py-8 text-center text-sm text-muted"
+      class="px-4 py-10 text-center text-base text-muted"
     >
       {{ $t('table.empty') }}
     </p>

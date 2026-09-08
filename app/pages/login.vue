@@ -41,7 +41,7 @@ async function submit() {
     <h1 class="text-2xl font-semibold text-highlighted">
       {{ $t('login.title') }}
     </h1>
-    <p class="mt-2 text-sm text-muted">
+    <p class="mt-2 text-base text-muted">
       {{ $t('login.description') }}
     </p>
 
@@ -70,7 +70,7 @@ async function submit() {
             <p class="font-medium text-highlighted">
               {{ account.name }}
             </p>
-            <p class="mt-0.5 text-xs text-muted">
+            <p class="mt-0.5 text-sm text-muted">
               {{ $t(`login.roles.${account.role}`) }} · {{ account.email }}
             </p>
           </button>

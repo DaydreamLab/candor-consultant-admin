@@ -28,7 +28,7 @@ const labelOptions = DEMO_LABELS.map(row => ({ label: row.id, value: row.id }))
     @submit="emit('submit', $event)"
   >
     <section class="space-y-4 rounded-xl border border-default bg-elevated p-4 sm:p-5">
-      <h2 class="text-sm font-semibold text-highlighted">
+      <h2 class="text-base font-semibold text-highlighted">
         {{ $t('form.identity') }}
       </h2>
       <UFormField
@@ -101,7 +101,7 @@ const labelOptions = DEMO_LABELS.map(row => ({ label: row.id, value: row.id }))
     </section>
 
     <section class="space-y-4 rounded-xl border border-default bg-elevated p-4 sm:p-5">
-      <h2 class="text-sm font-semibold text-highlighted">
+      <h2 class="text-base font-semibold text-highlighted">
         {{ $t('form.stockPrice') }}
       </h2>
       <UFormField

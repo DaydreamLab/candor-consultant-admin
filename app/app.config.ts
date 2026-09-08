@@ -7,6 +7,21 @@ export default defineAppConfig({
       warning: 'sand',
       error: 'coral',
       info: 'lagoon'
+    },
+    button: {
+      defaultVariants: {
+        size: 'md'
+      }
+    },
+    input: {
+      defaultVariants: {
+        size: 'md'
+      }
+    },
+    select: {
+      defaultVariants: {
+        size: 'md'
+      }
     }
   }
 })

@@ -122,6 +122,12 @@ export interface KeyInLine {
   sku: string
   qty: number
   status: 'draft' | 'confirmed'
+  confirmedAt: string | null
+}
+
+export interface ShipmentEvent {
+  status: ShipStatus
+  at: string
 }
 
 export interface ShipmentRow {
@@ -133,6 +139,7 @@ export interface ShipmentRow {
   tracking: string | null
   shippedAt: string | null
   items: { sku: string, qty: number }[]
+  events: ShipmentEvent[]
 }
 
 export interface InvoiceRow {

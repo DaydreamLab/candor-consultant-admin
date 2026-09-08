@@ -1,11 +1,17 @@
 <script setup lang="ts">
 const route = useRoute()
 const localePath = useLocalePath()
+const { t } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { writable } = useOrgScope()
 
 const sku = computed(() => String(route.params.sku ?? ''))
 const { state, load, goList, onSubmit } = useProductEditor(sku)
+
+const crumbs = computed(() => [
+  { label: t('nav.products'), to: localePath('/products') },
+  { label: sku.value || t('actions.edit') }
+])
 
 onMounted(async () => {
   if (!load()) {
@@ -28,19 +34,9 @@ onMounted(async () => {
       >
         {{ $t('form.back') }}
       </UButton>
-    </template>
-
-    <ProductFormFields
-      v-model:state="state"
-      form-id="product-form"
-      sku-locked
-      @submit="onSubmit"
-    />
-
-    <div class="mt-6 flex justify-end gap-2">
       <UButton
         color="neutral"
-        variant="outline"
+        variant="ghost"
         @click="goList"
       >
         {{ $t('actions.cancel') }}
@@ -48,10 +44,20 @@ onMounted(async () => {
       <UButton
         type="submit"
         form="product-form"
+        size="lg"
         :disabled="!writable"
       >
         {{ $t('actions.save') }}
       </UButton>
-    </div>
+    </template>
+
+    <AppBreadcrumb :items="crumbs" />
+
+    <ProductFormFields
+      v-model:state="state"
+      form-id="product-form"
+      sku-locked
+      @submit="onSubmit"
+    />
   </PageHeader>
 </template>

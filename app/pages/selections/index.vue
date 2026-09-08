@@ -4,15 +4,18 @@ import type { SelectionLineForm } from '~/utils/schemas'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { KeyInLine } from '~/types/admin'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { scoped, orgLabel, showOrg, writable } = useOrgScope()
 const ops = useOpsStore()
 const feedback = useOpsFeedback()
 
-const drawerOpen = ref(false)
-const editingId = ref<string | null>(null)
+const selectedId = ref<string | null>(null)
+const creating = ref(false)
+const openIds = ref<string[]>([])
 const deleteId = ref<string | null>(null)
+const confirmId = ref<string | null>(null)
+const unconfirmId = ref<string | null>(null)
 const state = reactive<Partial<SelectionLineForm>>({})
 
 const groups = computed(() => {
@@ -30,15 +33,30 @@ const groups = computed(() => {
       }
     })
     const confirmed = items.length > 0 && items.every(item => item.status === 'confirmed')
+    const confirmedAt = items.find(item => item.confirmedAt)?.confirmedAt ?? null
+    const shippedLock = ops.shipments.some(ship =>
+      ship.caseId === row.id && ['in_transit', 'delivered'].includes(ship.status)
+    )
     return {
       ...row,
       customerName: locale.value === 'en' ? row.customerEn : row.customer,
       items,
       total: items.reduce((sum, item) => sum + item.amount, 0),
-      listStatus: items.length === 0 ? 'draft' : (confirmed ? 'confirmed' : 'draft')
+      listStatus: items.length === 0 ? 'draft' : (confirmed ? 'confirmed' : 'draft'),
+      confirmedAt,
+      shippedLock
     }
   })
 })
+
+const {
+  page,
+  pageSize,
+  rows: pagedGroups,
+  total,
+  from,
+  to
+} = usePager(groups, 10)
 
 function skuOptions(orgId: string) {
   return ops.products
@@ -49,23 +67,43 @@ function skuOptions(orgId: string) {
     }))
 }
 
+function toggle(id: string) {
+  if (openIds.value.includes(id)) {
+    openIds.value = openIds.value.filter(item => item !== id)
+    return
+  }
+  openIds.value = [...openIds.value, id]
+}
+
+function isOpen(id: string) {
+  return openIds.value.includes(id)
+}
+
 function openCreate(caseId: string) {
-  editingId.value = null
+  if (!writable.value) {
+    return
+  }
+  creating.value = true
+  selectedId.value = null
   Object.assign(state, { caseId, sku: '', qty: 1 })
-  drawerOpen.value = true
 }
 
 function openEdit(line: KeyInLine) {
-  editingId.value = line.id
+  creating.value = false
+  selectedId.value = line.id
   Object.assign(state, { caseId: line.caseId, sku: line.sku, qty: line.qty })
-  drawerOpen.value = true
+}
+
+function closeDetail() {
+  creating.value = false
+  selectedId.value = null
 }
 
 function onSubmit(event: FormSubmitEvent<SelectionLineForm>) {
   const data = event.data
   const caseRow = ops.cases.find(row => row.id === data.caseId)
-  if (editingId.value) {
-    ops.updateKeyInLine(editingId.value, { sku: data.sku, qty: data.qty })
+  if (selectedId.value) {
+    ops.updateKeyInLine(selectedId.value, { sku: data.sku, qty: data.qty })
   } else {
     ops.addKeyInLine({
       caseId: data.caseId,
@@ -74,7 +112,7 @@ function onSubmit(event: FormSubmitEvent<SelectionLineForm>) {
       qty: data.qty
     })
   }
-  drawerOpen.value = false
+  closeDetail()
   feedback.saved(data.sku)
 }
 
@@ -84,18 +122,41 @@ function confirmLine() {
   }
   ops.removeKeyInLine(deleteId.value)
   feedback.deleted()
+  if (selectedId.value === deleteId.value) {
+    closeDetail()
+  }
   deleteId.value = null
 }
 
-function confirmCase(caseId: string) {
-  ops.confirmSelection(caseId)
-  feedback.saved(caseId)
+function confirmCase() {
+  if (!confirmId.value) {
+    return
+  }
+  ops.confirmSelection(confirmId.value)
+  feedback.saved(confirmId.value)
+  confirmId.value = null
+}
+
+function unconfirmCase() {
+  if (!unconfirmId.value) {
+    return
+  }
+  const ok = ops.unconfirmSelection(unconfirmId.value)
+  if (!ok) {
+    feedback.warned(t('selections.locked'))
+  } else {
+    feedback.saved(unconfirmId.value)
+  }
+  unconfirmId.value = null
 }
 
 const activeOrgId = computed(() => {
   const caseRow = ops.cases.find(row => row.id === state.caseId)
   return caseRow?.orgId ?? ops.defaultOrgId()
 })
+
+const detailOpen = computed(() => creating.value || Boolean(selectedId.value))
+const detailTitle = computed(() => creating.value ? t('selections.addLine') : t('actions.edit'))
 </script>
 
 <template>
@@ -103,187 +164,252 @@ const activeOrgId = computed(() => {
     :title="$t('nav.selections')"
     :description="moduleDesc('selections')"
   >
-    <p class="mb-4 rounded-lg bg-muted px-3 py-2 text-sm text-muted">
+    <p class="mb-4 rounded-lg bg-muted px-4 py-3 text-base text-muted">
       {{ $t('selections.confirmHint') }}
     </p>
 
-    <div
-      v-if="!groups.length"
-      class="rounded-xl border border-default bg-elevated p-8 text-center text-sm text-muted"
-    >
-      {{ $t('table.empty') }}
-    </div>
-
-    <div class="space-y-4">
-      <section
-        v-for="group in groups"
-        :key="group.id"
-        class="overflow-hidden rounded-xl border border-default bg-elevated"
-      >
-        <header class="flex flex-wrap items-center gap-3 border-b border-default px-4 py-3">
-          <div class="min-w-0 flex-1">
-            <p class="font-medium text-highlighted">
-              {{ group.id }} · {{ group.customerName }}
-            </p>
-            <p class="text-xs text-muted">
-              <span v-if="showOrg">{{ orgLabel(group.orgId) }} · </span>{{ $t(`plan.${group.planId}`) }}
-            </p>
-          </div>
-          <StatusBadge
-            :label="$t(`status.${group.listStatus}`)"
-            :color="group.listStatus === 'confirmed' ? 'success' : 'warning'"
-          />
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-plus"
-            :disabled="!writable"
-            @click="openCreate(group.id)"
-          >
-            {{ $t('selections.addLine') }}
-          </UButton>
-          <UButton
-            size="xs"
-            :disabled="!writable || !group.items.length || group.listStatus === 'confirmed'"
-            @click="confirmCase(group.id)"
-          >
-            {{ $t('selections.confirm') }}
-          </UButton>
-        </header>
-
-        <table
-          v-if="group.items.length"
-          class="w-full text-left text-sm"
+    <SplitDetail>
+      <div>
+        <div
+          v-if="!pagedGroups.length"
+          class="rounded-xl border border-default bg-elevated p-8 text-center text-base text-muted"
         >
-          <thead class="border-b border-default bg-muted/40 text-xs text-muted">
-            <tr>
-              <th class="px-4 py-2 font-medium">
-                {{ $t('col.aLabel') }}
-              </th>
-              <th class="px-4 py-2 font-medium">
-                {{ $t('col.yName') }}
-              </th>
-              <th class="px-4 py-2 font-medium">
-                {{ $t('col.qty') }}
-              </th>
-              <th class="px-4 py-2 font-medium">
-                {{ $t('col.cost') }}
-              </th>
-              <th class="px-4 py-2 font-medium">
-                {{ $t('col.actions') }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in group.items"
-              :key="item.id"
-              class="border-b border-default last:border-0"
+          {{ $t('table.empty') }}
+        </div>
+
+        <div class="space-y-3">
+          <section
+            v-for="group in pagedGroups"
+            :key="group.id"
+            class="overflow-hidden rounded-xl border border-default bg-elevated"
+          >
+            <button
+              type="button"
+              class="flex w-full flex-wrap items-center gap-3 px-4 py-4 text-left hover:bg-muted/30"
+              @click="toggle(group.id)"
             >
-              <td class="px-4 py-3 font-medium text-highlighted">
-                {{ item.aLabel }}
-              </td>
-              <td class="px-4 py-3 text-muted">
-                {{ item.yName }}
-              </td>
-              <td class="px-4 py-3">
-                {{ item.qty }}
-              </td>
-              <td class="px-4 py-3">
-                {{ money(item.amount) }}
-              </td>
-              <td class="px-4 py-3">
-                <RowActions
-                  :disabled="!writable"
-                  @edit="openEdit(item)"
-                  @remove="deleteId = item.id"
-                />
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td
-                class="px-4 py-3 text-muted"
-                colspan="3"
-              >
-                {{ $t('selections.lineTotal') }}
-              </td>
-              <td class="px-4 py-3 font-medium text-highlighted">
-                {{ money(group.total) }}
-              </td>
-              <td />
-            </tr>
-          </tfoot>
-        </table>
-        <p
-          v-else
-          class="px-4 py-6 text-sm text-muted"
-        >
-          {{ $t('selections.emptyCase') }}
-        </p>
-      </section>
-    </div>
+              <UIcon
+                :name="isOpen(group.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                class="size-5 text-muted"
+              />
+              <div class="min-w-0 flex-1">
+                <p class="text-base font-semibold text-highlighted">
+                  {{ group.id }} · {{ group.customerName }}
+                </p>
+                <p class="mt-1 text-sm text-muted">
+                  <span v-if="showOrg">{{ orgLabel(group.orgId) }} · </span>{{ $t(`plan.${group.planId}`) }}
+                </p>
+              </div>
+              <StatusBadge
+                :label="$t(`status.${group.listStatus}`)"
+                :color="group.listStatus === 'confirmed' ? 'success' : 'warning'"
+              />
+            </button>
 
-    <UModal
-      v-model:open="drawerOpen"
-      :title="editingId ? $t('actions.edit') : $t('selections.addLine')"
-      :description="$t('form.lineTitle')"
-      :ui="{ footer: 'justify-end' }"
-    >
-      <template #body>
-        <UForm
-          id="line-form"
-          :schema="selectionLineSchema"
-          :state="state"
-          class="space-y-4"
-          @submit="onSubmit"
+            <div
+              v-if="isOpen(group.id)"
+              class="border-t border-default px-4 py-4"
+            >
+              <p
+                class="mb-4 rounded-lg px-3 py-2 text-sm"
+                :class="group.listStatus === 'confirmed' ? 'bg-success/10 text-success' : 'bg-muted text-muted'"
+              >
+                {{ group.confirmedAt
+                  ? $t('selections.confirmedAt', { time: group.confirmedAt })
+                  : $t('selections.notConfirmed') }}
+              </p>
+
+              <div class="mb-4 flex flex-wrap gap-2">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-plus"
+                  :disabled="!writable || group.listStatus === 'confirmed'"
+                  @click="openCreate(group.id)"
+                >
+                  {{ $t('selections.addLine') }}
+                </UButton>
+                <UButton
+                  v-if="group.listStatus !== 'confirmed'"
+                  :disabled="!writable || !group.items.length"
+                  @click="confirmId = group.id"
+                >
+                  {{ $t('selections.confirm') }}
+                </UButton>
+                <UButton
+                  v-else
+                  color="neutral"
+                  variant="outline"
+                  :disabled="!writable || group.shippedLock"
+                  @click="unconfirmId = group.id"
+                >
+                  {{ $t('selections.unconfirm') }}
+                </UButton>
+              </div>
+
+              <table
+                v-if="group.items.length"
+                class="app-table w-full text-left text-base"
+              >
+                <thead class="border-b border-default bg-muted/40 text-sm text-muted">
+                  <tr>
+                    <th>{{ $t('col.aLabel') }}</th>
+                    <th>{{ $t('col.yName') }}</th>
+                    <th>{{ $t('col.qty') }}</th>
+                    <th>{{ $t('col.cost') }}</th>
+                    <th>{{ $t('col.actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="item in group.items"
+                    :key="item.id"
+                    class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+                    :class="item.id === selectedId ? 'bg-primary/5' : ''"
+                    @click="openEdit(item)"
+                  >
+                    <td class="font-medium text-highlighted">
+                      <div class="flex items-center gap-3">
+                        <ProductThumb
+                          :seed="item.sku"
+                          :label="item.aLabel"
+                          size="sm"
+                        />
+                        {{ item.aLabel }}
+                      </div>
+                    </td>
+                    <td class="text-muted">
+                      {{ item.yName }}
+                    </td>
+                    <td>
+                      {{ item.qty }}
+                    </td>
+                    <td class="tabular-money">
+                      {{ money(item.amount) }}
+                    </td>
+                    <td @click.stop>
+                      <RowActions
+                        :disabled="!writable || group.listStatus === 'confirmed'"
+                        @edit="openEdit(item)"
+                        @remove="deleteId = item.id"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td
+                      class="text-muted"
+                      colspan="3"
+                    >
+                      {{ $t('selections.lineTotal') }}
+                    </td>
+                    <td class="tabular-money font-semibold text-highlighted">
+                      {{ money(group.total) }}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+              <p
+                v-else
+                class="py-4 text-base text-muted"
+              >
+                {{ $t('selections.emptyCase') }}
+              </p>
+            </div>
+          </section>
+        </div>
+
+        <ListPager
+          :page="page"
+          :page-size="pageSize"
+          :total="total"
+          :from="from"
+          :to="to"
+          @update:page="page = $event"
+        />
+      </div>
+
+      <template #detail>
+        <DetailPanel
+          :open="detailOpen"
+          :title="detailTitle"
+          :empty="$t('form.emptyDetail')"
+          icon="i-lucide-clipboard-list"
+          @close="closeDetail"
         >
-          <UFormField
-            name="sku"
-            :label="$t('col.sku')"
+          <UForm
+            id="line-form"
+            :schema="selectionLineSchema"
+            :state="state"
+            class="space-y-4"
+            @submit="onSubmit"
           >
-            <USelect
-              v-model="state.sku"
-              :items="skuOptions(activeOrgId)"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            name="qty"
-            :label="$t('col.qty')"
-          >
-            <UInput
-              v-model="state.qty"
-              type="number"
-              class="w-full"
-            />
-          </UFormField>
-        </UForm>
+            <UFormField
+              name="sku"
+              :label="$t('col.sku')"
+            >
+              <USelect
+                v-model="state.sku"
+                :items="skuOptions(activeOrgId)"
+                value-key="value"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              name="qty"
+              :label="$t('col.qty')"
+            >
+              <UInput
+                v-model="state.qty"
+                type="number"
+                class="w-full"
+              />
+            </UFormField>
+          </UForm>
+          <template #footer>
+            <UButton
+              color="neutral"
+              variant="outline"
+              @click="closeDetail"
+            >
+              {{ $t('actions.cancel') }}
+            </UButton>
+            <UButton
+              type="submit"
+              form="line-form"
+              :disabled="!writable"
+            >
+              {{ $t('actions.save') }}
+            </UButton>
+          </template>
+        </DetailPanel>
       </template>
-      <template #footer="{ close }">
-        <UButton
-          color="neutral"
-          variant="outline"
-          @click="close"
-        >
-          {{ $t('actions.cancel') }}
-        </UButton>
-        <UButton
-          type="submit"
-          form="line-form"
-        >
-          {{ $t('actions.save') }}
-        </UButton>
-      </template>
-    </UModal>
+    </SplitDetail>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"
       @update:open="(open) => { if (!open) deleteId = null }"
       @confirm="confirmLine"
+    />
+    <ConfirmDelete
+      :open="Boolean(confirmId)"
+      color="primary"
+      :title="$t('selections.confirmTitle')"
+      :description="$t('selections.confirmBody')"
+      :confirm-label="$t('selections.confirm')"
+      @update:open="(open) => { if (!open) confirmId = null }"
+      @confirm="confirmCase"
+    />
+    <ConfirmDelete
+      :open="Boolean(unconfirmId)"
+      color="warning"
+      :title="$t('selections.unconfirmTitle')"
+      :description="$t('selections.unconfirmBody')"
+      :confirm-label="$t('selections.unconfirm')"
+      @update:open="(open) => { if (!open) unconfirmId = null }"
+      @confirm="unconfirmCase"
     />
   </PageHeader>
 </template>
