@@ -1,8 +1,11 @@
 # 坦見／Candor 顧問後台
 
+- **線上示範**：[https://rezta20.github.io/candor-consultant-admin/](https://rezta20.github.io/candor-consultant-admin/)
+- **GitHub 原始碼**：[https://github.com/Rezta20/candor-consultant-admin](https://github.com/Rezta20/candor-consultant-admin)
+
 路徑：`~/Projects/candor-consultant-admin`
 
-Y 顧問營運後台（多租戶）。**不是** A 客人端 App。客人只付給 A；諮詢內容不存放於此。
+Y 顧問營運後台（多租戶）。**不是** A 客人端 App。客人只付給 A；諮詢內容不存放於此。示範站為前端 Mock，登入後即可操作。
 
 ## 第一週可見
 

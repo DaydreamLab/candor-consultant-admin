@@ -6,6 +6,12 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n'
   ],
 
+  ssr: false,
+
+  app: {
+    baseURL: process.env.NUXT_APP_BASE_URL || '/'
+  },
+
   devtools: {
     enabled: true
   },
