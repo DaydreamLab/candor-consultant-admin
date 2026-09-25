@@ -2,6 +2,8 @@
 
 對應 [02-roadmap.md](02-roadmap.md)。
 
+**里程碑總覽**：M0–M1 完成（示範站）；M2–M4 未開始（全切片仍 Mock／殼）。細項見下方勾選與功能表。
+
 **同步規則**：本檔與 [candor-core docs/04-integration-progress.md](https://github.com/DaydreamLab/candor-core/blob/main/docs/04-integration-progress.md) 的 Admin 區必須一致。功能表的**接線**欄變更時，須與本檔下方 API 切片及 candor-core `04` 一起改；**畫面**欄只改本 repo。
 
 ## 狀態定義
@@ -35,16 +37,30 @@
 - [x] 側欄與多角色示範登入
 - [x] 履約／倉儲／請款／平台等 Mock 頁（含不做範圍的殼）
 
+## M2 — Operator 登入直連
+
+- [ ] Auth 切片 `已接`（登入／目前身份畫面 `可用`）
+- [ ] 無 user／operator token 混用
+
+## M3 — 主檔與訂單出貨
+
+- [ ] 商品／庫存／出貨／使用者：殼改接達 `已接`
+- [ ] 訂單、PackagePlan、LabService：補頁且接線 `已接`
+
+## M4 — 報告校正與 weight set
+
+- [ ] 報告校正／重試、weight sets、Operator CRUD、代操去識別化：有入口且接線 `已接` 或排程明確
+
 ## 功能（使用者可見）
 
-接線欄由下方 API 切片彙總。側欄對照見 [spec/10-screen-scope.md](spec/10-screen-scope.md)。
+接線欄由下方 API 切片彙總。側欄對照見 [spec/10-screen-scope.md](spec/10-screen-scope.md)。里程碑欄：`完成`＝已達；其餘為掛帳階段。
 
 ### In-scope
 
 | 功能 | 路由／入口 | 畫面 | 接線 | 里程碑 |
 |------|------------|------|------|--------|
 | Operator 登入／目前身份 | `/login` | 殼 | Mock | M2 |
-| 工作台 | `/` | 殼 | 不需 | —（勿依賴 case 聚合） |
+| 工作台 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
 | 商品與庫存 | `/products`、`/products/new`、`/products/[sku]` | 殼 | Mock | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
@@ -55,8 +71,8 @@
 | Weight sets | —（可掛設定） | 無 | Mock | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
-| 設定頁 | `/settings` | 殼 | 不需 | —（可當 M4 入口） |
-| 報告列表／詳情 | — | 無 | 不做 | — |
+| 設定頁 | `/settings` | 殼 | 不需 | 完成（殼；可當 M4 入口） |
+| 報告列表／詳情 | — | 無 | 不做 | 不做 |
 
 ### 明確不做（示範頁可暫留）
 
@@ -142,4 +158,4 @@
 
 ---
 
-**最後更新**：2026-09-25（新增功能表；Admin 全切片仍 Mock；文件 M0 就緒）
+**最後更新**：2026-09-25（補 M2–M4 勾選與總覽；Admin 全切片仍 Mock；文件 M0 就緒）
