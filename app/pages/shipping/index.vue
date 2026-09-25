@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { TimelineItem } from '@nuxt/ui'
+import type { TimelineItem, FormSubmitEvent } from '@nuxt/ui'
 import { SHIP_STATUS_COLOR } from '~/utils/labels'
 import { shipmentSchema } from '~/utils/schemas'
 import type { ShipmentForm } from '~/utils/schemas'
 import type { ShipmentRow, ShipStatus } from '~/types/admin'
 import { SHIP_FLOW } from '~/utils/demo'
-import type { FormSubmitEvent } from '@nuxt/ui'
 
 const { locale, t } = useI18n()
 const { moduleDesc } = usePageCopy()

@@ -8,12 +8,12 @@ export default defineNuxtConfig({
 
   ssr: false,
 
-  app: {
-    baseURL: process.env.NUXT_APP_BASE_URL || '/'
-  },
-
   devtools: {
     enabled: true
+  },
+
+  app: {
+    baseURL: process.env.NUXT_APP_BASE_URL || '/'
   },
 
   css: ['~/assets/css/main.css'],
