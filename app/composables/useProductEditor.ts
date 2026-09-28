@@ -68,7 +68,10 @@ export function useProductEditor(editingSku: MaybeRefOrGetter<string | null>) {
       return
     }
     const sku = toValue(editingSku)
-    const saved = ops.saveProduct(event.data, sku ?? undefined)
+    const saved = ops.saveProduct({
+      ...event.data,
+      image: event.data.image ?? null
+    }, sku ?? undefined)
     if (!saved) {
       feedback.warned(event.data.sku)
       return

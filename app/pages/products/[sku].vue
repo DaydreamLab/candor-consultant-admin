@@ -1,17 +1,11 @@
 <script setup lang="ts">
 const route = useRoute()
 const localePath = useLocalePath()
-const { t } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { writable } = useOrgScope()
 
 const sku = computed(() => String(route.params.sku ?? ''))
 const { state, load, goList, onSubmit } = useProductEditor(sku)
-
-const crumbs = computed(() => [
-  { label: t('nav.products'), to: localePath('/products') },
-  { label: sku.value || t('actions.edit') }
-])
 
 onMounted(async () => {
   if (!load()) {
@@ -50,8 +44,6 @@ onMounted(async () => {
         {{ $t('actions.save') }}
       </UButton>
     </template>
-
-    <AppBreadcrumb :items="crumbs" />
 
     <ProductFormFields
       v-model:state="state"

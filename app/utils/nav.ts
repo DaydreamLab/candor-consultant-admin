@@ -6,6 +6,8 @@ export interface NavItem {
   to: string
   icon: string
   platformOnly?: boolean
+  /** false：側欄不加「開發中」。未設視為開發中。 */
+  developing?: boolean
 }
 
 export interface NavGroup {
@@ -18,6 +20,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'ops',
     items: [
       { key: 'workbench', to: '/', icon: 'i-lucide-layout-dashboard' },
+      { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
       { key: 'cases', to: '/cases', icon: 'i-lucide-folder-kanban' },
       { key: 'labs', to: '/labs', icon: 'i-lucide-flask-conical' },
       { key: 'progress', to: '/progress', icon: 'i-lucide-list-checks' },
@@ -27,7 +30,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'warehouse',
     items: [
-      { key: 'products', to: '/products', icon: 'i-lucide-package' },
+      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false },
+      { key: 'packagePlans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
       { key: 'selections', to: '/selections', icon: 'i-lucide-clipboard-list' },
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck' }
     ]
@@ -48,6 +52,26 @@ export const NAV_GROUPS: NavGroup[] = [
     ]
   }
 ]
+
+export function normalizeAdminPath(path: string): string {
+  const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/'
+  if (stripped.length > 1 && stripped.endsWith('/')) {
+    return stripped.slice(0, -1)
+  }
+  return stripped
+}
+
+/** 頁面標題不加「開發中」：訂單、方案、商品（含子頁）、目前帳號。 */
+export function isDevelopingPath(path: string): boolean {
+  const current = normalizeAdminPath(path)
+  if (current === '/account' || current === '/orders' || current === '/package-plans') {
+    return false
+  }
+  if (current === '/products' || current.startsWith('/products/')) {
+    return false
+  }
+  return true
+}
 
 export function visibleNavGroups(role: Role | null): NavGroup[] {
   if (!role) {

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import type { NavItem } from '~/utils/nav'
+import { normalizeAdminPath } from '~/utils/nav'
 
 const localePath = useLocalePath()
 const route = useRoute()
@@ -11,12 +13,20 @@ const open = ref(false)
 
 const groups = computed(() => visibleNavGroups(session.role))
 
+function itemLabel(item: NavItem) {
+  const name = t(`nav.${item.key}`)
+  if (item.developing === false) {
+    return name
+  }
+  return `${name} ${t('nav.developing')}`
+}
+
 const menuGroups = computed(() =>
   groups.value.map(group => ({
     key: group.key,
     label: t(`nav.${group.key}`),
     items: group.items.map(item => ({
-      label: t(`nav.${item.key}`),
+      label: itemLabel(item),
       icon: item.icon,
       to: localePath(item.to),
       onSelect: () => {
@@ -27,7 +37,10 @@ const menuGroups = computed(() =>
 )
 
 const headerTitle = computed(() => {
-  const current = route.path.replace(/^\/en/, '') || '/'
+  const current = normalizeAdminPath(route.path)
+  if (current === '/account') {
+    return t('nav.account')
+  }
   for (const group of groups.value) {
     for (const item of group.items) {
       const active = item.to === '/'
@@ -40,6 +53,8 @@ const headerTitle = computed(() => {
   }
   return t('brandAdmin')
 })
+
+const onAccount = computed(() => normalizeAdminPath(route.path) === '/account')
 
 const roleLabel = computed(() => {
   const role = session.operator?.role
@@ -94,13 +109,26 @@ async function logout() {
           class="flex w-full min-w-0"
           :class="collapsed ? 'flex-col items-center gap-2' : 'items-center gap-2'"
         >
+          <UButton
+            v-if="collapsed"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-circle-user"
+            square
+            :to="localePath('/account')"
+            :aria-label="$t('nav.account')"
+          />
           <div
-            v-if="!collapsed"
+            v-else
             class="min-w-0 flex-1"
           >
-            <p class="truncate text-sm font-medium text-highlighted">
+            <NuxtLink
+              :to="localePath('/account')"
+              class="block truncate text-sm font-medium hover:underline"
+              :class="onAccount ? 'text-primary' : 'text-highlighted'"
+            >
               {{ session.session?.name }}
-            </p>
+            </NuxtLink>
             <p class="truncate text-xs text-muted">
               {{ roleLabel }}
             </p>

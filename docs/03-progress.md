@@ -59,13 +59,13 @@
 
 | 功能 | 路由／入口 | 畫面 | 接線 | 里程碑 |
 |------|------------|------|------|--------|
-| Operator 登入／目前身份 | `/login` | 可用 | 接線中 | M2 |
+| Operator 登入／目前身份 | `/login`（可用）；`/account` 空殼，不接 `GET /admin/me` | 可用 | 接線中 | M2 |
 | 工作台 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
 | 商品與庫存 | `/products`、`/products/new`、`/products/[sku]` | 殼 | Mock | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
-| 訂單列表／詳情／取消／讀對話 | — | 無 | Mock | M3 |
-| PackagePlan 主檔 | — | 無 | Mock | M3 |
+| 訂單列表／詳情／取消／讀對話 | `/orders`（空殼；詳情未做） | 殼 | Mock | M3 |
+| PackagePlan 主檔 | `/package-plans`（空殼） | 殼 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | Weight sets | —（可掛設定） | 無 | Mock | M4 |
@@ -158,4 +158,4 @@
 
 ---
 
-**最後更新**：2026-09-28（登入改打 `POST /admin/auth/login`，狀態接線中；`GET /admin/me` 仍 Mock。candor-core `docs/04` 尚未同步）
+**最後更新**：2026-09-28（`/orders`、`/package-plans`、`/account` 為空殼，接線仍 Mock；`GET /admin/me` 未接。candor-core `docs/04` 尚未同步）

@@ -1,16 +1,10 @@
 <script setup lang="ts">
 const localePath = useLocalePath()
-const { t } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { state, load, goList, onSubmit } = useProductEditor(null)
 const { writable } = useOrgScope()
 
 load()
-
-const crumbs = computed(() => [
-  { label: t('nav.products'), to: localePath('/products') },
-  { label: t('actions.add') }
-])
 </script>
 
 <template>
@@ -43,8 +37,6 @@ const crumbs = computed(() => [
         {{ $t('actions.save') }}
       </UButton>
     </template>
-
-    <AppBreadcrumb :items="crumbs" />
 
     <ProductFormFields
       v-model:state="state"
