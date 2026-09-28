@@ -68,6 +68,11 @@ export const invoiceSchema = z.object({
   status: z.enum(['draft', 'sent', 'paid'])
 })
 
+export const loginSchema = z.object({
+  email: z.email(),
+  password: z.string().min(1)
+})
+
 export const staffSchema = z.object({
   name: z.string().min(1),
   email: z.email(),
@@ -82,4 +87,5 @@ export type ProductForm = z.output<typeof productSchema>
 export type SelectionLineForm = z.output<typeof selectionLineSchema>
 export type ShipmentForm = z.output<typeof shipmentSchema>
 export type InvoiceForm = z.output<typeof invoiceSchema>
+export type LoginForm = z.output<typeof loginSchema>
 export type StaffForm = z.output<typeof staffSchema>

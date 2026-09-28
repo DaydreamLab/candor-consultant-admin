@@ -7,7 +7,7 @@ Operator 端：商品／庫存／價格帶、訂單出貨、報告校正與權�
 - 預覽：https://daydreamlab.github.io/candor-consultant-admin/
 - 原始碼：https://github.com/DaydreamLab/candor-consultant-admin
 
-目前為**前端 Mock**（多租戶示範資料、cookie 切角色）。目標為單租戶 operator 後台，範圍見 [docs/00-overview.md](docs/00-overview.md)。
+登入已打 core `POST /api/v1/admin/auth/login`。其餘畫面仍是**前端 Mock**（多租戶示範資料）。目標為單租戶 operator 後台，範圍見 [docs/00-overview.md](docs/00-overview.md)。
 
 ## 技術棧
 

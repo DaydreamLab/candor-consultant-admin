@@ -2,17 +2,28 @@
 
 規範示範登入與目標 operator 身份的對照。權威權限矩陣：[candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)、身份：[spec 24](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/24-identity-and-auth.md)。
 
-## 現況（Mock）
+## 現況
 
 | 項目 | 實作 |
 |------|------|
 | Store | `app/stores/session.ts` |
-| 登入 | `loginAs(staffId)` 從 `DEMO_STAFF` 選人 |
-| 存放 | cookie `candor-admin-session`（整份 `SessionUser`） |
-| 型別 | `Role` = `platform_viewer`｜`platform_assist`｜`consultant_ops`｜`consultant_admin` |
-| 租戶 | `orgId`／`orgName` 可空；platform 角色看全部 org |
+| 登入 | `POST /api/v1/admin/auth/login`（email、password） |
+| Base | `NUXT_PUBLIC_API_BASE`，預設 `https://candor-core.dev.daydream-lab.com/api/v1` |
+| Token | `localStorage` 鍵 `candor.operator.token`（不進 cookie、URL、log） |
+| 身份 | 同鍵旁的 profile（`operator`：`id`、`role`、`email`、`name`）；過期即清掉 |
+| 角色 | API 只接受 `expert`｜`ops`｜`admin` |
+| 目前身份 API | `GET /admin/me` 尚未接；側欄姓名／角色來自登入回應 |
 
-**僅供示範**，不得當成 core 契約。
+舊 cookie `candor-admin-session` 在 session store 啟動時清除，不再當登入憑證。
+
+其餘示範頁仍用 `Role`（`platform_*`／`consultant_*`）做 Mock 權限。登入成功後只在 store 內暫時對應，**不寫進 API**：
+
+| operator `role` | 暫時對應的示範 `Role` | 用途 |
+|-----------------|------------------------|------|
+| `admin` | `consultant_admin` | 既有 Mock 頁的寫入／帳號權限 |
+| `ops`、`expert` | `consultant_ops` | 既有 Mock 頁的寫入 |
+
+側欄顯示的是 operator 角色，不是上表的示範角色。
 
 ## 目標（直連）
 
@@ -41,7 +52,7 @@
 
 | 檔案 | 現況 | 接線後 |
 |------|------|--------|
-| `auth.global.ts` | 未登入導向 `/login` | 改為檢查 operator token／me |
+| `auth.global.ts` | 檢查 operator token；未登入導向 `/login` | 再加上 `GET /admin/me` |
 | `platform.global.ts` | 限制 platformOnly nav | 改為 core 角色；`orgs` 等不做頁應移除或永遠隱藏 |
 
 ## 相關

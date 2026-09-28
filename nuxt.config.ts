@@ -25,6 +25,12 @@ export default defineNuxtConfig({
     storageKey: 'candor-admin-color-mode'
   },
 
+  runtimeConfig: {
+    public: {
+      apiBase: 'https://candor-core.dev.daydream-lab.com/api/v1'
+    }
+  },
+
   routeRules: {
     '/inventory': { redirect: '/products' },
     '/key-in': { redirect: '/selections' },

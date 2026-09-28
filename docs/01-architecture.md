@@ -18,7 +18,7 @@ Browser／Nuxt **直連** candor-core admin API（目標）；目前多數畫面
 | 模組 | 職責 | 不可做 |
 |------|------|--------|
 | **pages／components** | 列表、表單、簽核等示範 UI | 為「不做」能力發明後端契約 |
-| **stores/session** | 示範登入（cookie）→ 未來 operator JWT | 與客人端共用 token 鍵 |
+| **stores/session** | `POST /admin/auth/login`；token 在 `candor.operator.token` | 與客人端共用 token 鍵 |
 | **stores/ops** | 示範主檔／案件等狀態 | 把 `case` 語意寫進 OpenAPI |
 | **utils/nav** | 側欄分組 | 接線後仍導向必做頁用舊 path 當 API 名 |
 | **utils/demo** | 種子假資料 | 當成正式環境資料源 |
@@ -26,7 +26,7 @@ Browser／Nuxt **直連** candor-core admin API（目標）；目前多數畫面
 
 ## Mock 邊界
 
-現況：所有業務資料來自 `DEMO_*` 常數與 Pinia；登入為 `loginAs(staffId)`，session 存在 cookie `candor-admin-session`。
+現況：業務資料仍來自 `DEMO_*` 常數與 Pinia。登入已打 `POST /api/v1/admin/auth/login`，operator JWT 放 `localStorage` 鍵 `candor.operator.token`。
 
 目標：新增 admin API client（對齊 younger 的 `useCandorApi` 模式），逐步把 in-scope 頁改為 `已接`；「不做」頁可隱藏、刪除或標示示範-only，但不得打 core。
 

@@ -33,10 +33,24 @@
   },
   "login": {
     "title": "登入顧問後台",
-    "description": "示範登入。之後會換成正式帳號。請選一個帳號進入。",
+    "description": "使用後台操作者帳號登入。",
     "email": "Email",
+    "password": "密碼",
     "role": "角色",
-    "submit": "進入後台（示範）",
+    "submit": "登入",
+    "invalid": "帳號或密碼不正確。",
+    "rateLimited": "嘗試次數過多，請稍後再試。",
+    "failed": "登入失敗，請稍後再試。",
+    "demo": {
+      "title": "示範帳號",
+      "note": "這段之後會拿掉。可複製，或直接填進上面的欄位。",
+      "name": "名稱",
+      "account": "帳號",
+      "password": "密碼",
+      "copy": "複製",
+      "copied": "已複製",
+      "fill": "填入欄位"
+    },
     "pick": "示範帳號",
     "candor": "坦見",
     "roles": {
@@ -50,7 +64,10 @@
     "platform_viewer": "坦見業主（唯讀）",
     "platform_assist": "坦見協助",
     "consultant_ops": "營運",
-    "consultant_admin": "管理員"
+    "consultant_admin": "管理員",
+    "expert": "專家",
+    "ops": "營運",
+    "admin": "管理員"
   },
   "workbench": {
     "title": "工作台",

@@ -42,7 +42,7 @@ const headerTitle = computed(() => {
 })
 
 const roleLabel = computed(() => {
-  const role = session.role
+  const role = session.operator?.role
   return role ? t(`roles.${role}`) : ''
 })
 

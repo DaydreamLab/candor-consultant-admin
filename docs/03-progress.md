@@ -2,7 +2,7 @@
 
 對應 [02-roadmap.md](02-roadmap.md)。
 
-**里程碑總覽**：M0–M1 完成（示範站）；M2–M4 未開始（全切片仍 Mock／殼）。細項見下方勾選與功能表。
+**里程碑總覽**：M0–M1 完成（示範站）；M2 進行中（登入已打 core，`GET /admin/me` 仍 Mock）；M3–M4 未開始。細項見下方勾選與功能表。
 
 **同步規則**：本檔與 [candor-core docs/04-integration-progress.md](https://github.com/DaydreamLab/candor-core/blob/main/docs/04-integration-progress.md) 的 Admin 區必須一致。功能表的**接線**欄變更時，須與本檔下方 API 切片及 candor-core `04` 一起改；**畫面**欄只改本 repo。
 
@@ -59,7 +59,7 @@
 
 | 功能 | 路由／入口 | 畫面 | 接線 | 里程碑 |
 |------|------------|------|------|--------|
-| Operator 登入／目前身份 | `/login` | 殼 | Mock | M2 |
+| Operator 登入／目前身份 | `/login` | 可用 | 接線中 | M2 |
 | 工作台 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
 | 商品與庫存 | `/products`、`/products/new`、`/products/[sku]` | 殼 | Mock | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
@@ -93,7 +93,7 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 登入 | `POST /admin/auth/login` | Mock |
+| 登入 | `POST /admin/auth/login` | 接線中 |
 | 目前身份 | `GET /admin/me` | Mock |
 | Operator CRUD／重設密碼 | `/admin/operators/**` | Mock |
 
@@ -158,4 +158,4 @@
 
 ---
 
-**最後更新**：2026-09-25（補 M2–M4 勾選與總覽；Admin 全切片仍 Mock；文件 M0 就緒）
+**最後更新**：2026-09-28（登入改打 `POST /admin/auth/login`，狀態接線中；`GET /admin/me` 仍 Mock。candor-core `docs/04` 尚未同步）

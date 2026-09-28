@@ -1,45 +1,68 @@
-import type { SessionUser } from '~/types/admin'
-import { DEMO_STAFF, staffToSession } from '~/utils/demo'
+import type { Role, SessionUser } from '~/types/admin'
+import type { Operator, OperatorRole } from '~/types/operator'
+import { adminLogin } from '~/utils/admin-api'
+import {
+  clearOperatorSession,
+  readStoredOperator,
+  writeOperatorSession
+} from '~/utils/operator-session'
 
 export const useSessionStore = defineStore('session', () => {
-  const cookie = useCookie<SessionUser | null>('candor-admin-session', {
-    default: () => null,
-    sameSite: 'lax'
-  })
+  const config = useRuntimeConfig()
+  const legacySession = useCookie<null>('candor-admin-session')
+  legacySession.value = null
 
-  const session = ref<SessionUser | null>(hydrate(cookie.value))
+  const operator = ref<Operator | null>(null)
+  const session = ref<SessionUser | null>(null)
 
-  const isLoggedIn = computed(() => Boolean(session.value))
+  const isLoggedIn = computed(() => Boolean(operator.value))
   const role = computed(() => session.value?.role ?? null)
 
-  function loginAs(staffId: string) {
-    const staff = DEMO_STAFF.find(row => row.id === staffId)
-    if (!staff) {
-      return
-    }
-    const user = staffToSession(staff)
-    session.value = user
-    cookie.value = user
+  function sync() {
+    const stored = readStoredOperator()
+    operator.value = stored?.operator ?? null
+    session.value = stored ? toDemoSession(stored.operator) : null
+  }
+
+  async function login(email: string, password: string) {
+    const data = await adminLogin(config.public.apiBase, email, password)
+    writeOperatorSession(data)
+    sync()
   }
 
   function logout() {
+    clearOperatorSession()
+    operator.value = null
     session.value = null
-    cookie.value = null
   }
 
+  sync()
+
   return {
+    operator,
     session,
     isLoggedIn,
     role,
-    loginAs,
+    sync,
+    login,
     logout
   }
 })
 
-function hydrate(value: SessionUser | null) {
-  if (!value?.id) {
-    return null
+function toDemoSession(operator: Operator): SessionUser {
+  return {
+    id: operator.id,
+    email: operator.email,
+    name: operator.name,
+    role: demoRole(operator.role),
+    orgId: null,
+    orgName: null
   }
-  const staff = DEMO_STAFF.find(row => row.id === value.id)
-  return staff ? staffToSession(staff) : null
+}
+
+function demoRole(role: OperatorRole): Role {
+  if (role === 'admin') {
+    return 'consultant_admin'
+  }
+  return 'consultant_ops'
 }

@@ -33,10 +33,24 @@
   },
   "login": {
     "title": "Sign in to consultant admin",
-    "description": "Demo login. Pick an account to enter. This will be replaced by real accounts later.",
+    "description": "Sign in with an operator account.",
     "email": "Email",
+    "password": "Password",
     "role": "Role",
-    "submit": "Enter admin (demo)",
+    "submit": "Sign in",
+    "invalid": "Incorrect email or password.",
+    "rateLimited": "Too many attempts. Try again later.",
+    "failed": "Sign-in failed. Try again later.",
+    "demo": {
+      "title": "Demo account",
+      "note": "This block will be removed later. Copy the values, or fill the fields above.",
+      "name": "Name",
+      "account": "Account",
+      "password": "Password",
+      "copy": "Copy",
+      "copied": "Copied",
+      "fill": "Fill fields"
+    },
     "pick": "Demo accounts",
     "candor": "Candor",
     "roles": {
@@ -50,7 +64,10 @@
     "platform_viewer": "Candor owner (read-only)",
     "platform_assist": "Candor assist",
     "consultant_ops": "Operations",
-    "consultant_admin": "Admin"
+    "consultant_admin": "Admin",
+    "expert": "Expert",
+    "ops": "Operations",
+    "admin": "Admin"
   },
   "workbench": {
     "title": "Workbench",
