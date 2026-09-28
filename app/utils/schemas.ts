@@ -31,23 +31,6 @@ export const labSchema = z.object({
   status: z.enum(['unscheduled', 'scheduled', 'awaiting_report', 'report_ready'])
 })
 
-export const productSchema = z.object({
-  sku: z.string().min(1),
-  orgId: z.string().min(1),
-  name: z.string().min(1),
-  nameEn: z.string().min(1),
-  aLabel: z.string().min(1),
-  aLabelEn: z.string().min(1),
-  spec: z.string().min(1),
-  cost: z.coerce.number().min(0),
-  priceToA: z.coerce.number().min(0),
-  labelVersion: z.string().min(1),
-  image: z.string().nullable().optional(),
-  onHand: z.coerce.number().int().min(0),
-  reserved: z.coerce.number().int().min(0),
-  reorderAt: z.coerce.number().int().min(0)
-})
-
 export const selectionLineSchema = z.object({
   caseId: z.string().min(1),
   sku: z.string().min(1),
@@ -83,7 +66,6 @@ export const staffSchema = z.object({
 
 export type CaseForm = z.output<typeof caseSchema>
 export type LabForm = z.output<typeof labSchema>
-export type ProductForm = z.output<typeof productSchema>
 export type SelectionLineForm = z.output<typeof selectionLineSchema>
 export type ShipmentForm = z.output<typeof shipmentSchema>
 export type InvoiceForm = z.output<typeof invoiceSchema>

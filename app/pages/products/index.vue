@@ -1,157 +1,173 @@
 <script setup lang="ts">
-const localePath = useLocalePath()
-const { locale, t } = useI18n()
-const { moduleDesc } = usePageCopy()
-const { scoped, orgLabel, showOrg, writable } = useOrgScope()
-const ops = useOpsStore()
-const feedback = useOpsFeedback()
+import { AdminApiError, adminListSellableItems } from '~/utils/admin-api'
+import { readOperatorToken } from '~/utils/operator-session'
 
+const config = useRuntimeConfig()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const sellableItems = ref<Record<string, unknown>[]>([])
+const pending = ref(true)
+const errorMessage = ref('')
 const query = ref('')
-const deleteSku = ref<string | null>(null)
 
 const rows = computed(() => {
-  const list = scoped(ops.products).map((product) => {
-    const stock = ops.inventory.find(item => item.sku === product.sku)
-    const onHand = stock?.onHand ?? 0
-    const reserved = stock?.reserved ?? 0
-    const available = onHand - reserved
-    const reorderAt = stock?.reorderAt ?? 0
-    return {
-      ...product,
-      onHand,
-      reserved,
-      available,
-      reorderAt,
-      low: available <= reorderAt
-    }
-  })
   const q = query.value.trim().toLowerCase()
   if (!q) {
-    return list
+    return sellableItems.value
   }
-  return list.filter((row) => {
-    const name = locale.value === 'en' ? row.nameEn : row.name
-    const label = locale.value === 'en' ? row.aLabelEn : row.aLabel
-    return [row.sku, name, label].join(' ').toLowerCase().includes(q)
-  })
+  return sellableItems.value.filter(row => searchableText(row).includes(q))
 })
 
-function yName(row: (typeof rows.value)[number]) {
-  return locale.value === 'en' ? row.nameEn : row.name
+if (import.meta.client) {
+  void load()
 }
 
-function aName(row: (typeof rows.value)[number]) {
-  return locale.value === 'en' ? row.aLabelEn : row.aLabel
-}
-
-function confirmDelete() {
-  if (!deleteSku.value) {
+async function load() {
+  const token = readOperatorToken()
+  if (!token) {
+    sellableItems.value = []
+    errorMessage.value = t('products.failed')
+    pending.value = false
     return
   }
-  const ok = ops.removeProduct(deleteSku.value)
-  if (!ok) {
-    feedback.warned(t('actions.inUse'))
-  } else {
-    feedback.deleted(deleteSku.value)
+
+  pending.value = true
+  errorMessage.value = ''
+  try {
+    sellableItems.value = await adminListSellableItems(config.public.apiBase, token)
+  } catch (error) {
+    sellableItems.value = []
+    errorMessage.value = failText(error)
+  } finally {
+    pending.value = false
   }
-  deleteSku.value = null
+}
+
+function openItem(row: Record<string, unknown>) {
+  const id = idOf(row)
+  if (!id) {
+    return
+  }
+  void navigateTo(localePath(`/products/${encodeURIComponent(id)}`))
+}
+
+function rowKey(row: Record<string, unknown>, index: number) {
+  return idOf(row) || `sellable-item-${index}`
+}
+
+function searchableText(row: Record<string, unknown>) {
+  return [scalarText(row.name), scalarText(row.sku), scalarText(row.code), scalarText(row.id), scalarText(row.spec)]
+    .join(' ')
+    .toLowerCase()
+}
+
+function nameOf(row: Record<string, unknown>) {
+  return scalarText(row.name).trim()
+}
+
+function imageOf(row: Record<string, unknown>) {
+  return scalarText(row.image).trim() || scalarText(row.image_url).trim()
+}
+
+function metaOf(row: Record<string, unknown>) {
+  const identifier = scalarText(row.sku).trim() || scalarText(row.code).trim() || scalarText(row.id).trim()
+  const spec = scalarText(row.spec).trim()
+  return [identifier, spec].filter(Boolean).join(' · ')
+}
+
+function idOf(row: Record<string, unknown>) {
+  return scalarText(row.id).trim()
+}
+
+function scalarText(value: unknown) {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  return ''
+}
+
+function failText(error: unknown) {
+  const message = error instanceof AdminApiError ? error.message.trim() : ''
+  return message || t('products.failed')
 }
 </script>
 
 <template>
   <PageHeader
     :title="$t('nav.products')"
-    :description="moduleDesc('products')"
+    plain
   >
-    <template #actions>
-      <UInput
-        v-model="query"
-        icon="i-lucide-search"
-        :placeholder="$t('table.search')"
-        class="w-52"
-      />
-      <UButton
-        icon="i-lucide-plus"
-        :disabled="!writable"
-        :to="localePath('/products/new')"
-      >
-        {{ $t('actions.add') }}
-      </UButton>
-    </template>
-
-    <div
-      v-if="!rows.length"
-      class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
+    <p
+      v-if="pending"
+      class="text-sm text-muted"
     >
-      {{ $t('table.empty') }}
-    </div>
+      {{ $t('products.loading') }}
+    </p>
     <div
       v-else
       class="overflow-hidden rounded-xl border border-default bg-elevated"
     >
-      <article
-        v-for="row in rows"
-        :key="row.sku"
-        class="flex flex-wrap items-center gap-5 border-b border-default px-5 py-5 last:border-0 hover:bg-muted/30"
-        role="link"
-        @click="navigateTo(localePath(`/products/${encodeURIComponent(row.sku)}`))"
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default px-4 py-3">
+        <UInput
+          v-model="query"
+          icon="i-lucide-search"
+          :placeholder="$t('table.search')"
+          class="w-52"
+        />
+        <UButton
+          icon="i-lucide-plus"
+          :to="localePath('/products/new')"
+        >
+          {{ $t('actions.add') }}
+        </UButton>
+      </div>
+      <p
+        v-if="errorMessage"
+        class="px-5 py-4 text-sm text-error"
       >
-        <ProductThumb
-          :seed="row.sku"
-          :label="aName(row)"
-          :src="row.image"
-          size="lg"
-        />
-        <div class="min-w-48 flex-1">
-          <p class="text-base font-semibold text-highlighted">
-            {{ aName(row) }}
-          </p>
-          <p class="mt-1 text-sm text-muted">
-            {{ yName(row) }} · {{ row.sku }}
-          </p>
-          <p class="mt-1 text-sm text-dimmed">
-            {{ row.spec }}
-            <span v-if="showOrg"> · {{ orgLabel(row.orgId) }}</span>
-          </p>
-        </div>
-        <div class="grid min-w-44 grid-cols-2 gap-x-6 gap-y-1">
-          <p class="text-sm text-muted">
-            {{ $t('products.costHint') }}
-          </p>
-          <p class="tabular-money text-right text-base font-semibold text-highlighted">
-            {{ money(row.cost) }}
-          </p>
-          <p class="text-sm text-muted">
-            {{ $t('products.priceHint') }}
-          </p>
-          <p class="tabular-money text-right text-base font-semibold text-highlighted">
-            {{ money(row.priceToA) }}
-          </p>
-        </div>
-        <div class="min-w-28 text-base">
-          <p class="text-sm text-muted">
-            {{ $t('col.onHand') }} {{ row.onHand }}
-          </p>
-          <p class="mt-1 font-medium text-highlighted">
-            {{ $t('col.available') }} {{ row.available }}
-          </p>
-        </div>
-        <StatusBadge
-          :label="row.low ? $t('products.lowStock') : $t('products.inStock')"
-          :color="row.low ? 'error' : 'success'"
-        />
-        <RowActions
-          :edit="false"
-          :disabled="!writable"
-          @remove="deleteSku = row.sku"
-        />
-      </article>
+        {{ errorMessage }}
+      </p>
+      <p
+        v-else-if="!rows.length"
+        class="p-10 text-center text-base text-muted"
+      >
+        {{ $t('products.empty') }}
+      </p>
+      <template v-else>
+        <article
+          v-for="(row, index) in rows"
+          :key="rowKey(row, index)"
+          class="flex items-center gap-4 border-b border-default px-5 py-4 last:border-0"
+          :class="idOf(row) ? 'cursor-pointer hover:bg-muted/30' : ''"
+          @click="openItem(row)"
+        >
+          <img
+            v-if="imageOf(row)"
+            :src="imageOf(row)"
+            alt=""
+            class="size-16 shrink-0 rounded-lg object-cover"
+          >
+          <div class="min-w-0">
+            <p
+              v-if="nameOf(row)"
+              class="text-base font-semibold text-highlighted"
+            >
+              {{ nameOf(row) }}
+            </p>
+            <p
+              v-if="metaOf(row)"
+              class="text-sm text-muted"
+              :class="nameOf(row) ? 'mt-1' : ''"
+            >
+              {{ metaOf(row) }}
+            </p>
+          </div>
+        </article>
+      </template>
     </div>
-
-    <ConfirmDelete
-      :open="Boolean(deleteSku)"
-      @update:open="(open) => { if (!open) deleteSku = null }"
-      @confirm="confirmDelete"
-    />
   </PageHeader>
 </template>

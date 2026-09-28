@@ -424,17 +424,21 @@
     "emptyDetail": "從左側選一位同事，或按邀請加入。"
   },
   "products": {
-    "lowStock": "低庫存",
-    "inStock": "庫存正常",
-    "costHint": "顧問進貨成本",
-    "priceHint": "向坦見請款單價",
-    "image": "預覽圖",
-    "imageHint": "列表與出貨會顯示這張圖。示範環境存在瀏覽器裡，重新整理後會還原。",
-    "uploadImage": "上傳預覽圖",
-    "replaceImage": "更換圖片",
-    "removeImage": "移除",
-    "imageType": "請上傳 JPG、PNG 或 WebP。",
-    "imageTooLarge": "圖片請小於 2MB。"
+    "loading": "讀取中…",
+    "failed": "無法讀取商品。",
+    "saveFailed": "無法儲存商品。",
+    "deleteFailed": "無法刪除商品。",
+    "empty": "尚無商品",
+    "deleteConfirm": "刪除後無法復原。",
+    "fields": {
+      "image": "照片",
+      "name": "名稱",
+      "identifier": "識別",
+      "spec": "規格",
+      "onHand": "現有",
+      "reserved": "預留",
+      "reorderAt": "補貨點"
+    }
   },
   "shipping": {
     "expandHint": "點開案件可看出貨時間軸。上方仍是這筆的品項縮圖。"

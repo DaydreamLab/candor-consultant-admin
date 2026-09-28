@@ -1,12 +1,16 @@
 import type { BreadcrumbItem } from '@nuxt/ui'
 import { NAV_GROUPS, normalizeAdminPath } from '~/utils/nav'
 
+export function useSellableItemCrumbLabel() {
+  return useState<string | null>('candor-sellable-item-label', () => null)
+}
+
 export function usePageCrumbs() {
   const route = useRoute()
   const localePath = useLocalePath()
-  const { t, locale } = useI18n()
-  const ops = useOpsStore()
+  const { t } = useI18n()
   const orderLabel = useState<string | null>('candor-order-detail-label', () => null)
+  const sellableItemLabel = useSellableItemCrumbLabel()
 
   const items = computed<BreadcrumbItem[]>(() => {
     const current = normalizeAdminPath(route.path)
@@ -19,10 +23,10 @@ export function usePageCrumbs() {
     }
 
     if (current.startsWith('/products/')) {
-      const sku = String(route.params.sku ?? '')
+      const id = String(route.params.id ?? '')
       return [
         { label: t('nav.products'), to: localePath('/products') },
-        { label: productLabel(sku) }
+        { label: sellableItemLabel.value || id }
       ]
     }
 
@@ -49,15 +53,6 @@ export function usePageCrumbs() {
       }
     }
     return t('brandAdmin')
-  }
-
-  function productLabel(sku: string) {
-    const product = ops.productOf(sku)
-    if (!product) {
-      return sku
-    }
-    const name = locale.value === 'en' ? product.nameEn : product.name
-    return name || sku
   }
 
   return { items }

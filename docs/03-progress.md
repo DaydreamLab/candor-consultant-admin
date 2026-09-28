@@ -61,7 +61,7 @@
 |------|------------|------|------|--------|
 | Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 接線中 | M2 |
 | 工作台 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
-| 商品與庫存 | `/products`、`/products/new`、`/products/[sku]` | 殼 | Mock | M3 |
+| 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（商品 CRUD 已接；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
 | 訂單列表 | `/orders` | 可用 | 已接 | M3 |
@@ -110,7 +110,7 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| SellableItem CRUD | `/admin/sellable-items`、`/admin/sellable-item/{id}` | Mock |
+| SellableItem CRUD | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH`／`DELETE /admin/sellable-item/{id}` | 已接 |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
 | PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
 | PackagePlan 建立、更新、刪除、單筆詳情 | `/admin/package-plans`、`/admin/package-plan/{id}` | Mock |
@@ -162,4 +162,4 @@
 
 ---
 
-**最後更新**：2026-09-28（`GET /admin/package-plans` 已接，`/package-plans` 只顯示列表。建立、更新、刪除與單筆詳情仍為 Mock。`GET /admin/order/{id}` 與 `GET /admin/order/{id}/message` 已接，`/orders/{id}` 可讀訂單資料、明細與對話。取消、出貨仍為 Mock。`GET /admin/orders` 已接。`GET /admin/me` 已接；登入切片仍接線中。candor-core `docs/04` 尚未同步）
+**最後更新**：2026-09-28（SellableItem CRUD 已接：`GET`／`POST /admin/sellable-items`、`GET`／`PATCH`／`DELETE /admin/sellable-item/{id}`。`/products` 可列表、新增、開啟 `/products/{id}` 更新與刪除。庫存讀寫與 alerts 仍為 Mock。`GET /admin/package-plans` 已接，`/package-plans` 只顯示列表。建立、更新、刪除與單筆詳情仍為 Mock。`GET /admin/order/{id}` 與 `GET /admin/order/{id}/message` 已接，`/orders/{id}` 可讀訂單資料、明細與對話。取消、出貨仍為 Mock。`GET /admin/orders` 已接。`GET /admin/me` 已接；登入切片仍接線中。candor-core `docs/04` 尚未同步）

@@ -1,6 +1,6 @@
 # Spec 10 — 畫面範圍（in-scope vs 不做）
 
-對照現有側欄（`app/utils/nav.ts`）與 [candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)。訂單列表已接 `GET /admin/orders`；詳情與讀對話已接 `GET /admin/order/{id}`、`GET /admin/order/{id}/message`。方案列表已接 `GET /admin/package-plans`（只顯示）。取消、出貨與其餘空殼路由尚未接 API。
+對照現有側欄（`app/utils/nav.ts`）與 [candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)。訂單列表已接 `GET /admin/orders`；詳情與讀對話已接 `GET /admin/order/{id}`、`GET /admin/order/{id}/message`。方案列表已接 `GET /admin/package-plans`（只顯示）。商品 CRUD 已接 sellable item（列表、單筆、建立、更新、刪除）。庫存讀寫與 alerts、取消、出貨與其餘空殼路由尚未接 API。
 
 未接項目的選單文字與頁面標題後加「開發中」。側欄不加的只有 `orders`、`packagePlans`、`products`。頁面標題同樣不加的還有商品新增／詳情，以及側欄底部姓名進入的 `/account`。
 
@@ -21,7 +21,7 @@
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| products | `/products`、`/products/new`、`/products/[sku]` | **in-scope** | → SellableItem＋inventory |
+| products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 商品 CRUD 已接 `sellable_item`。庫存讀寫與 alerts 仍 Mock |
 | packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新、刪除、單筆詳情仍 Mock |
 | selections | `/selections` | **不做** | keyin／手改組成不採用 |
 | shipping | `/shipping` | **in-scope（語意）** | → 訂單 shipment 推進；勿另立 selection 出貨 API |

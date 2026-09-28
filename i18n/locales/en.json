@@ -424,17 +424,21 @@
     "emptyDetail": "Select a person on the left, or invite someone."
   },
   "products": {
-    "lowStock": "Low stock",
-    "inStock": "In stock",
-    "costHint": "Consultant cost",
-    "priceHint": "Unit price billed to Candor",
-    "image": "Preview image",
-    "imageHint": "Shown in the list and shipping. Demo images stay in the browser and reset on refresh.",
-    "uploadImage": "Upload preview",
-    "replaceImage": "Replace image",
-    "removeImage": "Remove",
-    "imageType": "Please upload JPG, PNG, or WebP.",
-    "imageTooLarge": "Please keep the image under 2MB."
+    "loading": "Loading…",
+    "failed": "Could not load products.",
+    "saveFailed": "Could not save this product.",
+    "deleteFailed": "Could not delete this product.",
+    "empty": "No products yet",
+    "deleteConfirm": "This cannot be undone.",
+    "fields": {
+      "image": "Photo",
+      "name": "Name",
+      "identifier": "Identifier",
+      "spec": "Spec",
+      "onHand": "On hand",
+      "reserved": "Reserved",
+      "reorderAt": "Reorder at"
+    }
   },
   "shipping": {
     "expandHint": "Expand a case to see its shipping timeline. Item thumbnails stay at the top."

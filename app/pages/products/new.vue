@@ -1,47 +1,72 @@
 <script setup lang="ts">
-const localePath = useLocalePath()
-const { moduleDesc } = usePageCopy()
-const { state, load, goList, onSubmit } = useProductEditor(null)
-const { writable } = useOrgScope()
+import { AdminApiError, adminCreateSellableItem } from '~/utils/admin-api'
+import { readOperatorToken } from '~/utils/operator-session'
 
-load()
+const config = useRuntimeConfig()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const saving = ref(false)
+const errorMessage = ref('')
+
+async function onSave(body: Record<string, unknown>) {
+  const token = readOperatorToken()
+  if (!token) {
+    errorMessage.value = t('products.saveFailed')
+    return
+  }
+
+  saving.value = true
+  errorMessage.value = ''
+  try {
+    const created = await adminCreateSellableItem(config.public.apiBase, token, body)
+    const id = idOf(created)
+    if (id) {
+      await navigateTo(localePath(`/products/${encodeURIComponent(id)}`))
+      return
+    }
+    await navigateTo(localePath('/products'))
+  } catch (error) {
+    errorMessage.value = failText(error)
+  } finally {
+    saving.value = false
+  }
+}
+
+function idOf(row: Record<string, unknown>) {
+  const id = row.id
+  if (typeof id === 'string' && id.trim()) {
+    return id.trim()
+  }
+  if (typeof id === 'number' && Number.isFinite(id)) {
+    return String(id)
+  }
+  return ''
+}
+
+function failText(error: unknown) {
+  const message = error instanceof AdminApiError ? error.message.trim() : ''
+  return message || t('products.saveFailed')
+}
 </script>
 
 <template>
   <PageHeader
     :title="$t('actions.add')"
-    :description="moduleDesc('products')"
+    plain
   >
-    <template #actions>
-      <UButton
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-arrow-left"
-        :to="localePath('/products')"
-      >
-        {{ $t('form.back') }}
-      </UButton>
-      <UButton
-        color="neutral"
-        variant="ghost"
-        @click="goList"
-      >
-        {{ $t('actions.cancel') }}
-      </UButton>
-      <UButton
-        type="submit"
-        form="product-form"
-        size="lg"
-        :disabled="!writable"
-      >
-        {{ $t('actions.save') }}
-      </UButton>
-    </template>
-
-    <ProductFormFields
-      v-model:state="state"
-      form-id="product-form"
-      @submit="onSubmit"
+    <p
+      v-if="errorMessage"
+      class="mb-4 text-sm text-error"
+    >
+      {{ errorMessage }}
+    </p>
+    <SellableItemForm
+      mode="create"
+      :sellable-item="null"
+      :saving="saving"
+      :deleting="false"
+      @save="onSave"
     />
   </PageHeader>
 </template>

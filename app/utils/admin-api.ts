@@ -104,6 +104,105 @@ export async function adminListPackagePlans(apiBase: string, token: string) {
   }
 }
 
+export async function adminListSellableItems(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/sellable-items'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readSellableItemRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminCreateSellableItem(apiBase: string, token: string, payload: Record<string, unknown>) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/sellable-items'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetSellableItem(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminUpdateSellableItem(apiBase: string, token: string, id: string, payload: Record<string, unknown>) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminDeleteSellableItem(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminLogin(apiBase: string, email: string, password: string) {
   try {
     const body = await $fetch<AdminSuccess<OperatorLoginData>>(adminUrl(apiBase, '/auth/login'), {
@@ -166,6 +265,30 @@ function packagePlanListOf(data: unknown): unknown[] | null {
   }
   if (Array.isArray(data.package_plans)) {
     return data.package_plans
+  }
+  if (Array.isArray(data.items)) {
+    return data.items
+  }
+  return null
+}
+
+function readSellableItemRows(data: unknown) {
+  const rows = sellableItemListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord)
+}
+
+function sellableItemListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.sellable_items)) {
+    return data.sellable_items
   }
   if (Array.isArray(data.items)) {
     return data.items
