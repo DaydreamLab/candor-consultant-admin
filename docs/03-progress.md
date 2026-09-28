@@ -66,7 +66,8 @@
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
 | 訂單列表 | `/orders` | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話 | `/orders/{id}`（詳情與對話可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
-| PackagePlan 主檔 | `/package-plans`（空殼） | 殼 | Mock | M3 |
+| PackagePlan 列表 | `/package-plans` | 可用 | 已接 | M3 |
+| PackagePlan 建立、更新、刪除、單筆詳情 | —（下一階段） | 無 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | Weight sets | —（可掛設定） | 無 | Mock | M4 |
@@ -111,7 +112,8 @@
 |------|------|------|
 | SellableItem CRUD | `/admin/sellable-items`、`/admin/sellable-item/{id}` | Mock |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
-| PackagePlan CRUD | `/admin/package-plans`、`/admin/package-plan/{id}` | Mock |
+| PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
+| PackagePlan 建立、更新、刪除、單筆詳情 | `/admin/package-plans`、`/admin/package-plan/{id}` | Mock |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock |
 
 ### Orders／shipments
@@ -160,4 +162,4 @@
 
 ---
 
-**最後更新**：2026-09-28（`GET /admin/order/{id}` 與 `GET /admin/order/{id}/message` 已接，`/orders/{id}` 可讀訂單資料、明細與對話。取消、出貨仍為 Mock。`GET /admin/orders` 已接。`GET /admin/me` 已接；登入切片仍接線中。`/package-plans` 仍為空殼。candor-core `docs/04` 尚未同步）
+**最後更新**：2026-09-28（`GET /admin/package-plans` 已接，`/package-plans` 只顯示列表。建立、更新、刪除與單筆詳情仍為 Mock。`GET /admin/order/{id}` 與 `GET /admin/order/{id}/message` 已接，`/orders/{id}` 可讀訂單資料、明細與對話。取消、出貨仍為 Mock。`GET /admin/orders` 已接。`GET /admin/me` 已接；登入切片仍接線中。candor-core `docs/04` 尚未同步）

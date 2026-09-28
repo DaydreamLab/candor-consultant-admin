@@ -85,6 +85,25 @@ export async function adminListOrderMessages(apiBase: string, token: string, id:
   }
 }
 
+export async function adminListPackagePlans(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/package-plans'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readPackagePlanRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminLogin(apiBase: string, email: string, password: string) {
   try {
     const body = await $fetch<AdminSuccess<OperatorLoginData>>(adminUrl(apiBase, '/auth/login'), {
@@ -128,6 +147,30 @@ function orderListOf(data: unknown): unknown[] | null {
   }
   const nested = Object.values(data).find((value): value is unknown[] => Array.isArray(value))
   return nested ?? null
+}
+
+function readPackagePlanRows(data: unknown) {
+  const rows = packagePlanListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord)
+}
+
+function packagePlanListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.package_plans)) {
+    return data.package_plans
+  }
+  if (Array.isArray(data.items)) {
+    return data.items
+  }
+  return null
 }
 
 function readOrderMessages(data: unknown) {

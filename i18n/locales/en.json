@@ -134,6 +134,18 @@
       "assistant": "Assistant"
     }
   },
+  "packagePlans": {
+    "description": "This stage is display only",
+    "loading": "Loading…",
+    "failed": "Could not load package plans.",
+    "empty": "No package plans yet",
+    "columns": {
+      "name": "Name",
+      "status": "Status",
+      "price": "Price",
+      "summary": "Summary"
+    }
+  },
   "roles": {
     "platform_viewer": "Candor owner (read-only)",
     "platform_assist": "Candor assist",

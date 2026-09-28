@@ -134,6 +134,18 @@
       "assistant": "助理"
     }
   },
+  "packagePlans": {
+    "description": "本階段只顯示",
+    "loading": "讀取中…",
+    "failed": "無法讀取方案。",
+    "empty": "尚無方案",
+    "columns": {
+      "name": "名稱",
+      "status": "狀態",
+      "price": "價格",
+      "summary": "內容摘要"
+    }
+  },
   "roles": {
     "platform_viewer": "坦見業主（唯讀）",
     "platform_assist": "坦見協助",
