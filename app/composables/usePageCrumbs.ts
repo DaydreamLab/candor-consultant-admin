@@ -6,6 +6,7 @@ export function usePageCrumbs() {
   const localePath = useLocalePath()
   const { t, locale } = useI18n()
   const ops = useOpsStore()
+  const orderLabel = useState<string | null>('candor-order-detail-label', () => null)
 
   const items = computed<BreadcrumbItem[]>(() => {
     const current = normalizeAdminPath(route.path)
@@ -29,7 +30,7 @@ export function usePageCrumbs() {
       const id = String(route.params.id ?? '')
       return [
         { label: t('nav.orders'), to: localePath('/orders') },
-        { label: id }
+        { label: orderLabel.value || id }
       ]
     }
 

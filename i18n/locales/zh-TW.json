@@ -85,12 +85,53 @@
     "loading": "讀取中…",
     "failed": "無法讀取訂單。",
     "empty": "尚無訂單",
+    "detailFailed": "無法讀取訂單。",
+    "messagesFailed": "無法讀取對話。",
+    "messagesEmpty": "尚無對話",
+    "sections": {
+      "detail": "訂單資料",
+      "lines": "明細",
+      "messages": "對話紀錄"
+    },
     "columns": {
       "number": "編號",
       "status": "狀態",
       "createdAt": "建立時間",
       "summary": "摘要",
       "amount": "金額"
+    },
+    "lineColumns": {
+      "name": "品名",
+      "qty": "數量",
+      "price": "價格"
+    },
+    "fields": {
+      "status": "狀態",
+      "created_at": "建立時間",
+      "amount_total": "金額",
+      "recipient_name": "客戶／收件",
+      "package_plan_name": "方案",
+      "payment_status": "付款狀態",
+      "paid_at": "付款時間",
+      "paid_amount": "付款金額",
+      "period_start": "期間開始",
+      "period_end": "期間結束",
+      "confirmed_at": "確認時間",
+      "cancelled_at": "取消時間",
+      "cancel_reason": "取消原因",
+      "invoice_type": "發票類型",
+      "invoice_carrier": "發票載具",
+      "conversation_id": "對話",
+      "renewal_of_order_id": "續約訂單",
+      "report_id": "報告",
+      "recommendation_run_id": "建議",
+      "updated_at": "更新時間",
+      "user_id": "使用者"
+    },
+    "speakers": {
+      "user": "使用者",
+      "customer": "客戶",
+      "assistant": "助理"
     }
   },
   "roles": {

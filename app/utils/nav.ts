@@ -61,7 +61,7 @@ export function normalizeAdminPath(path: string): string {
   return stripped
 }
 
-/** 頁面標題不加「開發中」：訂單（含詳情殼）、方案、商品（含子頁）、目前帳號。 */
+/** 頁面標題不加「開發中」：訂單（含詳情）、方案、商品（含子頁）、目前帳號。 */
 export function isDevelopingPath(path: string): boolean {
   const current = normalizeAdminPath(path)
   if (current === '/account' || current === '/package-plans') {

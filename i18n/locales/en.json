@@ -85,12 +85,53 @@
     "loading": "Loading…",
     "failed": "Could not load orders.",
     "empty": "No orders yet",
+    "detailFailed": "Could not load this order.",
+    "messagesFailed": "Could not load the conversation.",
+    "messagesEmpty": "No messages yet",
+    "sections": {
+      "detail": "Order",
+      "lines": "Lines",
+      "messages": "Conversation"
+    },
     "columns": {
       "number": "Number",
       "status": "Status",
       "createdAt": "Created",
       "summary": "Summary",
       "amount": "Amount"
+    },
+    "lineColumns": {
+      "name": "Item",
+      "qty": "Qty",
+      "price": "Price"
+    },
+    "fields": {
+      "status": "Status",
+      "created_at": "Created",
+      "amount_total": "Amount",
+      "recipient_name": "Customer / recipient",
+      "package_plan_name": "Package plan",
+      "payment_status": "Payment",
+      "paid_at": "Paid at",
+      "paid_amount": "Paid amount",
+      "period_start": "Period start",
+      "period_end": "Period end",
+      "confirmed_at": "Confirmed",
+      "cancelled_at": "Cancelled",
+      "cancel_reason": "Cancel reason",
+      "invoice_type": "Invoice type",
+      "invoice_carrier": "Invoice carrier",
+      "conversation_id": "Conversation",
+      "renewal_of_order_id": "Renewal of",
+      "report_id": "Report",
+      "recommendation_run_id": "Recommendation",
+      "updated_at": "Updated",
+      "user_id": "User"
+    },
+    "speakers": {
+      "user": "User",
+      "customer": "Customer",
+      "assistant": "Assistant"
     }
   },
   "roles": {
