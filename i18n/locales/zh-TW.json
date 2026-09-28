@@ -45,6 +45,7 @@
     "invalid": "帳號或密碼不正確。",
     "rateLimited": "嘗試次數過多，請稍後再試。",
     "failed": "登入失敗，請稍後再試。",
+    "skip": "先進入後台（不打登入 API）",
     "demo": {
       "title": "示範帳號",
       "note": "這段之後會拿掉。可複製，或直接填進上面的欄位。",
@@ -62,6 +63,22 @@
       "platform_assist": "協助（可微調、留紀錄）",
       "consultant_ops": "營運",
       "consultant_admin": "管理員"
+    }
+  },
+  "operatorMe": {
+    "loading": "讀取中…",
+    "failed": "無法讀取目前帳號。",
+    "fields": {
+      "name": "名稱",
+      "email": "Email",
+      "role": "角色",
+      "status": "狀態",
+      "last_login_at": "上次登入",
+      "id": "ID"
+    },
+    "status": {
+      "active": "使用中",
+      "suspended": "已停用"
     }
   },
   "roles": {

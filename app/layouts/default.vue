@@ -55,6 +55,7 @@ const headerTitle = computed(() => {
 })
 
 const onAccount = computed(() => normalizeAdminPath(route.path) === '/account')
+const { displayName } = useOperatorMe()
 
 const roleLabel = computed(() => {
   const role = session.operator?.role
@@ -127,7 +128,7 @@ async function logout() {
               class="block truncate text-sm font-medium hover:underline"
               :class="onAccount ? 'text-primary' : 'text-highlighted'"
             >
-              {{ session.session?.name }}
+              {{ displayName }}
             </NuxtLink>
             <p class="truncate text-xs text-muted">
               {{ roleLabel }}

@@ -45,6 +45,7 @@
     "invalid": "Incorrect email or password.",
     "rateLimited": "Too many attempts. Try again later.",
     "failed": "Sign-in failed. Try again later.",
+    "skip": "Enter without signing in",
     "demo": {
       "title": "Demo account",
       "note": "This block will be removed later. Copy the values, or fill the fields above.",
@@ -62,6 +63,22 @@
       "platform_assist": "Assist (can tweak, with audit log)",
       "consultant_ops": "Operations",
       "consultant_admin": "Admin"
+    }
+  },
+  "operatorMe": {
+    "loading": "Loading…",
+    "failed": "Could not load the current account.",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "last_login_at": "Last login",
+      "id": "ID"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended"
     }
   },
   "roles": {

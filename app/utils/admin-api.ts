@@ -9,6 +9,25 @@ export class AdminApiError extends Error {
   }
 }
 
+export async function adminGetMe(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<Record<string, unknown>>>(adminUrl(apiBase, '/me'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminLogin(apiBase: string, email: string, password: string) {
   try {
     const body = await $fetch<AdminSuccess<OperatorLoginData>>(adminUrl(apiBase, '/auth/login'), {
@@ -27,6 +46,10 @@ export async function adminLogin(apiBase: string, email: string, password: strin
     const message = readMessage(error)
     throw new AdminApiError(statusCode, message)
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function adminUrl(apiBase: string, path: string) {

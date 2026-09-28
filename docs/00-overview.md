@@ -11,7 +11,7 @@
 | | 現況（示範站） | 目標（對接 core） |
 |--|----------------|-------------------|
 | 租戶 | 多顧問公司 Mock（`orgs`） | **單租戶**起步；不做多租戶 UI 契約 |
-| 身份 | `POST /admin/auth/login`（`GET /admin/me` 尚未接） | operator JWT + `GET /admin/me` |
+| 身份 | `POST /admin/auth/login`；`GET /admin/me` 已接（`/account` 唯讀） | operator JWT + `GET /admin/me` |
 | 角色 | `platform_*`／`consultant_*` | `expert`｜`ops`｜`admin` |
 | 資料 | `utils/demo.ts` 記憶體 | `/api/v1/admin/**` |
 

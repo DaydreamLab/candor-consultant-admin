@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { AdminApiError } from '~/utils/admin-api'
+import { writeOperatorSession } from '~/utils/operator-session'
 import { loginSchema } from '~/utils/schemas'
 import type { LoginForm } from '~/utils/schemas'
 
@@ -51,6 +52,23 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   } finally {
     pending.value = false
   }
+}
+
+async function skipLogin() {
+  writeOperatorSession({
+    token: 'local-bypass',
+    expires_in: 8 * 60 * 60,
+    operator: {
+      id: 'local-bypass',
+      role: 'admin',
+      email: 'local@candor.dev',
+      name: '本地預覽',
+      status: 'active',
+      last_login_at: null
+    }
+  })
+  session.sync()
+  await navigateTo(localePath('/'))
 }
 
 function fillDemoAccount(account: typeof demoAccounts[number]) {
@@ -145,6 +163,16 @@ function describeLoginError(error: unknown) {
         :loading="pending"
       >
         {{ $t('login.submit') }}
+      </UButton>
+      <UButton
+        type="button"
+        block
+        size="lg"
+        color="neutral"
+        variant="outline"
+        @click="skipLogin"
+      >
+        {{ $t('login.skip') }}
       </UButton>
     </UForm>
 
