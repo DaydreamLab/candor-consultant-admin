@@ -81,6 +81,18 @@
       "suspended": "已停用"
     }
   },
+  "orders": {
+    "loading": "讀取中…",
+    "failed": "無法讀取訂單。",
+    "empty": "尚無訂單",
+    "columns": {
+      "number": "編號",
+      "status": "狀態",
+      "createdAt": "建立時間",
+      "summary": "摘要",
+      "amount": "金額"
+    }
+  },
   "roles": {
     "platform_viewer": "坦見業主（唯讀）",
     "platform_assist": "坦見協助",

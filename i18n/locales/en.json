@@ -81,6 +81,18 @@
       "suspended": "Suspended"
     }
   },
+  "orders": {
+    "loading": "Loading…",
+    "failed": "Could not load orders.",
+    "empty": "No orders yet",
+    "columns": {
+      "number": "Number",
+      "status": "Status",
+      "createdAt": "Created",
+      "summary": "Summary",
+      "amount": "Amount"
+    }
+  },
   "roles": {
     "platform_viewer": "Candor owner (read-only)",
     "platform_assist": "Candor assist",

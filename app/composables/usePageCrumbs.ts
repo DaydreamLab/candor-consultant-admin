@@ -25,6 +25,14 @@ export function usePageCrumbs() {
       ]
     }
 
+    if (current.startsWith('/orders/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.orders'), to: localePath('/orders') },
+        { label: id }
+      ]
+    }
+
     return [{ label: pageLabel(current) }]
   })
 

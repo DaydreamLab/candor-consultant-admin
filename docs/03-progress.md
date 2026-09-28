@@ -64,7 +64,8 @@
 | 商品與庫存 | `/products`、`/products/new`、`/products/[sku]` | 殼 | Mock | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
-| 訂單列表／詳情／取消／讀對話 | `/orders`（空殼；詳情未做） | 殼 | Mock | M3 |
+| 訂單列表 | `/orders` | 可用 | 已接 | M3 |
+| 訂單詳情／取消／讀對話 | `/orders/{id}`（空殼） | 殼 | Mock | M3 |
 | PackagePlan 主檔 | `/package-plans`（空殼） | 殼 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
@@ -117,7 +118,8 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 訂單列表／詳情 | `GET /admin/orders`、`GET /admin/order/{id}` | Mock |
+| 訂單列表 | `GET /admin/orders` | 已接 |
+| 訂單詳情 | `GET /admin/order/{id}` | Mock |
 | 讀訂單對話 | `GET /admin/order/{id}/message` | Mock |
 | 取消 | `POST /admin/order/{id}/cancel` | Mock |
 | 出貨建立／推進 | `POST`／`PATCH /admin/order/{id}/shipment` | Mock |
@@ -158,4 +160,4 @@
 
 ---
 
-**最後更新**：2026-09-28（`GET /admin/me` 已接，`/account` 唯讀可用；登入切片仍接線中。`/orders`、`/package-plans` 仍為空殼。candor-core `docs/04` 尚未同步）
+**最後更新**：2026-09-28（`GET /admin/orders` 已接，`/orders` 可點進 `/orders/{id}` 空殼。詳情、對話、取消、出貨仍為 Mock。`GET /admin/me` 已接；登入切片仍接線中。`/package-plans` 仍為空殼。candor-core `docs/04` 尚未同步）

@@ -28,6 +28,25 @@ export async function adminGetMe(apiBase: string, token: string) {
   }
 }
 
+export async function adminListOrders(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/orders'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readOrderRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminLogin(apiBase: string, email: string, password: string) {
   try {
     const body = await $fetch<AdminSuccess<OperatorLoginData>>(adminUrl(apiBase, '/auth/login'), {
@@ -46,6 +65,31 @@ export async function adminLogin(apiBase: string, email: string, password: strin
     const message = readMessage(error)
     throw new AdminApiError(statusCode, message)
   }
+}
+
+function readOrderRows(data: unknown) {
+  const rows = orderListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord)
+}
+
+function orderListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.orders)) {
+    return data.orders
+  }
+  if (Array.isArray(data.items)) {
+    return data.items
+  }
+  const nested = Object.values(data).find((value): value is unknown[] => Array.isArray(value))
+  return nested ?? null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
