@@ -11,7 +11,7 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | workbench | `/` | 示範殼 | 可改為訂單／庫存摘要；勿依賴 case 聚合 API |
-| orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/order-detail.vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`。取消與出貨仍 Mock |
+| orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`。取消與出貨仍 Mock |
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`） |
 | labs | `/labs` | **不做** | 檢驗排程不採用 |
 | progress | `/progress` | **不做** | 履約看板不採用 |

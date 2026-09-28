@@ -4,10 +4,6 @@ import { money } from '~/utils/format'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 
-definePageMeta({
-  path: '/orders/:id'
-})
-
 type LineColumn = 'name' | 'qty' | 'price'
 
 const NAME_KEYS = ['name', 'item_name', 'product_name', 'sellable_item_name', 'lab_service_name', 'package_plan_name', 'title']
