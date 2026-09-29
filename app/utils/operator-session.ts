@@ -6,24 +6,43 @@ const PROFILE_KEY = 'candor.operator.profile'
 
 const ROLES = new Set<OperatorRole>(['expert', 'ops', 'admin'])
 
+export type OperatorTokenStore = 'local' | 'session'
+
 export interface StoredOperator {
   operator: Operator
   expiresAt: number
 }
 
-function storage() {
+function browserStore(kind: OperatorTokenStore): Storage | null {
   if (!import.meta.client) {
     return null
   }
-  return window.localStorage
+  return kind === 'local' ? window.localStorage : window.sessionStorage
+}
+
+function activeStore(): Storage | null {
+  if (!import.meta.client) {
+    return null
+  }
+  if (window.sessionStorage.getItem(OPERATOR_TOKEN_KEY)) {
+    return window.sessionStorage
+  }
+  if (window.localStorage.getItem(OPERATOR_TOKEN_KEY)) {
+    return window.localStorage
+  }
+  return null
 }
 
 export function readOperatorToken() {
-  return storage()?.getItem(OPERATOR_TOKEN_KEY) ?? null
+  if (!import.meta.client) {
+    return null
+  }
+  return window.sessionStorage.getItem(OPERATOR_TOKEN_KEY)
+    || window.localStorage.getItem(OPERATOR_TOKEN_KEY)
 }
 
 export function readStoredOperator(): StoredOperator | null {
-  const store = storage()
+  const store = activeStore()
   if (!store) {
     return null
   }
@@ -36,11 +55,16 @@ export function readStoredOperator(): StoredOperator | null {
   return parsed
 }
 
-export function writeOperatorSession(data: OperatorLoginData) {
-  const store = storage()
+export function writeOperatorSession(
+  data: OperatorLoginData,
+  rememberMe: boolean = true
+) {
+  const kind: OperatorTokenStore = rememberMe ? 'local' : 'session'
+  const store = browserStore(kind)
   if (!store) {
     return
   }
+  clearOperatorSession()
   const operator = normalizeOperator(data.operator)
   const expiresAt = Date.now() + data.expires_in * 1000
   if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
@@ -52,12 +76,13 @@ export function writeOperatorSession(data: OperatorLoginData) {
 }
 
 export function clearOperatorSession() {
-  const store = storage()
-  if (!store) {
+  if (!import.meta.client) {
     return
   }
-  store.removeItem(OPERATOR_TOKEN_KEY)
-  store.removeItem(PROFILE_KEY)
+  for (const store of [window.sessionStorage, window.localStorage]) {
+    store.removeItem(OPERATOR_TOKEN_KEY)
+    store.removeItem(PROFILE_KEY)
+  }
 }
 
 function parseProfile(raw: string | null): StoredOperator | null {

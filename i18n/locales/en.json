@@ -40,6 +40,7 @@
     "description": "Sign in with an operator account.",
     "email": "Email",
     "password": "Password",
+    "rememberMe": "Remember me (30 days)",
     "role": "Role",
     "submit": "Sign in",
     "invalid": "Incorrect email or password.",

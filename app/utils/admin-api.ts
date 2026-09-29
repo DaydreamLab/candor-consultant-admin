@@ -203,11 +203,20 @@ export async function adminDeleteSellableItem(apiBase: string, token: string, id
   }
 }
 
-export async function adminLogin(apiBase: string, email: string, password: string) {
+export async function adminLogin(
+  apiBase: string,
+  email: string,
+  password: string,
+  rememberMe: boolean = false
+) {
   try {
     const body = await $fetch<AdminSuccess<OperatorLoginData>>(adminUrl(apiBase, '/auth/login'), {
       method: 'POST',
-      body: { email, password }
+      body: {
+        email,
+        password,
+        remember_me: rememberMe
+      }
     })
     if (body?.status !== 'success' || !body.data?.token || !body.data.operator) {
       throw new AdminApiError(500, '')

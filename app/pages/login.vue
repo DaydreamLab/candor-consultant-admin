@@ -15,7 +15,8 @@ const session = useSessionStore()
 
 const state = reactive<LoginForm>({
   email: '',
-  password: ''
+  password: '',
+  remember_me: false
 })
 const pending = ref(false)
 const errorMessage = ref('')
@@ -45,8 +46,12 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   errorMessage.value = ''
   pending.value = true
   try {
-    await session.login(event.data.email, event.data.password)
-    await navigateTo(localePath('/'))
+    await session.login(event.data.email, event.data.password, Boolean(event.data.remember_me))
+    await nextTick()
+    await reloadNuxtApp({
+      path: localePath('/'),
+      persistState: false
+    })
   } catch (error) {
     errorMessage.value = describeLoginError(error)
   } finally {
@@ -66,9 +71,12 @@ async function skipLogin() {
       status: 'active',
       last_login_at: null
     }
-  })
+  }, true)
   session.sync()
-  await navigateTo(localePath('/'))
+  await reloadNuxtApp({
+    path: localePath('/'),
+    persistState: false
+  })
 }
 
 function fillDemoAccount(account: typeof demoAccounts[number]) {
@@ -148,6 +156,12 @@ function describeLoginError(error: unknown) {
           class="w-full"
         />
       </UFormField>
+
+      <UCheckbox
+        v-model="state.remember_me"
+        name="remember_me"
+        :label="$t('login.rememberMe')"
+      />
 
       <p
         v-if="errorMessage"

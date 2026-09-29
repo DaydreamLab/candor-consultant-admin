@@ -40,6 +40,7 @@
     "description": "使用後台操作者帳號登入。",
     "email": "Email",
     "password": "密碼",
+    "rememberMe": "記住我（30 天）",
     "role": "角色",
     "submit": "登入",
     "invalid": "帳號或密碼不正確。",

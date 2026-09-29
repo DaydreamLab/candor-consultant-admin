@@ -24,9 +24,9 @@ export const useSessionStore = defineStore('session', () => {
     session.value = stored ? toDemoSession(stored.operator) : null
   }
 
-  async function login(email: string, password: string) {
-    const data = await adminLogin(config.public.apiBase, email, password)
-    writeOperatorSession(data)
+  async function login(email: string, password: string, rememberMe: boolean = false) {
+    const data = await adminLogin(config.public.apiBase, email, password, rememberMe)
+    writeOperatorSession(data, rememberMe)
     sync()
   }
 

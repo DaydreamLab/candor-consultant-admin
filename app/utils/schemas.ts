@@ -53,7 +53,8 @@ export const invoiceSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.email(),
-  password: z.string().min(1)
+  password: z.string().min(1),
+  remember_me: z.boolean().optional().default(false)
 })
 
 export const staffSchema = z.object({
