@@ -57,22 +57,30 @@ function rowKey(row: Record<string, unknown>, index: number) {
 }
 
 function searchableText(row: Record<string, unknown>) {
-  return [scalarText(row.name), scalarText(row.sku), scalarText(row.code), scalarText(row.id), scalarText(row.spec)]
+  return [nameOf(row), scalarText(row.sku), scalarText(row.code), scalarText(row.id), specOf(row)]
     .join(' ')
     .toLowerCase()
 }
 
 function nameOf(row: Record<string, unknown>) {
-  return scalarText(row.name).trim()
+  return scalarText(row.name_zh).trim() || scalarText(row.name).trim()
 }
 
 function imageOf(row: Record<string, unknown>) {
-  return scalarText(row.image).trim() || scalarText(row.image_url).trim()
+  const candidate = scalarText(row.image).trim() || scalarText(row.image_url).trim()
+  if (/^https?:\/\//i.test(candidate)) {
+    return candidate
+  }
+  return ''
+}
+
+function specOf(row: Record<string, unknown>) {
+  return scalarText(row.spec_text).trim() || scalarText(row.spec).trim()
 }
 
 function metaOf(row: Record<string, unknown>) {
   const identifier = scalarText(row.sku).trim() || scalarText(row.code).trim() || scalarText(row.id).trim()
-  const spec = scalarText(row.spec).trim()
+  const spec = specOf(row)
   return [identifier, spec].filter(Boolean).join(' · ')
 }
 
