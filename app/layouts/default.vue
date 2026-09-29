@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import type { NavItem } from '~/utils/nav'
 import { normalizeAdminPath } from '~/utils/nav'
 
 const localePath = useLocalePath()
@@ -13,26 +12,28 @@ const open = ref(false)
 
 const groups = computed(() => visibleNavGroups(session.role))
 
-function itemLabel(item: NavItem) {
-  const name = t(`nav.${item.key}`)
-  if (item.developing === false) {
-    return name
-  }
-  return `${name} ${t('nav.developing')}`
-}
-
 const menuGroups = computed(() =>
   groups.value.map(group => ({
     key: group.key,
     label: t(`nav.${group.key}`),
-    items: group.items.map(item => ({
-      label: itemLabel(item),
-      icon: item.icon,
-      to: localePath(item.to),
-      onSelect: () => {
-        open.value = false
+    items: group.items.map((item) => {
+      const menuItem: NavigationMenuItem = {
+        label: t(`nav.${item.key}`),
+        icon: item.icon,
+        to: localePath(item.to),
+        onSelect: () => {
+          open.value = false
+        }
       }
-    }) satisfies NavigationMenuItem)
+      if (item.developing !== false) {
+        menuItem.badge = {
+          label: t('nav.developing'),
+          color: 'neutral',
+          variant: 'subtle'
+        }
+      }
+      return menuItem
+    })
   }))
 )
 
