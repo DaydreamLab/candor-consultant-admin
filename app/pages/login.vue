@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { joinURL } from 'ufo'
 import { AdminApiError } from '~/utils/admin-api'
 import { writeOperatorSession } from '~/utils/operator-session'
 import { loginSchema } from '~/utils/schemas'
@@ -12,6 +13,7 @@ definePageMeta({
 const { t } = useI18n()
 const localePath = useLocalePath()
 const session = useSessionStore()
+const runtimeConfig = useRuntimeConfig()
 
 const state = reactive<LoginForm>({
   email: '',
@@ -39,6 +41,19 @@ const demoAccounts = [
   }
 ] as const
 
+/** Full browser path including app.baseURL (required on GitHub Pages project sites). */
+function appHref(path: string) {
+  return joinURL(runtimeConfig.app.baseURL, path)
+}
+
+async function enterApp() {
+  await nextTick()
+  await reloadNuxtApp({
+    path: appHref(localePath('/')),
+    persistState: false
+  })
+}
+
 async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   if (pending.value) {
     return
@@ -47,11 +62,7 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   pending.value = true
   try {
     await session.login(event.data.email, event.data.password, Boolean(event.data.remember_me))
-    await nextTick()
-    await reloadNuxtApp({
-      path: localePath('/'),
-      persistState: false
-    })
+    await enterApp()
   } catch (error) {
     errorMessage.value = describeLoginError(error)
   } finally {
@@ -73,10 +84,7 @@ async function skipLogin() {
     }
   }, true)
   session.sync()
-  await reloadNuxtApp({
-    path: localePath('/'),
-    persistState: false
-  })
+  await enterApp()
 }
 
 function fillDemoAccount(account: typeof demoAccounts[number]) {
