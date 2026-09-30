@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { normalizeAdminPath } from '~/utils/nav'
 
 const localePath = useLocalePath()
-const route = useRoute()
 const { t } = useI18n()
 const session = useSessionStore()
-const { orgLabel } = useOrgScope()
 
 const open = ref(false)
 
@@ -51,15 +48,14 @@ const navbarCrumbs = computed(() => {
   }))
 })
 
-const onAccount = computed(() => normalizeAdminPath(route.path) === '/account')
 const { displayName } = useOperatorMe()
 
-const roleLabel = computed(() => {
-  const role = session.operator?.role
-  return role ? t(`roles.${role}`) : ''
+const accountEmail = computed(() => session.operator?.email?.trim() ?? '')
+const accountName = computed(() => displayName.value.trim() || accountEmail.value)
+const initials = computed(() => {
+  const source = accountName.value
+  return source ? source.slice(0, 1).toUpperCase() : '?'
 })
-
-const orgSubtitle = computed(() => orgLabel(session.session?.orgId))
 
 async function logout() {
   session.logout()
@@ -104,48 +100,44 @@ async function logout() {
 
       <template #footer="{ collapsed }">
         <div
-          class="flex w-full min-w-0"
-          :class="collapsed ? 'flex-col items-center gap-2' : 'items-center gap-2'"
+          class="flex w-full min-w-0 flex-col gap-2"
+          :class="collapsed ? 'items-center' : ''"
         >
-          <UButton
-            v-if="collapsed"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-circle-user"
-            square
-            :to="localePath('/account')"
-            :aria-label="$t('nav.account')"
-          />
           <div
-            v-else
-            class="min-w-0 flex-1"
+            class="flex items-center gap-1"
+            :class="collapsed ? 'flex-col' : ''"
           >
-            <NuxtLink
-              :to="localePath('/account')"
-              class="block truncate text-sm font-medium hover:underline"
-              :class="onAccount ? 'text-primary' : 'text-highlighted'"
-            >
-              {{ displayName }}
-            </NuxtLink>
-            <p class="truncate text-xs text-muted">
-              {{ roleLabel }}
-            </p>
-            <p
-              v-if="orgSubtitle"
-              class="truncate text-xs text-dimmed"
-            >
-              {{ orgSubtitle }}
-            </p>
+            <LocaleSwitch :collapsed="collapsed" />
+            <ColorModeSwitch />
           </div>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-log-out"
-            :label="collapsed ? undefined : $t('nav.logout')"
-            :block="!collapsed"
-            square
-            @click="logout"
-          />
+          <div
+            class="flex min-w-0 items-center gap-2"
+            :class="collapsed ? 'flex-col' : 'w-full'"
+          >
+            <UUser
+              :name="collapsed ? undefined : accountName"
+              :description="collapsed || !accountEmail ? undefined : accountEmail"
+              :avatar="{ text: initials, alt: accountName }"
+              :to="localePath('/account')"
+              size="sm"
+              class="min-w-0"
+              :class="collapsed ? '' : 'flex-1'"
+              :ui="{
+                wrapper: 'min-w-0',
+                name: 'truncate',
+                description: 'truncate'
+              }"
+            />
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-log-out"
+              square
+              class="shrink-0"
+              :aria-label="$t('nav.logout')"
+              @click="logout"
+            />
+          </div>
         </div>
       </template>
     </UDashboardSidebar>
@@ -184,10 +176,6 @@ async function logout() {
             >
               {{ navbarTitle }}
             </span>
-          </template>
-          <template #right>
-            <LocaleSwitch />
-            <ColorModeSwitch />
           </template>
         </UDashboardNavbar>
       </template>

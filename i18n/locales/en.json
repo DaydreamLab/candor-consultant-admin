@@ -33,8 +33,13 @@
   },
   "colorMode": {
     "label": "Appearance",
+    "current": "Appearance: {mode}",
     "day": "Day",
     "dark": "Night"
+  },
+  "locale": {
+    "zhTW": "Current language: 繁體中文",
+    "en": "Current language: English"
   },
   "login": {
     "title": "Sign in to consultant admin",

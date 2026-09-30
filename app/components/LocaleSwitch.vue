@@ -1,34 +1,27 @@
 <template>
-  <div
-    class="app-locale-switch"
-    role="group"
-    aria-label="Language"
-  >
-    <button
-      v-for="item in localeItems"
-      :key="item.code"
-      type="button"
-      class="app-locale-btn"
-      :class="{ 'app-locale-btn-active': isActive(item.code) }"
-      :aria-pressed="isActive(item.code)"
-      @click="switchTo(item.code)"
-    >
-      {{ item.label }}
-    </button>
-  </div>
+  <UButton
+    color="neutral"
+    variant="ghost"
+    size="sm"
+    :label="collapsed ? shortLabel : label"
+    :aria-label="ariaLabel"
+    class="shrink-0"
+    @click="toggle"
+  />
 </template>
 
 <script setup lang="ts">
 type LocaleCode = 'zh-TW' | 'en'
 
-const { locale, setLocale } = useI18n({ useScope: 'global' })
+withDefaults(defineProps<{
+  collapsed?: boolean
+}>(), {
+  collapsed: false
+})
+
+const { locale, setLocale, t } = useI18n({ useScope: 'global' })
 const switchLocalePath = useSwitchLocalePath()
 const route = useRoute()
-
-const localeItems = [
-  { code: 'zh-TW' as const, label: '繁中' },
-  { code: 'en' as const, label: 'EN' }
-]
 
 const pendingLocale = ref<LocaleCode | null>(null)
 
@@ -44,14 +37,18 @@ const currentLocale = computed<LocaleCode>(() => {
   return 'zh-TW'
 })
 
+const label = computed(() => currentLocale.value === 'en' ? 'EN' : '繁中')
+const shortLabel = computed(() => currentLocale.value === 'en' ? 'EN' : '繁')
+const ariaLabel = computed(() => t(currentLocale.value === 'en' ? 'locale.en' : 'locale.zhTW'))
+
 watch(locale, (value) => {
   if (pendingLocale.value && value === pendingLocale.value) {
     pendingLocale.value = null
   }
 })
 
-function isActive(code: LocaleCode) {
-  return currentLocale.value === code
+async function toggle() {
+  await switchTo(currentLocale.value === 'en' ? 'zh-TW' : 'en')
 }
 
 async function switchTo(code: LocaleCode) {

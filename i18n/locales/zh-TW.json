@@ -33,8 +33,13 @@
   },
   "colorMode": {
     "label": "外觀",
+    "current": "外觀：{mode}",
     "day": "日間",
     "dark": "夜間"
+  },
+  "locale": {
+    "zhTW": "目前語言：繁體中文",
+    "en": "目前語言：English"
   },
   "login": {
     "title": "登入顧問後台",

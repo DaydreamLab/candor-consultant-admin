@@ -1,28 +1,14 @@
 <template>
-  <div
-    class="app-segment-switch"
-    role="group"
-    :aria-label="$t('colorMode.label')"
-  >
-    <button
-      type="button"
-      class="app-locale-btn"
-      :class="{ 'app-locale-btn-active': !isDark }"
-      :aria-pressed="!isDark"
-      @click="setMode('light')"
-    >
-      {{ $t('colorMode.day') }}
-    </button>
-    <button
-      type="button"
-      class="app-locale-btn"
-      :class="{ 'app-locale-btn-active': isDark }"
-      :aria-pressed="isDark"
-      @click="setMode('dark')"
-    >
-      {{ $t('colorMode.dark') }}
-    </button>
-  </div>
+  <UButton
+    color="neutral"
+    variant="ghost"
+    size="sm"
+    square
+    :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
+    :aria-label="ariaLabel"
+    class="shrink-0"
+    @click="toggle"
+  />
 </template>
 
 <script setup lang="ts">
@@ -37,6 +23,7 @@ interface ColorModeHelper {
 
 const STORAGE_KEY = 'candor-admin-color-mode'
 const colorMode = useColorMode()
+const { t } = useI18n()
 const pending = ref<Appearance | null>(null)
 
 const actual = computed<Appearance>(() => {
@@ -44,6 +31,9 @@ const actual = computed<Appearance>(() => {
 })
 
 const isDark = computed(() => (pending.value ?? actual.value) === 'dark')
+const ariaLabel = computed(() => t('colorMode.current', {
+  mode: isDark.value ? t('colorMode.dark') : t('colorMode.day')
+}))
 
 watch(actual, (mode) => {
   if (pending.value === mode) {
@@ -79,5 +69,9 @@ function setMode(mode: Appearance) {
   if (import.meta.client) {
     applyClass(mode)
   }
+}
+
+function toggle() {
+  setMode(isDark.value ? 'light' : 'dark')
 }
 </script>
