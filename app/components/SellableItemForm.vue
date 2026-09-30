@@ -445,7 +445,7 @@ function httpImage(item: Record<string, unknown> | null) {
   for (const candidate of [
     scalarText(item.image_url).trim(),
     scalarText(item.image).trim(),
-    scalarText(item.image_uri).trim(),
+    scalarText(item.image_uri).trim()
   ]) {
     if (/^https?:\/\//i.test(candidate)) {
       return candidate

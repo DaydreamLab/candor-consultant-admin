@@ -168,7 +168,7 @@ function imageOf(row: Record<string, unknown>) {
   for (const candidate of [
     scalarText(row.image_url).trim(),
     scalarText(row.image).trim(),
-    scalarText(row.image_uri).trim(),
+    scalarText(row.image_uri).trim()
   ]) {
     if (/^https?:\/\//i.test(candidate)) {
       return candidate
