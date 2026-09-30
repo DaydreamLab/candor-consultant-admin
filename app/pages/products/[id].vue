@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isBottlePriceSaveError } from '~/utils/sellable-item-form'
 import { AdminApiError, adminDeleteSellableItem, adminGetSellableItem, adminUpdateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { normalizeAdminPath } from '~/utils/nav'
@@ -21,6 +22,10 @@ const saving = ref(false)
 const deleting = ref(false)
 const errorMessage = ref('')
 const confirmDelete = ref(false)
+const bannerError = computed(() => {
+  const message = errorMessage.value.trim()
+  return message && !isBottlePriceSaveError(message) ? message : ''
+})
 
 watch([editing, saving, deleting, pending, sellableItem, locale], () => {
   if (pending.value || !sellableItem.value) {
@@ -173,10 +178,10 @@ function failText(error: unknown, fallback: string) {
     plain
   >
     <p
-      v-if="errorMessage"
+      v-if="bannerError"
       class="mb-4 text-sm text-error"
     >
-      {{ errorMessage }}
+      {{ bannerError }}
     </p>
     <p
       v-if="pending"
@@ -190,6 +195,7 @@ function failText(error: unknown, fallback: string) {
       :editing="editing"
       :sellable-item="sellableItem"
       :saving="saving"
+      :save-error="errorMessage"
       @save="onSave"
     />
     <ConfirmDelete

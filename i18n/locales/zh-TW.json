@@ -536,7 +536,15 @@
     "empty": "尚無商品",
     "deleteConfirm": "刪除後無法復原。",
     "servingsCount": "{n} 份",
+    "onSale": "販售中",
     "offSale": "停售",
+    "bottlePriceRequired": "販售中的商品，每瓶價格須大於 0。",
+    "sections": {
+      "identity": "商品",
+      "dose": "劑量與價格",
+      "copy": "說明",
+      "supply": "供應"
+    },
     "view": {
       "card": "卡片",
       "list": "列表"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isBottlePriceSaveError } from '~/utils/sellable-item-form'
 import { AdminApiError, adminCreateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -10,6 +11,10 @@ const { set } = bindNavbarActions()
 
 const saving = ref(false)
 const errorMessage = ref('')
+const bannerError = computed(() => {
+  const message = errorMessage.value.trim()
+  return message && !isBottlePriceSaveError(message) ? message : ''
+})
 
 watch([saving, locale], () => {
   set({
@@ -69,16 +74,17 @@ function failText(error: unknown) {
 <template>
   <PageHeader plain>
     <p
-      v-if="errorMessage"
+      v-if="bannerError"
       class="mb-4 text-sm text-error"
     >
-      {{ errorMessage }}
+      {{ bannerError }}
     </p>
     <SellableItemForm
       mode="create"
       editing
       :sellable-item="null"
       :saving="saving"
+      :save-error="errorMessage"
       @save="onSave"
     />
   </PageHeader>

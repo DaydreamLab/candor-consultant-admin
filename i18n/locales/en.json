@@ -536,7 +536,15 @@
     "empty": "No products yet",
     "deleteConfirm": "This cannot be undone.",
     "servingsCount": "{n} servings",
+    "onSale": "On sale",
     "offSale": "Off sale",
+    "bottlePriceRequired": "An on-sale product needs a bottle price greater than 0.",
+    "sections": {
+      "identity": "Product",
+      "dose": "Dose and price",
+      "copy": "Description",
+      "supply": "Supply"
+    },
     "view": {
       "card": "Cards",
       "list": "List"
