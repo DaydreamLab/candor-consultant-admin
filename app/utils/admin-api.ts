@@ -115,6 +115,157 @@ export async function adminGetOrderHealthReport(apiBase: string, token: string, 
   }
 }
 
+export type AdminUserListQuery = {
+  q?: string
+  has_orders?: boolean
+}
+
+export async function adminListUsers(apiBase: string, token: string, query: AdminUserListQuery = {}) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/users'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: compactUserQuery(query)
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readUserRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetUser(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/users/${encodeURIComponent(id)}`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminListUserOrders(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/users/${encodeURIComponent(id)}/orders`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readOrderRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminListUserConversations(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/users/${encodeURIComponent(id)}/conversations`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readConversationRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminListUserConversationMessages(
+  apiBase: string,
+  token: string,
+  userId: string,
+  conversationId: string
+) {
+  try {
+    const path = `/users/${encodeURIComponent(userId)}/conversation/${encodeURIComponent(conversationId)}/messages`
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, path), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readOrderMessages(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminListUserHealthReports(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/users/${encodeURIComponent(id)}/health-reports`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readHealthReportRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetUserHealthReport(
+  apiBase: string,
+  token: string,
+  userId: string,
+  reportId: string
+) {
+  try {
+    const path = `/users/${encodeURIComponent(userId)}/health-report/${encodeURIComponent(reportId)}`
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, path), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminListPackagePlans(apiBase: string, token: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/package-plans'), {
@@ -298,6 +449,69 @@ function readOrderRows(data: unknown) {
   return rows.filter(isRecord)
 }
 
+function readUserRows(data: unknown) {
+  const rows = userListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord)
+}
+
+function userListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.users)) {
+    return data.users
+  }
+  return null
+}
+
+function readConversationRows(data: unknown) {
+  const rows = conversationListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord)
+}
+
+function conversationListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.conversations)) {
+    return data.conversations
+  }
+  return null
+}
+
+function readHealthReportRows(data: unknown) {
+  const rows = healthReportListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord)
+}
+
+function healthReportListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.reports)) {
+    return data.reports
+  }
+  return null
+}
+
 function orderListOf(data: unknown): unknown[] | null {
   if (Array.isArray(data)) {
     return data
@@ -392,6 +606,17 @@ function compactQuery(query: AdminOrderListQuery) {
     if (typeof value === 'string' && value.trim()) {
       params[key] = value.trim()
     }
+  }
+  return params
+}
+
+function compactUserQuery(query: AdminUserListQuery) {
+  const params: Record<string, string | boolean> = {}
+  if (typeof query.q === 'string' && query.q.trim()) {
+    params.q = query.q.trim()
+  }
+  if (typeof query.has_orders === 'boolean') {
+    params.has_orders = query.has_orders
   }
   return params
 }

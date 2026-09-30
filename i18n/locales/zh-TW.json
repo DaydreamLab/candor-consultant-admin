@@ -20,7 +20,7 @@
     "reports": "營運報表",
     "reviews": "簽核",
     "orgs": "顧問公司",
-    "users": "帳號權限",
+    "users": "會員",
     "settings": "設定",
     "account": "目前帳號",
     "developing": "開發中",
@@ -297,7 +297,7 @@
       "invoices": "履約完成後向坦見請款。",
       "reports": "出貨項目、數量與成本，用來對帳。",
       "orgs": "公司資料。",
-      "users": "同事帳號與權限。管理員可邀請或調整角色。",
+      "users": "前台會員列表。可查看訂單、對話與報告上傳。",
       "settings": "通知信箱、出貨倉與坦見標籤版本。履約作業不在這裡。"
     },
     "platform": {
@@ -310,7 +310,7 @@
       "invoices": "履約完成後顧問向坦見請款。不是坦見的分潤帳本。",
       "reports": "出貨項目、數量、成本。坦見可看全部，各顧問公司只看自家。",
       "orgs": "目前合作：Younger、大樹藥局、幼獅藥局。顧問員工登入後看不到這份名單。",
-      "users": "坦見平台帳號，以及各顧問公司人員。權限決定能看還是能改。",
+      "users": "前台會員列表。可查看訂單、對話與報告上傳。",
       "settings": "平台通知信箱與坦見標籤版本。履約作業請走左側工作流程。"
     }
   },
@@ -535,8 +535,78 @@
     "pendingCount": "{n} 件待處理"
   },
   "users": {
-    "inviteHint": "用 Email 邀請同事，並指定角色。點左邊的人可在右側改資料。",
-    "emptyDetail": "從左側選一位同事，或按邀請加入。"
+    "loading": "讀取中…",
+    "failed": "無法讀取會員。",
+    "empty": "尚無會員",
+    "detailFailed": "無法讀取會員詳情。",
+    "notFound": "找不到這位會員。",
+    "filters": {
+      "q": "Email",
+      "qPlaceholder": "email 前綴",
+      "hasOrders": "訂單",
+      "any": "全部",
+      "withOrders": "有訂單",
+      "withoutOrders": "無訂單"
+    },
+    "columns": {
+      "email": "Email",
+      "displayName": "顯示名稱",
+      "createdAt": "建立時間",
+      "orderCount": "訂單",
+      "reportCount": "報告",
+      "anonymized": "去識別化",
+      "detail": "詳細"
+    },
+    "fields": {
+      "email": "Email",
+      "displayName": "顯示名稱",
+      "createdAt": "建立時間",
+      "updatedAt": "更新時間",
+      "orderCount": "訂單數",
+      "reportCount": "報告數",
+      "anonymizedAt": "去識別化時間",
+      "role": "角色"
+    },
+    "anonymized": {
+      "yes": "已去識別化",
+      "no": "—"
+    },
+    "sections": {
+      "summary": "摘要",
+      "orders": "訂單",
+      "conversations": "對話",
+      "reports": "報告上傳",
+      "messages": "對話內容",
+      "reportReading": "報告判讀"
+    },
+    "orders": {
+      "empty": "尚無訂單",
+      "failed": "無法讀取訂單。"
+    },
+    "conversations": {
+      "empty": "尚無對話",
+      "failed": "無法讀取對話。",
+      "columns": {
+        "id": "對話",
+        "goals": "目標",
+        "report": "報告",
+        "createdAt": "建立時間"
+      },
+      "messagesFailed": "無法讀取對話訊息。",
+      "messagesEmpty": "尚無訊息",
+      "pick": "點一列查看訊息"
+    },
+    "reports": {
+      "empty": "尚無報告",
+      "failed": "無法讀取報告。",
+      "columns": {
+        "id": "報告",
+        "status": "狀態",
+        "createdAt": "上傳時間"
+      },
+      "pick": "點一列查看判讀"
+    },
+    "openDetail": "詳細"
   },
   "products": {
     "listTitle": "保健品列表",

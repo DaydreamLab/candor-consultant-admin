@@ -63,7 +63,7 @@
 | 總覽 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
 | 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
-| 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
+| 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
 | 訂單列表 | `/orders` | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話／報告判讀 | `/orders/{id}`（詳情、對話與報告判讀可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
 | PackagePlan 列表 | `/package-plans` | 可用 | 已接 | M3 |
@@ -99,11 +99,14 @@
 | 目前身份 | `GET /admin/me` | 已接 |
 | Operator CRUD／重設密碼 | `/admin/operators/**` | Mock |
 
-### Users
+### Users（會員）
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 列表／詳情 | `GET /admin/users`、`GET /admin/users/{id}` | Mock |
+| 列表／詳情 | `GET /admin/users`、`GET /admin/users/{id}`（僅 `role=member`） | 已接 |
+| 會員訂單 | `GET /admin/users/{id}/orders` | 已接 |
+| 會員對話列表／訊息 | `GET /admin/users/{id}/conversations`、`GET /admin/users/{id}/conversation/{conversationId}/messages` | 已接 |
+| 會員報告列表／判讀 | `GET /admin/users/{id}/health-reports`、`GET /admin/users/{id}/health-report/{reportId}` | 已接 |
 | 代操去識別化 | `DELETE /admin/users/{id}/data` | Mock |
 
 ### Sellable items／inventory／package plans
@@ -164,4 +167,4 @@
 
 ---
 
-**最後更新**：2026-09-30（與 candor-core `docs/04` Admin 區對齊。商品列表／新增／更新已接；刪除按鈕對應的 `DELETE` core 未提供。價格帶只接列表。訂單列表、詳情與對話已接。登入仍接線中）
+**最後更新**：2026-10-01（與 candor-core `docs/04` Admin 區對齊。商品列表／新增／更新已接；刪除按鈕對應的 `DELETE` core 未提供。價格帶只接列表。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。登入仍接線中）

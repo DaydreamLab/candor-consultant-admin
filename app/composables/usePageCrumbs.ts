@@ -10,6 +10,7 @@ export function usePageCrumbs() {
   const localePath = useLocalePath()
   const { t } = useI18n()
   const orderLabel = useState<string | null>('candor-order-detail-label', () => null)
+  const userLabel = useState<string | null>('candor-user-detail-label', () => null)
   const sellableItemLabel = useSellableItemCrumbLabel()
 
   const items = computed<BreadcrumbItem[]>(() => {
@@ -35,6 +36,14 @@ export function usePageCrumbs() {
       return [
         { label: t('nav.orders'), to: localePath('/orders') },
         { label: orderLabel.value || id }
+      ]
+    }
+
+    if (current.startsWith('/users/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.users'), to: localePath('/users') },
+        { label: userLabel.value || id }
       ]
     }
 

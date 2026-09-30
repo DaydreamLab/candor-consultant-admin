@@ -1,349 +1,340 @@
 <script setup lang="ts">
-import { staffSchema } from '~/utils/schemas'
-import type { StaffForm } from '~/utils/schemas'
-import type { Role, StaffRow } from '~/types/admin'
-import { isPlatformRole } from '~/types/admin'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import { AdminApiError, adminListUsers } from '~/utils/admin-api'
+import { readOperatorToken } from '~/utils/operator-session'
 
-const session = useSessionStore()
+type UserColumn = 'email' | 'displayName' | 'createdAt' | 'orderCount' | 'reportCount' | 'anonymized' | 'detail'
+type ColumnAlign = 'left' | 'center' | 'right'
+
+const PAGE_SIZE = 10
+const FILTER_ANY = 'all'
+
+const config = useRuntimeConfig()
+const localePath = useLocalePath()
 const { t } = useI18n()
-const { moduleDesc } = usePageCopy()
-const { orgLabel, showOrg, platform, usersWritable, orgOptions } = useOrgScope()
-const ops = useOpsStore()
-const feedback = useOpsFeedback()
-const { accountStatusOptions, staffRoleOptions } = useSelectOptions()
 
-const selectedId = ref<string | null>(null)
-const creating = ref(false)
-const deleteId = ref<string | null>(null)
-const state = reactive<Partial<StaffForm>>({})
+const users = ref<Record<string, unknown>[]>([])
+const pending = ref(true)
+const errorMessage = ref('')
+const page = ref(1)
+let loadSeq = 0
+
+const filterQ = ref('')
+const filterHasOrders = ref(FILTER_ANY)
+const debouncedQ = ref('')
+
+let qTimer: ReturnType<typeof setTimeout> | null = null
+
+const columns: { key: UserColumn, align: ColumnAlign, width?: string, truncate?: boolean }[] = [
+  { key: 'email', align: 'left', width: 'w-[16rem]', truncate: true },
+  { key: 'displayName', align: 'left', width: 'w-[10rem]', truncate: true },
+  { key: 'createdAt', align: 'left', width: 'w-[9.5rem]' },
+  { key: 'orderCount', align: 'center', width: 'w-[5rem]' },
+  { key: 'reportCount', align: 'center', width: 'w-[5rem]' },
+  { key: 'anonymized', align: 'center', width: 'w-[7rem]' },
+  { key: 'detail', align: 'center', width: 'w-[5.5rem]' }
+]
+
+const hasOrdersOptions = computed(() => [
+  { label: t('users.filters.any'), value: FILTER_ANY },
+  { label: t('users.filters.withOrders'), value: 'true' },
+  { label: t('users.filters.withoutOrders'), value: 'false' }
+])
 
 const rows = computed(() => {
-  if (platform.value) {
-    return ops.staff
+  const start = (page.value - 1) * PAGE_SIZE
+  return users.value.slice(start, start + PAGE_SIZE)
+})
+const paginationTotal = computed(() => users.value.length)
+
+if (import.meta.client) {
+  watch(filterQ, (value) => {
+    if (qTimer) {
+      clearTimeout(qTimer)
+    }
+    qTimer = setTimeout(() => {
+      debouncedQ.value = value.trim()
+    }, 300)
+  })
+
+  watch(
+    [debouncedQ, filterHasOrders],
+    () => {
+      void load()
+    },
+    { immediate: true }
+  )
+}
+
+onUnmounted(() => {
+  if (qTimer) {
+    clearTimeout(qTimer)
   }
-  const orgId = session.session?.orgId
-  return ops.staff.filter(row => row.orgId === orgId)
 })
 
-const selected = computed(() => rows.value.find(row => row.id === selectedId.value) ?? null)
-const detailOpen = computed(() => creating.value || Boolean(selected.value))
-
-function fillCreate() {
-  Object.assign(state, {
-    name: '',
-    email: '',
-    role: 'consultant_ops',
-    orgId: ops.defaultOrgId(),
-    status: 'invited'
-  })
-}
-
-function fillEdit(row: StaffRow) {
-  Object.assign(state, {
-    name: row.name,
-    email: row.email,
-    role: row.role,
-    orgId: row.orgId ?? '',
-    status: row.status
-  })
-}
-
-function openCreate() {
-  if (!usersWritable.value) {
+async function load() {
+  const seq = ++loadSeq
+  const token = readOperatorToken()
+  if (!token) {
+    users.value = []
+    errorMessage.value = t('users.failed')
+    pending.value = false
     return
   }
-  selectedId.value = null
-  creating.value = true
-  fillCreate()
-}
 
-function selectRow(row: StaffRow) {
-  creating.value = false
-  selectedId.value = row.id
-  fillEdit(row)
-}
-
-function closeDetail() {
-  creating.value = false
-  selectedId.value = null
-}
-
-function persistStaff(data: StaffForm, id?: string) {
-  const orgId = isPlatformRole(data.role) ? null : (data.orgId || ops.defaultOrgId())
-  return ops.saveStaff({
-    id,
-    name: data.name,
-    email: data.email,
-    role: data.role,
-    orgId,
-    status: data.status
-  })
-}
-
-function onSubmit(event: FormSubmitEvent<StaffForm>) {
-  const data = event.data
-  const saved = persistStaff(data, selectedId.value ?? undefined)
-  feedback.saved(data.email)
-  creating.value = false
-  if (saved) {
-    selectedId.value = saved.id
-    fillEdit(saved)
-  }
-}
-
-function changeRole(row: StaffRow, role: Role) {
-  if (!usersWritable.value) {
-    return
-  }
-  ops.saveStaff({
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    role,
-    orgId: isPlatformRole(role) ? null : row.orgId,
-    status: row.status
-  })
-  feedback.saved(row.email)
-  if (selectedId.value === row.id) {
-    fillEdit({ ...row, role, orgId: isPlatformRole(role) ? null : row.orgId })
-  }
-}
-
-function confirmDelete() {
-  if (!deleteId.value) {
-    return
-  }
-  const ok = ops.removeStaff(deleteId.value)
-  if (!ok) {
-    feedback.warned(t('actions.selfDelete'))
-  } else {
-    feedback.deleted()
-    if (selectedId.value === deleteId.value) {
-      closeDetail()
+  pending.value = true
+  errorMessage.value = ''
+  page.value = 1
+  try {
+    const hasOrders = filterHasOrders.value === FILTER_ANY
+      ? undefined
+      : filterHasOrders.value === 'true'
+    const fetched = await adminListUsers(config.public.apiBase, token, {
+      q: debouncedQ.value || undefined,
+      has_orders: hasOrders
+    })
+    if (seq !== loadSeq) {
+      return
+    }
+    users.value = fetched
+  } catch (error) {
+    if (seq !== loadSeq) {
+      return
+    }
+    users.value = []
+    const message = error instanceof AdminApiError ? error.message.trim() : ''
+    errorMessage.value = message || t('users.failed')
+  } finally {
+    if (seq === loadSeq) {
+      pending.value = false
     }
   }
-  deleteId.value = null
 }
 
-watch(rows, (list) => {
-  if (selectedId.value && !list.some(row => row.id === selectedId.value)) {
-    selectedId.value = null
+function goToPage(next: number) {
+  if (pending.value || next < 1 || next === page.value) {
+    return
   }
-})
+  page.value = next
+}
+
+function userId(row: Record<string, unknown>) {
+  const id = row.id
+  return typeof id === 'string' && id.trim() ? id : ''
+}
+
+function rowKey(row: Record<string, unknown>, index: number) {
+  return userId(row) || `user-${index}`
+}
+
+function openUser(row: Record<string, unknown>) {
+  const id = userId(row)
+  if (!id) {
+    return
+  }
+  void navigateTo(localePath(`/users/${encodeURIComponent(id)}`))
+}
+
+function columnLabel(key: UserColumn) {
+  return t(`users.columns.${key}`)
+}
+
+function alignClass(align: ColumnAlign) {
+  if (align === 'center') {
+    return 'text-center'
+  }
+  if (align === 'right') {
+    return 'text-right'
+  }
+  return ''
+}
+
+function cellClass(column: { key: UserColumn, align: ColumnAlign, truncate?: boolean }) {
+  const classes = [alignClass(column.align)]
+  if (column.truncate) {
+    classes.push('truncate')
+  }
+  if (column.key === 'email') {
+    classes.push('font-medium text-highlighted')
+  } else if (column.key === 'createdAt') {
+    classes.push('text-muted')
+  }
+  return classes.filter(Boolean).join(' ')
+}
+
+function cellText(row: Record<string, unknown>, key: UserColumn) {
+  switch (key) {
+    case 'email':
+      return textOf(row.email)
+    case 'displayName':
+      return textOf(row.display_name)
+    case 'createdAt':
+      return createdAtOf(row.created_at)
+    case 'orderCount':
+      return countOf(row.order_count)
+    case 'reportCount':
+      return countOf(row.report_count)
+    case 'anonymized':
+      return anonymizedOf(row.anonymized_at)
+    case 'detail':
+      return ''
+  }
+}
+
+function textOf(value: unknown) {
+  if (typeof value === 'string' && value.trim()) {
+    return value
+  }
+  return t('status.na')
+}
+
+function countOf(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
+    return String(Number(value))
+  }
+  return '0'
+}
+
+function anonymizedOf(value: unknown) {
+  if (typeof value === 'string' && value.trim()) {
+    return t('users.anonymized.yes')
+  }
+  return t('users.anonymized.no')
+}
+
+function createdAtOf(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return t('status.na')
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${month}/${day} ${hours}:${minutes}`
+}
 </script>
 
 <template>
   <PageHeader
     :title="$t('nav.users')"
-    :description="moduleDesc('users')"
-    :locked="!usersWritable"
+    plain
   >
-    <template #actions>
-      <UButton
-        icon="i-lucide-user-plus"
-        :disabled="!usersWritable"
-        @click="openCreate"
-      >
-        {{ $t('actions.invite') }}
-      </UButton>
-    </template>
-
-    <p class="mb-4 text-base text-muted">
-      {{ $t('users.inviteHint') }}
-    </p>
-
-    <SplitDetail>
-      <div class="overflow-hidden rounded-xl border border-default bg-elevated">
-        <button
-          v-for="row in rows"
-          :key="row.id"
-          type="button"
-          class="flex w-full flex-wrap items-center gap-4 border-b border-default px-4 py-4 text-left last:border-0 hover:bg-muted/40"
-          :class="row.id === selectedId ? 'bg-primary/5' : ''"
-          @click="selectRow(row)"
-        >
-          <UAvatar
-            :alt="row.name"
-            :text="row.name.slice(0, 1)"
-            size="lg"
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-elevated p-4">
+        <div class="min-w-40 grow basis-40">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('users.filters.q') }}
+          </label>
+          <UInput
+            v-model="filterQ"
+            icon="i-lucide-search"
+            :placeholder="$t('users.filters.qPlaceholder')"
+            class="w-full"
           />
-          <div class="min-w-0 flex-1">
-            <p class="text-base font-semibold text-highlighted">
-              {{ row.name }}
-            </p>
-            <p class="mt-0.5 text-sm text-muted">
-              {{ row.email }}
-            </p>
-            <p
-              v-if="showOrg"
-              class="mt-0.5 text-sm text-dimmed"
-            >
-              {{ orgLabel(row.orgId) }}
-            </p>
-          </div>
-          <div
-            class="min-w-44"
-            @click.stop
-          >
-            <USelect
-              :model-value="row.role"
-              :items="staffRoleOptions"
-              value-key="value"
-              :disabled="!usersWritable"
-              class="w-full"
-              @update:model-value="changeRole(row, $event as Role)"
-            />
-          </div>
-          <StatusBadge
-            :label="$t(`status.${row.status}`)"
-            :color="row.status === 'active' ? 'success' : 'neutral'"
+        </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('users.filters.hasOrders') }}
+          </label>
+          <USelect
+            v-model="filterHasOrders"
+            :items="hasOrdersOptions"
+            value-key="value"
+            class="w-full"
           />
-        </button>
-        <p
-          v-if="!rows.length"
-          class="px-4 py-10 text-center text-base text-muted"
-        >
-          {{ $t('table.empty') }}
-        </p>
+        </div>
       </div>
 
-      <template #detail>
-        <DetailPanel
-          :open="detailOpen"
-          :title="creating ? $t('actions.invite') : selected?.name"
-          :subtitle="selected?.email ?? $t('form.staffTitle')"
-          :empty="$t('users.emptyDetail')"
-          icon="i-lucide-users"
-          @close="closeDetail"
-        >
-          <UForm
-            id="staff-form"
-            :schema="staffSchema"
-            :state="state"
-            class="space-y-4"
-            @submit="onSubmit"
-          >
-            <UFormField
-              name="name"
-              :label="$t('col.name')"
-            >
-              <UInput
-                v-model="state.name"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              name="email"
-              :label="$t('col.email')"
-            >
-              <UInput
-                v-model="state.email"
-                type="email"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              name="role"
-              :label="$t('col.role')"
-            >
-              <USelect
-                v-model="state.role"
-                :items="staffRoleOptions"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              v-if="showOrg && state.role && !isPlatformRole(state.role)"
-              name="orgId"
-              :label="$t('form.orgRequired')"
-            >
-              <USelect
-                v-model="state.orgId"
-                :items="orgOptions()"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              name="status"
-              :label="$t('col.status')"
-            >
-              <USelect
-                v-model="state.status"
-                :items="accountStatusOptions"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-          </UForm>
-          <template #footer>
-            <UButton
-              v-if="selected"
-              color="error"
-              variant="ghost"
-              :disabled="!usersWritable"
-              @click="deleteId = selected.id"
-            >
-              {{ $t('actions.delete') }}
-            </UButton>
-            <UButton
-              type="submit"
-              form="staff-form"
-              :disabled="!usersWritable"
-            >
-              {{ $t('actions.save') }}
-            </UButton>
-          </template>
-        </DetailPanel>
-      </template>
-    </SplitDetail>
-
-    <section
-      v-if="platform"
-      class="mt-8"
-    >
-      <h2 class="mb-2 text-base font-semibold text-highlighted">
-        {{ $t('audit.title') }}
-      </h2>
-      <p class="mb-4 text-base text-muted">
-        {{ $t('audit.hint') }}
+      <p
+        v-if="errorMessage"
+        class="text-sm text-error"
+      >
+        {{ errorMessage }}
       </p>
-      <AdminTable :empty="!ops.auditLog.length">
-        <template #head>
-          <tr>
-            <th>{{ $t('col.lastLogin') }}</th>
-            <th>{{ $t('col.name') }}</th>
-            <th>{{ $t('col.actions') }}</th>
-            <th>{{ $t('col.case') }}</th>
-          </tr>
-        </template>
-        <tr
-          v-for="row in ops.auditLog"
-          :key="row.id"
-          class="border-b border-default last:border-0"
+      <p
+        v-else-if="pending && !users.length"
+        class="text-sm text-muted"
+      >
+        {{ $t('users.loading') }}
+      </p>
+      <template v-else>
+        <p
+          v-if="!users.length"
+          class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
         >
-          <td class="text-muted">
-            {{ row.at }}
-          </td>
-          <td>
-            {{ row.actor }}
-          </td>
-          <td>
-            {{ row.action }}
-          </td>
-          <td class="text-muted">
-            {{ row.target }}
-          </td>
-        </tr>
-      </AdminTable>
-    </section>
-
-    <ConfirmDelete
-      :open="Boolean(deleteId)"
-      @update:open="(open) => { if (!open) deleteId = null }"
-      @confirm="confirmDelete"
-    />
+          {{ $t('users.empty') }}
+        </p>
+        <AdminTable
+          v-else
+          compact
+          fixed
+        >
+          <template #colgroup>
+            <colgroup>
+              <col
+                v-for="column in columns"
+                :key="column.key"
+                :class="column.width"
+              >
+            </colgroup>
+          </template>
+          <template #head>
+            <tr>
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                :class="[column.width, alignClass(column.align)]"
+              >
+                {{ columnLabel(column.key) }}
+              </th>
+            </tr>
+          </template>
+          <tr
+            v-for="(row, index) in rows"
+            :key="rowKey(row, index)"
+            class="border-b border-default last:border-0"
+            :class="userId(row) ? 'cursor-pointer hover:bg-muted/40' : ''"
+            @click="openUser(row)"
+          >
+            <td
+              v-for="column in columns"
+              :key="column.key"
+              :class="cellClass(column)"
+              :title="column.truncate ? cellText(row, column.key) : undefined"
+            >
+              <UButton
+                v-if="column.key === 'detail'"
+                size="xs"
+                variant="soft"
+                color="neutral"
+                @click.stop="openUser(row)"
+              >
+                {{ $t('users.openDetail') }}
+              </UButton>
+              <template v-else>
+                {{ cellText(row, column.key) }}
+              </template>
+            </td>
+          </tr>
+          <template #footer>
+            <div class="flex justify-end border-t border-default px-4 py-3">
+              <UPagination
+                :page="page"
+                :items-per-page="PAGE_SIZE"
+                :total="paginationTotal"
+                :disabled="pending"
+                @update:page="goToPage"
+              />
+            </div>
+          </template>
+        </AdminTable>
+      </template>
+    </div>
   </PageHeader>
 </template>

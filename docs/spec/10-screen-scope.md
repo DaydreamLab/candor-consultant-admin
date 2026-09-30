@@ -1,8 +1,8 @@
 # Spec 10 — 畫面範圍（in-scope vs 不做）
 
-對照現有側欄（`app/utils/nav.ts`）與 [candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)。訂單列表已接 `GET /admin/orders`；詳情、讀對話與報告判讀已接 `GET /admin/order/{id}`、`GET /admin/order/{id}/message`、`GET /admin/order/{id}/health-report`。方案列表已接 `GET /admin/package-plans`（只顯示）。商品列表、單筆、建立、更新已接 sellable item；刪除按鈕呼叫的 `DELETE` core 未提供（停售走 `PATCH` `sale_status`）。庫存讀寫與 alerts、取消、出貨與其餘空殼路由尚未接 API。
+對照現有側欄（`app/utils/nav.ts`）與 [candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)。訂單列表已接 `GET /admin/orders`；詳情、讀對話與報告判讀已接 `GET /admin/order/{id}`、`GET /admin/order/{id}/message`、`GET /admin/order/{id}/health-report`。會員列表／詳情已接 `GET /admin/users`、`GET /admin/users/{id}` 與子資源（訂單、對話、報告）。方案列表已接 `GET /admin/package-plans`（只顯示）。商品列表、單筆、建立、更新已接 sellable item；刪除按鈕呼叫的 `DELETE` core 未提供（停售走 `PATCH` `sale_status`）。庫存讀寫與 alerts、取消、出貨與其餘空殼路由尚未接 API。
 
-未接項目的選單文字與頁面標題後加「開發中」。側欄不加的只有 `orders`、`packagePlans`、`products`。頁面標題同樣不加的還有商品新增／詳情，以及側欄底部姓名進入的 `/account`。
+未接項目的選單文字與頁面標題後加「開發中」。側欄不加的只有 `orders`、`users`、`packagePlans`、`products`。頁面標題同樣不加的還有商品新增／詳情、會員詳情，以及側欄底部姓名進入的 `/account`。
 
 ## 側欄分組
 
@@ -12,6 +12,7 @@
 |---------|------|------|----------|
 | workbench | `/` | 示範殼 | 可改為訂單／庫存摘要；勿依賴 case 聚合 API |
 | orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`，報告判讀已接 `GET /admin/order/{id}/health-report`。取消與出貨仍 Mock |
+| users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`） |
 | labs | `/labs` | **不做** | 檢驗排程不採用 |
 | progress | `/progress` | **不做** | 履約看板不採用 |
@@ -43,7 +44,6 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | orgs | `/orgs` | **不做** | 多租戶不建模 |
-| users | `/users` | **in-scope** | → `GET /admin/users` |
 | settings | `/settings` | 部分 | Operator 帳號／權重入口可落此；勿做 org 設定 |
 
 ### 側欄底部（不在 `NAV_GROUPS`）
@@ -54,7 +54,7 @@
 
 ## 建議新增（尚無獨立 nav）
 
-接線時應有畫面或設定入口（可掛 settings 或新 nav）。訂單列表、詳情、讀對話與報告判讀已接；方案列表已接且只顯示。取消、出貨，以及 `package_plan` 寫入與單筆詳情仍未做：
+接線時應有畫面或設定入口（可掛 settings 或新 nav）。訂單列表、詳情、讀對話與報告判讀已接；會員列表／詳情／訂單／對話／報告已接；方案列表已接且只顯示。取消、出貨，以及 `package_plan` 寫入與單筆詳情仍未做：
 
 | 能力 | Core |
 |------|------|

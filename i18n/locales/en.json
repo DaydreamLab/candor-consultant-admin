@@ -20,7 +20,7 @@
     "reports": "Operations reports",
     "reviews": "Clinical review",
     "orgs": "Consultant firms",
-    "users": "Accounts & access",
+    "users": "Members",
     "settings": "Settings",
     "account": "Current account",
     "developing": "In development",
@@ -297,7 +297,7 @@
       "invoices": "After fulfillment, invoice Candor.",
       "reports": "Shipped items, qty, and cost for reconciliation.",
       "orgs": "Company profile.",
-      "users": "Colleague accounts and access. Admins can invite or adjust.",
+      "users": "Member list. View orders, conversations, and uploaded reports.",
       "settings": "Notification inbox, warehouse, and Candor label versions. Fulfillment work is not here."
     },
     "platform": {
@@ -310,7 +310,7 @@
       "invoices": "After fulfillment, the firm invoices Candor. Not Candor’s revenue-share ledger.",
       "reports": "Shipped items, qty, and cost. Candor sees all firms; each firm sees only itself.",
       "orgs": "Current partners: Younger, Dashu Pharmacy, Young Lion Pharmacy. Firm staff never see this list.",
-      "users": "Candor platform accounts and people at each consultant firm. Roles decide view vs edit.",
+      "users": "Member list. View orders, conversations, and uploaded reports.",
       "settings": "Platform notices and Candor label versions. Fulfillment work lives in the left-hand flow."
     }
   },
@@ -535,8 +535,78 @@
     "pendingCount": "{n} pending"
   },
   "users": {
-    "inviteHint": "Invite a colleague by email and choose a role. Select someone on the left to edit on the right.",
-    "emptyDetail": "Select a person on the left, or invite someone."
+    "loading": "Loading…",
+    "failed": "Could not load members.",
+    "empty": "No members yet",
+    "detailFailed": "Could not load member detail.",
+    "notFound": "Member not found.",
+    "filters": {
+      "q": "Email",
+      "qPlaceholder": "email prefix",
+      "hasOrders": "Orders",
+      "any": "Any",
+      "withOrders": "Has orders",
+      "withoutOrders": "No orders"
+    },
+    "columns": {
+      "email": "Email",
+      "displayName": "Display name",
+      "createdAt": "Created",
+      "orderCount": "Orders",
+      "reportCount": "Reports",
+      "anonymized": "Anonymized",
+      "detail": "Detail"
+    },
+    "fields": {
+      "email": "Email",
+      "displayName": "Display name",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "orderCount": "Orders",
+      "reportCount": "Reports",
+      "anonymizedAt": "Anonymized at",
+      "role": "Role"
+    },
+    "anonymized": {
+      "yes": "Anonymized",
+      "no": "—"
+    },
+    "sections": {
+      "summary": "Summary",
+      "orders": "Orders",
+      "conversations": "Conversations",
+      "reports": "Uploaded reports",
+      "messages": "Messages",
+      "reportReading": "Report reading"
+    },
+    "orders": {
+      "empty": "No orders",
+      "failed": "Could not load orders."
+    },
+    "conversations": {
+      "empty": "No conversations",
+      "failed": "Could not load conversations.",
+      "columns": {
+        "id": "Conversation",
+        "goals": "Goals",
+        "report": "Report",
+        "createdAt": "Created"
+      },
+      "messagesFailed": "Could not load messages.",
+      "messagesEmpty": "No messages",
+      "pick": "Select a row to view messages"
+    },
+    "reports": {
+      "empty": "No reports",
+      "failed": "Could not load reports.",
+      "columns": {
+        "id": "Report",
+        "status": "Status",
+        "createdAt": "Uploaded"
+      },
+      "pick": "Select a row to view reading"
+    },
+    "openDetail": "Detail"
   },
   "products": {
     "listTitle": "Supplement list",

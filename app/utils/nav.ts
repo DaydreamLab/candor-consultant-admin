@@ -21,6 +21,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'workbench', to: '/', icon: 'i-lucide-layout-dashboard' },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
+      { key: 'users', to: '/users', icon: 'i-lucide-users', developing: false },
       { key: 'cases', to: '/cases', icon: 'i-lucide-folder-kanban' },
       { key: 'labs', to: '/labs', icon: 'i-lucide-flask-conical' },
       { key: 'progress', to: '/progress', icon: 'i-lucide-list-checks' },
@@ -52,7 +53,6 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'platform',
     items: [
       { key: 'orgs', to: '/orgs', icon: 'i-lucide-building-2', platformOnly: true },
-      { key: 'users', to: '/users', icon: 'i-lucide-users' },
       { key: 'settings', to: '/settings', icon: 'i-lucide-settings' }
     ]
   }
@@ -66,7 +66,7 @@ export function normalizeAdminPath(path: string): string {
   return stripped
 }
 
-/** 頁面標題不加「開發中」：訂單（含詳情）、方案、商品（含子頁）、目前帳號。 */
+/** 頁面標題不加「開發中」：訂單（含詳情）、方案、商品（含子頁）、會員（含詳情）、目前帳號。 */
 export function isDevelopingPath(path: string): boolean {
   const current = normalizeAdminPath(path)
   if (current === '/account' || current === '/package-plans') {
@@ -76,6 +76,9 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/products' || current.startsWith('/products/')) {
+    return false
+  }
+  if (current === '/users' || current.startsWith('/users/')) {
     return false
   }
   return true
