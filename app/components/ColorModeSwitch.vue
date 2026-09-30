@@ -80,10 +80,4 @@ function setMode(mode: Appearance) {
     applyClass(mode)
   }
 }
-
-onMounted(() => {
-  if (colorMode.preference !== 'light' && colorMode.preference !== 'dark') {
-    setMode('light')
-  }
-})
 </script>
