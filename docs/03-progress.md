@@ -2,7 +2,7 @@
 
 對應 [02-roadmap.md](02-roadmap.md)。
 
-**里程碑總覽**：M0–M1 完成（示範站）；M2 進行中（登入已打 core，`GET /admin/me` 已接；登入切片仍接線中）；M3–M4 未開始。細項見下方勾選與功能表。
+**里程碑總覽**：M0–M1 完成（示範站）；M2 進行中（登入表單打 core，頁上仍有示範帳號與略過登入；`GET /admin/me` 已接）；M3 進行中（商品讀寫、價格帶列表、訂單讀取已接）；M4 未開始。細項見下方勾選與功能表。
 
 **同步規則**：本檔與 [candor-core docs/04-integration-progress.md](https://github.com/DaydreamLab/candor-core/blob/main/docs/04-integration-progress.md) 的 Admin 區必須一致。功能表的**接線**欄變更時，須與本檔下方 API 切片及 candor-core `04` 一起改；**畫面**欄只改本 repo。
 
@@ -61,13 +61,13 @@
 |------|------------|------|------|--------|
 | Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 接線中 | M2 |
 | 總覽 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
-| 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（商品 CRUD 已接；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
+| 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
 | 訂單列表 | `/orders` | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話 | `/orders/{id}`（詳情與對話可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
 | PackagePlan 列表 | `/package-plans` | 可用 | 已接 | M3 |
-| PackagePlan 建立、更新、刪除、單筆詳情 | —（下一階段） | 無 | Mock | M3 |
+| PackagePlan 建立、更新、單筆詳情 | —（下一階段；core 有 `GET /admin/package-plan/{id}`，無刪除端點） | 無 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | Weight sets | —（可掛設定） | 無 | Mock | M4 |
@@ -95,7 +95,7 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 登入 | `POST /admin/auth/login` | 接線中 |
+| 登入 | `POST /admin/auth/login` | 接線中（表單打真 API 與 `remember_me`；頁上仍有示範帳號與略過登入） |
 | 目前身份 | `GET /admin/me` | 已接 |
 | Operator CRUD／重設密碼 | `/admin/operators/**` | Mock |
 
@@ -110,10 +110,11 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| SellableItem CRUD | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH`／`DELETE /admin/sellable-item/{id}` | 已接 |
+| SellableItem 列表／建立／詳情／更新 | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH /admin/sellable-item/{id}` | 已接 |
+| SellableItem 刪除 | `DELETE /admin/sellable-item/{id}` | 接線中（商品頁有按鈕；core 無此端點，停售走 `PATCH` `sale_status`） |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
 | PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
-| PackagePlan 建立、更新、刪除、單筆詳情 | `/admin/package-plans`、`/admin/package-plan/{id}` | Mock |
+| PackagePlan 建立、更新、單筆詳情 | `POST /admin/package-plans`、`GET`／`PATCH /admin/package-plan/{id}` | Mock（`GET` 單筆 core 已有，畫面未呼叫；無刪除端點） |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock |
 
 ### Orders／shipments
@@ -162,4 +163,4 @@
 
 ---
 
-**最後更新**：2026-09-28（SellableItem CRUD 已接：`GET`／`POST /admin/sellable-items`、`GET`／`PATCH`／`DELETE /admin/sellable-item/{id}`。`/products` 可列表、新增、開啟 `/products/{id}` 更新與刪除。庫存讀寫與 alerts 仍為 Mock。`GET /admin/package-plans` 已接，`/package-plans` 只顯示列表。建立、更新、刪除與單筆詳情仍為 Mock。`GET /admin/order/{id}` 與 `GET /admin/order/{id}/message` 已接，`/orders/{id}` 可讀訂單資料、明細與對話。取消、出貨仍為 Mock。`GET /admin/orders` 已接。`GET /admin/me` 已接；登入切片仍接線中。candor-core `docs/04` 尚未同步）
+**最後更新**：2026-09-30（與 candor-core `docs/04` Admin 區對齊。商品列表／新增／更新已接；刪除按鈕對應的 `DELETE` core 未提供。價格帶只接列表。訂單列表、詳情與對話已接。登入仍接線中）

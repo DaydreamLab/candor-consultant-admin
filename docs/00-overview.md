@@ -4,16 +4,16 @@
 
 營運與領域專家需要在後台維護商品／庫存／價格帶、處理訂單出貨、校正報告與發布權重。本 app 是 **商家後台**（operator 端），不是客人端。
 
-評分、訂單真相與 admin API 在 **candor-core**；本專案負責畫面與（目前）示範 Mock。
+評分、訂單真相與 admin API 在 **candor-core**；本專案負責畫面。商品、價格帶列表與訂單讀取已打 core，其餘頁仍是示範 Mock。
 
 ## 現況 vs 目標
 
 | | 現況（示範站） | 目標（對接 core） |
 |--|----------------|-------------------|
 | 租戶 | 多顧問公司 Mock（`orgs`） | **單租戶**起步；不做多租戶 UI 契約 |
-| 身份 | `POST /admin/auth/login`；`GET /admin/me` 已接（`/account` 唯讀） | operator JWT + `GET /admin/me` |
-| 角色 | `platform_*`／`consultant_*` | `expert`｜`ops`｜`admin` |
-| 資料 | `utils/demo.ts` 記憶體 | `/api/v1/admin/**` |
+| 身份 | 登入表單打 `POST /admin/auth/login`（頁上仍有示範帳號與略過）；`GET /admin/me` 已接 | operator JWT + `GET /admin/me`，拿掉略過登入 |
+| 角色 | 登入後為 `expert`｜`ops`｜`admin`；示範頁仍可能出現舊角色 | `expert`｜`ops`｜`admin` |
+| 資料 | 商品、價格帶列表、訂單讀取走 `/api/v1/admin/**`；庫存、出貨、使用者等仍用 `utils/demo.ts` | 全部 in-scope 走 `/api/v1/admin/**` |
 
 ## 目標
 

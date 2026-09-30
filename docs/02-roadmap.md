@@ -42,7 +42,7 @@
 **範圍**
 
 - 既有殼改接：SellableItem／inventory（`/products`）、出貨推進（`/shipping` → shipment）、Users（`/users`）
-- **補頁**（目前功能表畫面 `無`）：訂單列表／詳情／取消／讀對話、PackagePlan、LabService
+- 已有入口：訂單列表／詳情／讀對話、PackagePlan 列表。仍缺：取消、出貨、價格帶寫入與單筆、LabService
 
 **驗收**
 
