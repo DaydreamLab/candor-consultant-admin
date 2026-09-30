@@ -4,38 +4,10 @@ import { money } from '~/utils/format'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 
-type LineColumn = 'name' | 'qty' | 'price'
+type FieldRow = { key: string, label: string, value: string, money?: boolean }
 
-const NAME_KEYS = ['name', 'item_name', 'product_name', 'sellable_item_name', 'lab_service_name', 'package_plan_name', 'title']
-const QTY_KEYS = ['quantity', 'qty']
-const PRICE_KEYS = ['price', 'unit_price', 'amount', 'lab_service_price']
 const TIME_KEYS = ['created_at', 'sent_at', 'timestamp', 'time']
-const LEADING_FIELDS = ['status', 'created_at', 'amount_total', 'recipient_name', 'package_plan_name']
-const SKIP_FIELDS = new Set(['id', 'order_no'])
 const CUSTOMER_ROLES = new Set(['user', 'customer', 'client'])
-const FIELD_LABELS = new Set([
-  'status',
-  'created_at',
-  'amount_total',
-  'recipient_name',
-  'package_plan_name',
-  'payment_status',
-  'paid_at',
-  'paid_amount',
-  'period_start',
-  'period_end',
-  'confirmed_at',
-  'cancelled_at',
-  'cancel_reason',
-  'invoice_type',
-  'invoice_carrier',
-  'conversation_id',
-  'renewal_of_order_id',
-  'report_id',
-  'recommendation_run_id',
-  'updated_at',
-  'user_id'
-])
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -52,9 +24,16 @@ const messagesPending = ref(true)
 const orderError = ref('')
 const messagesError = ref('')
 
-const orderFields = computed(() => fieldsOf(order.value))
-const orderLines = computed(() => linesOf(order.value))
-const lineColumns = computed(() => columnsOf(orderLines.value))
+const summaryFields = computed(() => summaryOf(order.value))
+const recipientFields = computed(() => recipientOf(order.value))
+const packageInfo = computed(() => packageOf(order.value))
+const packageComponents = computed(() => packageInfo.value?.components ?? [])
+const labLines = computed(() => labLinesOf(order.value))
+const payments = computed(() => recordsOf(order.value?.payments))
+const shipment = computed(() => recordOf(order.value?.shipment))
+const daySupplies = computed(() => recordsOf(order.value?.day_supplies))
+const vouchers = computed(() => recordsOf(order.value?.vouchers))
+const techFields = computed(() => techOf(order.value, packageInfo.value?.raw ?? null))
 const chatMessages = computed(() => oldestFirst(messages.value).map(toChatMessage))
 
 if (import.meta.client) {
@@ -121,85 +100,201 @@ function failText(error: unknown, fallback: string) {
   return message || fallback
 }
 
-function fieldsOf(data: Record<string, unknown> | null) {
+function summaryOf(data: Record<string, unknown> | null): FieldRow[] {
   if (!data) {
     return []
   }
-  const values = new Map<string, unknown>()
-  for (const [key, value] of Object.entries(data)) {
-    if (SKIP_FIELDS.has(key) || !isPresentScalar(value)) {
-      continue
-    }
-    values.set(key, value)
+  const rows: FieldRow[] = []
+  pushMapped(rows, 'status', data.status, value => mappedLabel('orderStatus', value))
+  pushMapped(rows, 'payment_status', data.payment_status, value => mappedLabel('paymentStatus', value))
+  pushMoney(rows, 'amount_total', data.amount_total)
+  pushText(rows, 'package_plan_name', data.package_plan_name)
+  pushTime(rows, 'created_at', data.created_at)
+  const period = periodText(data.period_start, data.period_end)
+  if (period) {
+    rows.push({ key: 'period', label: t('orders.fields.period'), value: period })
   }
-  if (!values.has('recipient_name')) {
-    const recipient = data.recipient
-    if (isRecord(recipient) && isPresentScalar(recipient.name)) {
-      values.set('recipient_name', recipient.name)
-    }
+  pushTime(rows, 'paid_at', data.paid_at)
+  pushMoney(rows, 'paid_amount', data.paid_amount)
+  if (data.status === 'confirmed' || isPresentScalar(data.confirmed_at)) {
+    pushTime(rows, 'confirmed_at', data.confirmed_at)
   }
-  const leading = LEADING_FIELDS.filter(key => values.has(key))
-  const rest = [...values.keys()].filter(key => !LEADING_FIELDS.includes(key))
-  return [...leading, ...rest].map(key => ({
-    key,
-    label: fieldLabel(key),
-    value: fieldValue(key, values.get(key)),
-    money: isMoneyKey(key)
-  }))
+  if (data.status === 'cancelled' || isPresentScalar(data.cancelled_at) || isPresentScalar(data.cancel_reason)) {
+    pushTime(rows, 'cancelled_at', data.cancelled_at)
+    pushText(rows, 'cancel_reason', data.cancel_reason)
+  }
+  return rows
 }
 
-function linesOf(data: Record<string, unknown> | null) {
+function recipientOf(data: Record<string, unknown> | null): FieldRow[] {
   if (!data) {
     return []
   }
-  for (const key of ['order_lines', 'lines'] as const) {
-    const value = data[key]
-    if (Array.isArray(value)) {
-      return value.filter(isRecord)
-    }
-  }
-  return []
+  const recipient = recordOf(data.recipient)
+  const rows: FieldRow[] = []
+  pushText(rows, 'recipient_name', recipient?.name ?? data.recipient_name)
+  pushText(rows, 'recipient_phone', recipient?.phone ?? data.recipient_phone)
+  pushText(rows, 'recipient_address', recipient?.address ?? data.recipient_address)
+  pushText(rows, 'recipient_email', recipient?.email ?? data.recipient_email)
+  pushMapped(rows, 'invoice_type', data.invoice_type, value => mappedLabel('invoiceType', value))
+  pushText(rows, 'invoice_carrier', data.invoice_carrier)
+  return rows
 }
 
-function columnsOf(rows: Record<string, unknown>[]): LineColumn[] {
-  const columns: LineColumn[] = []
-  if (rows.some(row => lineValue(row, NAME_KEYS) !== undefined)) {
-    columns.push('name')
+function packageOf(data: Record<string, unknown> | null) {
+  const pkg = recordOf(data?.package)
+  if (!pkg) {
+    return null
   }
-  if (rows.some(row => lineValue(row, QTY_KEYS) !== undefined)) {
-    columns.push('qty')
-  }
-  if (rows.some(row => lineValue(row, PRICE_KEYS) !== undefined)) {
-    columns.push('price')
-  }
-  return columns
+  const meta: FieldRow[] = []
+  pushMoney(meta, 'package_plan_price', pkg.package_plan_price)
+  pushText(meta, 'period_days', pkg.period_days)
+  pushMoney(meta, 'used_amount', pkg.used_amount)
+  pushMoney(meta, 'remaining', pkg.remaining)
+  const components = recordsOf(pkg.components)
+  return { raw: pkg, meta, components }
 }
 
-function lineValue(row: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    if (isPresentScalar(row[key])) {
-      return row[key]
-    }
-  }
-  return undefined
+function labLinesOf(data: Record<string, unknown> | null) {
+  return recordsOf(data?.lines).filter(row => row.kind === 'lab_service')
 }
 
-function lineKey(row: Record<string, unknown>, index: number) {
-  const id = row.id
-  return typeof id === 'string' && id.trim() ? id : `line-${index}`
+function techOf(data: Record<string, unknown> | null, pkg: Record<string, unknown> | null): FieldRow[] {
+  if (!data) {
+    return []
+  }
+  const rows: FieldRow[] = []
+  pushText(rows, 'id', data.id)
+  pushText(rows, 'user_id', data.user_id)
+  pushText(rows, 'conversation_id', data.conversation_id)
+  pushText(rows, 'renewal_of_order_id', data.renewal_of_order_id)
+  pushText(rows, 'report_id', data.report_id)
+  pushText(rows, 'recommendation_run_id', data.recommendation_run_id)
+  pushTime(rows, 'updated_at', data.updated_at)
+  pushText(rows, 'package_id', pkg?.id)
+  pushText(rows, 'composition_hash', pkg?.composition_hash)
+  return rows
 }
 
-function lineCell(row: Record<string, unknown>, column: LineColumn) {
-  if (column === 'name') {
-    const value = lineValue(row, NAME_KEYS)
-    return value === undefined ? t('status.na') : textOf(value)
+function pushText(rows: FieldRow[], key: string, value: unknown) {
+  if (!isPresentScalar(value)) {
+    return
   }
-  if (column === 'qty') {
-    const value = lineValue(row, QTY_KEYS)
-    return value === undefined ? t('status.na') : textOf(value)
+  rows.push({ key, label: t(`orders.fields.${key}`), value: textOf(value) })
+}
+
+function pushMoney(rows: FieldRow[], key: string, value: unknown) {
+  if (!isPresentScalar(value)) {
+    return
   }
-  const value = lineValue(row, PRICE_KEYS)
-  return value === undefined ? t('status.na') : amountText(value)
+  rows.push({ key, label: t(`orders.fields.${key}`), value: amountText(value), money: true })
+}
+
+function pushTime(rows: FieldRow[], key: string, value: unknown) {
+  if (!isPresentScalar(value)) {
+    return
+  }
+  rows.push({ key, label: t(`orders.fields.${key}`), value: timeText(value) })
+}
+
+function pushMapped(rows: FieldRow[], key: string, value: unknown, map: (value: string) => string) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return
+  }
+  rows.push({ key, label: t(`orders.fields.${key}`), value: map(value.trim()) })
+}
+
+function periodText(start: unknown, end: unknown) {
+  const startText = isPresentScalar(start) ? timeText(start) : ''
+  const endText = isPresentScalar(end) ? timeText(end) : ''
+  if (startText && endText) {
+    return `${startText} – ${endText}`
+  }
+  return startText || endText
+}
+
+function mappedLabel(group: string, value: string) {
+  const key = `orders.${group}.${value}`
+  const translated = t(key)
+  return translated === key ? value : translated
+}
+
+function paymentFields(row: Record<string, unknown>): FieldRow[] {
+  const rows: FieldRow[] = []
+  pushMapped(rows, 'method', row.method, value => mappedLabel('paymentMethod', value))
+  pushMapped(rows, 'status', row.status, value => mappedLabel('paymentRecordStatus', value))
+  pushMoney(rows, 'amount', row.amount)
+  pushTime(rows, 'created_at', row.created_at)
+  pushTime(rows, 'settled_at', row.settled_at)
+  pushTime(rows, 'expires_at', row.expires_at)
+  pushText(rows, 'provider_txn_id', row.provider_txn_id)
+  pushText(rows, 'atm_bank_code', row.atm_bank_code)
+  pushText(rows, 'atm_account_no', row.atm_account_no)
+  return rows
+}
+
+function shipmentFields(row: Record<string, unknown>): FieldRow[] {
+  const rows: FieldRow[] = []
+  pushMapped(rows, 'status', row.status, value => mappedLabel('shipmentStatus', value))
+  pushText(rows, 'carrier', row.carrier)
+  pushText(rows, 'tracking_no', row.tracking_no)
+  pushTime(rows, 'picked_at', row.picked_at)
+  pushTime(rows, 'shipped_at', row.shipped_at)
+  pushTime(rows, 'arrived_at', row.arrived_at)
+  pushText(rows, 'note', row.note)
+  return rows
+}
+
+function paymentKey(row: Record<string, unknown>, index: number) {
+  return scalarId(row.id) || `payment-${index}`
+}
+
+function componentKey(row: Record<string, unknown>, index: number) {
+  return scalarId(row.id) || `component-${index}`
+}
+
+function labKey(row: Record<string, unknown>, index: number) {
+  return scalarId(row.id) || `lab-${index}`
+}
+
+function daySupplyKey(row: Record<string, unknown>, index: number) {
+  return scalarId(row.id) || `day-supply-${index}`
+}
+
+function voucherKey(row: Record<string, unknown>, index: number) {
+  return scalarId(row.id) || `voucher-${index}`
+}
+
+function scalarId(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+function labName(row: Record<string, unknown>) {
+  return textOf(row.lab_service_name)
+}
+
+function labPrice(row: Record<string, unknown>) {
+  return amountText(row.lab_service_price ?? row.amount)
+}
+
+function componentName(row: Record<string, unknown>) {
+  return textOf(row.sellable_item_name)
+}
+
+function daySupplyName(row: Record<string, unknown>) {
+  return textOf(row.sellable_item_name)
+}
+
+function voucherName(row: Record<string, unknown>) {
+  return textOf(row.lab_service_name)
+}
+
+function voucherStatus(row: Record<string, unknown>) {
+  return typeof row.status === 'string' ? mappedLabel('voucherStatus', row.status) : t('status.na')
+}
+
+function voucherCode(row: Record<string, unknown>) {
+  return row.status === 'issued' && isPresentScalar(row.code) ? textOf(row.code) : t('status.na')
 }
 
 function oldestFirst(rows: Record<string, unknown>[]) {
@@ -253,8 +348,7 @@ function contentOf(row: Record<string, unknown>) {
 }
 
 function messageId(row: Record<string, unknown>, index: number) {
-  const id = row.id
-  return typeof id === 'string' && id.trim() ? id : `message-${index}`
+  return scalarId(row.id) || `message-${index}`
 }
 
 function messageTime(row: Record<string, unknown>) {
@@ -292,31 +386,6 @@ function speakerLabel(role: string) {
     return t('orders.speakers.assistant')
   }
   return role || t('status.na')
-}
-
-function fieldLabel(key: string) {
-  return FIELD_LABELS.has(key) ? t(`orders.fields.${key}`) : key
-}
-
-function fieldValue(key: string, value: unknown) {
-  if (typeof value === 'boolean') {
-    return value ? t('status.yes') : t('status.no')
-  }
-  if (isMoneyKey(key)) {
-    return amountText(value)
-  }
-  if (isTimeKey(key)) {
-    return timeText(value)
-  }
-  return textOf(value)
-}
-
-function isMoneyKey(key: string) {
-  return key === 'amount' || key === 'amount_total' || key === 'price' || key.endsWith('_amount') || key.endsWith('_price')
-}
-
-function isTimeKey(key: string) {
-  return key.endsWith('_at') || key === 'period_start' || key === 'period_end'
 }
 
 function amountText(value: unknown) {
@@ -369,6 +438,14 @@ function isPresentScalar(value: unknown) {
   return typeof value === 'boolean'
 }
 
+function recordOf(value: unknown): Record<string, unknown> | null {
+  return isRecord(value) ? value : null
+}
+
+function recordsOf(value: unknown) {
+  return Array.isArray(value) ? value.filter(isRecord) : []
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
@@ -401,15 +478,15 @@ function bubbleUi(side: 'left' | 'right') {
       </p>
       <template v-else>
         <section
-          v-if="orderFields.length"
+          v-if="summaryFields.length"
           class="overflow-hidden rounded-xl border border-default"
         >
           <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.detail') }}
+            {{ $t('orders.sections.summary') }}
           </h2>
           <dl class="grid gap-px bg-default sm:grid-cols-2">
             <div
-              v-for="field in orderFields"
+              v-for="field in summaryFields"
               :key="field.key"
               class="bg-elevated px-4 py-3.5"
             >
@@ -427,45 +504,306 @@ function bubbleUi(side: 'left' | 'right') {
         </section>
 
         <section
-          v-if="orderLines.length && lineColumns.length"
+          v-if="recipientFields.length"
+          class="overflow-hidden rounded-xl border border-default"
+        >
+          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.recipient') }}
+          </h2>
+          <dl class="grid gap-px bg-default sm:grid-cols-2">
+            <div
+              v-for="field in recipientFields"
+              :key="field.key"
+              class="bg-elevated px-4 py-3.5"
+            >
+              <dt class="text-sm text-muted">
+                {{ field.label }}
+              </dt>
+              <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                {{ field.value }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section
+          v-if="packageInfo"
           class="overflow-hidden rounded-xl border border-default bg-elevated"
         >
-          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.lines') }}
-          </h2>
-          <div class="overflow-x-auto">
+          <div class="border-b border-default px-4 py-3">
+            <h2 class="text-base font-semibold text-highlighted">
+              {{ $t('orders.sections.package') }}
+            </h2>
+            <p
+              v-if="packageInfo.meta.length"
+              class="mt-1 text-sm text-muted"
+            >
+              <span
+                v-for="(field, index) in packageInfo.meta"
+                :key="field.key"
+              >
+                <template v-if="index > 0"> · </template>
+                {{ field.label }} {{ field.value }}
+              </span>
+            </p>
+          </div>
+          <div
+            v-if="packageComponents.length"
+            class="overflow-x-auto"
+          >
             <table class="w-full text-left text-sm">
               <thead class="border-b border-default bg-muted/40 text-muted">
                 <tr>
-                  <th
-                    v-for="column in lineColumns"
-                    :key="column"
-                    class="px-4 py-3 font-medium"
-                    :class="column === 'price' ? 'text-right' : ''"
-                  >
-                    {{ $t(`orders.lineColumns.${column}`) }}
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.name') }}
+                  </th>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.dailyDose') }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium">
+                    {{ $t('orders.lineColumns.unitPrice') }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium">
+                    {{ $t('orders.lineColumns.monthlyCost') }}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="(row, index) in orderLines"
-                  :key="lineKey(row, index)"
+                  v-for="(row, index) in packageComponents"
+                  :key="componentKey(row, index)"
                   class="border-b border-default last:border-0"
                 >
-                  <td
-                    v-for="column in lineColumns"
-                    :key="column"
-                    class="px-4 py-3 text-highlighted"
-                    :class="column === 'price' ? 'tabular-money text-right font-medium' : ''"
-                  >
-                    {{ lineCell(row, column) }}
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ componentName(row) }}
+                  </td>
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ textOf(row.daily_dose) }}
+                  </td>
+                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                    {{ amountText(row.unit_price) }}
+                  </td>
+                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                    {{ amountText(row.monthly_cost) }}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </section>
+
+        <section
+          v-if="labLines.length"
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+        >
+          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.labLines') }}
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-default bg-muted/40 text-muted">
+                <tr>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.name') }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium">
+                    {{ $t('orders.lineColumns.price') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, index) in labLines"
+                  :key="labKey(row, index)"
+                  class="border-b border-default last:border-0"
+                >
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ labName(row) }}
+                  </td>
+                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                    {{ labPrice(row) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          v-if="payments.length"
+          class="overflow-hidden rounded-xl border border-default"
+        >
+          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.payments') }}
+          </h2>
+          <div class="divide-y divide-default">
+            <dl
+              v-for="(row, index) in payments"
+              :key="paymentKey(row, index)"
+              class="grid gap-px bg-default sm:grid-cols-2"
+            >
+              <div
+                v-for="field in paymentFields(row)"
+                :key="`${paymentKey(row, index)}-${field.key}`"
+                class="bg-elevated px-4 py-3.5"
+              >
+                <dt class="text-sm text-muted">
+                  {{ field.label }}
+                </dt>
+                <dd
+                  class="mt-1 text-sm font-medium break-all text-highlighted"
+                  :class="field.money ? 'tabular-money' : ''"
+                >
+                  {{ field.value }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
+        <section
+          v-if="shipment"
+          class="overflow-hidden rounded-xl border border-default"
+        >
+          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.shipment') }}
+          </h2>
+          <dl class="grid gap-px bg-default sm:grid-cols-2">
+            <div
+              v-for="field in shipmentFields(shipment)"
+              :key="field.key"
+              class="bg-elevated px-4 py-3.5"
+            >
+              <dt class="text-sm text-muted">
+                {{ field.label }}
+              </dt>
+              <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                {{ field.value }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section
+          v-if="daySupplies.length"
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+        >
+          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.daySupplies') }}
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-default bg-muted/40 text-muted">
+                <tr>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.name') }}
+                  </th>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.days') }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium">
+                    {{ $t('orders.lineColumns.dailyPrice') }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium">
+                    {{ $t('orders.lineColumns.price') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, index) in daySupplies"
+                  :key="daySupplyKey(row, index)"
+                  class="border-b border-default last:border-0"
+                >
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ daySupplyName(row) }}
+                  </td>
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ textOf(row.days) }}
+                  </td>
+                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                    {{ amountText(row.daily_price) }}
+                  </td>
+                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                    {{ amountText(row.amount) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          v-if="vouchers.length"
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+        >
+          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.vouchers') }}
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-default bg-muted/40 text-muted">
+                <tr>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.name') }}
+                  </th>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.status') }}
+                  </th>
+                  <th class="px-4 py-3 font-medium">
+                    {{ $t('orders.lineColumns.code') }}
+                  </th>
+                  <th class="px-4 py-3 text-right font-medium">
+                    {{ $t('orders.lineColumns.price') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, index) in vouchers"
+                  :key="voucherKey(row, index)"
+                  class="border-b border-default last:border-0"
+                >
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ voucherName(row) }}
+                  </td>
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ voucherStatus(row) }}
+                  </td>
+                  <td class="px-4 py-3 text-highlighted">
+                    {{ voucherCode(row) }}
+                  </td>
+                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                    {{ amountText(row.price) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <details
+          v-if="techFields.length"
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+        >
+          <summary class="cursor-pointer px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.tech') }}
+          </summary>
+          <dl class="grid gap-px border-t border-default bg-default sm:grid-cols-2">
+            <div
+              v-for="field in techFields"
+              :key="field.key"
+              class="bg-elevated px-4 py-3.5"
+            >
+              <dt class="text-sm text-muted">
+                {{ field.label }}
+              </dt>
+              <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                {{ field.value }}
+              </dd>
+            </div>
+          </dl>
+        </details>
       </template>
 
       <section class="overflow-hidden rounded-xl border border-default bg-elevated">

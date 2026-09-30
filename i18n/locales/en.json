@@ -89,32 +89,63 @@
     "detailFailed": "Could not load this order.",
     "messagesFailed": "Could not load the conversation.",
     "messagesEmpty": "No messages yet",
+    "filters": {
+      "any": "All",
+      "q": "Search",
+      "qPlaceholder": "Order no. or recipient",
+      "status": "Order status",
+      "payment": "Payment",
+      "from": "Created from",
+      "to": "Created to"
+    },
+    "pager": {
+      "prev": "Previous",
+      "next": "Next"
+    },
     "sections": {
-      "detail": "Order",
-      "lines": "Lines",
+      "summary": "Summary",
+      "recipient": "Recipient & invoice",
+      "package": "Package composition",
+      "labLines": "Other lines",
+      "payments": "Payments",
+      "shipment": "Shipment",
+      "daySupplies": "Day supplies",
+      "vouchers": "Vouchers",
+      "tech": "Technical",
       "messages": "Conversation"
     },
     "columns": {
       "number": "Number",
       "status": "Status",
+      "payment": "Payment",
       "createdAt": "Created",
       "summary": "Summary",
       "amount": "Amount"
     },
     "lineColumns": {
       "name": "Item",
-      "qty": "Qty",
-      "price": "Price"
+      "dailyDose": "Daily dose",
+      "unitPrice": "Unit price",
+      "monthlyCost": "Monthly cost",
+      "days": "Days",
+      "dailyPrice": "Daily price",
+      "price": "Price",
+      "code": "Code",
+      "status": "Status"
     },
     "fields": {
       "status": "Status",
       "created_at": "Created",
       "amount_total": "Amount",
-      "recipient_name": "Customer / recipient",
+      "recipient_name": "Recipient",
+      "recipient_phone": "Phone",
+      "recipient_address": "Address",
+      "recipient_email": "Email",
       "package_plan_name": "Package plan",
       "payment_status": "Payment",
       "paid_at": "Paid at",
       "paid_amount": "Paid amount",
+      "period": "Service period",
       "period_start": "Period start",
       "period_end": "Period end",
       "confirmed_at": "Confirmed",
@@ -122,12 +153,73 @@
       "cancel_reason": "Cancel reason",
       "invoice_type": "Invoice type",
       "invoice_carrier": "Invoice carrier",
+      "package_plan_price": "Plan price",
+      "period_days": "Days",
+      "used_amount": "Used amount",
+      "remaining": "Remaining",
+      "method": "Method",
+      "amount": "Amount",
+      "settled_at": "Settled at",
+      "expires_at": "Expires at",
+      "provider_txn_id": "Provider txn",
+      "atm_bank_code": "Bank code",
+      "atm_account_no": "ATM account",
+      "carrier": "Carrier",
+      "tracking_no": "Tracking no.",
+      "picked_at": "Picked at",
+      "shipped_at": "Shipped at",
+      "arrived_at": "Arrived at",
+      "note": "Note",
+      "id": "Order ID",
+      "package_id": "Package ID",
+      "composition_hash": "Composition hash",
       "conversation_id": "Conversation",
       "renewal_of_order_id": "Renewal of",
       "report_id": "Report",
       "recommendation_run_id": "Recommendation",
       "updated_at": "Updated",
       "user_id": "User"
+    },
+    "orderStatus": {
+      "created": "Created",
+      "confirmed": "Confirmed",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "paymentStatus": {
+      "unpaid": "Unpaid",
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "expired": "Expired"
+    },
+    "paymentRecordStatus": {
+      "pending": "Pending",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "expired": "Expired",
+      "refunded": "Refunded"
+    },
+    "paymentMethod": {
+      "card": "Card",
+      "linepay": "LINE Pay",
+      "atm": "ATM"
+    },
+    "shipmentStatus": {
+      "picking": "Picking",
+      "in_transit": "In transit",
+      "arrived": "Arrived"
+    },
+    "invoiceType": {
+      "cloud": "Cloud invoice",
+      "company": "Company",
+      "donate": "Donate",
+      "member": "Member carrier"
+    },
+    "voucherStatus": {
+      "pending": "Pending",
+      "issued": "Issued"
     },
     "speakers": {
       "user": "User",

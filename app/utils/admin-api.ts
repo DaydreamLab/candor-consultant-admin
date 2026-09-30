@@ -28,12 +28,23 @@ export async function adminGetMe(apiBase: string, token: string) {
   }
 }
 
-export async function adminListOrders(apiBase: string, token: string) {
+export type AdminOrderListQuery = {
+  status?: string
+  payment_status?: string
+  q?: string
+  from?: string
+  to?: string
+  limit?: number
+  offset?: number
+}
+
+export async function adminListOrders(apiBase: string, token: string, query: AdminOrderListQuery = {}) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/orders'), {
       headers: {
         Authorization: `Bearer ${token}`
-      }
+      },
+      query: compactQuery(query)
     })
     if (body?.status !== 'success') {
       throw new AdminApiError(500, '')
@@ -322,6 +333,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function adminUrl(apiBase: string, path: string) {
   const base = apiBase.replace(/\/$/, '')
   return `${base}/admin${path}`
+}
+
+function compactQuery(query: AdminOrderListQuery) {
+  const params: Record<string, string | number> = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      params[key] = value
+      continue
+    }
+    if (typeof value === 'string' && value.trim()) {
+      params[key] = value.trim()
+    }
+  }
+  return params
 }
 
 function readStatus(error: unknown) {

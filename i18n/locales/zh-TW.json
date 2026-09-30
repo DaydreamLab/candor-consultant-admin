@@ -89,32 +89,63 @@
     "detailFailed": "無法讀取訂單。",
     "messagesFailed": "無法讀取對話。",
     "messagesEmpty": "尚無對話",
+    "filters": {
+      "any": "全部",
+      "q": "搜尋",
+      "qPlaceholder": "單號或收件人",
+      "status": "訂單狀態",
+      "payment": "付款狀態",
+      "from": "建立起日",
+      "to": "建立迄日"
+    },
+    "pager": {
+      "prev": "上一頁",
+      "next": "下一頁"
+    },
     "sections": {
-      "detail": "訂單資料",
-      "lines": "明細",
+      "summary": "摘要",
+      "recipient": "收件與發票",
+      "package": "方案組成",
+      "labLines": "其他明細",
+      "payments": "付款",
+      "shipment": "出貨",
+      "daySupplies": "日配",
+      "vouchers": "兌換券",
+      "tech": "技術資訊",
       "messages": "對話紀錄"
     },
     "columns": {
       "number": "編號",
       "status": "狀態",
+      "payment": "付款",
       "createdAt": "建立時間",
       "summary": "摘要",
       "amount": "金額"
     },
     "lineColumns": {
       "name": "品名",
-      "qty": "數量",
-      "price": "價格"
+      "dailyDose": "每日劑量",
+      "unitPrice": "單價",
+      "monthlyCost": "月成本",
+      "days": "天數",
+      "dailyPrice": "每日價格",
+      "price": "價格",
+      "code": "核發碼",
+      "status": "狀態"
     },
     "fields": {
       "status": "狀態",
       "created_at": "建立時間",
       "amount_total": "金額",
-      "recipient_name": "客戶／收件",
+      "recipient_name": "收件人",
+      "recipient_phone": "電話",
+      "recipient_address": "地址",
+      "recipient_email": "Email",
       "package_plan_name": "方案",
       "payment_status": "付款狀態",
       "paid_at": "付款時間",
       "paid_amount": "付款金額",
+      "period": "服務期間",
       "period_start": "期間開始",
       "period_end": "期間結束",
       "confirmed_at": "確認時間",
@@ -122,12 +153,73 @@
       "cancel_reason": "取消原因",
       "invoice_type": "發票類型",
       "invoice_carrier": "發票載具",
+      "package_plan_price": "方案價格",
+      "period_days": "天數",
+      "used_amount": "已用金額",
+      "remaining": "剩餘",
+      "method": "付款方式",
+      "amount": "金額",
+      "settled_at": "入帳時間",
+      "expires_at": "到期時間",
+      "provider_txn_id": "交易編號",
+      "atm_bank_code": "銀行代碼",
+      "atm_account_no": "虛擬帳號",
+      "carrier": "物流",
+      "tracking_no": "物流單號",
+      "picked_at": "揀貨時間",
+      "shipped_at": "出貨時間",
+      "arrived_at": "送達時間",
+      "note": "備註",
+      "id": "訂單 ID",
+      "package_id": "方案快照 ID",
+      "composition_hash": "組成雜湊",
       "conversation_id": "對話",
       "renewal_of_order_id": "續約訂單",
       "report_id": "報告",
       "recommendation_run_id": "建議",
       "updated_at": "更新時間",
       "user_id": "使用者"
+    },
+    "orderStatus": {
+      "created": "已建立",
+      "confirmed": "已確認",
+      "shipped": "已出貨",
+      "delivered": "已送達",
+      "cancelled": "已取消"
+    },
+    "paymentStatus": {
+      "unpaid": "未付款",
+      "pending": "付款中",
+      "paid": "已付款",
+      "failed": "付款失敗",
+      "expired": "已逾期"
+    },
+    "paymentRecordStatus": {
+      "pending": "處理中",
+      "succeeded": "成功",
+      "failed": "失敗",
+      "expired": "已逾期",
+      "refunded": "已退款"
+    },
+    "paymentMethod": {
+      "card": "信用卡",
+      "linepay": "LINE Pay",
+      "atm": "ATM"
+    },
+    "shipmentStatus": {
+      "picking": "揀貨中",
+      "in_transit": "運送中",
+      "arrived": "已送達"
+    },
+    "invoiceType": {
+      "cloud": "雲端發票",
+      "company": "公司發票",
+      "donate": "捐贈",
+      "member": "會員載具"
+    },
+    "voucherStatus": {
+      "pending": "待核發",
+      "issued": "已核發"
     },
     "speakers": {
       "user": "使用者",

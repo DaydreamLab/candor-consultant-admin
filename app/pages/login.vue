@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { joinURL } from 'ufo'
 import { AdminApiError } from '~/utils/admin-api'
 import { writeOperatorSession } from '~/utils/operator-session'
 import { loginSchema } from '~/utils/schemas'
@@ -43,7 +42,9 @@ const demoAccounts = [
 
 /** Full browser path including app.baseURL (required on GitHub Pages project sites). */
 function appHref(path: string) {
-  return joinURL(runtimeConfig.app.baseURL, path)
+  const base = String(runtimeConfig.app.baseURL || '/').replace(/\/+$/, '')
+  const suffix = path.startsWith('/') ? path : `/${path}`
+  return `${base}${suffix}` || '/'
 }
 
 async function enterApp() {

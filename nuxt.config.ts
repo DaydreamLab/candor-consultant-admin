@@ -16,11 +16,6 @@ export default defineNuxtConfig({
     baseURL: process.env.NUXT_APP_BASE_URL || '/'
   },
 
-  // Project Pages 深連結／整頁重整時，用 404.html 回落到 SPA。
-  nitro: {
-    preset: 'github_pages'
-  },
-
   css: ['~/assets/css/main.css'],
 
   colorMode: {
@@ -44,6 +39,11 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2026-09-08',
+
+  // Project Pages 深連結／整頁重整時，用 404.html 回落到 SPA。
+  nitro: {
+    preset: 'github_pages'
+  },
 
   vite: {
     resolve: {
