@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { DEMO_SELLABLE_ITEMS } from '~/utils/demo-sellable-items'
+import { AdminApiError, adminListSellableItems } from '~/utils/admin-api'
 import { thumbLetter, thumbTone } from '~/utils/thumb'
+import { readOperatorToken } from '~/utils/operator-session'
 
 const VIEW_STORAGE_KEY = 'candor.products.view'
 const CATEGORY_ALL = 'all'
 const OFF_SALE = new Set(['off_sale', 'discontinued', 'stopped', 'inactive'])
 const SERVING_KEYS = ['servings_per_container', 'serving_per_container', 'serving_per_contain']
 
+const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
 
@@ -107,10 +109,24 @@ function setView(next: 'card' | 'list') {
 }
 
 async function load() {
+  const token = readOperatorToken()
+  if (!token) {
+    sellableItems.value = []
+    errorMessage.value = t('products.failed')
+    pending.value = false
+    return
+  }
+
   pending.value = true
   errorMessage.value = ''
-  sellableItems.value = DEMO_SELLABLE_ITEMS.map(row => ({ ...row }))
-  pending.value = false
+  try {
+    sellableItems.value = await adminListSellableItems(config.public.apiBase, token)
+  } catch (error) {
+    sellableItems.value = []
+    errorMessage.value = failText(error)
+  } finally {
+    pending.value = false
+  }
 }
 
 function openItem(row: Record<string, unknown>) {
@@ -250,6 +266,11 @@ function scalarText(value: unknown) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function failText(error: unknown) {
+  const message = error instanceof AdminApiError ? error.message.trim() : ''
+  return message || t('products.failed')
 }
 </script>
 

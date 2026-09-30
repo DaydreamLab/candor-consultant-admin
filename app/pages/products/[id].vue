@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { AdminApiError, adminDeleteSellableItem, adminUpdateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
+import { AdminApiError, adminDeleteSellableItem, adminGetSellableItem, adminUpdateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
-import { demoSellableItemById } from '~/utils/demo-sellable-items'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 
@@ -66,26 +65,33 @@ async function load(id: string) {
   errorMessage.value = ''
   confirmDelete.value = false
 
-  if (!id) {
+  const token = readOperatorToken()
+  if (!token || !id) {
     pending.value = false
     errorMessage.value = t('products.failed')
     return
   }
 
   pending.value = true
-  const row = demoSellableItemById(id)
-  if (sellableItemId.value !== id) {
-    return
-  }
-  if (!row) {
-    sellableItem.value = null
-    errorMessage.value = t('products.failed')
-  } else {
+  try {
+    const row = await adminGetSellableItem(config.public.apiBase, token, id)
+    if (sellableItemId.value !== id) {
+      return
+    }
     sellableItem.value = row
     crumbLabel.value = itemName(row)
     errorMessage.value = ''
+  } catch (error) {
+    if (sellableItemId.value !== id) {
+      return
+    }
+    sellableItem.value = null
+    errorMessage.value = failText(error, t('products.failed'))
+  } finally {
+    if (sellableItemId.value === id) {
+      pending.value = false
+    }
   }
-  pending.value = false
 }
 
 async function onSave(payload: SellableItemWrite) {
