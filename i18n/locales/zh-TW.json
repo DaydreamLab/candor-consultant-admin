@@ -12,7 +12,7 @@
     "cases": "案件",
     "labs": "採檢",
     "progress": "履約進度",
-    "products": "商品庫存",
+    "products": "保健品",
     "packagePlans": "方案",
     "selections": "案件選品",
     "shipping": "出貨",
@@ -26,6 +26,7 @@
     "developing": "開發中",
     "logout": "登出",
     "ops": "履約",
+    "catalog": "商品",
     "warehouse": "倉儲出貨",
     "finance": "請款與報表",
     "platform": "平台"
@@ -492,7 +493,7 @@
   "form": {
     "caseTitle": "案件",
     "labTitle": "採檢",
-    "productTitle": "商品庫存",
+    "productTitle": "保健品",
     "lineTitle": "選品品項",
     "shipTitle": "出貨",
     "invoiceTitle": "請款單",

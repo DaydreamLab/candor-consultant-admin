@@ -28,10 +28,15 @@ export const NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
+    key: 'catalog',
+    items: [
+      { key: 'packagePlans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
+      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false }
+    ]
+  },
+  {
     key: 'warehouse',
     items: [
-      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false },
-      { key: 'packagePlans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
       { key: 'selections', to: '/selections', icon: 'i-lucide-clipboard-list' },
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck' }
     ]

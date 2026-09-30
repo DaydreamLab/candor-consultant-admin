@@ -12,7 +12,7 @@
     "cases": "Cases",
     "labs": "Lab tests",
     "progress": "Fulfillment progress",
-    "products": "Products & stock",
+    "products": "Supplements",
     "packagePlans": "Package plans",
     "selections": "Case selections",
     "shipping": "Shipping",
@@ -26,6 +26,7 @@
     "developing": "In development",
     "logout": "Log out",
     "ops": "Fulfillment",
+    "catalog": "Products",
     "warehouse": "Warehouse",
     "finance": "Billing & reports",
     "platform": "Platform"
@@ -492,7 +493,7 @@
   "form": {
     "caseTitle": "Case",
     "labTitle": "Lab booking",
-    "productTitle": "Product & stock",
+    "productTitle": "Supplement",
     "lineTitle": "Selection line",
     "shipTitle": "Shipment",
     "invoiceTitle": "Invoice",

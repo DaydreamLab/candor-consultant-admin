@@ -17,12 +17,17 @@
 | progress | `/progress` | **不做** | 履約看板不採用 |
 | reviews | `/reviews` | **不做** | 簽核不採用 |
 
+### Catalog（`catalog`，側欄「商品」）
+
+| Nav key | 路徑 | 範圍 | 接線說明 |
+|---------|------|------|----------|
+| packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新、刪除、單筆詳情仍 Mock |
+| products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 商品 CRUD 已接 `sellable_item`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
+
 ### Warehouse（`warehouse`）
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 商品 CRUD 已接 `sellable_item`。庫存讀寫與 alerts 仍 Mock |
-| packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新、刪除、單筆詳情仍 Mock |
 | selections | `/selections` | **不做** | keyin／手改組成不採用 |
 | shipping | `/shipping` | **in-scope（語意）** | → 訂單 shipment 推進；勿另立 selection 出貨 API |
 
