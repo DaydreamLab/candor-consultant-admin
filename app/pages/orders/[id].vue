@@ -105,7 +105,8 @@ function summaryOf(data: Record<string, unknown> | null): FieldRow[] {
     return []
   }
   const rows: FieldRow[] = []
-  pushMapped(rows, 'status', data.status, value => mappedLabel('orderStatus', value))
+  pushText(rows, 'order_no', data.order_no)
+  pushMapped(rows, 'status', data.status, value => mappedLabel('orderStatus', value), 'order_status')
   pushMapped(rows, 'payment_status', data.payment_status, value => mappedLabel('paymentStatus', value))
   pushMoney(rows, 'amount_total', data.amount_total)
   pushText(rows, 'package_plan_name', data.package_plan_name)
@@ -197,11 +198,11 @@ function pushTime(rows: FieldRow[], key: string, value: unknown) {
   rows.push({ key, label: t(`orders.fields.${key}`), value: timeText(value) })
 }
 
-function pushMapped(rows: FieldRow[], key: string, value: unknown, map: (value: string) => string) {
+function pushMapped(rows: FieldRow[], key: string, value: unknown, map: (value: string) => string, labelKey = key) {
   if (typeof value !== 'string' || !value.trim()) {
     return
   }
-  rows.push({ key, label: t(`orders.fields.${key}`), value: map(value.trim()) })
+  rows.push({ key, label: t(`orders.fields.${labelKey}`), value: map(value.trim()) })
 }
 
 function periodText(start: unknown, end: unknown) {

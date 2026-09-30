@@ -136,6 +136,8 @@
       "status": "狀態"
     },
     "fields": {
+      "order_no": "訂單編號",
+      "order_status": "訂單狀態",
       "status": "狀態",
       "created_at": "建立時間",
       "amount_total": "金額",

@@ -136,6 +136,8 @@
       "status": "Status"
     },
     "fields": {
+      "order_no": "Order number",
+      "order_status": "Order status",
       "status": "Status",
       "created_at": "Created",
       "amount_total": "Amount",
