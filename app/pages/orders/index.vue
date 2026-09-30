@@ -18,8 +18,10 @@ const pending = ref(true)
 const errorMessage = ref('')
 const offset = ref(0)
 
-const filterStatus = ref('')
-const filterPayment = ref('')
+const FILTER_ANY = 'all'
+
+const filterStatus = ref(FILTER_ANY)
+const filterPayment = ref(FILTER_ANY)
 const filterQ = ref('')
 const filterFrom = ref('')
 const filterTo = ref('')
@@ -37,7 +39,7 @@ const columns: { key: OrderColumn, alignEnd: boolean }[] = [
 ]
 
 const statusOptions = computed(() => [
-  { label: t('orders.filters.any'), value: '' },
+  { label: t('orders.filters.any'), value: FILTER_ANY },
   ...ORDER_STATUSES.map(value => ({
     label: t(`orders.orderStatus.${value}`),
     value
@@ -45,7 +47,7 @@ const statusOptions = computed(() => [
 ])
 
 const paymentOptions = computed(() => [
-  { label: t('orders.filters.any'), value: '' },
+  { label: t('orders.filters.any'), value: FILTER_ANY },
   ...PAYMENT_STATUSES.map(value => ({
     label: t(`orders.paymentStatus.${value}`),
     value
@@ -94,8 +96,8 @@ async function load() {
   errorMessage.value = ''
   try {
     orders.value = await adminListOrders(config.public.apiBase, token, {
-      status: filterStatus.value || undefined,
-      payment_status: filterPayment.value || undefined,
+      status: filterStatus.value === FILTER_ANY ? undefined : filterStatus.value,
+      payment_status: filterPayment.value === FILTER_ANY ? undefined : filterPayment.value,
       q: debouncedQ.value || undefined,
       from: dateBound(filterFrom.value, 'start'),
       to: dateBound(filterTo.value, 'end'),
