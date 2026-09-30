@@ -16,7 +16,7 @@ const sellableItems = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
 const query = ref('')
-const categoryFilter = ref(CATEGORY_ALL)
+const categoryFilter = ref<string[]>([CATEGORY_ALL])
 const view = ref<'card' | 'list'>('card')
 
 const categoryOptions = computed(() => {
@@ -34,11 +34,24 @@ const categoryOptions = computed(() => {
   ]
 })
 
+const selectedCategories = computed(() => {
+  return categoryFilter.value.filter(value => value !== CATEGORY_ALL)
+})
+
+const categoryTriggerLabel = computed(() => {
+  const selected = selectedCategories.value
+  if (!selected.length) {
+    return t('products.categoryAll')
+  }
+  const separator = String(locale.value).startsWith('en') ? ', ' : '、'
+  return selected.join(separator)
+})
+
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
-  const category = categoryFilter.value
+  const selected = new Set(selectedCategories.value)
   return sellableItems.value.filter((row) => {
-    if (category !== CATEGORY_ALL && categoryOf(row) !== category) {
+    if (selected.size > 0 && !selected.has(categoryOf(row))) {
       return false
     }
     return !q || searchableText(row).includes(q)
@@ -54,6 +67,13 @@ const {
   to
 } = usePager(filtered, 20)
 
+watch(categoryFilter, (value, previous) => {
+  const next = normalizeCategories(value, previous ?? [])
+  if (!sameList(next, value)) {
+    categoryFilter.value = next
+  }
+})
+
 watch([query, categoryFilter], () => {
   page.value = 1
 })
@@ -64,6 +84,23 @@ if (import.meta.client) {
     view.value = stored
   }
   void load()
+}
+
+function normalizeCategories(value: string[], previous: string[]) {
+  const hadAll = previous.includes(CATEGORY_ALL)
+  const hasAll = value.includes(CATEGORY_ALL)
+  if (hasAll && !hadAll) {
+    return [CATEGORY_ALL]
+  }
+  const specific = value.filter(item => item !== CATEGORY_ALL)
+  if (!specific.length) {
+    return [CATEGORY_ALL]
+  }
+  return specific
+}
+
+function sameList(left: string[], right: string[]) {
+  return left.length === right.length && left.every((item, index) => item === right[index])
 }
 
 function setView(next: 'card' | 'list') {
@@ -260,11 +297,16 @@ function failText(error: unknown) {
             />
             <USelect
               v-model="categoryFilter"
+              multiple
               :items="categoryOptions"
               value-key="value"
               icon="i-lucide-filter"
               class="w-40"
-            />
+            >
+              <template #default>
+                {{ categoryTriggerLabel }}
+              </template>
+            </USelect>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1">
