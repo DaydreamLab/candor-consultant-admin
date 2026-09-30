@@ -95,6 +95,7 @@
     "detailFailed": "無法讀取訂單。",
     "messagesFailed": "無法讀取對話。",
     "messagesEmpty": "尚無對話",
+    "copyMessage": "複製訊息",
     "filters": {
       "any": "全部",
       "q": "搜尋",
@@ -229,11 +230,6 @@
     "voucherStatus": {
       "pending": "待核發",
       "issued": "已核發"
-    },
-    "speakers": {
-      "user": "使用者",
-      "customer": "客戶",
-      "assistant": "助理"
     }
   },
   "packagePlans": {

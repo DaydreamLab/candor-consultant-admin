@@ -95,6 +95,7 @@
     "detailFailed": "Could not load this order.",
     "messagesFailed": "Could not load the conversation.",
     "messagesEmpty": "No messages yet",
+    "copyMessage": "Copy message",
     "filters": {
       "any": "All",
       "q": "Search",
@@ -229,11 +230,6 @@
     "voucherStatus": {
       "pending": "Pending",
       "issued": "Issued"
-    },
-    "speakers": {
-      "user": "User",
-      "customer": "Customer",
-      "assistant": "Assistant"
     }
   },
   "packagePlans": {

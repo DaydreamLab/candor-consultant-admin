@@ -9,6 +9,13 @@ type FieldRow = { key: string, label: string, value: string, money?: boolean }
 const TIME_KEYS = ['created_at', 'sent_at', 'timestamp', 'time']
 const CUSTOMER_ROLES = new Set(['user', 'customer', 'client'])
 const TIMELINE_STEPS = ['created', 'confirmed', 'shipped', 'delivered'] as const
+const TIMELINE_ICONS: Record<string, string> = {
+  created: 'i-lucide-file-plus',
+  confirmed: 'i-lucide-badge-check',
+  shipped: 'i-lucide-truck',
+  delivered: 'i-lucide-package-check',
+  cancelled: 'i-lucide-x'
+}
 
 type TimelineState = 'done' | 'upcoming' | 'cancelled'
 
@@ -47,6 +54,28 @@ const daySupplies = computed(() => recordsOf(order.value?.day_supplies))
 const vouchers = computed(() => recordsOf(order.value?.vouchers))
 const techFields = computed(() => techOf(order.value, packageInfo.value?.raw ?? null))
 const chatMessages = computed(() => oldestFirst(messages.value).map(toChatMessage))
+const assistantMessage = computed(() => ({
+  side: 'left' as const,
+  variant: 'outline' as const,
+  avatar: {
+    icon: 'i-lucide-bot'
+  },
+  actions: [{
+    label: t('orders.copyMessage'),
+    icon: 'i-lucide-copy',
+    onClick: onCopyMessage
+  }],
+  ui: {
+    content: 'whitespace-pre-wrap'
+  }
+}))
+const userMessage = computed(() => ({
+  side: 'right' as const,
+  variant: 'soft' as const,
+  ui: {
+    content: 'bg-accented whitespace-pre-wrap'
+  }
+}))
 
 if (import.meta.client) {
   watch(orderId, (id) => {
@@ -279,6 +308,10 @@ function stepOf(key: (typeof TIMELINE_STEPS)[number], value: unknown, state: Tim
   }
 }
 
+function timelineIcon(key: string) {
+  return TIMELINE_ICONS[key] ?? ''
+}
+
 function timelineMarkerClass(state: TimelineState) {
   if (state === 'cancelled') {
     return 'bg-error text-white'
@@ -286,12 +319,12 @@ function timelineMarkerClass(state: TimelineState) {
   if (state === 'upcoming') {
     return 'border-2 border-muted bg-elevated'
   }
-  return 'bg-inverted'
+  return 'bg-primary text-white dark:text-brand-950'
 }
 
 function timelineConnectorClass(index: number) {
   const state = timelineSteps.value[index + 1]?.state ?? 'upcoming'
-  return state === 'upcoming' ? 'border-muted' : 'border-inverted'
+  return state === 'upcoming' ? 'border-muted' : 'border-primary'
 }
 
 function paymentFields(row: Record<string, unknown>): FieldRow[] {
@@ -386,17 +419,25 @@ function oldestFirst(rows: Record<string, unknown>[]) {
 function toChatMessage(row: Record<string, unknown>, index: number) {
   const speakerRole = roleOf(row)
   const customer = CUSTOMER_ROLES.has(speakerRole.toLowerCase())
-  const content = contentOf(row)
   return {
     id: messageId(row, index),
     role: customer ? 'user' as const : 'assistant' as const,
-    side: customer ? 'right' as const : 'left' as const,
-    variant: customer ? 'soft' as const : 'outline' as const,
-    speaker: speakerLabel(speakerRole),
-    content,
-    time: messageTimeText(row),
-    parts: [{ type: 'text' as const, text: content }]
+    parts: [{ type: 'text' as const, text: contentOf(row) }],
+    metadata: {
+      time: messageTimeText(row)
+    }
   }
+}
+
+function onCopyMessage(_event: MouseEvent, message: { parts?: Array<{ text?: string }> }) {
+  const text = (message.parts ?? [])
+    .map(part => part.text ?? '')
+    .join('\n')
+    .trim()
+  if (!text) {
+    return
+  }
+  void navigator.clipboard.writeText(text)
 }
 
 function roleOf(row: Record<string, unknown>) {
@@ -447,20 +488,6 @@ function messageTimeText(row: Record<string, unknown>) {
     }
   }
   return ''
-}
-
-function speakerLabel(role: string) {
-  const key = role.toLowerCase()
-  if (key === 'user') {
-    return t('orders.speakers.user')
-  }
-  if (key === 'customer' || key === 'client') {
-    return t('orders.speakers.customer')
-  }
-  if (key === 'assistant') {
-    return t('orders.speakers.assistant')
-  }
-  return role || t('status.na')
 }
 
 function amountText(value: unknown) {
@@ -524,13 +551,6 @@ function recordsOf(value: unknown) {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
-
-function bubbleUi(side: 'left' | 'right') {
-  return {
-    container: side === 'left' ? 'max-w-[75%] pb-3' : 'pb-3',
-    content: 'space-y-1'
-  }
-}
 </script>
 
 <template>
@@ -551,17 +571,17 @@ function bubbleUi(side: 'left' | 'right') {
         >
           <div
             v-if="index < timelineSteps.length - 1"
-            class="absolute top-[7px] left-1/2 w-full border-t"
+            class="absolute top-3.5 left-1/2 w-full border-t"
             :class="timelineConnectorClass(index)"
           />
           <span
-            class="relative z-10 flex size-3.5 items-center justify-center rounded-full"
+            class="relative z-10 flex size-7 items-center justify-center rounded-full"
             :class="timelineMarkerClass(step.state)"
           >
             <UIcon
-              v-if="step.state === 'cancelled'"
-              name="i-lucide-x"
-              class="size-2.5"
+              v-if="step.state !== 'upcoming'"
+              :name="timelineIcon(step.key)"
+              class="size-4"
             />
           </span>
           <span
@@ -604,65 +624,6 @@ function bubbleUi(side: 'left' | 'right') {
           </p>
           <template v-else>
             <details
-              v-if="summaryFields.length"
-              open
-              class="group shrink-0 overflow-hidden rounded-xl border border-default"
-            >
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
-                <span>{{ $t('orders.sections.summary') }}</span>
-                <UIcon
-                  name="i-lucide-chevron-right"
-                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
-                />
-              </summary>
-              <dl class="grid gap-px bg-default sm:grid-cols-2">
-                <div
-                  v-for="field in summaryFields"
-                  :key="field.key"
-                  class="bg-elevated px-4 py-3.5"
-                >
-                  <dt class="text-sm text-muted">
-                    {{ field.label }}
-                  </dt>
-                  <dd
-                    class="mt-1 text-sm font-medium break-all text-highlighted"
-                    :class="field.money ? 'tabular-money' : ''"
-                  >
-                    {{ field.value }}
-                  </dd>
-                </div>
-              </dl>
-            </details>
-
-            <details
-              v-if="recipientFields.length"
-              open
-              class="group shrink-0 overflow-hidden rounded-xl border border-default"
-            >
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
-                <span>{{ $t('orders.sections.recipient') }}</span>
-                <UIcon
-                  name="i-lucide-chevron-right"
-                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
-                />
-              </summary>
-              <dl class="grid gap-px bg-default sm:grid-cols-2">
-                <div
-                  v-for="field in recipientFields"
-                  :key="field.key"
-                  class="bg-elevated px-4 py-3.5"
-                >
-                  <dt class="text-sm text-muted">
-                    {{ field.label }}
-                  </dt>
-                  <dd class="mt-1 text-sm font-medium break-all text-highlighted">
-                    {{ field.value }}
-                  </dd>
-                </div>
-              </dl>
-            </details>
-
-            <details
               v-if="packageInfo"
               open
               class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
@@ -700,7 +661,7 @@ function bubbleUi(side: 'left' | 'right') {
                       <th class="px-4 py-3 font-medium">
                         {{ $t('orders.lineColumns.name') }}
                       </th>
-                      <th class="px-4 py-3 font-medium">
+                      <th class="px-4 py-3 text-center font-medium">
                         {{ $t('orders.lineColumns.dailyDose') }}
                       </th>
                       <th class="px-4 py-3 text-right font-medium">
@@ -720,7 +681,7 @@ function bubbleUi(side: 'left' | 'right') {
                       <td class="px-4 py-3 text-highlighted">
                         {{ componentName(row) }}
                       </td>
-                      <td class="px-4 py-3 text-highlighted">
+                      <td class="px-4 py-3 text-center text-highlighted">
                         {{ textOf(row.daily_dose) }}
                       </td>
                       <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
@@ -733,6 +694,65 @@ function bubbleUi(side: 'left' | 'right') {
                   </tbody>
                 </table>
               </div>
+            </details>
+
+            <details
+              v-if="summaryFields.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
+            >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.summary') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <dl class="grid sm:grid-cols-2">
+                <div
+                  v-for="field in summaryFields"
+                  :key="field.key"
+                  class="bg-elevated px-4 py-3.5"
+                >
+                  <dt class="text-sm text-muted">
+                    {{ field.label }}
+                  </dt>
+                  <dd
+                    class="mt-1 text-sm font-medium break-all text-highlighted"
+                    :class="field.money ? 'tabular-money' : ''"
+                  >
+                    {{ field.value }}
+                  </dd>
+                </div>
+              </dl>
+            </details>
+
+            <details
+              v-if="recipientFields.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
+            >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.recipient') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <dl class="grid sm:grid-cols-2">
+                <div
+                  v-for="field in recipientFields"
+                  :key="field.key"
+                  class="bg-elevated px-4 py-3.5"
+                >
+                  <dt class="text-sm text-muted">
+                    {{ field.label }}
+                  </dt>
+                  <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                    {{ field.value }}
+                  </dd>
+                </div>
+              </dl>
             </details>
 
             <details
@@ -780,7 +800,7 @@ function bubbleUi(side: 'left' | 'right') {
             <details
               v-if="payments.length"
               open
-              class="group shrink-0 overflow-hidden rounded-xl border border-default"
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
             >
               <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
                 <span>{{ $t('orders.sections.payments') }}</span>
@@ -793,7 +813,7 @@ function bubbleUi(side: 'left' | 'right') {
                 <dl
                   v-for="(row, index) in payments"
                   :key="paymentKey(row, index)"
-                  class="grid gap-px bg-default sm:grid-cols-2"
+                  class="grid sm:grid-cols-2"
                 >
                   <div
                     v-for="field in paymentFields(row)"
@@ -817,7 +837,7 @@ function bubbleUi(side: 'left' | 'right') {
             <details
               v-if="shipment"
               open
-              class="group shrink-0 overflow-hidden rounded-xl border border-default"
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
             >
               <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
                 <span>{{ $t('orders.sections.shipment') }}</span>
@@ -826,7 +846,7 @@ function bubbleUi(side: 'left' | 'right') {
                   class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
                 />
               </summary>
-              <dl class="grid gap-px bg-default sm:grid-cols-2">
+              <dl class="grid sm:grid-cols-2">
                 <div
                   v-for="field in shipmentFields(shipment)"
                   :key="field.key"
@@ -961,7 +981,7 @@ function bubbleUi(side: 'left' | 'right') {
                   class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
                 />
               </summary>
-              <dl class="grid gap-px bg-default sm:grid-cols-2">
+              <dl class="grid sm:grid-cols-2">
                 <div
                   v-for="field in techFields"
                   :key="field.key"
@@ -980,9 +1000,6 @@ function bubbleUi(side: 'left' | 'right') {
         </div>
 
         <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:h-full lg:max-h-none">
-          <h2 class="shrink-0 border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.messages') }}
-          </h2>
           <div class="min-h-0 flex-1 overflow-y-auto">
             <p
               v-if="messagesError"
@@ -1004,40 +1021,21 @@ function bubbleUi(side: 'left' | 'right') {
             </p>
             <UChatMessages
               v-else
+              :messages="chatMessages"
+              :assistant="assistantMessage"
+              :user="userMessage"
               :auto-scroll="false"
               :should-scroll-to-bottom="false"
-              class="px-3 py-4"
+              class="py-4"
             >
-              <UChatMessage
-                v-for="message in chatMessages"
-                :id="message.id"
-                :key="message.id"
-                :role="message.role"
-                :side="message.side"
-                :variant="message.variant"
-                :parts="message.parts"
-                :ui="bubbleUi(message.side)"
-              >
-                <template
-                  v-if="message.time"
-                  #header
+              <template #header="{ metadata }">
+                <time
+                  v-if="metadata?.time"
+                  class="text-xs text-muted"
                 >
-                  <time class="text-xs text-muted">
-                    {{ message.time }}
-                  </time>
-                </template>
-                <template #content>
-                  <p class="text-sm font-medium">
-                    {{ message.speaker }}
-                  </p>
-                  <p
-                    v-if="message.content"
-                    class="text-sm whitespace-pre-wrap wrap-break-word"
-                  >
-                    {{ message.content }}
-                  </p>
-                </template>
-              </UChatMessage>
+                  {{ metadata.time }}
+                </time>
+              </template>
             </UChatMessages>
           </div>
         </section>
