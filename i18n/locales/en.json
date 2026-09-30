@@ -7,7 +7,7 @@
   "brandShort": "C",
   "brandAdmin": "Consultant admin",
   "nav": {
-    "workbench": "Workbench",
+    "workbench": "Overview",
     "orders": "Orders",
     "cases": "Cases",
     "labs": "Lab tests",
@@ -250,7 +250,7 @@
     "admin": "Admin"
   },
   "workbench": {
-    "title": "Workbench",
+    "title": "Overview",
     "subtitleFirm": "Work in fulfillment order. Consultation transcripts are not in this system.",
     "subtitlePlatform": "Platform view of Younger, Dashu Pharmacy, and Young Lion Pharmacy queues.",
     "pendingCases": "New cases",

@@ -7,7 +7,7 @@
   "brandShort": "坦",
   "brandAdmin": "顧問後台",
   "nav": {
-    "workbench": "工作台",
+    "workbench": "總覽",
     "orders": "訂單",
     "cases": "案件",
     "labs": "採檢",
@@ -250,7 +250,7 @@
     "admin": "管理員"
   },
   "workbench": {
-    "title": "工作台",
+    "title": "總覽",
     "subtitleFirm": "依履約順序處理。諮詢對話不在此系統。",
     "subtitlePlatform": "平台視角可看 Younger、大樹藥局、幼獅藥局的履約隊列。",
     "pendingCases": "待接案",
