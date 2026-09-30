@@ -1,15 +1,30 @@
 <script setup lang="ts">
-import { AdminApiError, adminCreateSellableItem } from '~/utils/admin-api'
+import { AdminApiError, adminCreateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
+import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const { set } = bindNavbarActions()
 
 const saving = ref(false)
 const errorMessage = ref('')
 
-async function onSave(body: Record<string, unknown>) {
+watch([saving, locale], () => {
+  set({
+    showDelete: false,
+    deleting: false,
+    busy: saving.value,
+    onDelete: () => {},
+    primaryLabel: t('actions.save'),
+    primaryLoading: saving.value,
+    primaryForm: SELLABLE_ITEM_FORM_ID,
+    onPrimary: null
+  })
+}, { immediate: true })
+
+async function onSave(payload: SellableItemWrite) {
   const token = readOperatorToken()
   if (!token) {
     errorMessage.value = t('products.saveFailed')
@@ -19,7 +34,7 @@ async function onSave(body: Record<string, unknown>) {
   saving.value = true
   errorMessage.value = ''
   try {
-    const created = await adminCreateSellableItem(config.public.apiBase, token, body)
+    const created = await adminCreateSellableItem(config.public.apiBase, token, payload)
     const id = idOf(created)
     if (id) {
       await navigateTo(localePath(`/products/${encodeURIComponent(id)}`))
@@ -51,10 +66,7 @@ function failText(error: unknown) {
 </script>
 
 <template>
-  <PageHeader
-    :title="$t('actions.add')"
-    plain
-  >
+  <PageHeader plain>
     <p
       v-if="errorMessage"
       class="mb-4 text-sm text-error"
@@ -63,9 +75,9 @@ function failText(error: unknown) {
     </p>
     <SellableItemForm
       mode="create"
+      editing
       :sellable-item="null"
       :saving="saving"
-      :deleting="false"
       @save="onSave"
     />
   </PageHeader>

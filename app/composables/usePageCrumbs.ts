@@ -16,10 +16,7 @@ export function usePageCrumbs() {
     const current = normalizeAdminPath(route.path)
 
     if (current === '/products/new') {
-      return [
-        { label: t('nav.products'), to: localePath('/products') },
-        { label: t('actions.add') }
-      ]
+      return [{ label: t('products.createTitle') }]
     }
 
     if (current.startsWith('/products/')) {

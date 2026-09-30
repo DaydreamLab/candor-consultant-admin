@@ -35,6 +35,24 @@ const menuGroups = computed(() =>
 )
 
 const { items: crumbs } = usePageCrumbs()
+const navbarStore = useNavbarActions()
+const navbarActions = computed(() => navbarStore.value.current)
+
+function onNavbarPrimary(event: MouseEvent) {
+  const actions = navbarActions.value
+  if (!actions) {
+    return
+  }
+  if (actions.primaryForm) {
+    const form = document.getElementById(actions.primaryForm)
+    if (form instanceof HTMLFormElement) {
+      event.preventDefault()
+      form.requestSubmit()
+    }
+    return
+  }
+  actions.onPrimary?.()
+}
 const hasParentCrumb = computed(() => crumbs.value.length > 1)
 const navbarTitle = computed(() => {
   const last = crumbs.value[crumbs.value.length - 1]
@@ -176,6 +194,33 @@ async function logout() {
             >
               {{ navbarTitle }}
             </span>
+          </template>
+          <template #right>
+            <div
+              v-if="navbarActions"
+              class="flex shrink-0 items-center gap-2"
+            >
+              <UButton
+                v-if="navbarActions.showDelete"
+                type="button"
+                color="error"
+                variant="outline"
+                :loading="navbarActions.deleting"
+                :disabled="navbarActions.busy"
+                @click="navbarActions.onDelete()"
+              >
+                {{ $t('actions.delete') }}
+              </UButton>
+              <UButton
+                :type="navbarActions.primaryForm ? 'submit' : 'button'"
+                :form="navbarActions.primaryForm || undefined"
+                :loading="navbarActions.primaryLoading"
+                :disabled="navbarActions.busy"
+                @click="onNavbarPrimary"
+              >
+                {{ navbarActions.primaryLabel }}
+              </UButton>
+            </div>
           </template>
         </UDashboardNavbar>
       </template>

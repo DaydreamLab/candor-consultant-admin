@@ -1,23 +1,51 @@
 <script setup lang="ts">
-import { AdminApiError, adminDeleteSellableItem, adminGetSellableItem, adminUpdateSellableItem } from '~/utils/admin-api'
+import { AdminApiError, adminDeleteSellableItem, adminUpdateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
+import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
+import { demoSellableItemById } from '~/utils/demo-sellable-items'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
 const route = useRoute()
 const localePath = useLocalePath()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const crumbLabel = useSellableItemCrumbLabel()
+const { set } = bindNavbarActions()
 
 const sellableItemId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || sellableItemId.value)
 
 const sellableItem = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
+const editing = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const errorMessage = ref('')
 const confirmDelete = ref(false)
+
+watch([editing, saving, deleting, pending, sellableItem, locale], () => {
+  if (pending.value || !sellableItem.value) {
+    set(null)
+    return
+  }
+  const editingNow = editing.value
+  set({
+    showDelete: true,
+    deleting: deleting.value,
+    busy: saving.value || deleting.value,
+    onDelete: () => {
+      confirmDelete.value = true
+    },
+    primaryLabel: editingNow ? t('actions.save') : t('actions.edit'),
+    primaryLoading: saving.value,
+    primaryForm: editingNow ? SELLABLE_ITEM_FORM_ID : null,
+    onPrimary: editingNow
+      ? null
+      : () => {
+          editing.value = true
+        }
+  })
+}, { immediate: true })
 
 if (import.meta.client) {
   watch(sellableItemId, (id) => {
@@ -34,39 +62,33 @@ onUnmounted(() => {
 async function load(id: string) {
   crumbLabel.value = null
   sellableItem.value = null
+  editing.value = false
   errorMessage.value = ''
   confirmDelete.value = false
 
-  const token = readOperatorToken()
-  if (!token || !id) {
+  if (!id) {
     pending.value = false
     errorMessage.value = t('products.failed')
     return
   }
 
   pending.value = true
-  try {
-    const row = await adminGetSellableItem(config.public.apiBase, token, id)
-    if (sellableItemId.value !== id) {
-      return
-    }
-    sellableItem.value = row
-    crumbLabel.value = scalarText(row.name).trim() || null
-    errorMessage.value = ''
-  } catch (error) {
-    if (sellableItemId.value !== id) {
-      return
-    }
-    sellableItem.value = null
-    errorMessage.value = failText(error, t('products.failed'))
-  } finally {
-    if (sellableItemId.value === id) {
-      pending.value = false
-    }
+  const row = demoSellableItemById(id)
+  if (sellableItemId.value !== id) {
+    return
   }
+  if (!row) {
+    sellableItem.value = null
+    errorMessage.value = t('products.failed')
+  } else {
+    sellableItem.value = row
+    crumbLabel.value = itemName(row)
+    errorMessage.value = ''
+  }
+  pending.value = false
 }
 
-async function onSave(body: Record<string, unknown>) {
+async function onSave(payload: SellableItemWrite) {
   const token = readOperatorToken()
   const id = sellableItemId.value
   if (!token || !id) {
@@ -77,12 +99,13 @@ async function onSave(body: Record<string, unknown>) {
   saving.value = true
   errorMessage.value = ''
   try {
-    const row = await adminUpdateSellableItem(config.public.apiBase, token, id, body)
+    const row = await adminUpdateSellableItem(config.public.apiBase, token, id, payload)
     if (sellableItemId.value !== id) {
       return
     }
     sellableItem.value = row
-    crumbLabel.value = scalarText(row.name).trim() || null
+    crumbLabel.value = itemName(row)
+    editing.value = false
   } catch (error) {
     if (sellableItemId.value !== id) {
       return
@@ -115,6 +138,10 @@ async function onDelete() {
   } finally {
     deleting.value = false
   }
+}
+
+function itemName(row: Record<string, unknown>) {
+  return scalarText(row.name_zh).trim() || scalarText(row.name).trim() || null
 }
 
 function scalarText(value: unknown) {
@@ -153,12 +180,10 @@ function failText(error: unknown, fallback: string) {
     <SellableItemForm
       v-else-if="sellableItem"
       mode="update"
+      :editing="editing"
       :sellable-item="sellableItem"
-      :fallback-id="sellableItemId"
       :saving="saving"
-      :deleting="deleting"
       @save="onSave"
-      @remove="confirmDelete = true"
     />
     <ConfirmDelete
       :open="confirmDelete"

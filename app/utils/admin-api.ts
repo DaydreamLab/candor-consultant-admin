@@ -134,14 +134,19 @@ export async function adminListSellableItems(apiBase: string, token: string) {
   }
 }
 
-export async function adminCreateSellableItem(apiBase: string, token: string, payload: Record<string, unknown>) {
+export type SellableItemWrite = {
+  body: Record<string, unknown>
+  image: File | null
+}
+
+export async function adminCreateSellableItem(apiBase: string, token: string, payload: SellableItemWrite) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/sellable-items'), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`
       },
-      body: payload
+      body: sellableItemRequestBody(payload)
     })
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
@@ -174,14 +179,14 @@ export async function adminGetSellableItem(apiBase: string, token: string, id: s
   }
 }
 
-export async function adminUpdateSellableItem(apiBase: string, token: string, id: string, payload: Record<string, unknown>) {
+export async function adminUpdateSellableItem(apiBase: string, token: string, id: string, payload: SellableItemWrite) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`
       },
-      body: payload
+      body: sellableItemRequestBody(payload)
     })
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
@@ -193,6 +198,29 @@ export async function adminUpdateSellableItem(apiBase: string, token: string, id
     }
     throw new AdminApiError(readStatus(error), readMessage(error))
   }
+}
+
+function sellableItemRequestBody(payload: SellableItemWrite) {
+  if (!payload.image) {
+    return payload.body
+  }
+  const form = new FormData()
+  form.append('image', payload.image)
+  for (const [key, value] of Object.entries(payload.body)) {
+    appendSellableField(form, key, value)
+  }
+  return form
+}
+
+function appendSellableField(form: FormData, key: string, value: unknown) {
+  if (value == null) {
+    return
+  }
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    form.append(key, String(value))
+    return
+  }
+  form.append(key, JSON.stringify(value))
 }
 
 export async function adminDeleteSellableItem(apiBase: string, token: string, id: string) {
