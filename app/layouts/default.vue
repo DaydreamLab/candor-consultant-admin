@@ -37,22 +37,18 @@ const menuGroups = computed(() =>
   }))
 )
 
-const headerTitle = computed(() => {
-  const current = normalizeAdminPath(route.path)
-  if (current === '/account') {
-    return t('nav.account')
-  }
-  for (const group of groups.value) {
-    for (const item of group.items) {
-      const active = item.to === '/'
-        ? current === '/' || current === ''
-        : current === item.to || current.startsWith(`${item.to}/`)
-      if (active) {
-        return t(`nav.${item.key}`)
-      }
-    }
-  }
-  return t('brandAdmin')
+const { items: crumbs } = usePageCrumbs()
+const hasParentCrumb = computed(() => crumbs.value.length > 1)
+const navbarTitle = computed(() => {
+  const last = crumbs.value[crumbs.value.length - 1]
+  return typeof last?.label === 'string' && last.label.trim() ? last.label : t('brandAdmin')
+})
+const navbarCrumbs = computed(() => {
+  const items = crumbs.value
+  return items.map((item, index) => ({
+    ...item,
+    class: index === items.length - 1 ? 'min-w-0' : 'shrink-0'
+  }))
 })
 
 const onAccount = computed(() => normalizeAdminPath(route.path) === '/account')
@@ -154,11 +150,40 @@ async function logout() {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardPanel>
+    <UDashboardPanel :ui="{ body: 'p-5 sm:p-7' }">
       <template #header>
-        <UDashboardNavbar :title="headerTitle">
+        <UDashboardNavbar :ui="{ title: 'min-w-0' }">
           <template #leading>
             <UDashboardSidebarCollapse />
+          </template>
+          <template #title>
+            <UBreadcrumb
+              v-if="hasParentCrumb"
+              as="div"
+              :items="navbarCrumbs"
+              class="min-w-0"
+              :ui="{
+                root: 'min-w-0',
+                list: 'min-w-0 flex-nowrap',
+                linkLabel: 'truncate'
+              }"
+            >
+              <template #item-label="{ item, index }">
+                <span
+                  :class="index === crumbs.length - 1
+                    ? 'block truncate text-xl font-semibold text-highlighted'
+                    : 'text-sm font-medium'"
+                >
+                  {{ item.label }}
+                </span>
+              </template>
+            </UBreadcrumb>
+            <span
+              v-else
+              class="truncate text-xl font-semibold text-highlighted"
+            >
+              {{ navbarTitle }}
+            </span>
           </template>
           <template #right>
             <LocaleSwitch />
@@ -168,9 +193,7 @@ async function logout() {
       </template>
 
       <template #body>
-        <div class="p-5 sm:p-7">
-          <slot />
-        </div>
+        <slot />
       </template>
     </UDashboardPanel>
   </UDashboardGroup>

@@ -1,43 +1,35 @@
 <template>
   <div>
-    <UBreadcrumb
-      :items="crumbs"
-      class="mb-4"
-    />
-    <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <header
+      v-if="showMeta"
+      class="mb-6 flex flex-wrap items-start justify-between gap-3"
+    >
       <div class="min-w-0 max-w-3xl">
-        <div
-          v-if="title"
-          class="flex flex-wrap items-center gap-2"
+        <UBadge
+          v-if="developing"
+          color="neutral"
+          variant="subtle"
         >
-          <h1 class="text-2xl font-semibold text-highlighted">
-            {{ title }}
-          </h1>
-          <UBadge
-            v-if="developing"
-            color="neutral"
-            variant="subtle"
-          >
-            {{ $t('nav.developing') }}
-          </UBadge>
-        </div>
+          {{ $t('nav.developing') }}
+        </UBadge>
         <p
           v-if="description"
           class="text-base text-muted"
-          :class="title ? 'mt-2' : ''"
+          :class="developing ? 'mt-2' : ''"
         >
           {{ description }}
         </p>
         <p
           v-if="!plain"
           class="text-sm text-dimmed"
-          :class="title || description ? 'mt-2' : ''"
+          :class="developing || description ? 'mt-2' : ''"
         >
           {{ hint }}
         </p>
         <p
           v-if="showLock"
-          class="mt-2 text-base text-warning"
+          class="text-base text-warning"
+          :class="developing || description || !plain ? 'mt-2' : ''"
         >
           {{ $t('actions.readOnly') }}
         </p>
@@ -58,17 +50,24 @@ import { isDevelopingPath } from '~/utils/nav'
 
 const { hint } = usePageCopy()
 const { writable } = useOrgScope()
-const { items: crumbs } = usePageCrumbs()
 const route = useRoute()
+const slots = useSlots()
 
 const props = defineProps<{
   title?: string
   description?: string
   locked?: boolean
-  /** 空殼頁：只留麵包屑與標題 */
+  /** 空殼頁：標題在頂欄，內文不留說明 */
   plain?: boolean
 }>()
 
 const developing = computed(() => Boolean(props.title) && isDevelopingPath(route.path))
 const showLock = computed(() => !props.plain && (props.locked ?? !writable.value))
+const showMeta = computed(() =>
+  Boolean(props.description)
+  || Boolean(slots.actions)
+  || developing.value
+  || showLock.value
+  || !props.plain
+)
 </script>
