@@ -23,7 +23,8 @@ const PAYMENT_BADGE: Record<string, { color: BadgeColor, variant: BadgeVariant }
   expired: { color: 'error', variant: 'outline' }
 }
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
+const FETCH_SIZE = 50
 const ORDER_STATUSES = ['created', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const
 const PAYMENT_STATUSES = ['unpaid', 'pending', 'paid', 'failed', 'expired'] as const
 
@@ -34,7 +35,10 @@ const { t } = useI18n()
 const orders = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const offset = ref(0)
+const page = ref(1)
+const hasMore = ref(false)
+let loadSeq = 0
+let nextOffset = 0
 
 const FILTER_ANY = 'all'
 
@@ -74,8 +78,11 @@ const paymentOptions = computed(() => [
   }))
 ])
 
-const canPrev = computed(() => offset.value > 0)
-const canNext = computed(() => orders.value.length >= PAGE_SIZE)
+const rows = computed(() => {
+  const start = (page.value - 1) * PAGE_SIZE
+  return orders.value.slice(start, start + PAGE_SIZE)
+})
+const paginationTotal = computed(() => orders.value.length + (hasMore.value ? 1 : 0))
 
 if (import.meta.client) {
   watch(filterQ, (value) => {
@@ -90,8 +97,7 @@ if (import.meta.client) {
   watch(
     [filterStatus, filterPayment, debouncedQ, filterFrom, filterTo],
     () => {
-      offset.value = 0
-      void load()
+      void load(true)
     },
     { immediate: true }
   )
@@ -103,33 +109,59 @@ onUnmounted(() => {
   }
 })
 
-async function load() {
+async function load(reset: boolean) {
+  const seq = ++loadSeq
   const token = readOperatorToken()
   if (!token) {
     orders.value = []
+    hasMore.value = false
     errorMessage.value = t('orders.failed')
     pending.value = false
     return
   }
 
+  if (reset) {
+    orders.value = []
+    page.value = 1
+    nextOffset = 0
+    hasMore.value = false
+  }
+
   pending.value = true
   errorMessage.value = ''
   try {
-    orders.value = await adminListOrders(config.public.apiBase, token, {
+    const fetched = await adminListOrders(config.public.apiBase, token, {
       status: filterStatus.value === FILTER_ANY ? undefined : filterStatus.value,
       payment_status: filterPayment.value === FILTER_ANY ? undefined : filterPayment.value,
       q: debouncedQ.value || undefined,
       from: dateBound(filterFrom.value, 'start'),
       to: dateBound(filterTo.value, 'end'),
-      limit: PAGE_SIZE,
-      offset: offset.value
+      limit: FETCH_SIZE,
+      offset: nextOffset
     })
+    if (seq !== loadSeq) {
+      return
+    }
+    if (!reset && fetched.length === 0) {
+      hasMore.value = false
+      page.value = Math.max(1, Math.ceil(orders.value.length / PAGE_SIZE))
+      return
+    }
+    orders.value = reset ? fetched : [...orders.value, ...fetched]
+    nextOffset += fetched.length
+    hasMore.value = fetched.length >= FETCH_SIZE
   } catch (error) {
+    if (seq !== loadSeq) {
+      return
+    }
     orders.value = []
+    hasMore.value = false
     const message = error instanceof AdminApiError ? error.message.trim() : ''
     errorMessage.value = message || t('orders.failed')
   } finally {
-    pending.value = false
+    if (seq === loadSeq) {
+      pending.value = false
+    }
   }
 }
 
@@ -141,20 +173,15 @@ function dateBound(value: string, edge: 'start' | 'end') {
   return edge === 'start' ? `${trimmed}T00:00:00` : `${trimmed}T23:59:59`
 }
 
-function prevPage() {
-  if (!canPrev.value) {
+function goToPage(next: number) {
+  if (pending.value || next < 1 || next === page.value) {
     return
   }
-  offset.value = Math.max(0, offset.value - PAGE_SIZE)
-  void load()
-}
-
-function nextPage() {
-  if (!canNext.value) {
-    return
+  page.value = next
+  const start = (next - 1) * PAGE_SIZE
+  if (start >= orders.value.length && hasMore.value) {
+    void load(false)
   }
-  offset.value += PAGE_SIZE
-  void load()
 }
 
 function orderId(row: Record<string, unknown>) {
@@ -362,7 +389,7 @@ function amountOf(value: unknown) {
         {{ errorMessage }}
       </p>
       <p
-        v-else-if="pending"
+        v-else-if="pending && !orders.length"
         class="text-sm text-muted"
       >
         {{ $t('orders.loading') }}
@@ -400,7 +427,7 @@ function amountOf(value: unknown) {
             </tr>
           </template>
           <tr
-            v-for="(row, index) in orders"
+            v-for="(row, index) in rows"
             :key="rowKey(row, index)"
             class="border-b border-default last:border-0"
             :class="orderId(row) ? 'cursor-pointer hover:bg-muted/40' : ''"
@@ -432,28 +459,18 @@ function amountOf(value: unknown) {
               </template>
             </td>
           </tr>
+          <template #footer>
+            <div class="flex justify-end border-t border-default px-4 py-3">
+              <UPagination
+                :page="page"
+                :items-per-page="PAGE_SIZE"
+                :total="paginationTotal"
+                :disabled="pending"
+                @update:page="goToPage"
+              />
+            </div>
+          </template>
         </AdminTable>
-        <div
-          v-if="canPrev || canNext"
-          class="flex items-center justify-end gap-2"
-        >
-          <UButton
-            color="neutral"
-            variant="outline"
-            :disabled="!canPrev || pending"
-            @click="prevPage"
-          >
-            {{ $t('orders.pager.prev') }}
-          </UButton>
-          <UButton
-            color="neutral"
-            variant="outline"
-            :disabled="!canNext || pending"
-            @click="nextPage"
-          >
-            {{ $t('orders.pager.next') }}
-          </UButton>
-        </div>
       </template>
     </div>
   </PageHeader>
