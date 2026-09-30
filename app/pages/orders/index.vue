@@ -3,7 +3,7 @@ import { AdminApiError, adminListOrders } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
 
-type OrderColumn = 'number' | 'status' | 'payment' | 'createdAt' | 'summary' | 'amount'
+type OrderColumn = 'number' | 'createdAt' | 'recipient' | 'item' | 'status' | 'amount' | 'payment'
 
 const PAGE_SIZE = 50
 const ORDER_STATUSES = ['created', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const
@@ -11,7 +11,7 @@ const PAYMENT_STATUSES = ['unpaid', 'pending', 'paid', 'failed', 'expired'] as c
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const orders = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
@@ -29,13 +29,16 @@ const debouncedQ = ref('')
 
 let qTimer: ReturnType<typeof setTimeout> | null = null
 
-const columns: { key: OrderColumn, alignEnd: boolean }[] = [
-  { key: 'number', alignEnd: false },
-  { key: 'status', alignEnd: false },
-  { key: 'payment', alignEnd: false },
-  { key: 'createdAt', alignEnd: false },
-  { key: 'summary', alignEnd: false },
-  { key: 'amount', alignEnd: true }
+type ColumnAlign = 'left' | 'center' | 'right'
+
+const columns: { key: OrderColumn, align: ColumnAlign, width?: string, truncate?: boolean }[] = [
+  { key: 'number', align: 'left', width: 'w-[13.5rem]' },
+  { key: 'createdAt', align: 'left', width: 'w-[6.5rem]' },
+  { key: 'recipient', align: 'left', width: 'w-[8rem]', truncate: true },
+  { key: 'item', align: 'left', truncate: true },
+  { key: 'status', align: 'center', width: 'w-[7rem]' },
+  { key: 'amount', align: 'right', width: 'w-[8.5rem]' },
+  { key: 'payment', align: 'center', width: 'w-[7rem]' }
 ]
 
 const statusOptions = computed(() => [
@@ -158,33 +161,47 @@ function columnLabel(key: OrderColumn) {
   return t(`orders.columns.${key}`)
 }
 
-function cellClass(key: OrderColumn) {
-  if (key === 'amount') {
-    return 'tabular-money text-right font-medium text-highlighted'
+function alignClass(align: ColumnAlign) {
+  if (align === 'center') {
+    return 'text-center'
   }
-  if (key === 'number') {
-    return 'font-medium text-highlighted'
-  }
-  if (key === 'createdAt') {
-    return 'text-muted'
+  if (align === 'right') {
+    return 'text-right'
   }
   return ''
+}
+
+function cellClass(column: { key: OrderColumn, align: ColumnAlign, truncate?: boolean }) {
+  const classes = [alignClass(column.align)]
+  if (column.truncate) {
+    classes.push('truncate')
+  }
+  if (column.key === 'amount') {
+    classes.push('tabular-money font-medium text-highlighted')
+  } else if (column.key === 'number') {
+    classes.push('font-medium text-highlighted')
+  } else if (column.key === 'createdAt') {
+    classes.push('text-muted')
+  }
+  return classes.filter(Boolean).join(' ')
 }
 
 function cellText(row: Record<string, unknown>, key: OrderColumn) {
   switch (key) {
     case 'number':
       return textOf(row.order_no)
-    case 'status':
-      return statusLabel('orderStatus', row.status)
-    case 'payment':
-      return statusLabel('paymentStatus', row.payment_status)
     case 'createdAt':
       return createdAtOf(row.created_at)
-    case 'summary':
-      return summaryOf(row)
+    case 'recipient':
+      return textOf(row.recipient_name)
+    case 'item':
+      return textOf(row.package_plan_name)
+    case 'status':
+      return statusLabel('orderStatus', row.status)
     case 'amount':
       return amountOf(row.amount_total)
+    case 'payment':
+      return statusLabel('paymentStatus', row.payment_status)
   }
 }
 
@@ -215,20 +232,9 @@ function createdAtOf(value: unknown) {
   if (Number.isNaN(date.getTime())) {
     return value
   }
-  return new Intl.DateTimeFormat(locale.value === 'en' ? 'en-US' : 'zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
-
-function summaryOf(row: Record<string, unknown>) {
-  const parts = [row.recipient_name, row.package_plan_name]
-    .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
-    .map(value => value.trim())
-  return parts.length ? parts.join(' · ') : t('status.na')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${month}/${day}`
 }
 
 function amountOf(value: unknown) {
@@ -326,13 +332,23 @@ function amountOf(value: unknown) {
         <AdminTable
           v-else
           compact
+          fixed
         >
+          <template #colgroup>
+            <colgroup>
+              <col
+                v-for="column in columns"
+                :key="column.key"
+                :class="column.width"
+              />
+            </colgroup>
+          </template>
           <template #head>
             <tr>
               <th
                 v-for="column in columns"
                 :key="column.key"
-                :class="column.alignEnd ? 'text-right' : ''"
+                :class="[column.width, alignClass(column.align)]"
               >
                 {{ columnLabel(column.key) }}
               </th>
@@ -348,7 +364,8 @@ function amountOf(value: unknown) {
             <td
               v-for="column in columns"
               :key="column.key"
-              :class="cellClass(column.key)"
+              :class="cellClass(column)"
+              :title="column.truncate ? cellText(row, column.key) : undefined"
             >
               {{ cellText(row, column.key) }}
             </td>

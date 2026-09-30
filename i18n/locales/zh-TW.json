@@ -8,7 +8,7 @@
   "brandAdmin": "顧問後台",
   "nav": {
     "workbench": "總覽",
-    "orders": "訂單",
+    "orders": "訂單列表",
     "cases": "案件",
     "labs": "採檢",
     "progress": "履約進度",
@@ -93,7 +93,7 @@
     "filters": {
       "any": "全部",
       "q": "搜尋",
-      "qPlaceholder": "單號或收件人",
+      "qPlaceholder": "訂單編號或收件人",
       "status": "訂單狀態",
       "payment": "付款狀態",
       "from": "建立起日",
@@ -116,12 +116,13 @@
       "messages": "對話紀錄"
     },
     "columns": {
-      "number": "編號",
-      "status": "狀態",
-      "payment": "付款",
+      "number": "訂單編號",
       "createdAt": "建立時間",
-      "summary": "摘要",
-      "amount": "金額"
+      "recipient": "收件人",
+      "item": "方案項目",
+      "status": "訂單狀態",
+      "amount": "訂單金額",
+      "payment": "付款狀態"
     },
     "lineColumns": {
       "name": "品名",

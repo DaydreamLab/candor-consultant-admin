@@ -8,7 +8,7 @@
   "brandAdmin": "Consultant admin",
   "nav": {
     "workbench": "Overview",
-    "orders": "Orders",
+    "orders": "Order list",
     "cases": "Cases",
     "labs": "Lab tests",
     "progress": "Fulfillment progress",
@@ -93,9 +93,9 @@
     "filters": {
       "any": "All",
       "q": "Search",
-      "qPlaceholder": "Order no. or recipient",
+      "qPlaceholder": "Order number or recipient",
       "status": "Order status",
-      "payment": "Payment",
+      "payment": "Payment status",
       "from": "Created from",
       "to": "Created to"
     },
@@ -116,12 +116,13 @@
       "messages": "Conversation"
     },
     "columns": {
-      "number": "Number",
-      "status": "Status",
-      "payment": "Payment",
+      "number": "Order number",
       "createdAt": "Created",
-      "summary": "Summary",
-      "amount": "Amount"
+      "recipient": "Recipient",
+      "item": "Plan item",
+      "status": "Order status",
+      "amount": "Order amount",
+      "payment": "Payment status"
     },
     "lineColumns": {
       "name": "Item",
