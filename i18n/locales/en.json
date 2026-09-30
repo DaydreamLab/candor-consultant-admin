@@ -119,7 +119,24 @@
       "daySupplies": "Day supplies",
       "vouchers": "Vouchers",
       "tech": "Technical",
-      "messages": "Conversation"
+      "messages": "Conversation",
+      "reportReading": "Report reading"
+    },
+    "reportReading": {
+      "loading": "Loading report…",
+      "failed": "Could not load report reading",
+      "empty": "No structured lab results to list.",
+      "optimal": "Optimal",
+      "caution": "Caution",
+      "alert": "Alert",
+      "pending": "Pending review",
+      "colorHint": "Values colored by reference range",
+      "status": "Status",
+      "item": "Item",
+      "value": "Value",
+      "unit": "Unit",
+      "refRange": "Reference",
+      "position": "Position"
     },
     "columns": {
       "number": "Order number",

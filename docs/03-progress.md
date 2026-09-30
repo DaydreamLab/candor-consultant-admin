@@ -65,7 +65,7 @@
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 使用者列表／詳情 | `/users` | 殼 | Mock | M3 |
 | 訂單列表 | `/orders` | 可用 | 已接 | M3 |
-| 訂單詳情／取消／讀對話 | `/orders/{id}`（詳情與對話可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
+| 訂單詳情／取消／讀對話／報告判讀 | `/orders/{id}`（詳情、對話與報告判讀可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
 | PackagePlan 列表 | `/package-plans` | 可用 | 已接 | M3 |
 | PackagePlan 建立、更新、單筆詳情 | —（下一階段；core 有 `GET /admin/package-plan/{id}`，無刪除端點） | 無 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
@@ -124,6 +124,7 @@
 | 訂單列表 | `GET /admin/orders` | 已接 |
 | 訂單詳情 | `GET /admin/order/{id}` | 已接 |
 | 讀訂單對話 | `GET /admin/order/{id}/message` | 已接 |
+| 讀訂單報告判讀 | `GET /admin/order/{id}/health-report` | 已接 |
 | 取消 | `POST /admin/order/{id}/cancel` | Mock |
 | 出貨建立／推進 | `POST`／`PATCH /admin/order/{id}/shipment` | Mock |
 

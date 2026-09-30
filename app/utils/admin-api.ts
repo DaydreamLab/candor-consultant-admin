@@ -96,6 +96,25 @@ export async function adminListOrderMessages(apiBase: string, token: string, id:
   }
 }
 
+export async function adminGetOrderHealthReport(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/order/${encodeURIComponent(id)}/health-report`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminListPackagePlans(apiBase: string, token: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/package-plans'), {

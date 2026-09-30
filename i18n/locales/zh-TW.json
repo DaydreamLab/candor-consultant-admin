@@ -119,7 +119,24 @@
       "daySupplies": "日配",
       "vouchers": "兌換券",
       "tech": "技術資訊",
-      "messages": "對話紀錄"
+      "messages": "對話紀錄",
+      "reportReading": "報告判讀"
+    },
+    "reportReading": {
+      "loading": "載入報告中…",
+      "failed": "無法載入報告判讀",
+      "empty": "尚無結構化檢驗結果可表列。",
+      "optimal": "最佳值",
+      "caution": "提醒值",
+      "alert": "警戒值",
+      "pending": "待確認",
+      "colorHint": "數值依參考區間著色",
+      "status": "狀態",
+      "item": "項目",
+      "value": "數值",
+      "unit": "單位",
+      "refRange": "參考區間",
+      "position": "位置"
     },
     "columns": {
       "number": "訂單編號",

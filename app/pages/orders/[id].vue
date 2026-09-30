@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { AdminApiError, adminGetOrder, adminListOrderMessages } from '~/utils/admin-api'
+import { AdminApiError, adminGetOrder, adminGetOrderHealthReport, adminListOrderMessages } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
+import {
+  displayResultValue,
+  formatResultRef,
+  resultGaugePct,
+  resultStatusClass,
+  type HealthReportResult,
+  type ResultStatusClass
+} from '~/utils/report-result-status'
 
 type FieldRow = { key: string, label: string, value: string, money?: boolean }
 
@@ -37,10 +45,17 @@ const title = computed(() => orderLabel.value || orderId.value)
 
 const order = ref<Record<string, unknown> | null>(null)
 const messages = ref<Record<string, unknown>[]>([])
+const reportResults = ref<HealthReportResult[]>([])
 const orderPending = ref(true)
 const messagesPending = ref(true)
+const reportPending = ref(false)
 const orderError = ref('')
 const messagesError = ref('')
+const reportError = ref('')
+const reportOpen = ref(true)
+let loadSeq = 0
+
+const reportSectionVisible = computed(() => Boolean(scalarId(order.value?.report_id)))
 
 const summaryFields = computed(() => summaryOf(order.value))
 const recipientFields = computed(() => recipientOf(order.value))
@@ -90,16 +105,22 @@ onUnmounted(() => {
 })
 
 async function load(id: string) {
+  const seq = ++loadSeq
   orderLabel.value = null
   order.value = null
   messages.value = []
+  reportResults.value = []
   orderError.value = ''
   messagesError.value = ''
+  reportError.value = ''
+  reportPending.value = false
+  reportOpen.value = true
 
   const token = readOperatorToken()
   if (!token || !id) {
     orderPending.value = false
     messagesPending.value = false
+    reportPending.value = false
     orderError.value = t('orders.detailFailed')
     messagesError.value = t('orders.messagesFailed')
     return
@@ -111,7 +132,7 @@ async function load(id: string) {
     adminGetOrder(config.public.apiBase, token, id),
     adminListOrderMessages(config.public.apiBase, token, id)
   ])
-  if (orderId.value !== id) {
+  if (seq !== loadSeq || orderId.value !== id) {
     return
   }
 
@@ -134,11 +155,91 @@ async function load(id: string) {
     messagesError.value = failText(messagesResult.reason, t('orders.messagesFailed'))
   }
   messagesPending.value = false
+
+  if (!scalarId(order.value?.report_id)) {
+    return
+  }
+
+  reportPending.value = true
+  try {
+    const report = await adminGetOrderHealthReport(config.public.apiBase, token, id)
+    if (seq !== loadSeq || orderId.value !== id) {
+      return
+    }
+    reportResults.value = healthReportResultsOf(report)
+    reportError.value = ''
+  } catch (error) {
+    if (seq !== loadSeq || orderId.value !== id) {
+      return
+    }
+    reportResults.value = []
+    reportError.value = failText(error, t('orders.reportReading.failed'))
+  } finally {
+    if (seq === loadSeq) {
+      reportPending.value = false
+    }
+  }
 }
 
 function failText(error: unknown, fallback: string) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
   return message || fallback
+}
+
+function healthReportResultsOf(data: Record<string, unknown>): HealthReportResult[] {
+  const out: HealthReportResult[] = []
+  for (const row of recordsOf(data.results)) {
+    const id = scalarId(row.id)
+    if (!id) {
+      continue
+    }
+    out.push({
+      id,
+      biomarker_id: optionalString(row.biomarker_id),
+      raw_name: optionalString(row.raw_name),
+      raw_value: optionalString(row.raw_value),
+      raw_unit: optionalString(row.raw_unit),
+      value_numeric: optionalNumber(row.value_numeric),
+      unit: optionalString(row.unit),
+      ref_low: optionalNumber(row.ref_low),
+      ref_high: optionalNumber(row.ref_high),
+      borderline_low: optionalNumber(row.borderline_low),
+      borderline_high: optionalNumber(row.borderline_high),
+      critical_low: optionalNumber(row.critical_low),
+      critical_high: optionalNumber(row.critical_high),
+      confidence: optionalNumber(row.confidence),
+      needs_review: typeof row.needs_review === 'boolean' ? row.needs_review : undefined,
+      page: optionalNumber(row.page)
+    })
+  }
+  return out
+}
+
+function optionalString(value: unknown) {
+  return typeof value === 'string' ? value : null
+}
+
+function optionalNumber(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
+    return Number(value)
+  }
+  return null
+}
+
+function resultStatusLabel(cls: ResultStatusClass) {
+  if (cls === 'ok') {
+    return t('orders.reportReading.optimal')
+  }
+  if (cls === 'warn') {
+    return t('orders.reportReading.caution')
+  }
+  if (cls === 'alert') {
+    return t('orders.reportReading.alert')
+  }
+  return t('orders.reportReading.pending')
 }
 
 function summaryOf(data: Record<string, unknown> | null): FieldRow[] {
@@ -555,11 +656,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 <template>
   <PageHeader
-    class="flex flex-col lg:h-[calc(100svh-var(--ui-header-height)-3.5rem)] lg:min-h-0 lg:overflow-hidden"
+    class="flex flex-col"
     :title="title"
     plain
   >
-    <div class="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+    <div class="flex flex-col gap-6">
       <ol
         v-if="timelineSteps.length"
         class="flex shrink-0 items-start overflow-x-auto rounded-xl border border-default bg-elevated px-4 py-4"
@@ -605,10 +706,140 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         </li>
       </ol>
 
-      <div class="flex flex-col gap-6 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:overflow-hidden">
+      <section
+        v-if="reportSectionVisible"
+        class="flex shrink-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated"
+      >
+        <button
+          type="button"
+          class="flex shrink-0 cursor-pointer items-center justify-between gap-3 bg-elevated px-4 py-3 text-left text-base font-semibold text-highlighted"
+          :class="reportOpen ? 'border-b border-default' : ''"
+          @click="reportOpen = !reportOpen"
+        >
+          <span>{{ $t('orders.sections.reportReading') }}</span>
+          <UIcon
+            name="i-lucide-chevron-right"
+            class="size-4 shrink-0 text-muted transition-transform"
+            :class="reportOpen ? 'rotate-90' : ''"
+          />
+        </button>
+        <div
+          v-show="reportOpen"
+          class="flex min-h-0 flex-col"
+        >
+          <p
+            v-if="reportError"
+            class="px-4 py-3 text-sm text-error"
+          >
+            {{ reportError }}
+          </p>
+          <p
+            v-else-if="reportPending"
+            class="px-4 py-3 text-sm text-muted"
+          >
+            {{ $t('orders.reportReading.loading') }}
+          </p>
+          <p
+            v-else-if="!reportResults.length"
+            class="px-4 py-3 text-sm text-muted"
+          >
+            {{ $t('orders.reportReading.empty') }}
+          </p>
+          <template v-else>
+            <div class="shrink-0 border-b border-default bg-elevated px-4 py-2.5">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-muted px-3 py-2 text-xs text-muted">
+                <span class="inline-flex items-center">
+                  <i class="yr-dot ok" />{{ $t('orders.reportReading.optimal') }}
+                </span>
+                <span class="inline-flex items-center">
+                  <i class="yr-dot warn" />{{ $t('orders.reportReading.caution') }}
+                </span>
+                <span class="inline-flex items-center">
+                  <i class="yr-dot alert" />{{ $t('orders.reportReading.alert') }}
+                </span>
+                <span class="text-dimmed sm:ms-auto">{{ $t('orders.reportReading.colorHint') }}</span>
+              </div>
+            </div>
+            <div class="h-56 min-h-0 overflow-y-auto bg-elevated px-4 py-3">
+              <div class="overflow-x-auto rounded-lg border border-default bg-default">
+                <table class="w-full min-w-[32rem] border-collapse text-sm">
+                  <thead>
+                    <tr class="bg-muted text-left text-xs font-semibold text-muted">
+                      <th class="border-b border-dashed border-default px-2.5 py-2">
+                        {{ $t('orders.reportReading.status') }}
+                      </th>
+                      <th class="border-b border-dashed border-default px-2.5 py-2">
+                        {{ $t('orders.reportReading.item') }}
+                      </th>
+                      <th class="border-b border-dashed border-default px-2.5 py-2">
+                        {{ $t('orders.reportReading.value') }}
+                      </th>
+                      <th class="border-b border-dashed border-default px-2.5 py-2">
+                        {{ $t('orders.reportReading.unit') }}
+                      </th>
+                      <th class="border-b border-dashed border-default px-2.5 py-2">
+                        {{ $t('orders.reportReading.refRange') }}
+                      </th>
+                      <th class="border-b border-dashed border-default px-2.5 py-2">
+                        {{ $t('orders.reportReading.position') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="row in reportResults"
+                      :key="row.id"
+                      class="border-b border-dashed border-default last:border-0"
+                    >
+                      <td class="px-2.5 py-2.5 text-highlighted">
+                        <i
+                          class="yr-dot"
+                          :class="resultStatusClass(row)"
+                        />{{ resultStatusLabel(resultStatusClass(row)) }}
+                      </td>
+                      <td class="px-2.5 py-2.5 font-semibold text-highlighted">
+                        {{ row.raw_name || row.biomarker_id || '—' }}
+                      </td>
+                      <td
+                        class="px-2.5 py-2.5 text-base font-bold"
+                        :class="`yr-val-${resultStatusClass(row)}`"
+                      >
+                        {{ displayResultValue(row) }}
+                      </td>
+                      <td class="px-2.5 py-2.5 text-muted">
+                        {{ row.unit || row.raw_unit || '—' }}
+                      </td>
+                      <td class="px-2.5 py-2.5 text-xs text-muted">
+                        {{ formatResultRef(row) }}
+                      </td>
+                      <td class="overflow-visible px-2.5 py-2.5">
+                        <div
+                          v-if="resultGaugePct(row) != null"
+                          class="yr-gauge relative h-2 w-[4.5rem] overflow-visible rounded-full"
+                        >
+                          <div
+                            class="yr-gauge-marker absolute top-[-3px] h-3.5 -translate-x-1/2 rounded-sm"
+                            :style="{ left: `${resultGaugePct(row)}%` }"
+                          />
+                        </div>
+                        <span
+                          v-else
+                          class="text-muted"
+                        >—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <div class="grid items-start gap-6 lg:grid-cols-2 lg:items-stretch">
         <div
           :key="orderId"
-          class="flex min-w-0 flex-col gap-6 lg:min-h-0 lg:overflow-y-auto"
+          class="flex min-w-0 flex-col gap-6"
         >
           <p
             v-if="orderError"
@@ -999,7 +1230,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
           </template>
         </div>
 
-        <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:h-full lg:max-h-none">
+        <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:max-h-none">
+          <div class="flex shrink-0 items-center border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
+            <span>{{ $t('orders.sections.messages') }}</span>
+          </div>
           <div class="min-h-0 flex-1 overflow-y-auto">
             <p
               v-if="messagesError"
@@ -1043,3 +1277,63 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     </div>
   </PageHeader>
 </template>
+
+<style scoped>
+.yr-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.3rem;
+  vertical-align: middle;
+  border-radius: 999px;
+}
+
+.yr-dot.ok {
+  background: var(--ui-success);
+}
+
+.yr-dot.warn {
+  background: var(--ui-warning);
+}
+
+.yr-dot.alert {
+  background: var(--ui-error);
+}
+
+.yr-dot.unknown {
+  background: var(--ui-text-dimmed);
+}
+
+.yr-val-ok {
+  color: var(--ui-success);
+}
+
+.yr-val-warn {
+  color: var(--ui-warning);
+}
+
+.yr-val-alert {
+  color: var(--ui-error);
+}
+
+.yr-val-unknown {
+  color: var(--ui-text-muted);
+}
+
+.yr-gauge {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--ui-error) 85%, var(--ui-bg-elevated)) 0%,
+    color-mix(in oklab, var(--ui-warning) 85%, var(--ui-bg-elevated)) 28%,
+    color-mix(in oklab, var(--ui-success) 85%, var(--ui-bg-elevated)) 50%,
+    color-mix(in oklab, var(--ui-warning) 85%, var(--ui-bg-elevated)) 72%,
+    color-mix(in oklab, var(--ui-error) 85%, var(--ui-bg-elevated)) 100%
+  );
+}
+
+.yr-gauge-marker {
+  width: 3px;
+  background: var(--ui-text-highlighted);
+  box-shadow: 0 0 0 1px var(--ui-bg-elevated);
+}
+</style>
