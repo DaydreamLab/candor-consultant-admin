@@ -12,7 +12,7 @@
     "cases": "案件",
     "labs": "採檢",
     "progress": "履約進度",
-    "products": "保健品",
+    "products": "保健品列表",
     "packagePlans": "方案項目",
     "selections": "案件選品",
     "shipping": "出貨",
@@ -522,12 +522,20 @@
     "emptyDetail": "從左側選一位同事，或按邀請加入。"
   },
   "products": {
+    "listTitle": "保健品列表",
+    "categoryAll": "全部分類",
     "loading": "讀取中…",
     "failed": "無法讀取商品。",
     "saveFailed": "無法儲存商品。",
     "deleteFailed": "無法刪除商品。",
     "empty": "尚無商品",
     "deleteConfirm": "刪除後無法復原。",
+    "servingsCount": "{n} 份",
+    "offSale": "停售",
+    "view": {
+      "card": "卡片",
+      "list": "列表"
+    },
     "fields": {
       "image": "照片",
       "name": "名稱",

@@ -42,6 +42,9 @@ export function usePageCrumbs() {
   })
 
   function pageLabel(current: string) {
+    if (current === '/products') {
+      return t('products.listTitle')
+    }
     if (current === '/account') {
       return t('nav.account')
     }

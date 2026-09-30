@@ -12,7 +12,7 @@
     "cases": "Cases",
     "labs": "Lab tests",
     "progress": "Fulfillment progress",
-    "products": "Supplements",
+    "products": "Supplement list",
     "packagePlans": "Plan items",
     "selections": "Case selections",
     "shipping": "Shipping",
@@ -522,12 +522,20 @@
     "emptyDetail": "Select a person on the left, or invite someone."
   },
   "products": {
+    "listTitle": "Supplement list",
+    "categoryAll": "All categories",
     "loading": "Loading…",
     "failed": "Could not load products.",
     "saveFailed": "Could not save this product.",
     "deleteFailed": "Could not delete this product.",
     "empty": "No products yet",
     "deleteConfirm": "This cannot be undone.",
+    "servingsCount": "{n} servings",
+    "offSale": "Off sale",
+    "view": {
+      "card": "Cards",
+      "list": "List"
+    },
     "fields": {
       "image": "Photo",
       "name": "Name",
