@@ -4,6 +4,25 @@ import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
 
 type OrderColumn = 'number' | 'createdAt' | 'recipient' | 'item' | 'status' | 'amount' | 'payment'
+type BadgeColumn = 'status' | 'payment'
+type BadgeColor = 'error' | 'primary' | 'success' | 'info' | 'warning' | 'neutral'
+type BadgeVariant = 'outline' | 'soft'
+
+const ORDER_BADGE: Record<string, { color: BadgeColor, variant: BadgeVariant }> = {
+  created: { color: 'neutral', variant: 'outline' },
+  confirmed: { color: 'primary', variant: 'soft' },
+  shipped: { color: 'info', variant: 'soft' },
+  delivered: { color: 'success', variant: 'soft' },
+  cancelled: { color: 'error', variant: 'outline' }
+}
+
+const PAYMENT_BADGE: Record<string, { color: BadgeColor, variant: BadgeVariant }> = {
+  unpaid: { color: 'warning', variant: 'outline' },
+  pending: { color: 'warning', variant: 'soft' },
+  paid: { color: 'success', variant: 'soft' },
+  failed: { color: 'error', variant: 'soft' },
+  expired: { color: 'error', variant: 'outline' }
+}
 
 const PAGE_SIZE = 50
 const ORDER_STATUSES = ['created', 'confirmed', 'shipped', 'delivered', 'cancelled'] as const
@@ -186,6 +205,10 @@ function cellClass(column: { key: OrderColumn, align: ColumnAlign, truncate?: bo
   return classes.filter(Boolean).join(' ')
 }
 
+function isBadgeColumn(key: OrderColumn): key is BadgeColumn {
+  return key === 'status' || key === 'payment'
+}
+
 function cellText(row: Record<string, unknown>, key: OrderColumn) {
   switch (key) {
     case 'number':
@@ -196,12 +219,23 @@ function cellText(row: Record<string, unknown>, key: OrderColumn) {
       return textOf(row.recipient_name)
     case 'item':
       return textOf(row.package_plan_name)
-    case 'status':
-      return statusLabel('orderStatus', row.status)
     case 'amount':
       return amountOf(row.amount_total)
+    case 'status':
     case 'payment':
-      return statusLabel('paymentStatus', row.payment_status)
+      return ''
+  }
+}
+
+function badgeOf(row: Record<string, unknown>, key: BadgeColumn) {
+  const raw = key === 'status' ? row.status : row.payment_status
+  const value = typeof raw === 'string' ? raw : ''
+  const style = (key === 'status' ? ORDER_BADGE : PAYMENT_BADGE)[value]
+    ?? { color: 'neutral' as const, variant: 'outline' as const }
+  return {
+    label: statusLabel(key === 'status' ? 'orderStatus' : 'paymentStatus', raw),
+    color: style.color,
+    variant: style.variant
   }
 }
 
@@ -367,7 +401,14 @@ function amountOf(value: unknown) {
               :class="cellClass(column)"
               :title="column.truncate ? cellText(row, column.key) : undefined"
             >
-              {{ cellText(row, column.key) }}
+              <UBadge
+                v-if="isBadgeColumn(column.key)"
+                size="sm"
+                v-bind="badgeOf(row, column.key)"
+              />
+              <template v-else>
+                {{ cellText(row, column.key) }}
+              </template>
             </td>
           </tr>
         </AdminTable>
