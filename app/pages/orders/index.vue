@@ -3,8 +3,7 @@ import { AdminApiError, adminListOrders } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
 
-type OrderColumn = 'number' | 'createdAt' | 'recipient' | 'item' | 'status' | 'amount' | 'payment'
-type BadgeColumn = 'status' | 'payment'
+type OrderColumn = 'number' | 'createdAt' | 'recipient' | 'status' | 'item' | 'amount'
 type BadgeColor = 'error' | 'primary' | 'success' | 'info' | 'warning' | 'neutral'
 type BadgeVariant = 'outline' | 'soft'
 
@@ -52,12 +51,11 @@ type ColumnAlign = 'left' | 'center' | 'right'
 
 const columns: { key: OrderColumn, align: ColumnAlign, width?: string, truncate?: boolean }[] = [
   { key: 'number', align: 'left', width: 'w-[13.5rem]' },
-  { key: 'createdAt', align: 'left', width: 'w-[6.5rem]' },
+  { key: 'createdAt', align: 'left', width: 'w-[9.5rem]' },
   { key: 'recipient', align: 'left', width: 'w-[8rem]', truncate: true },
-  { key: 'item', align: 'left', truncate: true },
   { key: 'status', align: 'center', width: 'w-[7rem]' },
-  { key: 'amount', align: 'right', width: 'w-[8.5rem]' },
-  { key: 'payment', align: 'center', width: 'w-[7rem]' }
+  { key: 'item', align: 'left', truncate: true },
+  { key: 'amount', align: 'right', width: 'w-[15rem]' }
 ]
 
 const statusOptions = computed(() => [
@@ -205,8 +203,8 @@ function cellClass(column: { key: OrderColumn, align: ColumnAlign, truncate?: bo
   return classes.filter(Boolean).join(' ')
 }
 
-function isBadgeColumn(key: OrderColumn): key is BadgeColumn {
-  return key === 'status' || key === 'payment'
+function isBadgeColumn(key: OrderColumn) {
+  return key === 'status'
 }
 
 function cellText(row: Record<string, unknown>, key: OrderColumn) {
@@ -222,18 +220,17 @@ function cellText(row: Record<string, unknown>, key: OrderColumn) {
     case 'amount':
       return amountOf(row.amount_total)
     case 'status':
-    case 'payment':
       return ''
   }
 }
 
-function badgeOf(row: Record<string, unknown>, key: BadgeColumn) {
-  const raw = key === 'status' ? row.status : row.payment_status
+function badgeOf(row: Record<string, unknown>) {
+  const raw = row.status
   const value = typeof raw === 'string' ? raw : ''
-  const style = (key === 'status' ? ORDER_BADGE : PAYMENT_BADGE)[value]
+  const style = ORDER_BADGE[value]
     ?? { color: 'neutral' as const, variant: 'outline' as const }
   return {
-    label: statusLabel(key === 'status' ? 'orderStatus' : 'paymentStatus', raw),
+    label: statusLabel('orderStatus', raw),
     color: style.color,
     variant: style.variant
   }
@@ -268,7 +265,21 @@ function createdAtOf(value: unknown) {
   }
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  return `${month}/${day}`
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${month}/${day} ${hours}:${minutes}`
+}
+
+function paymentBadgeOf(row: Record<string, unknown>) {
+  const raw = row.payment_status
+  const value = typeof raw === 'string' ? raw : ''
+  const style = PAYMENT_BADGE[value]
+    ?? { color: 'neutral' as const, variant: 'outline' as const }
+  return {
+    label: statusLabel('paymentStatus', raw),
+    color: style.color,
+    variant: style.variant
+  }
 }
 
 function amountOf(value: unknown) {
@@ -404,8 +415,18 @@ function amountOf(value: unknown) {
               <UBadge
                 v-if="isBadgeColumn(column.key)"
                 size="sm"
-                v-bind="badgeOf(row, column.key)"
+                v-bind="badgeOf(row)"
               />
+              <span
+                v-else-if="column.key === 'amount'"
+                class="inline-flex items-center justify-end gap-2"
+              >
+                <UBadge
+                  size="sm"
+                  v-bind="paymentBadgeOf(row)"
+                />
+                {{ amountOf(row.amount_total) }}
+              </span>
               <template v-else>
                 {{ cellText(row, column.key) }}
               </template>
