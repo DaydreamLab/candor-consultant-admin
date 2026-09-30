@@ -8,6 +8,17 @@ type FieldRow = { key: string, label: string, value: string, money?: boolean }
 
 const TIME_KEYS = ['created_at', 'sent_at', 'timestamp', 'time']
 const CUSTOMER_ROLES = new Set(['user', 'customer', 'client'])
+const TIMELINE_STEPS = ['created', 'confirmed', 'shipped', 'delivered'] as const
+
+type TimelineState = 'done' | 'upcoming' | 'cancelled'
+
+type TimelineStep = {
+  key: string
+  label: string
+  time: string
+  state: TimelineState
+  reason: string
+}
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -31,6 +42,7 @@ const packageComponents = computed(() => packageInfo.value?.components ?? [])
 const labLines = computed(() => labLinesOf(order.value))
 const payments = computed(() => recordsOf(order.value?.payments))
 const shipment = computed(() => recordOf(order.value?.shipment))
+const timelineSteps = computed(() => timelineOf(order.value, shipment.value))
 const daySupplies = computed(() => recordsOf(order.value?.day_supplies))
 const vouchers = computed(() => recordsOf(order.value?.vouchers))
 const techFields = computed(() => techOf(order.value, packageInfo.value?.raw ?? null))
@@ -218,6 +230,68 @@ function mappedLabel(group: string, value: string) {
   const key = `orders.${group}.${value}`
   const translated = t(key)
   return translated === key ? value : translated
+}
+
+function timelineOf(data: Record<string, unknown> | null, shipmentRow: Record<string, unknown> | null): TimelineStep[] {
+  if (!data) {
+    return []
+  }
+  const times: Record<(typeof TIMELINE_STEPS)[number], unknown> = {
+    created: data.created_at,
+    confirmed: data.confirmed_at,
+    shipped: shipmentRow?.shipped_at,
+    delivered: shipmentRow?.arrived_at
+  }
+  const status = typeof data.status === 'string' ? data.status : ''
+  if (status === 'cancelled') {
+    let reached = 0
+    if (isPresentScalar(times.confirmed)) {
+      reached = 1
+    }
+    if (isPresentScalar(times.shipped)) {
+      reached = 2
+    }
+    if (isPresentScalar(times.delivered)) {
+      reached = 3
+    }
+    const steps = TIMELINE_STEPS.slice(0, reached + 1).map(key => stepOf(key, times[key], 'done'))
+    steps.push({
+      key: 'cancelled',
+      label: mappedLabel('orderStatus', 'cancelled'),
+      time: isPresentScalar(data.cancelled_at) ? timeText(data.cancelled_at) : '',
+      state: 'cancelled',
+      reason: isPresentScalar(data.cancel_reason) ? textOf(data.cancel_reason) : ''
+    })
+    return steps
+  }
+  const currentIndex = TIMELINE_STEPS.indexOf(status as (typeof TIMELINE_STEPS)[number])
+  const active = currentIndex >= 0 ? currentIndex : 0
+  return TIMELINE_STEPS.map((key, index) => stepOf(key, times[key], index <= active ? 'done' : 'upcoming'))
+}
+
+function stepOf(key: (typeof TIMELINE_STEPS)[number], value: unknown, state: TimelineState): TimelineStep {
+  return {
+    key,
+    label: mappedLabel('orderStatus', key),
+    time: isPresentScalar(value) ? timeText(value) : '',
+    state,
+    reason: ''
+  }
+}
+
+function timelineMarkerClass(state: TimelineState) {
+  if (state === 'cancelled') {
+    return 'bg-error text-white'
+  }
+  if (state === 'upcoming') {
+    return 'border-2 border-muted bg-elevated'
+  }
+  return 'bg-inverted'
+}
+
+function timelineConnectorClass(index: number) {
+  const state = timelineSteps.value[index + 1]?.state ?? 'upcoming'
+  return state === 'upcoming' ? 'border-muted' : 'border-inverted'
 }
 
 function paymentFields(row: Record<string, unknown>): FieldRow[] {
@@ -461,412 +535,513 @@ function bubbleUi(side: 'left' | 'right') {
 
 <template>
   <PageHeader
+    class="flex flex-col lg:h-[calc(100svh-var(--ui-header-height)-3.5rem)] lg:min-h-0 lg:overflow-hidden"
     :title="title"
     plain
   >
-    <div class="flex flex-col gap-6">
-      <p
-        v-if="orderError"
-        class="text-sm text-error"
+    <div class="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+      <ol
+        v-if="timelineSteps.length"
+        class="flex shrink-0 items-start overflow-x-auto rounded-xl border border-default bg-elevated px-4 py-4"
       >
-        {{ orderError }}
-      </p>
-      <p
-        v-else-if="orderPending"
-        class="text-sm text-muted"
-      >
-        {{ $t('orders.loading') }}
-      </p>
-      <template v-else>
-        <section
-          v-if="summaryFields.length"
-          class="overflow-hidden rounded-xl border border-default"
+        <li
+          v-for="(step, index) in timelineSteps"
+          :key="step.key"
+          class="relative flex w-28 shrink-0 flex-col items-center px-1 text-center sm:w-auto sm:min-w-28 sm:flex-1"
         >
-          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.summary') }}
-          </h2>
-          <dl class="grid gap-px bg-default sm:grid-cols-2">
-            <div
-              v-for="field in summaryFields"
-              :key="field.key"
-              class="bg-elevated px-4 py-3.5"
-            >
-              <dt class="text-sm text-muted">
-                {{ field.label }}
-              </dt>
-              <dd
-                class="mt-1 text-sm font-medium break-all text-highlighted"
-                :class="field.money ? 'tabular-money' : ''"
-              >
-                {{ field.value }}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <section
-          v-if="recipientFields.length"
-          class="overflow-hidden rounded-xl border border-default"
-        >
-          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.recipient') }}
-          </h2>
-          <dl class="grid gap-px bg-default sm:grid-cols-2">
-            <div
-              v-for="field in recipientFields"
-              :key="field.key"
-              class="bg-elevated px-4 py-3.5"
-            >
-              <dt class="text-sm text-muted">
-                {{ field.label }}
-              </dt>
-              <dd class="mt-1 text-sm font-medium break-all text-highlighted">
-                {{ field.value }}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <section
-          v-if="packageInfo"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
-        >
-          <div class="border-b border-default px-4 py-3">
-            <h2 class="text-base font-semibold text-highlighted">
-              {{ $t('orders.sections.package') }}
-            </h2>
-            <p
-              v-if="packageInfo.meta.length"
-              class="mt-1 text-sm text-muted"
-            >
-              <span
-                v-for="(field, index) in packageInfo.meta"
-                :key="field.key"
-              >
-                <template v-if="index > 0"> · </template>
-                {{ field.label }} {{ field.value }}
-              </span>
-            </p>
-          </div>
           <div
-            v-if="packageComponents.length"
-            class="overflow-x-auto"
+            v-if="index < timelineSteps.length - 1"
+            class="absolute top-[7px] left-1/2 w-full border-t"
+            :class="timelineConnectorClass(index)"
+          />
+          <span
+            class="relative z-10 flex size-3.5 items-center justify-center rounded-full"
+            :class="timelineMarkerClass(step.state)"
           >
-            <table class="w-full text-left text-sm">
-              <thead class="border-b border-default bg-muted/40 text-muted">
-                <tr>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.name') }}
-                  </th>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.dailyDose') }}
-                  </th>
-                  <th class="px-4 py-3 text-right font-medium">
-                    {{ $t('orders.lineColumns.unitPrice') }}
-                  </th>
-                  <th class="px-4 py-3 text-right font-medium">
-                    {{ $t('orders.lineColumns.monthlyCost') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, index) in packageComponents"
-                  :key="componentKey(row, index)"
-                  class="border-b border-default last:border-0"
-                >
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ componentName(row) }}
-                  </td>
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ textOf(row.daily_dose) }}
-                  </td>
-                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
-                    {{ amountText(row.unit_price) }}
-                  </td>
-                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
-                    {{ amountText(row.monthly_cost) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+            <UIcon
+              v-if="step.state === 'cancelled'"
+              name="i-lucide-x"
+              class="size-2.5"
+            />
+          </span>
+          <span
+            class="mt-2 text-sm font-medium"
+            :class="step.state === 'upcoming' ? 'text-muted' : 'text-highlighted'"
+          >
+            {{ step.label }}
+          </span>
+          <time
+            v-if="step.time"
+            class="mt-0.5 text-xs text-muted"
+          >
+            {{ step.time }}
+          </time>
+          <p
+            v-if="step.reason"
+            class="mt-1 text-xs text-muted wrap-break-word"
+          >
+            {{ $t('orders.fields.cancel_reason') }}: {{ step.reason }}
+          </p>
+        </li>
+      </ol>
 
-        <section
-          v-if="labLines.length"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
+      <div class="flex flex-col gap-6 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:overflow-hidden">
+        <div
+          :key="orderId"
+          class="flex min-w-0 flex-col gap-6 lg:min-h-0 lg:overflow-y-auto"
         >
-          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.labLines') }}
-          </h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="border-b border-default bg-muted/40 text-muted">
-                <tr>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.name') }}
-                  </th>
-                  <th class="px-4 py-3 text-right font-medium">
-                    {{ $t('orders.lineColumns.price') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, index) in labLines"
-                  :key="labKey(row, index)"
-                  class="border-b border-default last:border-0"
-                >
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ labName(row) }}
-                  </td>
-                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
-                    {{ labPrice(row) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section
-          v-if="payments.length"
-          class="overflow-hidden rounded-xl border border-default"
-        >
-          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.payments') }}
-          </h2>
-          <div class="divide-y divide-default">
-            <dl
-              v-for="(row, index) in payments"
-              :key="paymentKey(row, index)"
-              class="grid gap-px bg-default sm:grid-cols-2"
+          <p
+            v-if="orderError"
+            class="text-sm text-error"
+          >
+            {{ orderError }}
+          </p>
+          <p
+            v-else-if="orderPending"
+            class="text-sm text-muted"
+          >
+            {{ $t('orders.loading') }}
+          </p>
+          <template v-else>
+            <details
+              v-if="summaryFields.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default"
             >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.summary') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <dl class="grid gap-px bg-default sm:grid-cols-2">
+                <div
+                  v-for="field in summaryFields"
+                  :key="field.key"
+                  class="bg-elevated px-4 py-3.5"
+                >
+                  <dt class="text-sm text-muted">
+                    {{ field.label }}
+                  </dt>
+                  <dd
+                    class="mt-1 text-sm font-medium break-all text-highlighted"
+                    :class="field.money ? 'tabular-money' : ''"
+                  >
+                    {{ field.value }}
+                  </dd>
+                </div>
+              </dl>
+            </details>
+
+            <details
+              v-if="recipientFields.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default"
+            >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.recipient') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <dl class="grid gap-px bg-default sm:grid-cols-2">
+                <div
+                  v-for="field in recipientFields"
+                  :key="field.key"
+                  class="bg-elevated px-4 py-3.5"
+                >
+                  <dt class="text-sm text-muted">
+                    {{ field.label }}
+                  </dt>
+                  <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                    {{ field.value }}
+                  </dd>
+                </div>
+              </dl>
+            </details>
+
+            <details
+              v-if="packageInfo"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
+            >
+              <summary class="cursor-pointer list-none px-4 py-3 group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span class="flex items-center justify-between gap-3">
+                  <span class="text-base font-semibold text-highlighted">
+                    {{ $t('orders.sections.package') }}
+                  </span>
+                  <UIcon
+                    name="i-lucide-chevron-right"
+                    class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                  />
+                </span>
+                <span
+                  v-if="packageInfo.meta.length"
+                  class="mt-1 block text-sm font-normal text-muted"
+                >
+                  <span
+                    v-for="(field, index) in packageInfo.meta"
+                    :key="field.key"
+                  >
+                    <template v-if="index > 0"> · </template>
+                    {{ field.label }} {{ field.value }}
+                  </span>
+                </span>
+              </summary>
               <div
-                v-for="field in paymentFields(row)"
-                :key="`${paymentKey(row, index)}-${field.key}`"
-                class="bg-elevated px-4 py-3.5"
+                v-if="packageComponents.length"
+                class="overflow-x-auto"
               >
-                <dt class="text-sm text-muted">
-                  {{ field.label }}
-                </dt>
-                <dd
-                  class="mt-1 text-sm font-medium break-all text-highlighted"
-                  :class="field.money ? 'tabular-money' : ''"
-                >
-                  {{ field.value }}
-                </dd>
+                <table class="w-full text-left text-sm">
+                  <thead class="border-b border-default bg-muted/40 text-muted">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.name') }}
+                      </th>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.dailyDose') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.unitPrice') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.monthlyCost') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in packageComponents"
+                      :key="componentKey(row, index)"
+                      class="border-b border-default last:border-0"
+                    >
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ componentName(row) }}
+                      </td>
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ textOf(row.daily_dose) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.unit_price) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.monthly_cost) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </dl>
-          </div>
-        </section>
+            </details>
 
-        <section
-          v-if="shipment"
-          class="overflow-hidden rounded-xl border border-default"
-        >
-          <h2 class="border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.shipment') }}
-          </h2>
-          <dl class="grid gap-px bg-default sm:grid-cols-2">
-            <div
-              v-for="field in shipmentFields(shipment)"
-              :key="field.key"
-              class="bg-elevated px-4 py-3.5"
+            <details
+              v-if="labLines.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
             >
-              <dt class="text-sm text-muted">
-                {{ field.label }}
-              </dt>
-              <dd class="mt-1 text-sm font-medium break-all text-highlighted">
-                {{ field.value }}
-              </dd>
-            </div>
-          </dl>
-        </section>
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.labLines') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                  <thead class="border-b border-default bg-muted/40 text-muted">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.name') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.price') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in labLines"
+                      :key="labKey(row, index)"
+                      class="border-b border-default last:border-0"
+                    >
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ labName(row) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ labPrice(row) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
 
-        <section
-          v-if="daySupplies.length"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
-        >
-          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.daySupplies') }}
-          </h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="border-b border-default bg-muted/40 text-muted">
-                <tr>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.name') }}
-                  </th>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.days') }}
-                  </th>
-                  <th class="px-4 py-3 text-right font-medium">
-                    {{ $t('orders.lineColumns.dailyPrice') }}
-                  </th>
-                  <th class="px-4 py-3 text-right font-medium">
-                    {{ $t('orders.lineColumns.price') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, index) in daySupplies"
-                  :key="daySupplyKey(row, index)"
-                  class="border-b border-default last:border-0"
+            <details
+              v-if="payments.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default"
+            >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.payments') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <div class="divide-y divide-default">
+                <dl
+                  v-for="(row, index) in payments"
+                  :key="paymentKey(row, index)"
+                  class="grid gap-px bg-default sm:grid-cols-2"
                 >
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ daySupplyName(row) }}
-                  </td>
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ textOf(row.days) }}
-                  </td>
-                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
-                    {{ amountText(row.daily_price) }}
-                  </td>
-                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
-                    {{ amountText(row.amount) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+                  <div
+                    v-for="field in paymentFields(row)"
+                    :key="`${paymentKey(row, index)}-${field.key}`"
+                    class="bg-elevated px-4 py-3.5"
+                  >
+                    <dt class="text-sm text-muted">
+                      {{ field.label }}
+                    </dt>
+                    <dd
+                      class="mt-1 text-sm font-medium break-all text-highlighted"
+                      :class="field.money ? 'tabular-money' : ''"
+                    >
+                      {{ field.value }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </details>
 
-        <section
-          v-if="vouchers.length"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
-        >
-          <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.vouchers') }}
-          </h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="border-b border-default bg-muted/40 text-muted">
-                <tr>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.name') }}
-                  </th>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.status') }}
-                  </th>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('orders.lineColumns.code') }}
-                  </th>
-                  <th class="px-4 py-3 text-right font-medium">
-                    {{ $t('orders.lineColumns.price') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, index) in vouchers"
-                  :key="voucherKey(row, index)"
-                  class="border-b border-default last:border-0"
+            <details
+              v-if="shipment"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default"
+            >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-elevated px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.shipment') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <dl class="grid gap-px bg-default sm:grid-cols-2">
+                <div
+                  v-for="field in shipmentFields(shipment)"
+                  :key="field.key"
+                  class="bg-elevated px-4 py-3.5"
                 >
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ voucherName(row) }}
-                  </td>
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ voucherStatus(row) }}
-                  </td>
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ voucherCode(row) }}
-                  </td>
-                  <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
-                    {{ amountText(row.price) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+                  <dt class="text-sm text-muted">
+                    {{ field.label }}
+                  </dt>
+                  <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                    {{ field.value }}
+                  </dd>
+                </div>
+              </dl>
+            </details>
 
-        <details
-          v-if="techFields.length"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
-        >
-          <summary class="cursor-pointer px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('orders.sections.tech') }}
-          </summary>
-          <dl class="grid gap-px border-t border-default bg-default sm:grid-cols-2">
-            <div
-              v-for="field in techFields"
-              :key="field.key"
-              class="bg-elevated px-4 py-3.5"
+            <details
+              v-if="daySupplies.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
             >
-              <dt class="text-sm text-muted">
-                {{ field.label }}
-              </dt>
-              <dd class="mt-1 text-sm font-medium break-all text-highlighted">
-                {{ field.value }}
-              </dd>
-            </div>
-          </dl>
-        </details>
-      </template>
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.daySupplies') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                  <thead class="border-b border-default bg-muted/40 text-muted">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.name') }}
+                      </th>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.days') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.dailyPrice') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.price') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in daySupplies"
+                      :key="daySupplyKey(row, index)"
+                      class="border-b border-default last:border-0"
+                    >
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ daySupplyName(row) }}
+                      </td>
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ textOf(row.days) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.daily_price) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.amount) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
 
-      <section class="overflow-hidden rounded-xl border border-default bg-elevated">
-        <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-          {{ $t('orders.sections.messages') }}
-        </h2>
-        <p
-          v-if="messagesError"
-          class="px-4 py-3 text-sm text-error"
-        >
-          {{ messagesError }}
-        </p>
-        <p
-          v-else-if="messagesPending"
-          class="px-4 py-3 text-sm text-muted"
-        >
-          {{ $t('orders.loading') }}
-        </p>
-        <p
-          v-else-if="!chatMessages.length"
-          class="px-4 py-10 text-center text-base text-muted"
-        >
-          {{ $t('orders.messagesEmpty') }}
-        </p>
-        <UChatMessages
-          v-else
-          :auto-scroll="false"
-          :should-scroll-to-bottom="false"
-          class="px-3 py-4"
-        >
-          <UChatMessage
-            v-for="message in chatMessages"
-            :id="message.id"
-            :key="message.id"
-            :role="message.role"
-            :side="message.side"
-            :variant="message.variant"
-            :parts="message.parts"
-            :ui="bubbleUi(message.side)"
-          >
-            <template
-              v-if="message.time"
-              #header
+            <details
+              v-if="vouchers.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
             >
-              <time class="text-xs text-muted">
-                {{ message.time }}
-              </time>
-            </template>
-            <template #content>
-              <p class="text-sm font-medium">
-                {{ message.speaker }}
-              </p>
-              <p
-                v-if="message.content"
-                class="text-sm whitespace-pre-wrap wrap-break-word"
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.vouchers') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                  <thead class="border-b border-default bg-muted/40 text-muted">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.name') }}
+                      </th>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.status') }}
+                      </th>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.code') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.price') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in vouchers"
+                      :key="voucherKey(row, index)"
+                      class="border-b border-default last:border-0"
+                    >
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ voucherName(row) }}
+                      </td>
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ voucherStatus(row) }}
+                      </td>
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ voucherCode(row) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.price) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+
+            <details
+              v-if="techFields.length"
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
+            >
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-base font-semibold text-highlighted group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span>{{ $t('orders.sections.tech') }}</span>
+                <UIcon
+                  name="i-lucide-chevron-right"
+                  class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <dl class="grid gap-px bg-default sm:grid-cols-2">
+                <div
+                  v-for="field in techFields"
+                  :key="field.key"
+                  class="bg-elevated px-4 py-3.5"
+                >
+                  <dt class="text-sm text-muted">
+                    {{ field.label }}
+                  </dt>
+                  <dd class="mt-1 text-sm font-medium break-all text-highlighted">
+                    {{ field.value }}
+                  </dd>
+                </div>
+              </dl>
+            </details>
+          </template>
+        </div>
+
+        <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:h-full lg:max-h-none">
+          <h2 class="shrink-0 border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
+            {{ $t('orders.sections.messages') }}
+          </h2>
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            <p
+              v-if="messagesError"
+              class="px-4 py-3 text-sm text-error"
+            >
+              {{ messagesError }}
+            </p>
+            <p
+              v-else-if="messagesPending"
+              class="px-4 py-3 text-sm text-muted"
+            >
+              {{ $t('orders.loading') }}
+            </p>
+            <p
+              v-else-if="!chatMessages.length"
+              class="px-4 py-10 text-center text-base text-muted"
+            >
+              {{ $t('orders.messagesEmpty') }}
+            </p>
+            <UChatMessages
+              v-else
+              :auto-scroll="false"
+              :should-scroll-to-bottom="false"
+              class="px-3 py-4"
+            >
+              <UChatMessage
+                v-for="message in chatMessages"
+                :id="message.id"
+                :key="message.id"
+                :role="message.role"
+                :side="message.side"
+                :variant="message.variant"
+                :parts="message.parts"
+                :ui="bubbleUi(message.side)"
               >
-                {{ message.content }}
-              </p>
-            </template>
-          </UChatMessage>
-        </UChatMessages>
-      </section>
+                <template
+                  v-if="message.time"
+                  #header
+                >
+                  <time class="text-xs text-muted">
+                    {{ message.time }}
+                  </time>
+                </template>
+                <template #content>
+                  <p class="text-sm font-medium">
+                    {{ message.speaker }}
+                  </p>
+                  <p
+                    v-if="message.content"
+                    class="text-sm whitespace-pre-wrap wrap-break-word"
+                  >
+                    {{ message.content }}
+                  </p>
+                </template>
+              </UChatMessage>
+            </UChatMessages>
+          </div>
+        </section>
+      </div>
     </div>
   </PageHeader>
 </template>
