@@ -30,6 +30,7 @@ watch([editing, saving, deleting, pending, sellableItem, locale], () => {
   const editingNow = editing.value
   set({
     showDelete: true,
+    deleteDisabled: true,
     deleting: deleting.value,
     busy: saving.value || deleting.value,
     onDelete: () => {

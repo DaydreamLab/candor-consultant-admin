@@ -206,7 +206,7 @@ async function logout() {
                 color="error"
                 variant="outline"
                 :loading="navbarActions.deleting"
-                :disabled="navbarActions.busy"
+                :disabled="navbarActions.busy || navbarActions.deleteDisabled"
                 @click="navbarActions.onDelete()"
               >
                 {{ $t('actions.delete') }}

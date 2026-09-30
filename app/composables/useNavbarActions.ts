@@ -2,6 +2,7 @@ export const SELLABLE_ITEM_FORM_ID = 'sellable-item-form'
 
 export type NavbarActions = {
   showDelete: boolean
+  deleteDisabled: boolean
   deleting: boolean
   busy: boolean
   onDelete: () => void

@@ -14,6 +14,7 @@ const errorMessage = ref('')
 watch([saving, locale], () => {
   set({
     showDelete: false,
+    deleteDisabled: false,
     deleting: false,
     busy: saving.value,
     onDelete: () => {},
