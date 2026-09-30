@@ -2,32 +2,12 @@
 import { AdminApiError, adminListPackagePlans } from '~/utils/admin-api'
 import { readOperatorToken } from '~/utils/operator-session'
 
-type PackagePlanColumn = 'name' | 'status' | 'price' | 'summary'
-
 const config = useRuntimeConfig()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const packagePlans = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-
-const columns = computed(() => {
-  const keys = new Set(packagePlans.value.flatMap(row => Object.keys(row)))
-  const visible: { key: PackagePlanColumn, alignEnd: boolean }[] = []
-  if (keys.has('name') || keys.has('title')) {
-    visible.push({ key: 'name', alignEnd: false })
-  }
-  if (keys.has('status')) {
-    visible.push({ key: 'status', alignEnd: false })
-  }
-  if (keys.has('price') || keys.has('amount')) {
-    visible.push({ key: 'price', alignEnd: true })
-  }
-  if (keys.has('summary') || keys.has('description') || keys.has('items')) {
-    visible.push({ key: 'summary', alignEnd: false })
-  }
-  return visible
-})
 
 if (import.meta.client) {
   void load()
@@ -66,35 +46,19 @@ function rowKey(row: Record<string, unknown>, index: number) {
   return `package-plan-${index}`
 }
 
-function columnLabel(key: PackagePlanColumn) {
-  return t(`packagePlans.columns.${key}`)
-}
-
-function cellClass(key: PackagePlanColumn) {
-  if (key === 'price') {
-    return 'tabular-money text-right font-medium text-highlighted'
-  }
-  if (key === 'name') {
-    return 'font-medium text-highlighted'
-  }
-  return ''
-}
-
-function cellText(row: Record<string, unknown>, key: PackagePlanColumn) {
-  switch (key) {
-    case 'name':
-      return nameOf(row)
-    case 'status':
-      return textOf(row.status)
-    case 'price':
-      return priceOf(row)
-    case 'summary':
-      return summaryOf(row)
-  }
-}
-
 function nameOf(row: Record<string, unknown>) {
-  return textValue(row.name) || textValue(row.title) || t('status.na')
+  const zh = textValue(row.name_zh)
+  const en = textValue(row.name_en)
+  const localized = String(locale.value).startsWith('en') ? (en || zh) : (zh || en)
+  return localized || textValue(row.name) || textValue(row.title) || t('status.na')
+}
+
+function descriptionOf(row: Record<string, unknown>) {
+  return textValue(row.description) || t('status.na')
+}
+
+function periodDaysOf(row: Record<string, unknown>) {
+  return textValue(row.period_days) || t('status.na')
 }
 
 function priceOf(row: Record<string, unknown>) {
@@ -105,41 +69,6 @@ function priceOf(row: Record<string, unknown>) {
     return amountOf(row.amount)
   }
   return t('status.na')
-}
-
-function summaryOf(row: Record<string, unknown>) {
-  const summary = textValue(row.summary)
-  if (summary) {
-    return summary
-  }
-  const description = textValue(row.description)
-  if (description) {
-    return description
-  }
-  const names = itemNames(row.items)
-  return names.length ? names.join(' · ') : t('status.na')
-}
-
-function itemNames(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  const names: string[] = []
-  for (const item of value) {
-    if (typeof item === 'string' && item.trim()) {
-      names.push(item.trim())
-      continue
-    }
-    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      continue
-    }
-    const record = item as Record<string, unknown>
-    const name = textValue(record.name) || textValue(record.title)
-    if (name) {
-      names.push(name)
-    }
-  }
-  return names
 }
 
 function textOf(value: unknown) {
@@ -198,34 +127,35 @@ function amountOf(value: unknown) {
     >
       {{ $t('packagePlans.empty') }}
     </p>
-    <AdminTable
+    <div
       v-else
-      compact
+      class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
-      <template #head>
-        <tr>
-          <th
-            v-for="column in columns"
-            :key="column.key"
-            :class="column.alignEnd ? 'text-right' : ''"
-          >
-            {{ columnLabel(column.key) }}
-          </th>
-        </tr>
-      </template>
-      <tr
+      <UCard
         v-for="(row, index) in packagePlans"
         :key="rowKey(row, index)"
-        class="border-b border-default last:border-0"
+        :title="nameOf(row)"
+        :description="descriptionOf(row)"
       >
-        <td
-          v-for="column in columns"
-          :key="column.key"
-          :class="cellClass(column.key)"
-        >
-          {{ cellText(row, column.key) }}
-        </td>
-      </tr>
-    </AdminTable>
+        <dl class="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <dt class="text-muted">
+              {{ $t('orders.fields.period_days') }}
+            </dt>
+            <dd class="mt-1 font-medium text-highlighted">
+              {{ periodDaysOf(row) }}
+            </dd>
+          </div>
+          <div class="text-right">
+            <dt class="text-muted">
+              {{ $t('packagePlans.columns.price') }}
+            </dt>
+            <dd class="tabular-money mt-1 font-medium text-highlighted">
+              {{ priceOf(row) }}
+            </dd>
+          </div>
+        </dl>
+      </UCard>
+    </div>
   </PageHeader>
 </template>
