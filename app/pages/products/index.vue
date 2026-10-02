@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AdminApiError, adminListSellableItems } from '~/utils/admin-api'
+import { AdminApiError, adminListSellableItems, adminUpdateSellableItem } from '~/utils/admin-api'
 import { thumbLetter, thumbTone } from '~/utils/thumb'
 import { readOperatorToken } from '~/utils/operator-session'
 
@@ -11,6 +11,7 @@ const SERVING_KEYS = ['servings_per_container', 'serving_per_container', 'servin
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
+const session = useSessionStore()
 
 const sellableItems = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
@@ -18,6 +19,9 @@ const errorMessage = ref('')
 const query = ref('')
 const categoryFilter = ref<string[]>([CATEGORY_ALL])
 const view = ref<'card' | 'list'>('card')
+const togglingIds = ref<Set<string>>(new Set())
+
+const canToggleSale = computed(() => session.operator?.role !== 'expert')
 
 const categoryOptions = computed(() => {
   const names = new Set<string>()
@@ -135,6 +139,54 @@ function openItem(row: Record<string, unknown>) {
     return
   }
   void navigateTo(localePath(`/products/${encodeURIComponent(id)}`))
+}
+
+function onSaleOf(row: Record<string, unknown>) {
+  return !offSaleOf(row)
+}
+
+function isToggling(row: Record<string, unknown>) {
+  const id = idOf(row)
+  return Boolean(id) && togglingIds.value.has(id)
+}
+
+async function toggleSale(row: Record<string, unknown>, nextOnSale: boolean) {
+  if (!canToggleSale.value) {
+    return
+  }
+  const id = idOf(row)
+  const token = readOperatorToken()
+  if (!id || !token) {
+    return
+  }
+  const previous = scalarText(row.sale_status).trim() || 'off_sale'
+  const next = nextOnSale ? 'on_sale' : 'off_sale'
+  if (previous === next) {
+    return
+  }
+  row.sale_status = next
+  const nextSet = new Set(togglingIds.value)
+  nextSet.add(id)
+  togglingIds.value = nextSet
+  errorMessage.value = ''
+  try {
+    const updated = await adminUpdateSellableItem(config.public.apiBase, token, id, {
+      body: { sale_status: next },
+      image: null
+    })
+    Object.assign(row, updated)
+  } catch (error) {
+    row.sale_status = previous
+    errorMessage.value = failText(error) || t('products.saleToggleFailed')
+  } finally {
+    const cleared = new Set(togglingIds.value)
+    cleared.delete(id)
+    togglingIds.value = cleared
+  }
+}
+
+function stopRowClick(event: Event) {
+  event.stopPropagation()
 }
 
 function rowKey(row: Record<string, unknown>, index: number) {
@@ -381,12 +433,26 @@ function failText(error: unknown) {
               </span>
             </div>
             <div class="space-y-1 p-3">
-              <p
-                v-if="nameOf(row)"
-                class="line-clamp-2 text-base font-semibold text-highlighted"
-              >
-                {{ nameOf(row) }}
-              </p>
+              <div class="flex items-start justify-between gap-2">
+                <p
+                  v-if="nameOf(row)"
+                  class="line-clamp-2 text-base font-semibold text-highlighted"
+                >
+                  {{ nameOf(row) }}
+                </p>
+                <div
+                  v-if="canToggleSale && idOf(row)"
+                  class="shrink-0"
+                  @click="stopRowClick"
+                >
+                  <USwitch
+                    :model-value="onSaleOf(row)"
+                    :disabled="isToggling(row)"
+                    :aria-label="$t('products.saleToggle')"
+                    @update:model-value="toggleSale(row, $event)"
+                  />
+                </div>
+              </div>
               <div
                 v-if="hasBadges(row)"
                 class="flex flex-wrap gap-1"
@@ -459,26 +525,39 @@ function failText(error: unknown) {
                 >
                   {{ nameOf(row) }}
                 </p>
-                <div
-                  v-if="hasBadges(row)"
-                  class="flex shrink-0 flex-wrap justify-end gap-1"
-                >
-                  <UBadge
-                    v-if="categoryOf(row)"
-                    color="neutral"
-                    variant="subtle"
-                    size="sm"
+                <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                  <div
+                    v-if="hasBadges(row)"
+                    class="flex flex-wrap justify-end gap-1"
                   >
-                    {{ categoryOf(row) }}
-                  </UBadge>
-                  <UBadge
-                    v-if="offSaleOf(row)"
-                    color="warning"
-                    variant="subtle"
-                    size="sm"
+                    <UBadge
+                      v-if="categoryOf(row)"
+                      color="neutral"
+                      variant="subtle"
+                      size="sm"
+                    >
+                      {{ categoryOf(row) }}
+                    </UBadge>
+                    <UBadge
+                      v-if="offSaleOf(row)"
+                      color="warning"
+                      variant="subtle"
+                      size="sm"
+                    >
+                      {{ $t('products.offSale') }}
+                    </UBadge>
+                  </div>
+                  <div
+                    v-if="canToggleSale && idOf(row)"
+                    @click="stopRowClick"
                   >
-                    {{ $t('products.offSale') }}
-                  </UBadge>
+                    <USwitch
+                      :model-value="onSaleOf(row)"
+                      :disabled="isToggling(row)"
+                      :aria-label="$t('products.saleToggle')"
+                      @update:model-value="toggleSale(row, $event)"
+                    />
+                  </div>
                 </div>
               </div>
               <p

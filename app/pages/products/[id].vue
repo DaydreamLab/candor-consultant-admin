@@ -9,11 +9,13 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
+const session = useSessionStore()
 const crumbLabel = useSellableItemCrumbLabel()
 const { set } = bindNavbarActions()
 
 const sellableItemId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || sellableItemId.value)
+const canEdit = computed(() => session.operator?.role !== 'expert')
 
 const sellableItem = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
@@ -27,9 +29,14 @@ const bannerError = computed(() => {
   return message && !isBottlePriceSaveError(message) ? message : ''
 })
 
-watch([editing, saving, deleting, pending, sellableItem, locale], () => {
+watch([editing, saving, deleting, pending, sellableItem, locale, canEdit], () => {
   if (pending.value || !sellableItem.value) {
     set(null)
+    return
+  }
+  if (!canEdit.value) {
+    set(null)
+    editing.value = false
     return
   }
   const editingNow = editing.value

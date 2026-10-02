@@ -27,7 +27,7 @@ type NutritionRow = {
   daily_reference_pct: string
 }
 
-type CopyKey = 'audience' | 'summary' | 'highlights' | 'usage_text' | 'usage_limit' | 'ingredients_text' | 'cautions'
+type CopyKey = 'audience' | 'summary' | 'highlights' | 'usage_text' | 'usage_limit' | 'ingredients_text' | 'cautions' | 'risk_text' | 'contraindication_text'
 type SupplyKey = 'shelf_life_text' | 'distributor' | 'origin'
 type IntegerKey = 'servings_per_container' | 'daily_servings_min' | 'daily_servings_max' | 'unit_price' | 'bottle_price'
 
@@ -45,6 +45,7 @@ type FormState = {
   bottle_price: string
   active: boolean
   is_core: boolean
+  can_co_pack: boolean
   sale_status: string
   audience: string
   summary: string
@@ -53,6 +54,9 @@ type FormState = {
   usage_limit: string
   ingredients_text: string
   cautions: string
+  risk_text: string
+  contraindication_text: string
+  unit_size_text: string
   shelf_life_text: string
   distributor: string
   origin: string
@@ -72,7 +76,9 @@ const copyUsage: { key: CopyKey, label: string, rows: number }[] = [
 
 const copyTail: { key: CopyKey, label: string, rows: number }[] = [
   { key: 'ingredients_text', label: 'products.fields.ingredients', rows: 3 },
-  { key: 'cautions', label: 'products.fields.cautions', rows: 3 }
+  { key: 'cautions', label: 'products.fields.cautions', rows: 3 },
+  { key: 'risk_text', label: 'products.fields.riskText', rows: 3 },
+  { key: 'contraindication_text', label: 'products.fields.contraindicationText', rows: 3 }
 ]
 
 const supplyFields: { key: SupplyKey, label: string }[] = [
@@ -140,8 +146,9 @@ const showSupply = computed(() => visibleSupply.value.length > 0)
 
 const showActive = computed(() => props.editing || typeof props.sellableItem?.active === 'boolean')
 const showCore = computed(() => props.editing || typeof props.sellableItem?.is_core === 'boolean')
+const showCoPack = computed(() => props.editing || typeof props.sellableItem?.can_co_pack === 'boolean')
 const showSaleStatus = computed(() => props.editing || Boolean(state.sale_status.trim()))
-const showStatus = computed(() => showActive.value || showCore.value || showSaleStatus.value)
+const showStatus = computed(() => showActive.value || showCore.value || showCoPack.value || showSaleStatus.value)
 
 const saleStatusItems = computed(() => {
   const current = state.sale_status.trim()
@@ -171,6 +178,7 @@ const showDose = computed(() => {
   return Boolean(
     state.servings_per_container.trim()
     || state.serving_size_text.trim()
+    || state.unit_size_text.trim()
     || state.daily_servings_min.trim()
     || state.daily_servings_max.trim()
     || state.unit_price.trim()
@@ -254,6 +262,7 @@ function writeBody() {
     category: state.category.trim(),
     spec_text: state.spec_text.trim(),
     serving_size_text: state.serving_size_text.trim(),
+    unit_size_text: state.unit_size_text.trim(),
     audience: state.audience.trim(),
     summary: state.summary.trim(),
     highlights: state.highlights.trim(),
@@ -261,11 +270,14 @@ function writeBody() {
     usage_limit: state.usage_limit.trim(),
     ingredients_text: state.ingredients_text.trim(),
     cautions: state.cautions.trim(),
+    risk_text: state.risk_text.trim(),
+    contraindication_text: state.contraindication_text.trim(),
     shelf_life_text: state.shelf_life_text.trim(),
     distributor: state.distributor.trim(),
     origin: state.origin.trim(),
     active: state.active,
     is_core: state.is_core,
+    can_co_pack: state.can_co_pack,
     sale_status: state.sale_status.trim() || 'on_sale',
     nutrition: state.nutrition
       .map(row => ({
@@ -358,6 +370,7 @@ function applyItem(item: Record<string, unknown> | null) {
     next.bottle_price = integerText(item.bottle_price)
     next.active = typeof item.active === 'boolean' ? item.active : true
     next.is_core = item.is_core === true
+    next.can_co_pack = item.can_co_pack !== false
     next.sale_status = scalarText(item.sale_status).trim() || 'on_sale'
     next.audience = fieldText(item.audience)
     next.summary = scalarText(item.summary).trim()
@@ -366,6 +379,9 @@ function applyItem(item: Record<string, unknown> | null) {
     next.usage_limit = scalarText(item.usage_limit).trim()
     next.ingredients_text = scalarText(item.ingredients_text).trim()
     next.cautions = scalarText(item.cautions).trim()
+    next.risk_text = scalarText(item.risk_text).trim()
+    next.contraindication_text = scalarText(item.contraindication_text).trim()
+    next.unit_size_text = scalarText(item.unit_size_text).trim()
     next.shelf_life_text = scalarText(item.shelf_life_text).trim()
     next.distributor = scalarText(item.distributor).trim()
     next.origin = scalarText(item.origin).trim()
@@ -390,6 +406,7 @@ function emptyState(): FormState {
     bottle_price: '',
     active: true,
     is_core: false,
+    can_co_pack: true,
     sale_status: 'on_sale',
     audience: '',
     summary: '',
@@ -398,6 +415,9 @@ function emptyState(): FormState {
     usage_limit: '',
     ingredients_text: '',
     cautions: '',
+    risk_text: '',
+    contraindication_text: '',
+    unit_size_text: '',
     shelf_life_text: '',
     distributor: '',
     origin: '',
@@ -614,7 +634,7 @@ function yesNo(value: boolean) {
 
         <div
           v-if="showStatus"
-          class="mt-4 grid gap-4 sm:grid-cols-3"
+          class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           <UFormField
             v-if="showActive"
@@ -644,6 +664,21 @@ function yesNo(value: boolean) {
             <USwitch
               v-else
               v-model="state.is_core"
+            />
+          </UFormField>
+          <UFormField
+            v-if="showCoPack"
+            :label="$t('products.fields.canCoPack')"
+          >
+            <p
+              v-if="!editing"
+              class="text-sm font-medium text-highlighted"
+            >
+              {{ yesNo(state.can_co_pack) }}
+            </p>
+            <USwitch
+              v-else
+              v-model="state.can_co_pack"
             />
           </UFormField>
           <UFormField
@@ -708,6 +743,22 @@ function yesNo(value: boolean) {
               <UInput
                 v-else
                 v-model="state.serving_size_text"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField
+              v-if="filled(state.unit_size_text)"
+              :label="$t('products.fields.unitSizeText')"
+            >
+              <p
+                v-if="!editing"
+                class="text-sm font-medium text-highlighted"
+              >
+                {{ state.unit_size_text }}
+              </p>
+              <UInput
+                v-else
+                v-model="state.unit_size_text"
                 class="w-full"
               />
             </UFormField>
