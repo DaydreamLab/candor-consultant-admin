@@ -70,7 +70,9 @@
 | PackagePlan 建立、更新、單筆詳情 | —（下一階段；core 有 `GET /admin/package-plan/{id}`，無刪除端點） | 無 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
-| Weight sets | —（可掛設定） | 無 | Mock | M4 |
+| 專家訓練／權重 | `/expert-tuning`、`/expert-tuning/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
+| 專家訓練／訓練批次 | `/expert-tuning/training`、`/expert-tuning/training/{id}` | 殼 | Mock | M4 |
+| Weight sets | —（權重分頁仍 mock；HTTP 見 core） | 殼 | Mock | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
 | 設定頁 | `/settings` | 殼＋client-config | 已接（檢測更多外連） | 完成 |
@@ -145,6 +147,8 @@
 | 能力 | 端點 | 狀態 |
 |------|------|------|
 | 列表／建立／詳情／entries／dry-run／publish | `/admin/weight-sets/**` | Mock |
+| 後台「專家訓練」權重分頁 | `/expert-tuning`（本地 mock，未呼叫 weight-set API） | Mock |
+| 後台「專家訓練」訓練批次 | `/expert-tuning/training`（本地 mock；案例庫／模擬案例／review；無 HTTP） | Mock |
 
 ### 明確不做（示範頁可暫留）
 
@@ -168,4 +172,4 @@
 
 ---
 
-**最後更新**：2026-10-01（與 candor-core `docs/04` Admin 區對齊。商品列表／新增／更新已接；刪除按鈕對應的 `DELETE` core 未提供。價格帶只接列表。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。登入仍接線中）
+**最後更新**：2026-10-03（與 candor-core `docs/04` Admin 區對齊。商品列表／新增／更新已接；刪除按鈕對應的 `DELETE` core 未提供。價格帶只接列表。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**專家訓練**在側欄「平台」：權重與訓練批次皆為 mock（見 core spec 15）。登入仍接線中）

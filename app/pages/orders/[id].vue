@@ -46,6 +46,8 @@ const title = computed(() => orderLabel.value || orderId.value)
 const order = ref<Record<string, unknown> | null>(null)
 const messages = ref<Record<string, unknown>[]>([])
 const reportResults = ref<HealthReportResult[]>([])
+const conversationUsage = ref<Record<string, unknown> | null>(null)
+const reportUsage = ref<Record<string, unknown> | null>(null)
 const orderPending = ref(true)
 const messagesPending = ref(true)
 const reportPending = ref(false)
@@ -110,6 +112,8 @@ async function load(id: string) {
   order.value = null
   messages.value = []
   reportResults.value = []
+  conversationUsage.value = null
+  reportUsage.value = null
   orderError.value = ''
   messagesError.value = ''
   reportError.value = ''
@@ -148,10 +152,12 @@ async function load(id: string) {
   orderPending.value = false
 
   if (messagesResult.status === 'fulfilled') {
-    messages.value = messagesResult.value
+    messages.value = messagesResult.value.messages
+    conversationUsage.value = messagesResult.value.llm_usage
     messagesError.value = ''
   } else {
     messages.value = []
+    conversationUsage.value = null
     messagesError.value = failText(messagesResult.reason, t('orders.messagesFailed'))
   }
   messagesPending.value = false
@@ -167,12 +173,14 @@ async function load(id: string) {
       return
     }
     reportResults.value = healthReportResultsOf(report)
+    reportUsage.value = isUsageRecord(report.llm_usage) ? report.llm_usage : null
     reportError.value = ''
   } catch (error) {
     if (seq !== loadSeq || orderId.value !== id) {
       return
     }
     reportResults.value = []
+    reportUsage.value = null
     reportError.value = failText(error, t('orders.reportReading.failed'))
   } finally {
     if (seq === loadSeq) {
@@ -184,6 +192,10 @@ async function load(id: string) {
 function failText(error: unknown, fallback: string) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
   return message || fallback
+}
+
+function isUsageRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function healthReportResultsOf(data: Record<string, unknown>): HealthReportResult[] {
@@ -716,7 +728,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
           :class="reportOpen ? 'border-b border-default' : ''"
           @click="reportOpen = !reportOpen"
         >
-          <span>{{ $t('orders.sections.reportReading') }}</span>
+          <div class="min-w-0 space-y-1">
+            <span>{{ $t('orders.sections.reportReading') }}</span>
+            <LlmUsageSummary :usage="reportUsage" />
+          </div>
           <UIcon
             name="i-lucide-chevron-right"
             class="size-4 shrink-0 text-muted transition-transform"
@@ -1231,8 +1246,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         </div>
 
         <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:max-h-none">
-          <div class="flex shrink-0 items-center border-b border-default bg-elevated px-4 py-3 text-base font-semibold text-highlighted">
-            <span>{{ $t('orders.sections.messages') }}</span>
+          <div class="flex shrink-0 flex-col gap-2 border-b border-default bg-elevated px-4 py-3">
+            <span class="text-base font-semibold text-highlighted">{{ $t('orders.sections.messages') }}</span>
+            <LlmUsageSummary :usage="conversationUsage" />
           </div>
           <div class="min-h-0 flex-1 overflow-y-auto">
             <p

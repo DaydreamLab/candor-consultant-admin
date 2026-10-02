@@ -144,7 +144,7 @@ export async function adminListOrderMessages(apiBase: string, token: string, id:
     if (body?.status !== 'success') {
       throw new AdminApiError(500, '')
     }
-    return readOrderMessages(body.data)
+    return readOrderMessagesPayload(body.data)
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error
@@ -270,7 +270,7 @@ export async function adminListUserConversationMessages(
     if (body?.status !== 'success') {
       throw new AdminApiError(500, '')
     }
-    return readOrderMessages(body.data)
+    return readOrderMessagesPayload(body.data)
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error
@@ -634,12 +634,21 @@ function sellableItemListOf(data: unknown): unknown[] | null {
   return null
 }
 
-function readOrderMessages(data: unknown) {
+function readOrderMessagesPayload(data: unknown): {
+  messages: Record<string, unknown>[]
+  llm_usage: Record<string, unknown> | null
+} {
   if (Array.isArray(data)) {
-    return data.filter(isRecord)
+    return {
+      messages: data.filter(isRecord),
+      llm_usage: null
+    }
   }
   if (isRecord(data) && Array.isArray(data.messages)) {
-    return data.messages.filter(isRecord)
+    return {
+      messages: data.messages.filter(isRecord),
+      llm_usage: isRecord(data.llm_usage) ? data.llm_usage : null
+    }
   }
   throw new AdminApiError(500, '')
 }

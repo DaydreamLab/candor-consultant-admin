@@ -53,6 +53,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'platform',
     items: [
       { key: 'orgs', to: '/orgs', icon: 'i-lucide-building-2', platformOnly: true },
+      { key: 'expertTuning', to: '/expert-tuning', icon: 'i-lucide-sliders-horizontal' },
       { key: 'settings', to: '/settings', icon: 'i-lucide-settings' }
     ]
   }

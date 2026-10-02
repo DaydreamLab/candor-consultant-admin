@@ -14,6 +14,7 @@
     "progress": "履約進度",
     "products": "保健品列表",
     "packagePlans": "方案項目",
+    "expertTuning": "專家訓練",
     "selections": "案件選品",
     "shipping": "出貨",
     "invoices": "請款作業",
@@ -260,6 +261,105 @@
       "price": "價格",
       "summary": "內容摘要"
     }
+  },
+  "expertTuning": {
+    "description": "權重版本與條目（示範資料，尚未接 API）。",
+    "tabs": {
+      "weights": "權重",
+      "training": "訓練"
+    },
+    "training": {
+      "description": "建立訓練組合：勾選去識別化案例對話，依權重版本產出模擬案例，專家 review 後才解鎖 clone／publish。",
+      "detailDescription": "逐筆 approve 或調整品項；改品項須填原因。全部完成後可推進。",
+      "create": "新建訓練組合",
+      "createTitle": "新建並產出模擬案例",
+      "generate": "產出模擬案例",
+      "empty": "尚無訓練組合",
+      "notFound": "找不到這個訓練組合。",
+      "back": "回到訓練列表",
+      "promote": "推進（解鎖 clone）",
+      "promoteHint": "每一筆都 review 後才可推進。推進不會自動改權重數字。",
+      "promotedHint": "已解鎖。權重分頁會出現草稿說明；仍須手動 clone → publish。",
+      "approve": "Approve（維持品項）",
+      "saveAdjust": "存成調整",
+      "casesTitle": "模擬案例",
+      "progress": "{done}／{total} 已 review",
+      "fields": {
+        "name": "組合名稱",
+        "weight": "權重版本",
+        "count": "模擬筆數",
+        "countHint": "預設概念為 50；本 mock 建議先用較小數字。",
+        "cases": "案例對話（去識別化）",
+        "items": "品項（可調整）",
+        "reason": "原因",
+        "reasonHint": "有改品項時必填",
+        "expert": "專家身份"
+      },
+      "columns": {
+        "name": "名稱",
+        "weight": "權重版本",
+        "count": "筆數",
+        "progress": "進度",
+        "status": "狀態"
+      },
+      "status": {
+        "selecting": "選案例中",
+        "generated": "已產出",
+        "in_review": "review 中",
+        "ready": "可推進",
+        "promoted": "已推進"
+      },
+      "reviewStatus": {
+        "pending": "待 review",
+        "approved": "已 approve",
+        "adjusted": "已調整"
+      },
+      "sections": {
+        "context": "案例摘要",
+        "simulated": "模擬品項",
+        "review": "專家 review"
+      },
+      "errors": {
+        "name": "請填組合名稱。",
+        "cases": "請至少勾選一則案例對話。",
+        "weight": "請選擇權重版本。",
+        "items": "請至少保留一個品項。",
+        "reason": "改了品項須填寫原因。",
+        "approveChanged": "品項已變更，請用「存成調整」並填原因。",
+        "promote": "尚不可推進（需全部 review 完成）。"
+      }
+    },
+    "emptyDetail": "從左側選一筆查看權重條目。",
+    "emptyList": "尚無權重版本",
+    "notFound": "找不到這個權重版本。",
+    "backToList": "回到權重列表",
+    "entriesTitle": "權重條目",
+    "mockHint": "此頁為開發中 mock，不寫入後端。",
+    "columns": {
+      "version": "版本",
+      "status": "狀態",
+      "label": "名稱",
+      "updatedAt": "更新時間",
+      "baseline": "基準版本"
+    },
+    "status": {
+      "draft": "草稿",
+      "published": "已發布",
+      "archived": "已封存"
+    },
+    "entries": {
+      "domain": "領域",
+      "ingredient": "成分",
+      "baseWeight": "權重",
+      "priority": "優先序"
+    }
+  },
+  "llmUsage": {
+    "input": "輸入",
+    "output": "輸出",
+    "cost": "預估成本",
+    "tokens": "{n} tokens",
+    "usd": "${amount}"
   },
   "roles": {
     "platform_viewer": "坦見業主（唯讀）",

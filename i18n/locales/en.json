@@ -14,6 +14,7 @@
     "progress": "Fulfillment progress",
     "products": "Supplement list",
     "packagePlans": "Plan items",
+    "expertTuning": "Expert tuning",
     "selections": "Case selections",
     "shipping": "Shipping",
     "invoices": "Invoice Candor",
@@ -260,6 +261,105 @@
       "price": "Price",
       "summary": "Summary"
     }
+  },
+  "expertTuning": {
+    "description": "Weight set versions and entries (mock data; API not wired).",
+    "tabs": {
+      "weights": "Weights",
+      "training": "Training"
+    },
+    "training": {
+      "description": "Create a training batch: pick de-identified case dialogues, simulate cases from a weight version, review all cases, then unlock clone → publish.",
+      "detailDescription": "Approve or adjust items per case; reason required when items change. Promote only after every case is reviewed.",
+      "create": "New training batch",
+      "createTitle": "Create and generate simulated cases",
+      "generate": "Generate cases",
+      "empty": "No training batches yet",
+      "notFound": "Training batch not found.",
+      "back": "Back to training list",
+      "promote": "Promote (unlock clone)",
+      "promoteHint": "Review every case before promoting. Promote does not auto-change weight numbers.",
+      "promotedHint": "Unlocked. A draft note appears on the Weights tab; clone → publish is still required.",
+      "approve": "Approve (keep items)",
+      "saveAdjust": "Save adjustment",
+      "casesTitle": "Simulated cases",
+      "progress": "{done}/{total} reviewed",
+      "fields": {
+        "name": "Batch name",
+        "weight": "Weight version",
+        "count": "Case count",
+        "countHint": "Concept default is 50; use a smaller number in this mock.",
+        "cases": "Case dialogues (de-identified)",
+        "items": "Items (adjustable)",
+        "reason": "Reason",
+        "reasonHint": "Required when items change",
+        "expert": "Expert identity"
+      },
+      "columns": {
+        "name": "Name",
+        "weight": "Weight version",
+        "count": "Count",
+        "progress": "Progress",
+        "status": "Status"
+      },
+      "status": {
+        "selecting": "Selecting",
+        "generated": "Generated",
+        "in_review": "In review",
+        "ready": "Ready",
+        "promoted": "Promoted"
+      },
+      "reviewStatus": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "adjusted": "Adjusted"
+      },
+      "sections": {
+        "context": "Case summary",
+        "simulated": "Simulated items",
+        "review": "Expert review"
+      },
+      "errors": {
+        "name": "Enter a batch name.",
+        "cases": "Select at least one case dialogue.",
+        "weight": "Select a weight version.",
+        "items": "Keep at least one item.",
+        "reason": "Reason is required when items change.",
+        "approveChanged": "Items changed — use Save adjustment with a reason.",
+        "promote": "Cannot promote until every case is reviewed."
+      }
+    },
+    "emptyDetail": "Select a row to view weight entries.",
+    "emptyList": "No weight sets yet",
+    "notFound": "Weight set not found.",
+    "backToList": "Back to weight list",
+    "entriesTitle": "Weight entries",
+    "mockHint": "In-development mock; nothing is written to the backend.",
+    "columns": {
+      "version": "Version",
+      "status": "Status",
+      "label": "Label",
+      "updatedAt": "Updated",
+      "baseline": "Baseline"
+    },
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "entries": {
+      "domain": "Domain",
+      "ingredient": "Ingredient",
+      "baseWeight": "Weight",
+      "priority": "Priority"
+    }
+  },
+  "llmUsage": {
+    "input": "Input",
+    "output": "Output",
+    "cost": "Est. cost",
+    "tokens": "{n} tokens",
+    "usd": "${amount}"
   },
   "roles": {
     "platform_viewer": "Candor owner (read-only)",

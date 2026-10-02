@@ -56,6 +56,8 @@ const conversations = ref<Record<string, unknown>[]>([])
 const reports = ref<Record<string, unknown>[]>([])
 const messages = ref<Record<string, unknown>[]>([])
 const reportResults = ref<HealthReportResult[]>([])
+const conversationUsage = ref<Record<string, unknown> | null>(null)
+const reportUsage = ref<Record<string, unknown> | null>(null)
 
 const userPending = ref(true)
 const ordersPending = ref(true)
@@ -128,6 +130,8 @@ async function load(id: string) {
   selectedReportId.value = ''
   messages.value = []
   reportResults.value = []
+  conversationUsage.value = null
+  reportUsage.value = null
   messagesError.value = ''
   reportError.value = ''
   userLabel.value = null
@@ -223,6 +227,7 @@ async function openConversation(row: Record<string, unknown>) {
     return
   }
   selectedConversationId.value = id
+  conversationUsage.value = isUsageRecord(row.llm_usage) ? row.llm_usage : null
   const seq = ++messagesSeq
   const token = readOperatorToken()
   if (!token) {
@@ -242,7 +247,8 @@ async function openConversation(row: Record<string, unknown>) {
     if (seq !== messagesSeq) {
       return
     }
-    messages.value = fetched
+    messages.value = fetched.messages
+    conversationUsage.value = fetched.llm_usage
   } catch (error) {
     if (seq !== messagesSeq) {
       return
@@ -262,6 +268,7 @@ async function openReport(row: Record<string, unknown>) {
     return
   }
   selectedReportId.value = id
+  reportUsage.value = isUsageRecord(row.llm_usage) ? row.llm_usage : null
   const seq = ++reportSeq
   const token = readOperatorToken()
   if (!token) {
@@ -282,6 +289,7 @@ async function openReport(row: Record<string, unknown>) {
       return
     }
     reportResults.value = healthReportResultsOf(report)
+    reportUsage.value = isUsageRecord(report.llm_usage) ? report.llm_usage : reportUsage.value
   } catch (error) {
     if (seq !== reportSeq) {
       return
@@ -315,6 +323,10 @@ function displayTitle(data: Record<string, unknown>) {
 function failText(error: unknown, fallback: string) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
   return message || fallback
+}
+
+function isUsageRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function healthReportResultsOf(data: Record<string, unknown>): HealthReportResult[] {
@@ -687,6 +699,9 @@ function messageTimeText(row: Record<string, unknown>) {
                     <th class="px-4 py-2.5">
                       {{ $t('users.conversations.columns.createdAt') }}
                     </th>
+                    <th class="px-4 py-2.5">
+                      {{ $t('llmUsage.cost') }}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -706,6 +721,9 @@ function messageTimeText(row: Record<string, unknown>) {
                     <td class="px-4 py-3 text-muted">
                       {{ createdAtOf(row.created_at) }}
                     </td>
+                    <td class="px-4 py-3">
+                      <LlmUsageSummary :usage="isUsageRecord(row.llm_usage) ? row.llm_usage : null" />
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -714,8 +732,14 @@ function messageTimeText(row: Record<string, unknown>) {
         </section>
 
         <section class="flex max-h-[28rem] min-h-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated">
-          <div class="shrink-0 border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('users.sections.messages') }}
+          <div class="shrink-0 space-y-2 border-b border-default px-4 py-3">
+            <div class="text-base font-semibold text-highlighted">
+              {{ $t('users.sections.messages') }}
+            </div>
+            <LlmUsageSummary
+              v-if="selectedConversationId"
+              :usage="conversationUsage"
+            />
           </div>
           <div class="min-h-0 flex-1 overflow-y-auto">
             <p
@@ -804,6 +828,9 @@ function messageTimeText(row: Record<string, unknown>) {
                     <th class="px-4 py-2.5">
                       {{ $t('users.reports.columns.createdAt') }}
                     </th>
+                    <th class="px-4 py-2.5">
+                      {{ $t('llmUsage.cost') }}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -823,6 +850,9 @@ function messageTimeText(row: Record<string, unknown>) {
                     <td class="px-4 py-3 text-muted">
                       {{ createdAtOf(row.created_at) }}
                     </td>
+                    <td class="px-4 py-3">
+                      <LlmUsageSummary :usage="isUsageRecord(row.llm_usage) ? row.llm_usage : null" />
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -831,8 +861,14 @@ function messageTimeText(row: Record<string, unknown>) {
         </section>
 
         <section class="overflow-hidden rounded-xl border border-default bg-elevated">
-          <div class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-            {{ $t('users.sections.reportReading') }}
+          <div class="space-y-2 border-b border-default px-4 py-3">
+            <div class="text-base font-semibold text-highlighted">
+              {{ $t('users.sections.reportReading') }}
+            </div>
+            <LlmUsageSummary
+              v-if="selectedReportId"
+              :usage="reportUsage"
+            />
           </div>
           <p
             v-if="!selectedReportId"

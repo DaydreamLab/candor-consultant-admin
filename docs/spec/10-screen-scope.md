@@ -44,7 +44,8 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | orgs | `/orgs` | **不做** | 多租戶不建模 |
-| settings | `/settings` | 部分 | Operator 帳號／權重入口可落此；勿做 org 設定 |
+| expertTuning | `/expert-tuning`、`/expert-tuning/weights/{id}`、`/expert-tuning/training`、`/expert-tuning/training/{id}` | **in-scope（語意）** | 側欄在「平台」。權重為列表點進詳情；權重與訓練批次皆為本地 mock（見 [candor-core spec 15](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/15-expert-tuning.md) 訓練批次）。不讀營運訂單／會員對話。不是 `/reviews` 簽核 |
+| settings | `/settings` | 部分 | Operator 帳號可落此；勿做 org 設定 |
 
 ### 側欄底部（不在 `NAV_GROUPS`）
 

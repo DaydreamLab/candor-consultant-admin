@@ -12,6 +12,8 @@ export function usePageCrumbs() {
   const orderLabel = useState<string | null>('candor-order-detail-label', () => null)
   const userLabel = useState<string | null>('candor-user-detail-label', () => null)
   const sellableItemLabel = useSellableItemCrumbLabel()
+  const trainingBatchLabel = useState<string | null>('candor-training-batch-label', () => null)
+  const weightSetLabel = useState<string | null>('candor-weight-set-label', () => null)
 
   const items = computed<BreadcrumbItem[]>(() => {
     const current = normalizeAdminPath(route.path)
@@ -36,6 +38,31 @@ export function usePageCrumbs() {
       return [
         { label: t('nav.orders'), to: localePath('/orders') },
         { label: orderLabel.value || id }
+      ]
+    }
+
+    if (current.startsWith('/expert-tuning/weights/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },
+        { label: t('expertTuning.tabs.weights'), to: localePath('/expert-tuning') },
+        { label: weightSetLabel.value || id }
+      ]
+    }
+
+    if (current === '/expert-tuning/training') {
+      return [
+        { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },
+        { label: t('expertTuning.tabs.training') }
+      ]
+    }
+
+    if (current.startsWith('/expert-tuning/training/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },
+        { label: t('expertTuning.tabs.training'), to: localePath('/expert-tuning/training') },
+        { label: trainingBatchLabel.value || id }
       ]
     }
 
