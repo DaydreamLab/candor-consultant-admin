@@ -73,7 +73,7 @@
 | Weight sets | —（可掛設定） | 無 | Mock | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
-| 設定頁 | `/settings` | 殼 | 不需 | 完成（殼；可當 M4 入口） |
+| 設定頁 | `/settings` | 殼＋client-config | 已接（檢測更多外連） | 完成 |
 | 報告列表／詳情 | — | 無 | 不做 | 不做 |
 
 ### 明確不做（示範頁可暫留）
@@ -119,6 +119,7 @@
 | PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
 | PackagePlan 建立、更新、單筆詳情 | `POST /admin/package-plans`、`GET`／`PATCH /admin/package-plan/{id}` | Mock（`GET` 單筆 core 已有，畫面未呼叫；無刪除端點） |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock |
+| Client config | `GET`／`PATCH /admin/client-config` | 已接（`/settings`） |
 
 ### Orders／shipments
 

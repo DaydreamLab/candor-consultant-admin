@@ -28,6 +28,63 @@ export async function adminGetMe(apiBase: string, token: string) {
   }
 }
 
+export type AdminClientConfig = {
+  individual_tests_url: string
+  updated_at?: string | null
+}
+
+export async function adminGetClientConfig(apiBase: string, token: string): Promise<AdminClientConfig> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/client-config'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const url = body.data.individual_tests_url
+    return {
+      individual_tests_url: typeof url === 'string' ? url : '',
+      updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchClientConfig(
+  apiBase: string,
+  token: string,
+  payload: { individual_tests_url: string }
+): Promise<AdminClientConfig> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/client-config'), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const url = body.data.individual_tests_url
+    return {
+      individual_tests_url: typeof url === 'string' ? url : '',
+      updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export type AdminOrderListQuery = {
   status?: string
   payment_status?: string
