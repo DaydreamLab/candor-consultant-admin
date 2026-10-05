@@ -22,13 +22,14 @@ const props = defineProps<{
 
 const localePath = useLocalePath()
 const colorMode = useColorMode()
+const runtimeConfig = useRuntimeConfig()
 
 const src = computed(() => {
-  if (props.collapsed) {
-    return '/brand/candor-mark.png'
-  }
-  return colorMode.value === 'dark'
-    ? '/brand/candor-logo-dark.png'
-    : '/brand/candor-logo.png'
+  const file = props.collapsed
+    ? '/brand/candor-mark.png'
+    : colorMode.value === 'dark'
+      ? '/brand/candor-logo-dark.png'
+      : '/brand/candor-logo.png'
+  return withAppBase(runtimeConfig.app.baseURL, file)
 })
 </script>

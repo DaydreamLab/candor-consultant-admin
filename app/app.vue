@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { locale, t } = useI18n()
+const runtimeConfig = useRuntimeConfig()
 
 useHead({
   title: t('meta.title'),
@@ -10,7 +11,7 @@ useHead({
     lang: locale
   },
   link: [
-    { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+    { rel: 'icon', type: 'image/png', href: withAppBase(runtimeConfig.app.baseURL, '/favicon.png') },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
     {
