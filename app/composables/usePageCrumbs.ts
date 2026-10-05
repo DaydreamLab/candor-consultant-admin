@@ -5,6 +5,10 @@ export function useSellableItemCrumbLabel() {
   return useState<string | null>('candor-sellable-item-label', () => null)
 }
 
+export function usePackagePlanCrumbLabel() {
+  return useState<string | null>('candor-package-plan-label', () => null)
+}
+
 export function usePageCrumbs() {
   const route = useRoute()
   const localePath = useLocalePath()
@@ -12,6 +16,7 @@ export function usePageCrumbs() {
   const orderLabel = useState<string | null>('candor-order-detail-label', () => null)
   const userLabel = useState<string | null>('candor-user-detail-label', () => null)
   const sellableItemLabel = useSellableItemCrumbLabel()
+  const packagePlanLabel = usePackagePlanCrumbLabel()
   const trainingBatchLabel = useState<string | null>('candor-training-batch-label', () => null)
   const weightSetLabel = useState<string | null>('candor-weight-set-label', () => null)
 
@@ -30,6 +35,14 @@ export function usePageCrumbs() {
       return [
         { label: t('nav.products'), to: localePath('/products') },
         { label: sellableItemLabel.value || id }
+      ]
+    }
+
+    if (current.startsWith('/package-plans/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.packagePlans'), to: localePath('/package-plans') },
+        { label: packagePlanLabel.value || id }
       ]
     }
 

@@ -64,10 +64,11 @@
 | 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
-| 訂單列表 | `/orders` | 可用 | 已接 | M3 |
+| 訂單 | `/orders` | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話／報告判讀 | `/orders/{id}`（詳情、對話與報告判讀可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
-| PackagePlan 列表 | `/package-plans` | 可用 | 已接 | M3 |
-| PackagePlan 建立、更新、單筆詳情 | —（下一階段；core 有 `GET /admin/package-plan/{id}`，無刪除端點） | 無 | Mock | M3 |
+| 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
+| 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
+| PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
 | LabService 主檔 | — | 無 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/expert-tuning`、`/expert-tuning/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
@@ -119,7 +120,8 @@
 | SellableItem 刪除 | `DELETE /admin/sellable-item/{id}` | 不做（詳情頁不提供刪除；停售走 `PATCH` `sale_status`） |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
 | PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
-| PackagePlan 建立、更新、單筆詳情 | `POST /admin/package-plans`、`GET`／`PATCH /admin/package-plan/{id}` | Mock（`GET` 單筆 core 已有，畫面未呼叫；無刪除端點） |
+| PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/package-plan/{id}` | 已接（畫面 `/package-plans/{id}`；`period_days` 可改且須 > 0；UI 選項 30／60／90） |
+| PackagePlan 建立 | `POST /admin/package-plans` | Mock（畫面未做；無刪除端點） |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/settings`） |
 
@@ -172,4 +174,4 @@
 
 ---
 
-**最後更新**：2026-10-03（與 candor-core `docs/04` Admin 區對齊。商品列表／新增／更新已接；刪除按鈕對應的 `DELETE` core 未提供。價格帶只接列表。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**專家訓練**在側欄「平台」：權重與訓練批次皆為 mock（見 core spec 15）。登入仍接線中）
+**最後更新**：2026-10-05（與 candor-core `docs/04` Admin 區對齊。側欄改名：訂單／保健品／銷售方案。銷售方案列表與詳情／更新已接（`period_days` 可改；UI 30／60／90）；建立仍 Mock。商品列表／新增／更新已接。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**專家訓練**在側欄「平台」：權重與訓練批次皆為 mock（見 core spec 15）。登入仍接線中）

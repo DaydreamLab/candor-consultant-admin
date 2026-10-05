@@ -342,6 +342,61 @@ export async function adminListPackagePlans(apiBase: string, token: string) {
   }
 }
 
+export type PackagePlanWrite = {
+  name_zh: string
+  name_en: string | null
+  description: string | null
+  price: number
+  period_days: number
+  sort_order: number
+  active: boolean
+}
+
+export async function adminGetPackagePlan(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/package-plan/${encodeURIComponent(id)}`), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminUpdatePackagePlan(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: PackagePlanWrite
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/package-plan/${encodeURIComponent(id)}`), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminListSellableItems(apiBase: string, token: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/sellable-items'), {

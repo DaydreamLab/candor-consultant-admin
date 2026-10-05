@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { AdminApiError, adminListPackagePlans } from '~/utils/admin-api'
+import { money } from '~/utils/format'
+import { packagePlanBudget } from '~/utils/package-plan-budget'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
+const localePath = useLocalePath()
 const { t, locale } = useI18n()
 
 const packagePlans = ref<Record<string, unknown>[]>([])
@@ -35,15 +38,27 @@ async function load() {
   }
 }
 
-function rowKey(row: Record<string, unknown>, index: number) {
+function openPlan(row: Record<string, unknown>) {
+  const id = idOf(row)
+  if (!id) {
+    return
+  }
+  void navigateTo(localePath(`/package-plans/${encodeURIComponent(id)}`))
+}
+
+function idOf(row: Record<string, unknown>) {
   const id = row.id
   if (typeof id === 'string' && id.trim()) {
-    return id
+    return id.trim()
   }
   if (typeof id === 'number' && Number.isFinite(id)) {
     return String(id)
   }
-  return `package-plan-${index}`
+  return ''
+}
+
+function rowKey(row: Record<string, unknown>, index: number) {
+  return idOf(row) || `package-plan-${index}`
 }
 
 function nameOf(row: Record<string, unknown>) {
@@ -71,6 +86,22 @@ function priceOf(row: Record<string, unknown>) {
   return t('status.na')
 }
 
+function budgetTexts(row: Record<string, unknown>) {
+  const price = numberOf(row.price) ?? numberOf(row.amount)
+  const days = numberOf(row.period_days)
+  if (price == null || days == null) {
+    return null
+  }
+  const budget = packagePlanBudget(price, days)
+  if (!budget) {
+    return null
+  }
+  return {
+    dailyBudget: money(budget.dailyBudget),
+    remainder: money(budget.remainder)
+  }
+}
+
 function textOf(value: unknown) {
   return textValue(value) || t('status.na')
 }
@@ -90,6 +121,16 @@ function hasDisplayValue(value: unknown) {
     return true
   }
   return typeof value === 'string' && Boolean(value.trim())
+}
+
+function numberOf(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
+    return Number(value)
+  }
+  return null
 }
 
 function amountOf(value: unknown) {
@@ -131,31 +172,56 @@ function amountOf(value: unknown) {
       v-else
       class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
-      <UCard
+      <button
         v-for="(row, index) in packagePlans"
         :key="rowKey(row, index)"
-        :title="nameOf(row)"
-        :description="descriptionOf(row)"
+        type="button"
+        class="text-left"
+        @click="openPlan(row)"
       >
-        <dl class="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt class="text-muted">
-              {{ $t('orders.fields.period_days') }}
-            </dt>
-            <dd class="mt-1 font-medium text-highlighted">
-              {{ periodDaysOf(row) }}
-            </dd>
-          </div>
-          <div class="text-right">
-            <dt class="text-muted">
-              {{ $t('packagePlans.columns.price') }}
-            </dt>
-            <dd class="tabular-money mt-1 font-medium text-highlighted">
-              {{ priceOf(row) }}
-            </dd>
-          </div>
-        </dl>
-      </UCard>
+        <UCard
+          :title="nameOf(row)"
+          :description="descriptionOf(row)"
+          class="h-full transition hover:border-primary"
+        >
+          <dl class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt class="text-muted">
+                {{ $t('packagePlans.fields.period_days') }}
+              </dt>
+              <dd class="mt-1 font-medium text-highlighted">
+                {{ periodDaysOf(row) }}
+              </dd>
+            </div>
+            <div class="text-right">
+              <dt class="text-muted">
+                {{ $t('packagePlans.fields.price') }}
+              </dt>
+              <dd class="tabular-money mt-1 font-medium text-highlighted">
+                {{ priceOf(row) }}
+              </dd>
+            </div>
+            <template v-if="budgetTexts(row)">
+              <div>
+                <dt class="text-muted">
+                  {{ $t('packagePlans.dailyBudget') }}
+                </dt>
+                <dd class="tabular-money mt-1 font-medium text-highlighted">
+                  {{ budgetTexts(row)?.dailyBudget }}
+                </dd>
+              </div>
+              <div class="text-right">
+                <dt class="text-muted">
+                  {{ $t('packagePlans.remainder') }}
+                </dt>
+                <dd class="tabular-money mt-1 font-medium text-highlighted">
+                  {{ budgetTexts(row)?.remainder }}
+                </dd>
+              </div>
+            </template>
+          </dl>
+        </UCard>
+      </button>
     </div>
   </PageHeader>
 </template>
