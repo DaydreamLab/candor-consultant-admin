@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { isDevelopingPath } from '~/utils/nav'
 
 const localePath = useLocalePath()
+const route = useRoute()
 const { t } = useI18n()
 const session = useSessionStore()
 
 const open = ref(false)
+const developing = computed(() => isDevelopingPath(route.path))
 
 const groups = computed(() => visibleNavGroups(session.role))
 
@@ -167,33 +170,53 @@ async function logout() {
             <UDashboardSidebarCollapse />
           </template>
           <template #title>
-            <UBreadcrumb
-              v-if="hasParentCrumb"
-              as="div"
-              :items="navbarCrumbs"
-              class="min-w-0"
-              :ui="{
-                root: 'min-w-0',
-                list: 'min-w-0 flex-nowrap',
-                linkLabel: 'truncate'
-              }"
-            >
-              <template #item-label="{ item, index }">
-                <span
-                  :class="index === crumbs.length - 1
-                    ? 'block truncate text-xl font-semibold text-highlighted'
-                    : 'text-sm font-medium'"
-                >
-                  {{ item.label }}
+            <div class="flex min-w-0 items-center gap-2">
+              <UBreadcrumb
+                v-if="hasParentCrumb"
+                as="div"
+                :items="navbarCrumbs"
+                class="min-w-0"
+                :ui="{
+                  root: 'min-w-0',
+                  list: 'min-w-0 flex-nowrap',
+                  linkLabel: 'truncate'
+                }"
+              >
+                <template #item-label="{ item, index }">
+                  <span
+                    class="inline-flex min-w-0 items-center gap-2"
+                    :class="index === crumbs.length - 1
+                      ? 'text-xl font-semibold text-highlighted'
+                      : 'text-sm font-medium'"
+                  >
+                    <span class="truncate">
+                      {{ item.label }}
+                    </span>
+                    <UBadge
+                      v-if="developing && index === crumbs.length - 1"
+                      color="neutral"
+                      variant="subtle"
+                      class="shrink-0 text-xs font-medium"
+                    >
+                      {{ $t('nav.developing') }}
+                    </UBadge>
+                  </span>
+                </template>
+              </UBreadcrumb>
+              <template v-else>
+                <span class="truncate text-xl font-semibold text-highlighted">
+                  {{ navbarTitle }}
                 </span>
+                <UBadge
+                  v-if="developing"
+                  color="neutral"
+                  variant="subtle"
+                  class="shrink-0 text-xs font-medium"
+                >
+                  {{ $t('nav.developing') }}
+                </UBadge>
               </template>
-            </UBreadcrumb>
-            <span
-              v-else
-              class="truncate text-xl font-semibold text-highlighted"
-            >
-              {{ navbarTitle }}
-            </span>
+            </div>
           </template>
           <template #right>
             <div

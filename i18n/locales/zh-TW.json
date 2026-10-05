@@ -11,9 +11,11 @@
     "orders": "訂單",
     "cases": "案件",
     "labs": "採檢",
+    "labAppointments": "預約記錄",
     "progress": "履約進度",
     "products": "保健品",
     "packagePlans": "銷售方案",
+    "labServices": "採檢服務",
     "expertTuning": "專家訓練",
     "selections": "案件選品",
     "shipping": "出貨",
@@ -274,6 +276,124 @@
       "status": "狀態",
       "price": "價格",
       "summary": "內容摘要"
+    }
+  },
+  "labServices": {
+    "description": "配合檢驗所／醫院的採檢服務（本地 mock，尚未接 API）。金額由項目加總，無套餐價。",
+    "createTitle": "新增採檢服務",
+    "loading": "讀取中…",
+    "failed": "無法讀取採檢服務。",
+    "notFound": "找不到這個採檢服務。",
+    "empty": "尚無採檢服務",
+    "saveFailed": "無法儲存採檢服務。",
+    "basePriceHint": "基本金額＝必選項目單價合計；可選項目不計入。",
+    "scheduleHint": "每條規則可選多個星期；每個時段各自有當日名額。本頁只保存設定，不扣量。",
+    "sections": {
+      "identity": "服務識別",
+      "partner": "檢驗所／醫院",
+      "items": "檢查項目",
+      "schedule": "可預約時段"
+    },
+    "fields": {
+      "code": "代碼",
+      "name_zh": "中文名稱",
+      "name_en": "英文名稱",
+      "description": "說明",
+      "sort_order": "排序",
+      "active": "上架",
+      "partner_name": "檢驗所名稱",
+      "partner_phone": "電話",
+      "partner_address": "地址",
+      "base_price": "基本金額",
+      "items": "項目數",
+      "item_name_zh": "項目名稱",
+      "item_name_en": "英文名稱",
+      "unit_price": "單價",
+      "required": "必選",
+      "weekdays": "星期",
+      "window_start": "開始",
+      "window_end": "結束",
+      "capacity": "名額"
+    },
+    "actions": {
+      "addItem": "加項目",
+      "removeItem": "移除項目",
+      "addRule": "加規則",
+      "removeRule": "移除規則",
+      "addWindow": "加時段",
+      "removeWindow": "移除時段"
+    },
+    "status": {
+      "active": "上架",
+      "inactive": "下架"
+    },
+    "weekdays": {
+      "1": "周一",
+      "2": "周二",
+      "3": "周三",
+      "4": "周四",
+      "5": "周五",
+      "6": "周六",
+      "7": "周日"
+    },
+    "validation": {
+      "required": "請填代碼、中文名稱與檢驗所名稱。",
+      "sortOrder": "排序須為整數。",
+      "itemName": "每個項目都要有名稱。",
+      "itemPrice": "項目單價須為大於 0 的整數元。",
+      "itemsRequired": "至少要有一個檢查項目。",
+      "requiredItem": "至少要有一個必選項目。",
+      "weekdays": "每條規則至少選一個星期。",
+      "window": "時段起迄須有效，且開始早於結束。",
+      "capacity": "名額須為大於 0 的整數。",
+      "windowsRequired": "每條規則至少要有一個時段。",
+      "rulesRequired": "至少要有一條可預約規則。"
+    }
+  },
+  "labAppointments": {
+    "description": "血檢／健檢預約記錄（本地 mock）。可列表、詳情與取消；不可新建或改期。",
+    "detailDescription": "已選項目與金額為下單／預約當下快照。",
+    "loading": "讀取中…",
+    "failed": "無法讀取預約記錄。",
+    "notFound": "找不到這筆預約。",
+    "empty": "尚無預約記錄",
+    "cancelFailed": "無法取消預約。",
+    "cancelledHint": "此預約已取消，不能再取消。",
+    "required": "必選",
+    "optional": "可選",
+    "actions": {
+      "cancel": "取消預約"
+    },
+    "calendar": {
+      "open": "行事曆",
+      "title": "預約行事曆",
+      "weekRange": "{start} – {end}",
+      "thisWeek": "本週",
+      "prevWeek": "上一週",
+      "nextWeek": "下一週",
+      "dayEmpty": "無預約"
+    },
+    "columns": {
+      "member": "會員",
+      "service": "服務",
+      "slot": "時段",
+      "amount": "金額",
+      "status": "狀態"
+    },
+    "fields": {
+      "member": "會員",
+      "service": "服務",
+      "partner": "檢驗所",
+      "slot": "預約時段",
+      "amount": "金額快照",
+      "status": "狀態",
+      "booked_at": "預約時間",
+      "cancelled_at": "取消時間",
+      "selected_items": "已選項目"
+    },
+    "status": {
+      "booked": "已預約",
+      "cancelled": "已取消"
     }
   },
   "expertTuning": {

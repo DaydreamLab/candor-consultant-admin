@@ -18,7 +18,8 @@
 ## 目標
 
 - Operator 登入與帳號管理（admin）。
-- SellableItem／inventory／PackagePlan／LabService 主檔。
+- SellableItem／inventory／PackagePlan／LabService 主檔（採檢服務為獨立選單；項目加總見 core ADR 0022）。
+- LabAppointment 預約記錄（列表／詳情／取消；非案件式採檢排程 `/labs`）。
 - 訂單列表／詳情、出貨推進、取消、讀訂單對話。
 - 健康報告校正與重試；weight set 草稿／dry-run／publish。
 - Users 檢視與（admin）代操去識別化。
@@ -27,7 +28,7 @@
 
 - `orgs` 多租戶營運
 - `cases` 履約單（改用 `order`）
-- `labs` 檢驗排程
+- `labs` 案件式檢驗排程（商品化 `/lab-services` 與 `/lab-appointments` 不在此列）
 - `selections`／`keyin` 手改組成（組成為建單快照）
 - 顧問請款 `invoices`
 - `reviews` 簽核

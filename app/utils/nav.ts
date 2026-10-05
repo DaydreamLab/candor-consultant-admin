@@ -24,6 +24,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'users', to: '/users', icon: 'i-lucide-users', developing: false },
       { key: 'cases', to: '/cases', icon: 'i-lucide-folder-kanban' },
       { key: 'labs', to: '/labs', icon: 'i-lucide-flask-conical' },
+      { key: 'labAppointments', to: '/lab-appointments', icon: 'i-lucide-calendar-clock' },
       { key: 'progress', to: '/progress', icon: 'i-lucide-list-checks' },
       { key: 'reviews', to: '/reviews', icon: 'i-lucide-badge-check' }
     ]
@@ -32,7 +33,8 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'catalog',
     items: [
       { key: 'packagePlans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
-      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false }
+      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false },
+      { key: 'labServices', to: '/lab-services', icon: 'i-lucide-droplet' }
     ]
   },
   {

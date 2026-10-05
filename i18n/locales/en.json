@@ -11,9 +11,11 @@
     "orders": "Orders",
     "cases": "Cases",
     "labs": "Lab tests",
+    "labAppointments": "Lab appointments",
     "progress": "Fulfillment progress",
     "products": "Supplements",
     "packagePlans": "Sales plans",
+    "labServices": "Collection services",
     "expertTuning": "Expert tuning",
     "selections": "Case selections",
     "shipping": "Shipping",
@@ -274,6 +276,124 @@
       "status": "Status",
       "price": "Price",
       "summary": "Summary"
+    }
+  },
+  "labServices": {
+    "description": "Collection services tied to a partner lab or hospital (local mock; API not wired). Price is the sum of selected items; no package price.",
+    "createTitle": "New collection service",
+    "loading": "Loading…",
+    "failed": "Could not load collection services.",
+    "notFound": "Collection service not found.",
+    "empty": "No collection services yet",
+    "saveFailed": "Could not save collection service.",
+    "basePriceHint": "Base amount = sum of required item prices; optional items are excluded.",
+    "scheduleHint": "Each rule can cover multiple weekdays; each time window has its own daily capacity. This page only stores settings; it does not decrement capacity.",
+    "sections": {
+      "identity": "Service identity",
+      "partner": "Partner lab / hospital",
+      "items": "Test items",
+      "schedule": "Bookable windows"
+    },
+    "fields": {
+      "code": "Code",
+      "name_zh": "Chinese name",
+      "name_en": "English name",
+      "description": "Description",
+      "sort_order": "Sort order",
+      "active": "Active",
+      "partner_name": "Partner name",
+      "partner_phone": "Phone",
+      "partner_address": "Address",
+      "base_price": "Base amount",
+      "items": "Items",
+      "item_name_zh": "Item name",
+      "item_name_en": "English name",
+      "unit_price": "Unit price",
+      "required": "Required",
+      "weekdays": "Weekdays",
+      "window_start": "Start",
+      "window_end": "End",
+      "capacity": "Capacity"
+    },
+    "actions": {
+      "addItem": "Add item",
+      "removeItem": "Remove item",
+      "addRule": "Add rule",
+      "removeRule": "Remove rule",
+      "addWindow": "Add window",
+      "removeWindow": "Remove window"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "weekdays": {
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat",
+      "7": "Sun"
+    },
+    "validation": {
+      "required": "Code, Chinese name, and partner name are required.",
+      "sortOrder": "Sort order must be an integer.",
+      "itemName": "Every item needs a name.",
+      "itemPrice": "Item price must be a positive integer (TWD).",
+      "itemsRequired": "Add at least one test item.",
+      "requiredItem": "Mark at least one item as required.",
+      "weekdays": "Each rule needs at least one weekday.",
+      "window": "Window start/end must be valid, and start must be earlier than end.",
+      "capacity": "Capacity must be a positive integer.",
+      "windowsRequired": "Each rule needs at least one time window.",
+      "rulesRequired": "Add at least one booking rule."
+    }
+  },
+  "labAppointments": {
+    "description": "Lab / checkup appointments (local mock). List, detail, and cancel only; no create or reschedule.",
+    "detailDescription": "Selected items and amount are snapshots from booking time.",
+    "loading": "Loading…",
+    "failed": "Could not load appointments.",
+    "notFound": "Appointment not found.",
+    "empty": "No appointments yet",
+    "cancelFailed": "Could not cancel appointment.",
+    "cancelledHint": "This appointment is already cancelled.",
+    "required": "Required",
+    "optional": "Optional",
+    "actions": {
+      "cancel": "Cancel appointment"
+    },
+    "calendar": {
+      "open": "Calendar",
+      "title": "Appointment calendar",
+      "weekRange": "{start} – {end}",
+      "thisWeek": "This week",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "dayEmpty": "None"
+    },
+    "columns": {
+      "member": "Member",
+      "service": "Service",
+      "slot": "Slot",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "fields": {
+      "member": "Member",
+      "service": "Service",
+      "partner": "Partner",
+      "slot": "Slot",
+      "amount": "Amount snapshot",
+      "status": "Status",
+      "booked_at": "Booked at",
+      "cancelled_at": "Cancelled at",
+      "selected_items": "Selected items"
+    },
+    "status": {
+      "booked": "Booked",
+      "cancelled": "Cancelled"
     }
   },
   "expertTuning": {

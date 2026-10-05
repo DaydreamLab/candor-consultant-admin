@@ -1,5 +1,6 @@
 export const SELLABLE_ITEM_FORM_ID = 'sellable-item-form'
 export const PACKAGE_PLAN_FORM_ID = 'package-plan-form'
+export const LAB_SERVICE_FORM_ID = 'lab-service-form'
 
 export type NavbarActions = {
   showDelete: boolean

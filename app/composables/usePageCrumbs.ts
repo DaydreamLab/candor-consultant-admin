@@ -9,6 +9,14 @@ export function usePackagePlanCrumbLabel() {
   return useState<string | null>('candor-package-plan-label', () => null)
 }
 
+export function useLabServiceCrumbLabel() {
+  return useState<string | null>('candor-lab-service-label', () => null)
+}
+
+export function useLabAppointmentCrumbLabel() {
+  return useState<string | null>('candor-lab-appointment-label', () => null)
+}
+
 export function usePageCrumbs() {
   const route = useRoute()
   const localePath = useLocalePath()
@@ -17,6 +25,8 @@ export function usePageCrumbs() {
   const userLabel = useState<string | null>('candor-user-detail-label', () => null)
   const sellableItemLabel = useSellableItemCrumbLabel()
   const packagePlanLabel = usePackagePlanCrumbLabel()
+  const labServiceLabel = useLabServiceCrumbLabel()
+  const labAppointmentLabel = useLabAppointmentCrumbLabel()
   const trainingBatchLabel = useState<string | null>('candor-training-batch-label', () => null)
   const weightSetLabel = useState<string | null>('candor-weight-set-label', () => null)
 
@@ -35,6 +45,29 @@ export function usePageCrumbs() {
       return [
         { label: t('nav.products'), to: localePath('/products') },
         { label: sellableItemLabel.value || id }
+      ]
+    }
+
+    if (current === '/lab-services/new') {
+      return [
+        { label: t('nav.labServices'), to: localePath('/lab-services') },
+        { label: t('labServices.createTitle') }
+      ]
+    }
+
+    if (current.startsWith('/lab-services/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.labServices'), to: localePath('/lab-services') },
+        { label: labServiceLabel.value || id }
+      ]
+    }
+
+    if (current.startsWith('/lab-appointments/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.labAppointments'), to: localePath('/lab-appointments') },
+        { label: labAppointmentLabel.value || id }
       ]
     }
 

@@ -2,7 +2,7 @@
 
 對照現有側欄（`app/utils/nav.ts`）與 [candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)。訂單列表已接 `GET /admin/orders`；詳情、讀對話與報告判讀已接 `GET /admin/order/{id}`、`GET /admin/order/{id}/message`、`GET /admin/order/{id}/health-report`。會員列表／詳情已接 `GET /admin/users`、`GET /admin/users/{id}` 與子資源（訂單、對話、報告）。方案列表已接 `GET /admin/package-plans`（只顯示）。商品列表、單筆、建立、更新已接 sellable item；刪除按鈕呼叫的 `DELETE` core 未提供（停售走 `PATCH` `sale_status`）。庫存讀寫與 alerts、取消、出貨與其餘空殼路由尚未接 API。
 
-未接項目的選單文字與頁面標題後加「開發中」。側欄不加的只有 `orders`、`users`、`packagePlans`、`products`。頁面標題同樣不加的還有商品新增／詳情、會員詳情，以及側欄底部姓名進入的 `/account`。
+未接項目：側欄選單文字右側、以及頂欄標題（或麵包屑最後一段）右側加「開發中」badge（由 `layouts/default.vue` 統一處理，不在 `PageHeader` 內文）。側欄不加的只有 `orders`、`users`、`packagePlans`、`products`。頂欄標題同樣不加的還有商品新增／詳情、會員詳情，以及側欄底部姓名進入的 `/account`。
 
 ## 側欄分組
 
@@ -14,7 +14,8 @@
 | orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`，報告判讀已接 `GET /admin/order/{id}/health-report`。取消與出貨仍 Mock |
 | users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`） |
-| labs | `/labs` | **不做** | 檢驗排程不採用 |
+| labs | `/labs` | **不做** | 案件式檢驗排程不採用（與下方 `labAppointments` 不同） |
+| labAppointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消）；無 HTTP。不是不做的 `labs` |
 | progress | `/progress` | **不做** | 履約看板不採用 |
 | reviews | `/reviews` | **不做** | 簽核不採用 |
 
@@ -24,6 +25,7 @@
 |---------|------|------|----------|
 | packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
 | products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
+| labServices | `/lab-services`、`/lab-services/new`、`/lab-services/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/lab-services`。獨立選單，不從保健品新增進入；與不做的案件「採檢」`/labs` 不同 |
 
 ### Warehouse（`warehouse`）
 
@@ -61,7 +63,8 @@
 |------|------|
 | 訂單詳情／取消／讀對話／報告判讀 | `/admin/order/{id}`（`/orders/{id}` 可讀詳情、對話與報告判讀；取消、出貨仍 Mock） |
 | PackagePlan 詳情／寫入 | `/admin/package-plan/{id}`（列表已接 `GET /admin/package-plans`，只顯示） |
-| LabService 主檔 | `/admin/lab-services`（商品化血檢，非排程 `labs`） |
+| LabService 主檔 | `/admin/lab-services`（畫面 `/lab-services` 已 mock；非排程 `labs`） |
+| LabAppointment | 無 HTTP（畫面 `/lab-appointments` 已 mock） |
 | 報告校正 | admin health-reports PATCH／retry |
 | Weight sets | `/admin/weight-sets/**` |
 | Operators | `/admin/operators/**` |
