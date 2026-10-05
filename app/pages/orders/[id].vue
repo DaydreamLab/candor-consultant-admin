@@ -432,7 +432,7 @@ function timelineMarkerClass(state: TimelineState) {
   if (state === 'upcoming') {
     return 'border-2 border-muted bg-elevated'
   }
-  return 'bg-primary text-white dark:text-brand-950'
+  return 'bg-primary text-white'
 }
 
 function timelineConnectorClass(index: number) {

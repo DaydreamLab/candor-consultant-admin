@@ -4,18 +4,18 @@
 @theme static {
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
 
-  /* Y admin primary: #629DE0 (Candor lagoon 600) */
-  --color-brand-50: #F5F9FD;
-  --color-brand-100: #E8F0FA;
-  --color-brand-200: #D1E2F6;
-  --color-brand-300: #B8D2F1;
-  --color-brand-400: #98BFEB;
-  --color-brand-500: #77AAE4;
-  --color-brand-600: #629DE0;
-  --color-brand-700: #4B77AA;
-  --color-brand-800: #355579;
-  --color-brand-900: #253B54;
-  --color-brand-950: #1A2A3C;
+  /* Y admin primary: logo blue #0784B1 */
+  --color-brand-50: #F0F7FA;
+  --color-brand-100: #DAEDF3;
+  --color-brand-200: #B6DBE8;
+  --color-brand-300: #8EC7DC;
+  --color-brand-400: #5CAECC;
+  --color-brand-500: #2894BB;
+  --color-brand-600: #0784B1;
+  --color-brand-700: #056487;
+  --color-brand-800: #044860;
+  --color-brand-900: #033142;
+  --color-brand-950: #022430;
 
   --color-mist-50: #F7F9FA;
   --color-mist-100: #F1F4F7;
@@ -65,18 +65,18 @@
   --color-coral-900: #3F161B;
   --color-coral-950: #2D1013;
 
-  /* Info uses A client teal so it stays distinct from Y primary */
-  --color-lagoon-50: #F0F7FA;
-  --color-lagoon-100: #DAEDF3;
-  --color-lagoon-200: #B6DBE8;
-  --color-lagoon-300: #8EC7DC;
-  --color-lagoon-400: #5CAECC;
-  --color-lagoon-500: #2894BB;
-  --color-lagoon-600: #0784B1;
-  --color-lagoon-700: #056487;
-  --color-lagoon-800: #044860;
-  --color-lagoon-900: #033142;
-  --color-lagoon-950: #022430;
+  /* Info stays indigo so badges stay distinct from primary #0784B1 */
+  --color-lagoon-50: #F4F6FC;
+  --color-lagoon-100: #E6EAF8;
+  --color-lagoon-200: #CDD5F2;
+  --color-lagoon-300: #AEBBE9;
+  --color-lagoon-400: #8A9CDE;
+  --color-lagoon-500: #6A7ED0;
+  --color-lagoon-600: #5468C4;
+  --color-lagoon-700: #3F4F96;
+  --color-lagoon-800: #2D396C;
+  --color-lagoon-900: #1F274B;
+  --color-lagoon-950: #161C36;
 }
 
 :root {
@@ -108,11 +108,17 @@
   --ui-text-dimmed: #7490AC;
   --ui-text-highlighted: #F7F9FA;
   --ui-border: #213548;
-  --ui-primary: var(--ui-color-primary-400);
+  --ui-primary: var(--ui-color-primary-600);
   --ui-success: var(--ui-color-success-400);
   --ui-warning: var(--ui-color-warning-400);
   --ui-error: var(--ui-color-error-400);
   --ui-info: var(--ui-color-info-400);
+}
+
+/* Solid primary stays on logo blue in dark mode, so the label stays white.
+   Other semantic colors remain on shade 400 and keep inverted (dark) text. */
+.dark .bg-primary.text-inverted {
+  color: #fff;
 }
 
 html {
