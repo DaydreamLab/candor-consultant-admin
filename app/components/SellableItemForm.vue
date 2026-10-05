@@ -67,6 +67,8 @@ type FormState = {
   nutrition: NutritionRow[]
 }
 
+const requiredMark = { label: "after:!text-red-500" }
+
 const onSaleFields: SaveErrorField[] = [
   'bottle_price',
   'unit_price',
@@ -154,6 +156,10 @@ function validate() {
   const nextNutrition = state.nutrition.map(() => ({ name: '', amount: '' }))
   let ok = true
 
+  if (!state.name_zh.trim()) {
+    localErrors.name_zh = t('products.nameZhRequired')
+    ok = false
+  }
   if (props.mode === 'create') {
     if (!state.code.trim()) {
       localErrors.code = t('products.codeRequired')
@@ -161,10 +167,6 @@ function validate() {
     }
     if (!state.sku.trim()) {
       localErrors.sku = t('products.skuRequired')
-      ok = false
-    }
-    if (!state.name_zh.trim()) {
-      localErrors.name_zh = t('products.nameZhRequired')
       ok = false
     }
   }
@@ -608,7 +610,8 @@ function scalarText(value: unknown) {
           <div class="min-w-0 flex-1 space-y-4">
             <UFormField
               :label="$t('products.fields.nameZh')"
-              :required="mode === 'create'"
+              required
+              :ui="requiredMark"
               :error="fieldError('name_zh') || undefined"
             >
               <UInput
@@ -628,7 +631,8 @@ function scalarText(value: unknown) {
             <div class="grid gap-4 sm:grid-cols-2">
               <UFormField
                 :label="$t('products.fields.code')"
-                :required="mode === 'create'"
+                required
+                :ui="requiredMark"
                 :error="fieldError('code') || undefined"
               >
                 <UInput
@@ -640,7 +644,8 @@ function scalarText(value: unknown) {
               </UFormField>
               <UFormField
                 :label="$t('products.fields.sku')"
-                :required="mode === 'create'"
+                required
+                :ui="requiredMark"
                 :error="fieldError('sku') || undefined"
               >
                 <UInput
@@ -694,6 +699,7 @@ function scalarText(value: unknown) {
             <UFormField
               :label="$t('products.fields.servingsPerContainer')"
               :required="onSale"
+              :ui="requiredMark"
               :error="fieldError('servings_per_container') || undefined"
             >
               <UInput
@@ -718,6 +724,7 @@ function scalarText(value: unknown) {
             <UFormField
               :label="$t('products.fields.dailyServingsMin')"
               :required="onSale"
+              :ui="requiredMark"
               :error="fieldError('daily_servings_min') || undefined"
             >
               <UInput
@@ -730,6 +737,7 @@ function scalarText(value: unknown) {
             <UFormField
               :label="$t('products.fields.dailyServingsMax')"
               :required="onSale"
+              :ui="requiredMark"
               :error="fieldError('daily_servings_max') || undefined"
             >
               <UInput
@@ -742,6 +750,7 @@ function scalarText(value: unknown) {
             <UFormField
               :label="$t('products.fields.dailyDose')"
               :required="onSale"
+              :ui="requiredMark"
               :error="fieldError('daily_dose') || undefined"
             >
               <UInput
@@ -754,6 +763,7 @@ function scalarText(value: unknown) {
             <UFormField
               :label="$t('products.fields.unitPrice')"
               :required="onSale"
+              :ui="requiredMark"
               :error="fieldError('unit_price') || undefined"
             >
               <UInput
@@ -766,6 +776,7 @@ function scalarText(value: unknown) {
             <UFormField
               :label="$t('products.fields.bottlePrice')"
               :required="onSale"
+              :ui="requiredMark"
               :error="fieldError('bottle_price') || undefined"
             >
               <UInput
