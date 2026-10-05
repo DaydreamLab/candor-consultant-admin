@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import type { SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID } from '~/composables/useNavbarActions'
-import { isBottlePriceSaveError } from '~/utils/sellable-item-form'
-
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024
-const IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
+import { fieldOfSaveError, type SaveErrorField } from '~/utils/sellable-item-form'
 
 const props = withDefaults(defineProps<{
   mode: 'create' | 'update'
@@ -28,10 +25,16 @@ type NutritionRow = {
   daily_reference_pct: string
 }
 
+type NutritionError = {
+  name: string
+  amount: string
+}
+
 type IntegerKey = 'servings_per_container' | 'unit_price' | 'bottle_price'
 type DecimalKey = 'daily_servings_min' | 'daily_servings_max' | 'daily_dose'
 
 type FormState = {
+  code: string
   name_zh: string
   name_en: string
   sku: string
@@ -64,60 +67,46 @@ type FormState = {
   nutrition: NutritionRow[]
 }
 
+const onSaleFields: SaveErrorField[] = [
+  'bottle_price',
+  'unit_price',
+  'servings_per_container',
+  'daily_servings_min',
+  'daily_servings_max',
+  'daily_dose'
+]
+
 const readoutFields = [
-  { key: 'code', label: 'products.fields.code' },
   { key: 'daily_price', label: 'products.fields.dailyPrice' },
   { key: 'monthly_cost', label: 'products.fields.monthlyCost' }
 ] as const
 
 const state = reactive<FormState>(emptyState())
-const imageFile = ref<File | null>(null)
-const imageError = ref('')
-const previewUrl = ref('')
-const localBottleError = ref('')
-const dismissedBottleError = ref(false)
+const localErrors = reactive(emptyFieldErrors())
+const nutritionErrors = ref<NutritionError[]>([])
+const dismissedRemote = ref(false)
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
 
 watch(() => props.sellableItem, (item) => {
   applyItem(item)
-  imageFile.value = null
-  imageError.value = ''
-  localBottleError.value = ''
-  dismissedBottleError.value = false
+  resetErrors()
 }, { immediate: true })
 
 watch(() => props.saveError, () => {
-  dismissedBottleError.value = false
-})
-
-watch(imageFile, (file, _, onCleanup) => {
-  if (!file) {
-    previewUrl.value = ''
-    return
-  }
-  const url = URL.createObjectURL(file)
-  previewUrl.value = url
-  onCleanup(() => {
-    URL.revokeObjectURL(url)
-  })
-})
-
-const imageModel = computed({
-  get: () => imageFile.value,
-  set: (file: File | null | undefined) => {
-    acceptImage(file ?? null)
-  }
+  dismissedRemote.value = false
 })
 
 const savedImageSrc = computed(() => httpImage(props.sellableItem))
-const displaySrc = computed(() => previewUrl.value || savedImageSrc.value)
 
 const onSale = computed({
   get: () => (state.sale_status.trim() || 'on_sale') === 'on_sale',
   set: (value: boolean) => {
     state.sale_status = value ? 'on_sale' : 'off_sale'
-    clearBottleError()
+    for (const key of onSaleFields) {
+      localErrors[key] = ''
+    }
+    dismissRemoteIf(onSaleFields)
   }
 })
 
@@ -135,101 +124,132 @@ const readouts = computed(() => {
   })
 })
 
-const bottlePriceError = computed(() => {
-  if (localBottleError.value) {
-    return localBottleError.value
+function fieldError(key: SaveErrorField) {
+  if (localErrors[key]) {
+    return localErrors[key]
   }
   const remote = props.saveError?.trim() ?? ''
-  if (remote && !dismissedBottleError.value && isBottlePriceSaveError(remote)) {
+  if (remote && !dismissedRemote.value && fieldOfSaveError(remote) === key) {
     return remote
   }
   return ''
-})
+}
+
+function nutritionFieldError(index: number, key: keyof NutritionError) {
+  return nutritionErrors.value[index]?.[key] ?? ''
+}
 
 function onSubmit() {
   if (props.saving || props.disabled) {
     return
   }
-  const image = props.mode === 'update' ? null : imageFile.value
-  if (image) {
-    const message = fileError(image)
-    if (message) {
-      imageError.value = message
-      imageFile.value = null
-      return
+  if (!validate()) {
+    return
+  }
+  emit('save', { body: writeBody() })
+}
+
+function validate() {
+  Object.assign(localErrors, emptyFieldErrors())
+  const nextNutrition = state.nutrition.map(() => ({ name: '', amount: '' }))
+  let ok = true
+
+  if (props.mode === 'create') {
+    if (!state.code.trim()) {
+      localErrors.code = t('products.codeRequired')
+      ok = false
+    }
+    if (!state.sku.trim()) {
+      localErrors.sku = t('products.skuRequired')
+      ok = false
+    }
+    if (!state.name_zh.trim()) {
+      localErrors.name_zh = t('products.nameZhRequired')
+      ok = false
     }
   }
-  if (bottlePriceMissing()) {
-    localBottleError.value = t('products.bottlePriceRequired')
-    return
-  }
-  emit('save', { body: writeBody(), image })
-}
 
-function bottlePriceMissing() {
-  const status = state.sale_status.trim() || 'on_sale'
-  if (status !== 'on_sale') {
-    return false
+  if ((state.sale_status.trim() || 'on_sale') === 'on_sale') {
+    if (!positiveInteger(state.bottle_price)) {
+      localErrors.bottle_price = t('products.bottlePriceRequired')
+      ok = false
+    }
+    if (!positiveInteger(state.unit_price)) {
+      localErrors.unit_price = t('products.unitPriceRequired')
+      ok = false
+    }
+    if (!positiveInteger(state.servings_per_container)) {
+      localErrors.servings_per_container = t('products.servingsRequired')
+      ok = false
+    }
+    const minValue = decimalValue(state.daily_servings_min)
+    const minOk = minValue != null && minValue > 0
+    if (!minOk) {
+      localErrors.daily_servings_min = t('products.dailyMinRequired')
+      ok = false
+    }
+    const maxValue = decimalValue(state.daily_servings_max)
+    if (maxValue == null || maxValue <= 0 || (minOk && minValue != null && maxValue < minValue)) {
+      localErrors.daily_servings_max = t('products.dailyMaxRequired')
+      ok = false
+    }
+    const dose = decimalValue(state.daily_dose)
+    const boundsOk = minOk && maxValue != null && minValue != null && maxValue >= minValue && maxValue > 0
+    if (dose == null || dose <= 0 || (boundsOk && minValue != null && maxValue != null && (dose < minValue || dose > maxValue))) {
+      localErrors.daily_dose = t('products.dailyDoseRequired')
+      ok = false
+    }
   }
-  const raw = state.bottle_price.trim()
-  const value = Number(raw)
-  return !raw || !Number.isInteger(value) || value <= 0
-}
 
-function acceptImage(file: File | null) {
-  if (!file) {
-    imageFile.value = null
-    imageError.value = ''
-    return
-  }
-  const message = fileError(file)
-  if (message) {
-    imageError.value = message
-    imageFile.value = null
-    return
-  }
-  imageError.value = ''
-  imageFile.value = file
-}
-
-function fileError(file: File) {
-  if (file.size > MAX_IMAGE_BYTES) {
-    return t('products.imageTooLarge')
-  }
-  if (!IMAGE_TYPES.has(file.type)) {
-    return t('products.imageType')
-  }
-  return ''
+  state.nutrition.forEach((row, index) => {
+    const name = row.name.trim()
+    const amount = row.amount_per_serving.trim()
+    const pct = row.daily_reference_pct.trim()
+    if (!name && !amount && !pct) {
+      return
+    }
+    if (!name) {
+      nextNutrition[index]!.name = t('products.nutritionNameRequired')
+      ok = false
+    }
+    if (!amount) {
+      nextNutrition[index]!.amount = t('products.nutritionAmountRequired')
+      ok = false
+    }
+  })
+  nutritionErrors.value = nextNutrition
+  return ok
 }
 
 function writeBody() {
   const updating = props.mode === 'update'
   const body: Record<string, unknown> = {
-    name_zh: optionalText(state.name_zh, updating),
-    name_en: optionalText(state.name_en, updating),
-    category: optionalText(state.category, updating),
-    spec_text: optionalText(state.spec_text, updating),
-    serving_size_text: optionalText(state.serving_size_text, updating),
-    unit_size_text: optionalText(state.unit_size_text, updating),
-    audience: optionalText(state.audience, updating),
-    summary: optionalText(state.summary, updating),
-    highlights: optionalText(state.highlights, updating),
-    usage_text: optionalText(state.usage_text, updating),
-    usage_limit: optionalText(state.usage_limit, updating),
-    ingredients_text: optionalText(state.ingredients_text, updating),
-    cautions: optionalText(state.cautions, updating),
-    risk_text: optionalText(state.risk_text, updating),
-    contraindication_text: optionalText(state.contraindication_text, updating),
-    shelf_life_text: optionalText(state.shelf_life_text, updating),
-    distributor: optionalText(state.distributor, updating),
-    origin: optionalText(state.origin, updating),
+    name_zh: optionalText(state.name_zh),
+    name_en: optionalText(state.name_en),
+    category: optionalText(state.category),
+    spec_text: optionalText(state.spec_text),
+    serving_size_text: optionalText(state.serving_size_text),
+    unit_size_text: optionalText(state.unit_size_text),
+    audience: optionalText(state.audience),
+    summary: optionalText(state.summary),
+    highlights: optionalText(state.highlights),
+    usage_text: optionalText(state.usage_text),
+    usage_limit: optionalText(state.usage_limit),
+    ingredients_text: optionalText(state.ingredients_text),
+    cautions: optionalText(state.cautions),
+    risk_text: optionalText(state.risk_text),
+    contraindication_text: optionalText(state.contraindication_text),
+    shelf_life_text: optionalText(state.shelf_life_text),
+    distributor: optionalText(state.distributor),
+    origin: optionalText(state.origin),
     active: state.active,
     is_core: state.is_core,
     can_co_pack: state.can_co_pack,
     sale_status: state.sale_status.trim() || 'on_sale',
-    nutrition: nutritionBody(updating)
+    nutrition: nutritionBody()
   }
   if (!updating) {
+    body.code = state.code.trim()
     body.sku = state.sku.trim()
   }
   assignInteger(body, 'servings_per_container', state.servings_per_container, updating)
@@ -241,24 +261,17 @@ function writeBody() {
   return body
 }
 
-function optionalText(raw: string, updating: boolean) {
-  const value = raw.trim()
-  if (updating) {
-    return value || null
-  }
-  return value
+function optionalText(raw: string) {
+  return raw.trim() || null
 }
 
-function nutritionBody(updating: boolean) {
-  const rows = state.nutrition.map(row => ({
-    name: row.name.trim(),
-    amount_per_serving: row.amount_per_serving.trim(),
-    daily_reference_pct: row.daily_reference_pct.trim()
-  }))
-  if (!updating) {
-    return rows.filter(row => row.name || row.amount_per_serving || row.daily_reference_pct)
-  }
-  return rows
+function nutritionBody() {
+  return state.nutrition
+    .map(row => ({
+      name: row.name.trim(),
+      amount_per_serving: row.amount_per_serving.trim(),
+      daily_reference_pct: row.daily_reference_pct.trim()
+    }))
     .filter(row => row.name && row.amount_per_serving)
     .map(row => ({
       name: row.name,
@@ -296,9 +309,7 @@ function assignDecimal(body: Record<string, unknown>, key: DecimalKey, raw: stri
 
 function setDigits(key: IntegerKey, value: string | number) {
   state[key] = String(value ?? '').replace(/\D/g, '')
-  if (key === 'bottle_price') {
-    clearBottleError()
-  }
+  clearField(key)
 }
 
 function setDecimal(key: DecimalKey, value: string | number) {
@@ -316,24 +327,85 @@ function setDecimal(key: DecimalKey, value: string | number) {
     }
   }
   state[key] = next
+  clearField(key)
 }
 
-function clearBottleError() {
-  localBottleError.value = ''
-  dismissedBottleError.value = true
+function clearField(key: SaveErrorField) {
+  localErrors[key] = ''
+  dismissRemoteIf([key])
+}
+
+function clearNutritionError(index: number, key: keyof NutritionError) {
+  const row = nutritionErrors.value[index]
+  if (!row) {
+    return
+  }
+  row[key] = ''
+}
+
+function dismissRemoteIf(keys: readonly SaveErrorField[]) {
+  const remote = props.saveError?.trim() ?? ''
+  const field = remote ? fieldOfSaveError(remote) : ''
+  if (field && keys.includes(field)) {
+    dismissedRemote.value = true
+  }
+}
+
+function resetErrors() {
+  Object.assign(localErrors, emptyFieldErrors())
+  nutritionErrors.value = []
+  dismissedRemote.value = false
+}
+
+function emptyFieldErrors(): Record<SaveErrorField, string> {
+  return {
+    name_zh: '',
+    daily_servings_min: '',
+    daily_servings_max: '',
+    daily_dose: '',
+    servings_per_container: '',
+    bottle_price: '',
+    unit_price: '',
+    sku: '',
+    code: ''
+  }
+}
+
+function positiveInteger(raw: string) {
+  const trimmed = raw.trim()
+  if (!trimmed) {
+    return false
+  }
+  const value = Number(trimmed)
+  return Number.isInteger(value) && value > 0
+}
+
+function decimalValue(raw: string) {
+  const trimmed = raw.trim().replace(/\.$/, '')
+  if (!trimmed) {
+    return null
+  }
+  const value = Number(trimmed)
+  if (!Number.isFinite(value)) {
+    return null
+  }
+  return value
 }
 
 function addNutrition() {
   state.nutrition.push({ name: '', amount_per_serving: '', daily_reference_pct: '' })
+  nutritionErrors.value.push({ name: '', amount: '' })
 }
 
 function removeNutrition(index: number) {
   state.nutrition.splice(index, 1)
+  nutritionErrors.value.splice(index, 1)
 }
 
 function applyItem(item: Record<string, unknown> | null) {
   const next = emptyState()
   if (item) {
+    next.code = scalarText(item.code).trim()
     next.name_zh = scalarText(item.name_zh).trim() || scalarText(item.name).trim()
     next.name_en = scalarText(item.name_en).trim()
     next.sku = scalarText(item.sku).trim()
@@ -371,6 +443,7 @@ function applyItem(item: Record<string, unknown> | null) {
 
 function emptyState(): FormState {
   return {
+    code: '',
     name_zh: '',
     name_en: '',
     sku: '',
@@ -513,21 +586,18 @@ function scalarText(value: unknown) {
         </h2>
         <div class="mt-4 flex flex-col gap-4 sm:flex-row">
           <div class="w-full shrink-0 space-y-3 sm:w-56">
-            <UFormField
-              :label="$t('products.fields.image')"
-              :error="imageError || undefined"
-            >
+            <UFormField :label="$t('products.fields.image')">
               <img
-                v-if="displaySrc && !previewUrl"
-                :src="displaySrc"
+                v-if="savedImageSrc"
+                :src="savedImageSrc"
                 alt=""
                 class="mb-3 size-56 max-w-full rounded-lg object-contain"
               >
               <UFileUpload
-                v-model="imageModel"
+                :model-value="null"
                 accept="image/png,image/jpeg,image/webp"
                 icon="i-lucide-image"
-                :disabled="mode === 'update'"
+                disabled
                 :label="$t('products.imageDrop')"
                 :description="$t('products.imageHint')"
                 class="min-h-56 w-full sm:w-56"
@@ -536,10 +606,15 @@ function scalarText(value: unknown) {
           </div>
 
           <div class="min-w-0 flex-1 space-y-4">
-            <UFormField :label="$t('products.fields.nameZh')">
+            <UFormField
+              :label="$t('products.fields.nameZh')"
+              :required="mode === 'create'"
+              :error="fieldError('name_zh') || undefined"
+            >
               <UInput
                 v-model="state.name_zh"
                 class="w-full"
+                @update:model-value="clearField('name_zh')"
               />
             </UFormField>
 
@@ -550,13 +625,32 @@ function scalarText(value: unknown) {
               />
             </UFormField>
 
-            <UFormField :label="$t('products.fields.sku')">
-              <UInput
-                v-model="state.sku"
-                class="w-full"
-                :disabled="mode === 'update'"
-              />
-            </UFormField>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField
+                :label="$t('products.fields.code')"
+                :required="mode === 'create'"
+                :error="fieldError('code') || undefined"
+              >
+                <UInput
+                  v-model="state.code"
+                  class="w-full"
+                  :disabled="mode === 'update'"
+                  @update:model-value="clearField('code')"
+                />
+              </UFormField>
+              <UFormField
+                :label="$t('products.fields.sku')"
+                :required="mode === 'create'"
+                :error="fieldError('sku') || undefined"
+              >
+                <UInput
+                  v-model="state.sku"
+                  class="w-full"
+                  :disabled="mode === 'update'"
+                  @update:model-value="clearField('sku')"
+                />
+              </UFormField>
+            </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
               <UFormField :label="$t('products.fields.category')">
@@ -597,7 +691,11 @@ function scalarText(value: unknown) {
         </h2>
         <div class="mt-4 space-y-4">
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('products.fields.servingsPerContainer')">
+            <UFormField
+              :label="$t('products.fields.servingsPerContainer')"
+              :required="onSale"
+              :error="fieldError('servings_per_container') || undefined"
+            >
               <UInput
                 :model-value="state.servings_per_container"
                 inputmode="numeric"
@@ -617,7 +715,11 @@ function scalarText(value: unknown) {
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.dailyServingsMin')">
+            <UFormField
+              :label="$t('products.fields.dailyServingsMin')"
+              :required="onSale"
+              :error="fieldError('daily_servings_min') || undefined"
+            >
               <UInput
                 :model-value="state.daily_servings_min"
                 inputmode="decimal"
@@ -625,7 +727,11 @@ function scalarText(value: unknown) {
                 @update:model-value="setDecimal('daily_servings_min', $event)"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.dailyServingsMax')">
+            <UFormField
+              :label="$t('products.fields.dailyServingsMax')"
+              :required="onSale"
+              :error="fieldError('daily_servings_max') || undefined"
+            >
               <UInput
                 :model-value="state.daily_servings_max"
                 inputmode="decimal"
@@ -633,7 +739,11 @@ function scalarText(value: unknown) {
                 @update:model-value="setDecimal('daily_servings_max', $event)"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.dailyDose')">
+            <UFormField
+              :label="$t('products.fields.dailyDose')"
+              :required="onSale"
+              :error="fieldError('daily_dose') || undefined"
+            >
               <UInput
                 :model-value="state.daily_dose"
                 inputmode="decimal"
@@ -641,7 +751,11 @@ function scalarText(value: unknown) {
                 @update:model-value="setDecimal('daily_dose', $event)"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.unitPrice')">
+            <UFormField
+              :label="$t('products.fields.unitPrice')"
+              :required="onSale"
+              :error="fieldError('unit_price') || undefined"
+            >
               <UInput
                 :model-value="state.unit_price"
                 inputmode="numeric"
@@ -651,7 +765,8 @@ function scalarText(value: unknown) {
             </UFormField>
             <UFormField
               :label="$t('products.fields.bottlePrice')"
-              :error="bottlePriceError || undefined"
+              :required="onSale"
+              :error="fieldError('bottle_price') || undefined"
             >
               <UInput
                 :model-value="state.bottle_price"
@@ -801,24 +916,28 @@ function scalarText(value: unknown) {
           <div
             v-for="(row, index) in state.nutrition"
             :key="index"
-            class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center"
+            class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start"
           >
             <UFormField
               :label="$t('products.fields.nutritionName')"
+              :error="nutritionFieldError(index, 'name') || undefined"
               class="sm:[&_label]:sr-only"
             >
               <UInput
                 v-model="row.name"
                 class="w-full"
+                @update:model-value="clearNutritionError(index, 'name')"
               />
             </UFormField>
             <UFormField
               :label="$t('products.fields.nutritionAmount')"
+              :error="nutritionFieldError(index, 'amount') || undefined"
               class="sm:[&_label]:sr-only"
             >
               <UInput
                 v-model="row.amount_per_serving"
                 class="w-full"
+                @update:model-value="clearNutritionError(index, 'amount')"
               />
             </UFormField>
             <UFormField

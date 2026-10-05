@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isBottlePriceSaveError } from '~/utils/sellable-item-form'
+import { fieldOfSaveError } from '~/utils/sellable-item-form'
 import { AdminApiError, adminCreateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -7,14 +7,11 @@ import { readOperatorToken } from '~/utils/operator-session'
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
+const toast = useToast()
 const { set } = bindNavbarActions()
 
 const saving = ref(false)
 const errorMessage = ref('')
-const bannerError = computed(() => {
-  const message = errorMessage.value.trim()
-  return message && !isBottlePriceSaveError(message) ? message : ''
-})
 
 watch([saving, locale], () => {
   set({
@@ -33,7 +30,7 @@ watch([saving, locale], () => {
 async function onSave(payload: SellableItemWrite) {
   const token = readOperatorToken()
   if (!token) {
-    errorMessage.value = t('products.saveFailed')
+    notifySaveError(t('products.saveFailed'))
     return
   }
 
@@ -48,7 +45,12 @@ async function onSave(payload: SellableItemWrite) {
     }
     await navigateTo(localePath('/products'))
   } catch (error) {
-    errorMessage.value = failText(error)
+    const message = failText(error)
+    if (fieldOfSaveError(message)) {
+      errorMessage.value = message
+      return
+    }
+    notifySaveError(message)
   } finally {
     saving.value = false
   }
@@ -69,16 +71,20 @@ function failText(error: unknown) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
   return message || t('products.saveFailed')
 }
+
+function notifySaveError(message: string) {
+  errorMessage.value = ''
+  toast.add({
+    title: message,
+    color: 'error',
+    progress: false,
+    duration: 2500
+  })
+}
 </script>
 
 <template>
   <PageHeader plain>
-    <p
-      v-if="bannerError"
-      class="mb-4 text-sm text-error"
-    >
-      {{ bannerError }}
-    </p>
     <SellableItemForm
       mode="create"
       :sellable-item="null"

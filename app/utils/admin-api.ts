@@ -418,7 +418,6 @@ export async function adminListSellableItems(apiBase: string, token: string) {
 
 export type SellableItemWrite = {
   body: Record<string, unknown>
-  image: File | null
 }
 
 export async function adminCreateSellableItem(apiBase: string, token: string, payload: SellableItemWrite) {
@@ -428,7 +427,7 @@ export async function adminCreateSellableItem(apiBase: string, token: string, pa
       headers: {
         Authorization: `Bearer ${token}`
       },
-      body: sellableItemRequestBody(payload)
+      body: payload.body
     })
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
@@ -480,29 +479,6 @@ export async function adminUpdateSellableItem(apiBase: string, token: string, id
     }
     throw new AdminApiError(readStatus(error), readMessage(error))
   }
-}
-
-function sellableItemRequestBody(payload: SellableItemWrite) {
-  if (!payload.image) {
-    return payload.body
-  }
-  const form = new FormData()
-  form.append('image', payload.image)
-  for (const [key, value] of Object.entries(payload.body)) {
-    appendSellableField(form, key, value)
-  }
-  return form
-}
-
-function appendSellableField(form: FormData, key: string, value: unknown) {
-  if (value == null) {
-    return
-  }
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    form.append(key, String(value))
-    return
-  }
-  form.append(key, JSON.stringify(value))
 }
 
 export async function adminDeleteSellableItem(apiBase: string, token: string, id: string) {

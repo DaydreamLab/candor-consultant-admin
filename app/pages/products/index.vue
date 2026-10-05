@@ -186,8 +186,7 @@ async function toggleSale(row: Record<string, unknown>, nextOnSale: boolean) {
   errorMessage.value = ''
   try {
     const updated = await adminUpdateSellableItem(config.public.apiBase, token, id, {
-      body: { sale_status: next },
-      image: null
+      body: { sale_status: next }
     })
     Object.assign(row, updated)
   } catch (error) {

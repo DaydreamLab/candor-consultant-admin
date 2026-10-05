@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { fieldOfSaveError } from '~/utils/sellable-item-form'
 import { AdminApiError, adminGetSellableItem, adminUpdateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { normalizeAdminPath } from '~/utils/nav'
@@ -115,7 +116,11 @@ async function onSave(payload: SellableItemWrite) {
       return
     }
     const message = failText(error, t('products.saveFailed'))
-    saveError.value = message
+    if (fieldOfSaveError(message)) {
+      saveError.value = message
+      return
+    }
+    saveError.value = ''
     notifySaveError(message)
   } finally {
     if (sellableItemId.value === id) {
