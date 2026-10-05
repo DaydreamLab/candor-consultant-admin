@@ -91,6 +91,7 @@ const dismissedRemote = ref(false)
 const fieldsLocked = computed(() => props.disabled || props.saving)
 
 const CATEGORY_VALUES = new Set(['排毒', '營養素', '腸道支持', '心血管'])
+const UNCATEGORIZED = '__uncategorized__'
 
 const categoryOptions = computed(() => {
   const options = [
@@ -98,13 +99,26 @@ const categoryOptions = computed(() => {
     { label: t('products.categories.nutrients'), value: '營養素' },
     { label: t('products.categories.gut'), value: '腸道支持' },
     { label: t('products.categories.cardio'), value: '心血管' },
-    { label: t('products.categories.none'), value: '' }
+    { label: t('products.categories.none'), value: UNCATEGORIZED }
   ]
   const current = state.category.trim()
   if (current && !CATEGORY_VALUES.has(current)) {
     options.splice(options.length - 1, 0, { label: current, value: current })
   }
   return options
+})
+
+const categoryModel = computed({
+  get: () => state.category.trim() || UNCATEGORIZED,
+  set: (value: string) => {
+    state.category = value === UNCATEGORIZED ? '' : value
+  }
+})
+const categorySearch = ref('')
+
+watch(() => state.category, async () => {
+  await nextTick()
+  categorySearch.value = ''
 })
 
 watch(() => props.sellableItem, (item) => {
@@ -677,7 +691,8 @@ function scalarText(value: unknown) {
             <div class="grid gap-4 sm:grid-cols-2">
               <UFormField :label="$t('products.fields.category')">
                 <UInputMenu
-                  v-model="state.category"
+                  v-model="categoryModel"
+                  v-model:search-term="categorySearch"
                   :items="categoryOptions"
                   value-key="value"
                   class="w-full"
