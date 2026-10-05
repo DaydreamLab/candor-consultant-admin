@@ -751,6 +751,13 @@
     "saleToggle": "上下架",
     "saleToggleFailed": "上下架失敗",
     "bottlePriceRequired": "販售中的商品，每瓶價格須大於 0。",
+    "filters": {
+      "any": "全部",
+      "q": "搜尋",
+      "qPlaceholder": "品名、SKU 或代碼",
+      "category": "分類",
+      "saleStatus": "販售狀態"
+    },
     "sections": {
       "identity": "商品",
       "dose": "劑量與價格",

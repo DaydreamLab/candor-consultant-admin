@@ -5,6 +5,7 @@ import { readOperatorToken } from '~/utils/operator-session'
 
 const VIEW_STORAGE_KEY = 'candor.products.view'
 const CATEGORY_ALL = 'all'
+const SALE_ALL = 'all'
 const OFF_SALE = new Set(['off_sale', 'discontinued', 'stopped', 'inactive'])
 const SERVING_KEYS = ['servings_per_container', 'serving_per_container', 'serving_per_contain']
 
@@ -18,6 +19,7 @@ const pending = ref(true)
 const errorMessage = ref('')
 const query = ref('')
 const categoryFilter = ref<string[]>([CATEGORY_ALL])
+const saleFilter = ref(SALE_ALL)
 const view = ref<'card' | 'list'>('card')
 const togglingIds = ref<Set<string>>(new Set())
 
@@ -38,6 +40,12 @@ const categoryOptions = computed(() => {
   ]
 })
 
+const saleOptions = computed(() => [
+  { label: t('products.filters.any'), value: SALE_ALL },
+  { label: t('products.onSale'), value: 'on_sale' },
+  { label: t('products.offSale'), value: 'off_sale' }
+])
+
 const selectedCategories = computed(() => {
   return categoryFilter.value.filter(value => value !== CATEGORY_ALL)
 })
@@ -54,8 +62,15 @@ const categoryTriggerLabel = computed(() => {
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   const selected = new Set(selectedCategories.value)
+  const sale = saleFilter.value
   return sellableItems.value.filter((row) => {
     if (selected.size > 0 && !selected.has(categoryOf(row))) {
+      return false
+    }
+    if (sale === 'on_sale' && offSaleOf(row)) {
+      return false
+    }
+    if (sale === 'off_sale' && !offSaleOf(row)) {
       return false
     }
     return !q || searchableText(row).includes(q)
@@ -78,7 +93,7 @@ watch(categoryFilter, (value, previous) => {
   }
 })
 
-watch([query, categoryFilter], () => {
+watch([query, categoryFilter, saleFilter], () => {
   page.value = 1
 })
 
@@ -334,36 +349,58 @@ function failText(error: unknown) {
     :title="$t('products.listTitle')"
     plain
   >
-    <p
-      v-if="pending"
-      class="text-sm text-muted"
-    >
-      {{ $t('products.loading') }}
-    </p>
-    <div v-else>
-      <div class="overflow-hidden rounded-xl border border-default bg-elevated">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-default px-4 py-3">
-          <div class="flex flex-wrap items-center gap-2">
-            <UInput
-              v-model="query"
-              icon="i-lucide-search"
-              :placeholder="$t('table.search')"
-              class="w-52"
-            />
-            <USelect
-              v-model="categoryFilter"
-              multiple
-              :items="categoryOptions"
-              value-key="value"
-              icon="i-lucide-filter"
-              class="w-40"
-            >
-              <template #default>
-                {{ categoryTriggerLabel }}
-              </template>
-            </USelect>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-elevated p-4">
+        <div class="min-w-40 grow basis-40">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('products.filters.q') }}
+          </label>
+          <UInput
+            v-model="query"
+            icon="i-lucide-search"
+            :placeholder="$t('products.filters.qPlaceholder')"
+            class="w-full"
+          />
+        </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('products.filters.category') }}
+          </label>
+          <USelect
+            v-model="categoryFilter"
+            multiple
+            :items="categoryOptions"
+            value-key="value"
+            icon="i-lucide-filter"
+            class="w-full"
+          >
+            <template #default>
+              {{ categoryTriggerLabel }}
+            </template>
+          </USelect>
+        </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('products.filters.saleStatus') }}
+          </label>
+          <USelect
+            v-model="saleFilter"
+            :items="saleOptions"
+            value-key="value"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <p
+        v-if="pending"
+        class="text-sm text-muted"
+      >
+        {{ $t('products.loading') }}
+      </p>
+      <template v-else>
+        <div class="overflow-hidden rounded-xl border border-default bg-elevated">
+          <div class="flex flex-wrap items-center justify-end gap-2 border-b border-default px-4 py-3">
             <div class="flex items-center gap-1">
               <UButton
                 icon="i-lucide-layout-grid"
@@ -391,164 +428,57 @@ function failText(error: unknown) {
               {{ $t('actions.add') }}
             </UButton>
           </div>
-        </div>
-        <p
-          v-if="errorMessage"
-          class="px-5 py-4 text-sm text-error"
-        >
-          {{ errorMessage }}
-        </p>
-        <p
-          v-else-if="!filtered.length"
-          class="p-10 text-center text-base text-muted"
-        >
-          {{ $t('products.empty') }}
-        </p>
-        <UPageGrid
-          v-else-if="view === 'card'"
-          :ui="{ base: 'relative grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4' }"
-          class="p-4"
-        >
-          <article
-            v-for="(row, index) in rows"
-            :key="rowKey(row, index)"
-            class="overflow-hidden rounded-lg border border-default bg-default"
-            :class="idOf(row) ? 'cursor-pointer hover:bg-muted/30' : ''"
-            @click="openItem(row)"
+          <p
+            v-if="errorMessage"
+            class="px-5 py-4 text-sm text-error"
           >
-            <div class="aspect-square overflow-hidden bg-muted">
-              <img
-                v-if="imageOf(row)"
-                :src="imageOf(row)"
-                alt=""
-                class="size-full object-cover"
-              >
-              <span
-                v-else
-                class="flex size-full items-center justify-center text-3xl font-semibold text-white"
-                :style="{ backgroundColor: thumbTone(thumbSeed(row)) }"
-                aria-hidden="true"
-              >
-                {{ thumbLetter(nameOf(row)) }}
-              </span>
-            </div>
-            <div class="space-y-1 p-3">
-              <div class="flex items-start justify-between gap-2">
-                <p
-                  v-if="nameOf(row)"
-                  class="line-clamp-2 text-base font-semibold text-highlighted"
-                >
-                  {{ nameOf(row) }}
-                </p>
-                <div
-                  v-if="canToggleSale && idOf(row)"
-                  class="shrink-0"
-                  @click="stopRowClick"
-                >
-                  <USwitch
-                    :model-value="onSaleOf(row)"
-                    :disabled="isToggling(row)"
-                    :aria-label="$t('products.saleToggle')"
-                    @update:model-value="toggleSale(row, $event)"
-                  />
-                </div>
-              </div>
-              <div
-                v-if="hasBadges(row)"
-                class="flex flex-wrap gap-1"
-              >
-                <UBadge
-                  v-if="categoryOf(row)"
-                  color="neutral"
-                  variant="subtle"
-                  size="sm"
-                >
-                  {{ categoryOf(row) }}
-                </UBadge>
-                <UBadge
-                  v-if="offSaleOf(row)"
-                  color="warning"
-                  variant="subtle"
-                  size="sm"
-                >
-                  {{ $t('products.offSale') }}
-                </UBadge>
-              </div>
-              <p
-                v-if="audienceOf(row)"
-                class="line-clamp-2 text-sm text-muted"
-              >
-                {{ audienceOf(row) }}
-              </p>
-              <p
-                v-if="portionOf(row)"
-                class="text-sm text-muted"
-              >
-                {{ portionOf(row) }}
-              </p>
-              <p
-                v-if="identifierOf(row)"
-                class="text-xs text-muted"
-              >
-                {{ identifierOf(row) }}
-              </p>
-            </div>
-          </article>
-        </UPageGrid>
-        <template v-else>
-          <article
-            v-for="(row, index) in rows"
-            :key="rowKey(row, index)"
-            class="flex items-center gap-4 border-b border-default px-5 py-4 last:border-0"
-            :class="idOf(row) ? 'cursor-pointer hover:bg-muted/30' : ''"
-            @click="openItem(row)"
+            {{ errorMessage }}
+          </p>
+          <p
+            v-else-if="!filtered.length"
+            class="p-10 text-center text-base text-muted"
           >
-            <img
-              v-if="imageOf(row)"
-              :src="imageOf(row)"
-              alt=""
-              class="size-16 shrink-0 rounded-lg object-cover"
+            {{ $t('products.empty') }}
+          </p>
+          <UPageGrid
+            v-else-if="view === 'card'"
+            :ui="{ base: 'relative grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4' }"
+            class="p-4"
+          >
+            <article
+              v-for="(row, index) in rows"
+              :key="rowKey(row, index)"
+              class="overflow-hidden rounded-lg border border-default bg-default"
+              :class="idOf(row) ? 'cursor-pointer hover:bg-muted/30' : ''"
+              @click="openItem(row)"
             >
-            <span
-              v-else
-              class="inline-flex size-16 shrink-0 items-center justify-center rounded-lg text-lg font-semibold text-white"
-              :style="{ backgroundColor: thumbTone(thumbSeed(row)) }"
-              aria-hidden="true"
-            >
-              {{ thumbLetter(nameOf(row)) }}
-            </span>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-start justify-between gap-3">
-                <p
-                  v-if="nameOf(row)"
-                  class="text-base font-semibold text-highlighted"
+              <div class="aspect-square overflow-hidden bg-muted">
+                <img
+                  v-if="imageOf(row)"
+                  :src="imageOf(row)"
+                  alt=""
+                  class="size-full object-cover"
                 >
-                  {{ nameOf(row) }}
-                </p>
-                <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                  <div
-                    v-if="hasBadges(row)"
-                    class="flex flex-wrap justify-end gap-1"
+                <span
+                  v-else
+                  class="flex size-full items-center justify-center text-3xl font-semibold text-white"
+                  :style="{ backgroundColor: thumbTone(thumbSeed(row)) }"
+                  aria-hidden="true"
+                >
+                  {{ thumbLetter(nameOf(row)) }}
+                </span>
+              </div>
+              <div class="space-y-1 p-3">
+                <div class="flex items-start justify-between gap-2">
+                  <p
+                    v-if="nameOf(row)"
+                    class="line-clamp-2 text-base font-semibold text-highlighted"
                   >
-                    <UBadge
-                      v-if="categoryOf(row)"
-                      color="neutral"
-                      variant="subtle"
-                      size="sm"
-                    >
-                      {{ categoryOf(row) }}
-                    </UBadge>
-                    <UBadge
-                      v-if="offSaleOf(row)"
-                      color="warning"
-                      variant="subtle"
-                      size="sm"
-                    >
-                      {{ $t('products.offSale') }}
-                    </UBadge>
-                  </div>
+                    {{ nameOf(row) }}
+                  </p>
                   <div
                     v-if="canToggleSale && idOf(row)"
+                    class="shrink-0"
                     @click="stopRowClick"
                   >
                     <USwitch
@@ -559,33 +489,140 @@ function failText(error: unknown) {
                     />
                   </div>
                 </div>
+                <div
+                  v-if="hasBadges(row)"
+                  class="flex flex-wrap gap-1"
+                >
+                  <UBadge
+                    v-if="categoryOf(row)"
+                    color="neutral"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ categoryOf(row) }}
+                  </UBadge>
+                  <UBadge
+                    v-if="offSaleOf(row)"
+                    color="warning"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    {{ $t('products.offSale') }}
+                  </UBadge>
+                </div>
+                <p
+                  v-if="audienceOf(row)"
+                  class="line-clamp-2 text-sm text-muted"
+                >
+                  {{ audienceOf(row) }}
+                </p>
+                <p
+                  v-if="portionOf(row)"
+                  class="text-sm text-muted"
+                >
+                  {{ portionOf(row) }}
+                </p>
+                <p
+                  v-if="identifierOf(row)"
+                  class="text-xs text-muted"
+                >
+                  {{ identifierOf(row) }}
+                </p>
               </div>
-              <p
-                v-if="audienceOf(row)"
-                class="line-clamp-2 text-sm text-muted"
-                :class="nameOf(row) || hasBadges(row) ? 'mt-1' : ''"
+            </article>
+          </UPageGrid>
+          <template v-else>
+            <article
+              v-for="(row, index) in rows"
+              :key="rowKey(row, index)"
+              class="flex items-center gap-4 border-b border-default px-5 py-4 last:border-0"
+              :class="idOf(row) ? 'cursor-pointer hover:bg-muted/30' : ''"
+              @click="openItem(row)"
+            >
+              <img
+                v-if="imageOf(row)"
+                :src="imageOf(row)"
+                alt=""
+                class="size-16 shrink-0 rounded-lg object-cover"
               >
-                {{ audienceOf(row) }}
-              </p>
-              <p
-                v-if="listMetaOf(row)"
-                class="text-sm text-muted"
-                :class="nameOf(row) || hasBadges(row) || audienceOf(row) ? 'mt-1' : ''"
+              <span
+                v-else
+                class="inline-flex size-16 shrink-0 items-center justify-center rounded-lg text-lg font-semibold text-white"
+                :style="{ backgroundColor: thumbTone(thumbSeed(row)) }"
+                aria-hidden="true"
               >
-                {{ listMetaOf(row) }}
-              </p>
-            </div>
-          </article>
-        </template>
-      </div>
-      <ListPager
-        :page="page"
-        :page-size="pageSize"
-        :total="total"
-        :from="from"
-        :to="to"
-        @update:page="page = $event"
-      />
+                {{ thumbLetter(nameOf(row)) }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-3">
+                  <p
+                    v-if="nameOf(row)"
+                    class="text-base font-semibold text-highlighted"
+                  >
+                    {{ nameOf(row) }}
+                  </p>
+                  <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <div
+                      v-if="hasBadges(row)"
+                      class="flex flex-wrap justify-end gap-1"
+                    >
+                      <UBadge
+                        v-if="categoryOf(row)"
+                        color="neutral"
+                        variant="subtle"
+                        size="sm"
+                      >
+                        {{ categoryOf(row) }}
+                      </UBadge>
+                      <UBadge
+                        v-if="offSaleOf(row)"
+                        color="warning"
+                        variant="subtle"
+                        size="sm"
+                      >
+                        {{ $t('products.offSale') }}
+                      </UBadge>
+                    </div>
+                    <div
+                      v-if="canToggleSale && idOf(row)"
+                      @click="stopRowClick"
+                    >
+                      <USwitch
+                        :model-value="onSaleOf(row)"
+                        :disabled="isToggling(row)"
+                        :aria-label="$t('products.saleToggle')"
+                        @update:model-value="toggleSale(row, $event)"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p
+                  v-if="audienceOf(row)"
+                  class="line-clamp-2 text-sm text-muted"
+                  :class="nameOf(row) || hasBadges(row) ? 'mt-1' : ''"
+                >
+                  {{ audienceOf(row) }}
+                </p>
+                <p
+                  v-if="listMetaOf(row)"
+                  class="text-sm text-muted"
+                  :class="nameOf(row) || hasBadges(row) || audienceOf(row) ? 'mt-1' : ''"
+                >
+                  {{ listMetaOf(row) }}
+                </p>
+              </div>
+            </article>
+          </template>
+        </div>
+        <ListPager
+          :page="page"
+          :page-size="pageSize"
+          :total="total"
+          :from="from"
+          :to="to"
+          @update:page="page = $event"
+        />
+      </template>
     </div>
   </PageHeader>
 </template>
