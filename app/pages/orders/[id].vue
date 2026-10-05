@@ -668,11 +668,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 <template>
   <PageHeader
-    class="flex flex-col"
+    class="flex flex-col lg:h-full lg:min-h-0 lg:flex-1 lg:overflow-hidden"
     :title="title"
     plain
   >
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       <ol
         v-if="timelineSteps.length"
         class="flex shrink-0 items-start overflow-x-auto rounded-xl border border-default bg-elevated px-4 py-4"
@@ -718,144 +718,144 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         </li>
       </ol>
 
-      <section
-        v-if="reportSectionVisible"
-        class="flex shrink-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated"
-      >
-        <button
-          type="button"
-          class="flex shrink-0 cursor-pointer items-center justify-between gap-3 bg-elevated px-4 py-3 text-left text-base font-semibold text-highlighted"
-          :class="reportOpen ? 'border-b border-default' : ''"
-          @click="reportOpen = !reportOpen"
-        >
-          <div class="flex min-w-0 flex-col gap-1">
-            <span>{{ $t('orders.sections.reportReading') }}</span>
-            <LlmUsageSummary :usage="reportUsage" />
-          </div>
-          <UIcon
-            name="i-lucide-chevron-right"
-            class="size-4 shrink-0 text-muted transition-transform"
-            :class="reportOpen ? 'rotate-90' : ''"
-          />
-        </button>
-        <div
-          v-show="reportOpen"
-          class="flex min-h-0 flex-col"
-        >
-          <p
-            v-if="reportError"
-            class="px-4 py-3 text-sm text-error"
-          >
-            {{ reportError }}
-          </p>
-          <p
-            v-else-if="reportPending"
-            class="px-4 py-3 text-sm text-muted"
-          >
-            {{ $t('orders.reportReading.loading') }}
-          </p>
-          <p
-            v-else-if="!reportResults.length"
-            class="px-4 py-3 text-sm text-muted"
-          >
-            {{ $t('orders.reportReading.empty') }}
-          </p>
-          <template v-else>
-            <div class="shrink-0 border-b border-default bg-elevated px-4 py-2.5">
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-muted px-3 py-2 text-xs text-muted">
-                <span class="inline-flex items-center">
-                  <i class="yr-dot ok" />{{ $t('orders.reportReading.optimal') }}
-                </span>
-                <span class="inline-flex items-center">
-                  <i class="yr-dot warn" />{{ $t('orders.reportReading.caution') }}
-                </span>
-                <span class="inline-flex items-center">
-                  <i class="yr-dot alert" />{{ $t('orders.reportReading.alert') }}
-                </span>
-                <span class="text-dimmed sm:ms-auto">{{ $t('orders.reportReading.colorHint') }}</span>
-              </div>
-            </div>
-            <div class="h-56 min-h-0 overflow-y-auto bg-elevated px-4 py-3">
-              <div class="overflow-x-auto rounded-lg border border-default bg-default">
-                <table class="w-full min-w-[32rem] border-collapse text-sm">
-                  <thead>
-                    <tr class="bg-muted text-left text-xs font-semibold text-muted">
-                      <th class="border-b border-dashed border-default px-2.5 py-2">
-                        {{ $t('orders.reportReading.status') }}
-                      </th>
-                      <th class="border-b border-dashed border-default px-2.5 py-2">
-                        {{ $t('orders.reportReading.item') }}
-                      </th>
-                      <th class="border-b border-dashed border-default px-2.5 py-2">
-                        {{ $t('orders.reportReading.value') }}
-                      </th>
-                      <th class="border-b border-dashed border-default px-2.5 py-2">
-                        {{ $t('orders.reportReading.unit') }}
-                      </th>
-                      <th class="border-b border-dashed border-default px-2.5 py-2">
-                        {{ $t('orders.reportReading.refRange') }}
-                      </th>
-                      <th class="border-b border-dashed border-default px-2.5 py-2">
-                        {{ $t('orders.reportReading.position') }}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="row in reportResults"
-                      :key="row.id"
-                      class="border-b border-dashed border-default last:border-0"
-                    >
-                      <td class="px-2.5 py-2.5 text-highlighted">
-                        <i
-                          class="yr-dot"
-                          :class="resultStatusClass(row)"
-                        />{{ resultStatusLabel(resultStatusClass(row)) }}
-                      </td>
-                      <td class="px-2.5 py-2.5 font-semibold text-highlighted">
-                        {{ row.raw_name || row.biomarker_id || '—' }}
-                      </td>
-                      <td
-                        class="px-2.5 py-2.5 text-base font-bold"
-                        :class="`yr-val-${resultStatusClass(row)}`"
-                      >
-                        {{ displayResultValue(row) }}
-                      </td>
-                      <td class="px-2.5 py-2.5 text-muted">
-                        {{ row.unit || row.raw_unit || '—' }}
-                      </td>
-                      <td class="px-2.5 py-2.5 text-xs text-muted">
-                        {{ formatResultRef(row) }}
-                      </td>
-                      <td class="overflow-visible px-2.5 py-2.5">
-                        <div
-                          v-if="resultGaugePct(row) != null"
-                          class="yr-gauge relative h-2 w-[4.5rem] overflow-visible rounded-full"
-                        >
-                          <div
-                            class="yr-gauge-marker absolute top-[-3px] h-3.5 -translate-x-1/2 rounded-sm"
-                            :style="{ left: `${resultGaugePct(row)}%` }"
-                          />
-                        </div>
-                        <span
-                          v-else
-                          class="text-muted"
-                        >—</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </template>
-        </div>
-      </section>
-
-      <div class="grid items-start gap-6 lg:grid-cols-2 lg:items-stretch">
+      <div class="grid items-start gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] lg:grid-rows-[minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
         <div
           :key="orderId"
-          class="flex min-w-0 flex-col gap-6"
+          class="scrollbar-none min-w-0 space-y-6 lg:min-h-0 lg:overflow-y-auto"
         >
+          <section
+            v-if="reportSectionVisible"
+            class="report-card shrink-0 overflow-hidden rounded-xl border border-default bg-elevated lg:flex lg:max-h-[50%] lg:flex-col"
+          >
+            <button
+              type="button"
+              class="flex shrink-0 cursor-pointer items-center justify-between gap-3 bg-elevated px-4 py-3 text-left text-base font-semibold text-highlighted"
+              :class="reportOpen ? 'border-b border-default' : ''"
+              @click="reportOpen = !reportOpen"
+            >
+              <div class="flex min-w-0 flex-col gap-1">
+                <span>{{ $t('orders.sections.reportReading') }}</span>
+                <LlmUsageSummary :usage="reportUsage" />
+              </div>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-4 shrink-0 text-muted transition-transform"
+                :class="reportOpen ? 'rotate-90' : ''"
+              />
+            </button>
+            <div
+              v-show="reportOpen"
+              class="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
+            >
+              <p
+                v-if="reportError"
+                class="px-4 py-3 text-sm text-error"
+              >
+                {{ reportError }}
+              </p>
+              <p
+                v-else-if="reportPending"
+                class="px-4 py-3 text-sm text-muted"
+              >
+                {{ $t('orders.reportReading.loading') }}
+              </p>
+              <p
+                v-else-if="!reportResults.length"
+                class="px-4 py-3 text-sm text-muted"
+              >
+                {{ $t('orders.reportReading.empty') }}
+              </p>
+              <template v-else>
+                <div class="shrink-0 border-b border-default bg-elevated px-4 py-2.5">
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg bg-muted px-3 py-2 text-xs text-muted">
+                    <span class="inline-flex items-center">
+                      <i class="yr-dot ok" />{{ $t('orders.reportReading.optimal') }}
+                    </span>
+                    <span class="inline-flex items-center">
+                      <i class="yr-dot warn" />{{ $t('orders.reportReading.caution') }}
+                    </span>
+                    <span class="inline-flex items-center">
+                      <i class="yr-dot alert" />{{ $t('orders.reportReading.alert') }}
+                    </span>
+                    <span class="text-dimmed sm:ms-auto">{{ $t('orders.reportReading.colorHint') }}</span>
+                  </div>
+                </div>
+                <div class="report-body scrollbar-none flex min-h-0 flex-col bg-elevated px-4 py-3 lg:flex-1">
+                  <div class="scrollbar-none min-h-0 flex-1 overflow-auto rounded-lg border border-default bg-default">
+                    <table class="w-full min-w-[32rem] border-separate border-spacing-0 text-sm">
+                      <thead>
+                        <tr class="text-left text-xs font-semibold text-muted">
+                          <th class="sticky top-0 z-10 border-b border-dashed border-default bg-muted px-2.5 py-2">
+                            {{ $t('orders.reportReading.status') }}
+                          </th>
+                          <th class="sticky top-0 z-10 border-b border-dashed border-default bg-muted px-2.5 py-2">
+                            {{ $t('orders.reportReading.item') }}
+                          </th>
+                          <th class="sticky top-0 z-10 border-b border-dashed border-default bg-muted px-2.5 py-2">
+                            {{ $t('orders.reportReading.value') }}
+                          </th>
+                          <th class="sticky top-0 z-10 border-b border-dashed border-default bg-muted px-2.5 py-2">
+                            {{ $t('orders.reportReading.unit') }}
+                          </th>
+                          <th class="sticky top-0 z-10 border-b border-dashed border-default bg-muted px-2.5 py-2">
+                            {{ $t('orders.reportReading.refRange') }}
+                          </th>
+                          <th class="sticky top-0 z-10 border-b border-dashed border-default bg-muted px-2.5 py-2">
+                            {{ $t('orders.reportReading.position') }}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          v-for="row in reportResults"
+                          :key="row.id"
+                          class="border-b border-dashed border-default last:border-b-0 [&>td]:border-b [&>td]:border-dashed [&>td]:border-default last:[&>td]:border-b-0"
+                        >
+                          <td class="px-2.5 py-2.5 text-highlighted">
+                            <i
+                              class="yr-dot"
+                              :class="resultStatusClass(row)"
+                            />{{ resultStatusLabel(resultStatusClass(row)) }}
+                          </td>
+                          <td class="px-2.5 py-2.5 font-semibold text-highlighted">
+                            {{ row.raw_name || row.biomarker_id || '—' }}
+                          </td>
+                          <td
+                            class="px-2.5 py-2.5 text-base font-bold"
+                            :class="`yr-val-${resultStatusClass(row)}`"
+                          >
+                            {{ displayResultValue(row) }}
+                          </td>
+                          <td class="px-2.5 py-2.5 text-muted">
+                            {{ row.unit || row.raw_unit || '—' }}
+                          </td>
+                          <td class="px-2.5 py-2.5 text-xs text-muted">
+                            {{ formatResultRef(row) }}
+                          </td>
+                          <td class="overflow-visible px-2.5 py-2.5">
+                            <div
+                              v-if="resultGaugePct(row) != null"
+                              class="yr-gauge relative h-2 w-[4.5rem] overflow-visible rounded-full"
+                            >
+                              <div
+                                class="yr-gauge-marker absolute top-[-3px] h-3.5 -translate-x-1/2 rounded-sm"
+                                :style="{ left: `${resultGaugePct(row)}%` }"
+                              />
+                            </div>
+                            <span
+                              v-else
+                              class="text-muted"
+                            >—</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </section>
+
           <p
             v-if="orderError"
             class="text-sm text-error"
@@ -1245,12 +1245,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
           </template>
         </div>
 
-        <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:max-h-none">
+        <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:h-full lg:max-h-full">
           <div class="flex shrink-0 flex-col gap-1 border-b border-default bg-elevated px-4 py-3">
             <span class="text-base font-semibold text-highlighted">{{ $t('orders.sections.messages') }}</span>
             <LlmUsageSummary :usage="conversationUsage" />
           </div>
-          <div class="min-h-0 flex-1 overflow-y-auto">
+          <div class="scrollbar-none min-h-0 flex-1 overflow-y-auto">
             <p
               v-if="messagesError"
               class="px-4 py-3 text-sm text-error"
@@ -1295,6 +1295,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 </template>
 
 <style scoped>
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .report-body {
+    flex: 1 1 auto;
+  }
+}
+
 .yr-dot {
   display: inline-block;
   width: 0.55rem;
