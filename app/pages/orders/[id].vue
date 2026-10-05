@@ -818,6 +818,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                 <ReportResultTable
                   v-else
                   :results="reportResults"
+                  hide-scrollbar
                   class="min-h-0 flex-1"
                 />
               </template>
