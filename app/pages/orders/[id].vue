@@ -783,7 +783,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
             </div>
             <UModal
               v-model:open="reportSheetOpen"
-              :title="$t('orders.reportReading.expand')"
               :ui="{
                 content: 'h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] sm:max-h-[calc(100dvh-3rem)] sm:max-w-6xl',
                 header: 'shrink-0',
