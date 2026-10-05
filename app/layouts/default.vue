@@ -82,6 +82,92 @@ async function logout() {
   session.logout()
   await navigateTo(localePath('/login'))
 }
+
+const sidebarScrollers = new Set<HTMLElement>()
+const scrollingTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>()
+let sidebarResizeObserver: ResizeObserver | undefined
+let sidebarScrollActive = true
+
+function syncSidebarScroll(el: HTMLElement) {
+  const edge = 4
+  const overflow = el.scrollHeight - el.clientHeight > edge
+  el.toggleAttribute('data-overflow-top', overflow && el.scrollTop > edge)
+  el.toggleAttribute('data-overflow-bottom', overflow && el.scrollTop + el.clientHeight < el.scrollHeight - edge)
+}
+
+function onSidebarScroll(event: Event) {
+  const el = event.currentTarget
+  if (!(el instanceof HTMLElement)) {
+    return
+  }
+  syncSidebarScroll(el)
+  el.classList.add('is-scrolling')
+  const previous = scrollingTimers.get(el)
+  if (previous) {
+    clearTimeout(previous)
+  }
+  scrollingTimers.set(el, setTimeout(() => {
+    el.classList.remove('is-scrolling')
+  }, 700))
+}
+
+function bindSidebarScroll() {
+  if (!sidebarScrollActive) {
+    return
+  }
+  document.querySelectorAll<HTMLElement>('.sidebar-scroll').forEach((el) => {
+    if (!sidebarScrollers.has(el)) {
+      sidebarScrollers.add(el)
+      el.addEventListener('scroll', onSidebarScroll, { passive: true })
+    }
+    sidebarResizeObserver?.observe(el)
+    for (const child of el.children) {
+      if (child instanceof HTMLElement) {
+        sidebarResizeObserver?.observe(child)
+      }
+    }
+    syncSidebarScroll(el)
+  })
+}
+
+onMounted(() => {
+  sidebarResizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const target = entry.target
+      const el = target.classList.contains('sidebar-scroll')
+        ? target
+        : target.closest('.sidebar-scroll')
+      if (el instanceof HTMLElement) {
+        syncSidebarScroll(el)
+      }
+    }
+  })
+  bindSidebarScroll()
+  requestAnimationFrame(() => bindSidebarScroll())
+  document.fonts?.ready.then(() => bindSidebarScroll())
+})
+
+watch(menuGroups, () => {
+  nextTick(() => bindSidebarScroll())
+})
+
+watch(open, () => {
+  nextTick(() => bindSidebarScroll())
+})
+
+onUnmounted(() => {
+  sidebarScrollActive = false
+  sidebarResizeObserver?.disconnect()
+  sidebarResizeObserver = undefined
+  for (const el of sidebarScrollers) {
+    el.removeEventListener('scroll', onSidebarScroll)
+    const timer = scrollingTimers.get(el)
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
+  sidebarScrollers.clear()
+})
 </script>
 
 <template>
@@ -92,7 +178,7 @@ async function logout() {
       collapsible
       resizable
       class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
+      :ui="{ body: 'sidebar-scroll', footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">
         <BrandMark :collapsed="collapsed" />
@@ -254,3 +340,64 @@ async function logout() {
     </UDashboardPanel>
   </UDashboardGroup>
 </template>
+
+<style scoped>
+:deep(.sidebar-scroll) {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+:deep(.sidebar-scroll:hover),
+:deep(.sidebar-scroll.is-scrolling) {
+  scrollbar-color: color-mix(in oklab, var(--ui-text) 40%, transparent) transparent;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: transparent;
+}
+
+:deep(.sidebar-scroll:hover)::-webkit-scrollbar-thumb,
+:deep(.sidebar-scroll.is-scrolling)::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--ui-text) 40%, transparent);
+}
+
+:deep(.sidebar-scroll[data-overflow-top]:not([data-overflow-bottom])) {
+  --sidebar-mask: linear-gradient(to bottom, transparent, #000 1.5rem);
+}
+
+:deep(.sidebar-scroll[data-overflow-bottom]:not([data-overflow-top])) {
+  --sidebar-mask: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
+}
+
+:deep(.sidebar-scroll[data-overflow-top][data-overflow-bottom]) {
+  --sidebar-mask: linear-gradient(
+    to bottom,
+    transparent,
+    #000 1.5rem,
+    #000 calc(100% - 1.5rem),
+    transparent
+  );
+}
+
+:deep(.sidebar-scroll[data-overflow-top]),
+:deep(.sidebar-scroll[data-overflow-bottom]) {
+  -webkit-mask-image: var(--sidebar-mask);
+  mask-image: var(--sidebar-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+</style>
