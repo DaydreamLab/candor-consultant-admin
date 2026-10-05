@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { isBottlePriceSaveError } from '~/utils/sellable-item-form'
 import { AdminApiError, adminGetSellableItem, adminUpdateSellableItem, type SellableItemWrite } from '~/utils/admin-api'
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { normalizeAdminPath } from '~/utils/nav'
@@ -16,14 +15,12 @@ const sellableItemId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || sellableItemId.value)
 const canEdit = computed(() => session.operator?.role !== 'expert')
 
+const toast = useToast()
 const sellableItem = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
 const saving = ref(false)
-const errorMessage = ref('')
-const bannerError = computed(() => {
-  const message = errorMessage.value.trim()
-  return message && !isBottlePriceSaveError(message) ? message : ''
-})
+const loadError = ref('')
+const saveError = ref('')
 
 watch([saving, pending, sellableItem, locale, canEdit], () => {
   if (pending.value || !sellableItem.value || !canEdit.value) {
@@ -58,12 +55,13 @@ onUnmounted(() => {
 async function load(id: string) {
   crumbLabel.value = null
   sellableItem.value = null
-  errorMessage.value = ''
+  loadError.value = ''
+  saveError.value = ''
 
   const token = readOperatorToken()
   if (!token || !id) {
     pending.value = false
-    errorMessage.value = t('products.failed')
+    loadError.value = t('products.failed')
     return
   }
 
@@ -75,13 +73,13 @@ async function load(id: string) {
     }
     sellableItem.value = row
     crumbLabel.value = itemName(row)
-    errorMessage.value = ''
+    loadError.value = ''
   } catch (error) {
     if (sellableItemId.value !== id) {
       return
     }
     sellableItem.value = null
-    errorMessage.value = failText(error, t('products.failed'))
+    loadError.value = failText(error, t('products.failed'))
   } finally {
     if (sellableItemId.value === id) {
       pending.value = false
@@ -93,12 +91,12 @@ async function onSave(payload: SellableItemWrite) {
   const token = readOperatorToken()
   const id = sellableItemId.value
   if (!token || !id || !canEdit.value) {
-    errorMessage.value = t('products.saveFailed')
+    notifySaveError(t('products.saveFailed'))
     return
   }
 
   saving.value = true
-  errorMessage.value = ''
+  saveError.value = ''
   try {
     const row = await adminUpdateSellableItem(config.public.apiBase, token, id, payload)
     if (sellableItemId.value !== id) {
@@ -106,11 +104,19 @@ async function onSave(payload: SellableItemWrite) {
     }
     sellableItem.value = row
     crumbLabel.value = itemName(row)
+    toast.add({
+      title: t('actions.saved'),
+      color: 'success',
+      progress: false,
+      duration: 2500
+    })
   } catch (error) {
     if (sellableItemId.value !== id) {
       return
     }
-    errorMessage.value = failText(error, t('products.saveFailed'))
+    const message = failText(error, t('products.saveFailed'))
+    saveError.value = message
+    notifySaveError(message)
   } finally {
     if (sellableItemId.value === id) {
       saving.value = false
@@ -136,6 +142,15 @@ function failText(error: unknown, fallback: string) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
   return message || fallback
 }
+
+function notifySaveError(message: string) {
+  toast.add({
+    title: message,
+    color: 'error',
+    progress: false,
+    duration: 2500
+  })
+}
 </script>
 
 <template>
@@ -144,10 +159,10 @@ function failText(error: unknown, fallback: string) {
     plain
   >
     <p
-      v-if="bannerError"
+      v-if="loadError"
       class="mb-4 text-sm text-error"
     >
-      {{ bannerError }}
+      {{ loadError }}
     </p>
     <p
       v-if="pending"
@@ -161,7 +176,7 @@ function failText(error: unknown, fallback: string) {
       :disabled="!canEdit"
       :sellable-item="sellableItem"
       :saving="saving"
-      :save-error="errorMessage"
+      :save-error="saveError"
       @save="onSave"
     />
   </PageHeader>

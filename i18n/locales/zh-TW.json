@@ -882,6 +882,7 @@
       "servingSize": "每份含量",
       "dailyServingsMin": "每日最少份數",
       "dailyServingsMax": "每日最多份數",
+      "dailyDose": "每日份數",
       "unitPrice": "單價",
       "active": "上架",
       "isCore": "核心品",

@@ -28,7 +28,8 @@ type NutritionRow = {
   daily_reference_pct: string
 }
 
-type IntegerKey = 'servings_per_container' | 'daily_servings_min' | 'daily_servings_max' | 'unit_price' | 'bottle_price'
+type IntegerKey = 'servings_per_container' | 'unit_price' | 'bottle_price'
+type DecimalKey = 'daily_servings_min' | 'daily_servings_max' | 'daily_dose'
 
 type FormState = {
   name_zh: string
@@ -40,6 +41,7 @@ type FormState = {
   serving_size_text: string
   daily_servings_min: string
   daily_servings_max: string
+  daily_dose: string
   unit_price: string
   bottle_price: string
   active: boolean
@@ -148,8 +150,9 @@ function onSubmit() {
   if (props.saving || props.disabled) {
     return
   }
-  if (imageFile.value) {
-    const message = fileError(imageFile.value)
+  const image = props.mode === 'update' ? null : imageFile.value
+  if (image) {
+    const message = fileError(image)
     if (message) {
       imageError.value = message
       imageFile.value = null
@@ -160,7 +163,7 @@ function onSubmit() {
     localBottleError.value = t('products.bottlePriceRequired')
     return
   }
-  emit('save', { body: writeBody(), image: imageFile.value })
+  emit('save', { body: writeBody(), image })
 }
 
 function bottlePriceMissing() {
@@ -200,54 +203,93 @@ function fileError(file: File) {
 }
 
 function writeBody() {
+  const updating = props.mode === 'update'
   const body: Record<string, unknown> = {
-    name_zh: state.name_zh.trim(),
-    name_en: state.name_en.trim(),
-    category: state.category.trim(),
-    spec_text: state.spec_text.trim(),
-    serving_size_text: state.serving_size_text.trim(),
-    unit_size_text: state.unit_size_text.trim(),
-    audience: state.audience.trim(),
-    summary: state.summary.trim(),
-    highlights: state.highlights.trim(),
-    usage_text: state.usage_text.trim(),
-    usage_limit: state.usage_limit.trim(),
-    ingredients_text: state.ingredients_text.trim(),
-    cautions: state.cautions.trim(),
-    risk_text: state.risk_text.trim(),
-    contraindication_text: state.contraindication_text.trim(),
-    shelf_life_text: state.shelf_life_text.trim(),
-    distributor: state.distributor.trim(),
-    origin: state.origin.trim(),
+    name_zh: optionalText(state.name_zh, updating),
+    name_en: optionalText(state.name_en, updating),
+    category: optionalText(state.category, updating),
+    spec_text: optionalText(state.spec_text, updating),
+    serving_size_text: optionalText(state.serving_size_text, updating),
+    unit_size_text: optionalText(state.unit_size_text, updating),
+    audience: optionalText(state.audience, updating),
+    summary: optionalText(state.summary, updating),
+    highlights: optionalText(state.highlights, updating),
+    usage_text: optionalText(state.usage_text, updating),
+    usage_limit: optionalText(state.usage_limit, updating),
+    ingredients_text: optionalText(state.ingredients_text, updating),
+    cautions: optionalText(state.cautions, updating),
+    risk_text: optionalText(state.risk_text, updating),
+    contraindication_text: optionalText(state.contraindication_text, updating),
+    shelf_life_text: optionalText(state.shelf_life_text, updating),
+    distributor: optionalText(state.distributor, updating),
+    origin: optionalText(state.origin, updating),
     active: state.active,
     is_core: state.is_core,
     can_co_pack: state.can_co_pack,
     sale_status: state.sale_status.trim() || 'on_sale',
-    nutrition: state.nutrition
-      .map(row => ({
-        name: row.name.trim(),
-        amount_per_serving: row.amount_per_serving.trim(),
-        daily_reference_pct: row.daily_reference_pct.trim()
-      }))
-      .filter(row => row.name || row.amount_per_serving || row.daily_reference_pct)
+    nutrition: nutritionBody(updating)
   }
-  if (props.mode === 'create') {
+  if (!updating) {
     body.sku = state.sku.trim()
   }
-  assignInteger(body, 'servings_per_container', state.servings_per_container)
-  assignInteger(body, 'daily_servings_min', state.daily_servings_min)
-  assignInteger(body, 'daily_servings_max', state.daily_servings_max)
-  assignInteger(body, 'unit_price', state.unit_price)
-  assignInteger(body, 'bottle_price', state.bottle_price)
+  assignInteger(body, 'servings_per_container', state.servings_per_container, updating)
+  assignDecimal(body, 'daily_servings_min', state.daily_servings_min, updating)
+  assignDecimal(body, 'daily_servings_max', state.daily_servings_max, updating)
+  assignDecimal(body, 'daily_dose', state.daily_dose, updating)
+  assignInteger(body, 'unit_price', state.unit_price, updating)
+  assignInteger(body, 'bottle_price', state.bottle_price, updating)
   return body
 }
 
-function assignInteger(body: Record<string, unknown>, key: IntegerKey, raw: string) {
+function optionalText(raw: string, updating: boolean) {
+  const value = raw.trim()
+  if (updating) {
+    return value || null
+  }
+  return value
+}
+
+function nutritionBody(updating: boolean) {
+  const rows = state.nutrition.map(row => ({
+    name: row.name.trim(),
+    amount_per_serving: row.amount_per_serving.trim(),
+    daily_reference_pct: row.daily_reference_pct.trim()
+  }))
+  if (!updating) {
+    return rows.filter(row => row.name || row.amount_per_serving || row.daily_reference_pct)
+  }
+  return rows
+    .filter(row => row.name && row.amount_per_serving)
+    .map(row => ({
+      name: row.name,
+      amount_per_serving: row.amount_per_serving,
+      daily_reference_pct: row.daily_reference_pct || null
+    }))
+}
+
+function assignInteger(body: Record<string, unknown>, key: IntegerKey, raw: string, updating: boolean) {
   if (!raw.trim()) {
+    if (updating) {
+      body[key] = null
+    }
     return
   }
   const value = Number(raw)
   if (Number.isInteger(value)) {
+    body[key] = value
+  }
+}
+
+function assignDecimal(body: Record<string, unknown>, key: DecimalKey, raw: string, updating: boolean) {
+  const trimmed = raw.trim().replace(/\.$/, '')
+  if (!trimmed) {
+    if (updating) {
+      body[key] = null
+    }
+    return
+  }
+  const value = Number(trimmed)
+  if (Number.isFinite(value)) {
     body[key] = value
   }
 }
@@ -257,6 +299,23 @@ function setDigits(key: IntegerKey, value: string | number) {
   if (key === 'bottle_price') {
     clearBottleError()
   }
+}
+
+function setDecimal(key: DecimalKey, value: string | number) {
+  const raw = String(value ?? '')
+  let next = ''
+  let dotted = false
+  for (const char of raw) {
+    if (char >= '0' && char <= '9') {
+      next += char
+      continue
+    }
+    if (char === '.' && !dotted) {
+      dotted = true
+      next += char
+    }
+  }
+  state[key] = next
 }
 
 function clearBottleError() {
@@ -282,8 +341,9 @@ function applyItem(item: Record<string, unknown> | null) {
     next.spec_text = scalarText(item.spec_text).trim() || scalarText(item.spec).trim()
     next.servings_per_container = integerText(item.servings_per_container)
     next.serving_size_text = scalarText(item.serving_size_text).trim()
-    next.daily_servings_min = integerText(item.daily_servings_min)
-    next.daily_servings_max = integerText(item.daily_servings_max)
+    next.daily_servings_min = decimalText(item.daily_servings_min)
+    next.daily_servings_max = decimalText(item.daily_servings_max)
+    next.daily_dose = decimalText(item.daily_dose)
     next.unit_price = integerText(item.unit_price)
     next.bottle_price = integerText(item.bottle_price)
     next.active = typeof item.active === 'boolean' ? item.active : true
@@ -320,6 +380,7 @@ function emptyState(): FormState {
     serving_size_text: '',
     daily_servings_min: '',
     daily_servings_max: '',
+    daily_dose: '',
     unit_price: '',
     bottle_price: '',
     active: true,
@@ -359,6 +420,29 @@ function integerText(value: unknown) {
     return String(Math.trunc(Math.abs(value)))
   }
   return scalarText(value).replace(/\D/g, '')
+}
+
+function decimalText(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  const text = scalarText(value).trim()
+  if (!text) {
+    return ''
+  }
+  let next = ''
+  let dotted = false
+  for (const char of text) {
+    if (char >= '0' && char <= '9') {
+      next += char
+      continue
+    }
+    if (char === '.' && !dotted && next) {
+      dotted = true
+      next += char
+    }
+  }
+  return next.replace(/\.$/, '')
 }
 
 function fieldText(value: unknown) {
@@ -443,6 +527,7 @@ function scalarText(value: unknown) {
                 v-model="imageModel"
                 accept="image/png,image/jpeg,image/webp"
                 icon="i-lucide-image"
+                :disabled="mode === 'update'"
                 :label="$t('products.imageDrop')"
                 :description="$t('products.imageHint')"
                 class="min-h-56 w-full sm:w-56"
@@ -535,17 +620,25 @@ function scalarText(value: unknown) {
             <UFormField :label="$t('products.fields.dailyServingsMin')">
               <UInput
                 :model-value="state.daily_servings_min"
-                inputmode="numeric"
+                inputmode="decimal"
                 class="w-full"
-                @update:model-value="setDigits('daily_servings_min', $event)"
+                @update:model-value="setDecimal('daily_servings_min', $event)"
               />
             </UFormField>
             <UFormField :label="$t('products.fields.dailyServingsMax')">
               <UInput
                 :model-value="state.daily_servings_max"
-                inputmode="numeric"
+                inputmode="decimal"
                 class="w-full"
-                @update:model-value="setDigits('daily_servings_max', $event)"
+                @update:model-value="setDecimal('daily_servings_max', $event)"
+              />
+            </UFormField>
+            <UFormField :label="$t('products.fields.dailyDose')">
+              <UInput
+                :model-value="state.daily_dose"
+                inputmode="decimal"
+                class="w-full"
+                @update:model-value="setDecimal('daily_dose', $event)"
               />
             </UFormField>
             <UFormField :label="$t('products.fields.unitPrice')">

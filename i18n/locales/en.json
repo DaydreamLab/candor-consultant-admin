@@ -882,6 +882,7 @@
       "servingSize": "Serving size",
       "dailyServingsMin": "Minimum daily servings",
       "dailyServingsMax": "Maximum daily servings",
+      "dailyDose": "Daily servings",
       "unitPrice": "Unit price",
       "active": "Active",
       "isCore": "Core item",

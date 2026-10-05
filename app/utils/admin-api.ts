@@ -468,7 +468,7 @@ export async function adminUpdateSellableItem(apiBase: string, token: string, id
       headers: {
         Authorization: `Bearer ${token}`
       },
-      body: sellableItemRequestBody(payload)
+      body: payload.body
     })
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
