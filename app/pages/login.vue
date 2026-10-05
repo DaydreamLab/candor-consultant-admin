@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { AdminApiError } from '~/utils/admin-api'
-import { writeOperatorSession } from '~/utils/operator-session'
 import { loginSchema } from '~/utils/schemas'
 import type { LoginForm } from '~/utils/schemas'
 
@@ -21,24 +20,6 @@ const state = reactive<LoginForm>({
 })
 const pending = ref(false)
 const errorMessage = ref('')
-const copiedField = ref<string | null>(null)
-
-const demoAccounts = [
-  {
-    id: 'younger',
-    name: 'younger',
-    role: 'ops',
-    email: 'younger@candor.dev',
-    password: 'younger1234'
-  },
-  {
-    id: 'admin',
-    name: 'candor',
-    role: 'admin',
-    email: 'admin@candor.dev',
-    password: 'candor1234'
-  }
-] as const
 
 /** Full browser path including app.baseURL (required on GitHub Pages project sites). */
 function appHref(path: string) {
@@ -69,50 +50,6 @@ async function onSubmit(event: FormSubmitEvent<LoginForm>) {
   } finally {
     pending.value = false
   }
-}
-
-async function skipLogin() {
-  writeOperatorSession({
-    token: 'local-bypass',
-    expires_in: 8 * 60 * 60,
-    operator: {
-      id: 'local-bypass',
-      role: 'admin',
-      email: 'local@candor.dev',
-      name: '本地預覽',
-      status: 'active',
-      last_login_at: null
-    }
-  }, true)
-  session.sync()
-  await enterApp()
-}
-
-function fillDemoAccount(account: typeof demoAccounts[number]) {
-  state.email = account.email
-  state.password = account.password
-  errorMessage.value = ''
-}
-
-async function copyDemoField(account: typeof demoAccounts[number], field: 'email' | 'password') {
-  const value = account[field]
-  try {
-    await navigator.clipboard.writeText(value)
-  } catch {
-    const input = document.createElement('textarea')
-    input.value = value
-    input.setAttribute('readonly', '')
-    input.style.position = 'fixed'
-    input.style.left = '-9999px'
-    document.body.appendChild(input)
-    input.select()
-    const copied = document.execCommand('copy')
-    input.remove()
-    if (!copied) {
-      return
-    }
-  }
-  copiedField.value = `${account.id}:${field}`
 }
 
 function describeLoginError(error: unknown) {
@@ -187,79 +124,6 @@ function describeLoginError(error: unknown) {
       >
         {{ $t('login.submit') }}
       </UButton>
-      <UButton
-        type="button"
-        block
-        size="lg"
-        color="neutral"
-        variant="outline"
-        @click="skipLogin"
-      >
-        {{ $t('login.skip') }}
-      </UButton>
     </UForm>
-
-    <!-- Temporary demo hint. Delete this section when the shortcut is no longer needed. -->
-    <section class="mt-8 space-y-3">
-      <div>
-        <h2 class="text-sm font-medium text-highlighted">
-          {{ $t('login.demo.title') }}
-        </h2>
-        <p class="mt-1 text-xs text-muted">
-          {{ $t('login.demo.note') }}
-        </p>
-      </div>
-      <div
-        v-for="account in demoAccounts"
-        :key="account.id"
-        class="rounded-xl border border-dashed border-default p-4"
-      >
-        <dl class="space-y-2 text-sm">
-          <div class="flex items-center justify-between gap-3">
-            <dt class="text-muted">
-              {{ $t('login.demo.name') }}
-            </dt>
-            <dd class="font-medium text-highlighted">
-              {{ account.name }}
-              <span class="font-normal text-muted">· {{ $t(`roles.${account.role}`) }}</span>
-            </dd>
-          </div>
-          <div
-            v-for="field in (['email', 'password'] as const)"
-            :key="field"
-            class="flex items-center justify-between gap-3"
-          >
-            <dt class="text-muted">
-              {{ $t(field === 'email' ? 'login.demo.account' : 'login.demo.password') }}
-            </dt>
-            <dd class="flex min-w-0 items-center gap-2">
-              <span class="truncate font-mono text-highlighted">
-                {{ account[field] }}
-              </span>
-              <UButton
-                type="button"
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :icon="copiedField === `${account.id}:${field}` ? 'i-lucide-check' : 'i-lucide-copy'"
-                :label="copiedField === `${account.id}:${field}` ? $t('login.demo.copied') : $t('login.demo.copy')"
-                @click="copyDemoField(account, field)"
-              />
-            </dd>
-          </div>
-        </dl>
-        <UButton
-          type="button"
-          class="mt-4"
-          block
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-clipboard-paste"
-          @click="fillDemoAccount(account)"
-        >
-          {{ $t('login.demo.fill') }}
-        </UButton>
-      </div>
-    </section>
   </div>
 </template>

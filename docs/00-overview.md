@@ -11,7 +11,7 @@
 | | 現況（示範站） | 目標（對接 core） |
 |--|----------------|-------------------|
 | 租戶 | 多顧問公司 Mock（`orgs`） | **單租戶**起步；不做多租戶 UI 契約 |
-| 身份 | 登入表單打 `POST /admin/auth/login`（頁上仍有示範帳號與略過）；`GET /admin/me` 已接 | operator JWT + `GET /admin/me`，拿掉略過登入 |
+| 身份 | `POST /admin/auth/login` + operator JWT；`GET /admin/me` 已接 | operator JWT + `GET /admin/me` |
 | 角色 | 登入後為 `expert`｜`ops`｜`admin`；示範頁仍可能出現舊角色 | `expert`｜`ops`｜`admin` |
 | 資料 | 商品、價格帶列表、訂單讀取走 `/api/v1/admin/**`；庫存、出貨、使用者等仍用 `utils/demo.ts` | 全部 in-scope 走 `/api/v1/admin/**` |
 

@@ -54,26 +54,7 @@
     "submit": "Sign in",
     "invalid": "Incorrect email or password.",
     "rateLimited": "Too many attempts. Try again later.",
-    "failed": "Sign-in failed. Try again later.",
-    "skip": "Enter without signing in",
-    "demo": {
-      "title": "Demo account",
-      "note": "This block will be removed later. Copy the values, or fill the fields above.",
-      "name": "Name",
-      "account": "Account",
-      "password": "Password",
-      "copy": "Copy",
-      "copied": "Copied",
-      "fill": "Fill fields"
-    },
-    "pick": "Demo accounts",
-    "candor": "Candor",
-    "roles": {
-      "platform_viewer": "Owner / shareholder (read-only)",
-      "platform_assist": "Assist (can tweak, with audit log)",
-      "consultant_ops": "Operations",
-      "consultant_admin": "Admin"
-    }
+    "failed": "Sign-in failed. Try again later."
   },
   "operatorMe": {
     "loading": "Loading…",

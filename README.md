@@ -47,4 +47,4 @@ pnpm generate   # GitHub Pages
 
 與 candor-core 一起用 `docker compose` 時，後台是 `admin` 服務，開 http://localhost:3001（`NUXT_PUBLIC_API_BASE=http://localhost:8080/api/v1`）。埠避開前台的 3000；core 的 `CORS_ALLOWED_ORIGINS` 須包含 `http://localhost:3001`。
 
-預設可用「A 股東／業主」等示範帳號登入（見登入頁）；接線後改為 core operator 帳號。
+登入走 core `POST /admin/auth/login`（operator 帳號，見 [spec 24](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/24-identity-and-auth.md)）。

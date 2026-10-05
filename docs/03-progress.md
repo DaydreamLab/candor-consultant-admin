@@ -2,7 +2,7 @@
 
 對應 [02-roadmap.md](02-roadmap.md)。
 
-**里程碑總覽**：M0–M1 完成（示範站）；M2 進行中（登入表單打 core，頁上仍有示範帳號與略過登入；`GET /admin/me` 已接）；M3 進行中（商品讀寫、價格帶列表、訂單讀取已接）；M4 未開始。細項見下方勾選與功能表。
+**里程碑總覽**：M0–M2 完成（示範站；operator 登入與 `GET /admin/me` 已接，無略過登入）；M3 進行中（商品讀寫、價格帶列表、訂單讀取已接）；M4 未開始。細項見下方勾選與功能表。
 
 **同步規則**：本檔與 [candor-core docs/04-integration-progress.md](https://github.com/DaydreamLab/candor-core/blob/main/docs/04-integration-progress.md) 的 Admin 區必須一致。功能表的**接線**欄變更時，須與本檔下方 API 切片及 candor-core `04` 一起改；**畫面**欄只改本 repo。
 
@@ -39,8 +39,8 @@
 
 ## M2 — Operator 登入直連
 
-- [ ] Auth 切片 `已接`（登入／目前身份畫面 `可用`）
-- [ ] 無 user／operator token 混用
+- [x] Auth 切片 `已接`（登入／目前身份畫面 `可用`）
+- [x] 無 user／operator token 混用
 
 ## M3 — 主檔與訂單出貨
 
@@ -59,7 +59,7 @@
 
 | 功能 | 路由／入口 | 畫面 | 接線 | 里程碑 |
 |------|------------|------|------|--------|
-| Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 接線中 | M2 |
+| Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 已接 | M2 |
 | 總覽 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
 | 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
@@ -99,7 +99,7 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 登入 | `POST /admin/auth/login` | 接線中（表單打真 API 與 `remember_me`；頁上仍有示範帳號與略過登入） |
+| 登入 | `POST /admin/auth/login` | 已接（`remember_me`；無示範帳號與略過登入） |
 | 目前身份 | `GET /admin/me` | 已接 |
 | Operator CRUD／重設密碼 | `/admin/operators/**` | Mock |
 
@@ -176,4 +176,4 @@
 
 ---
 
-**最後更新**：2026-10-05（與 candor-core `docs/04` Admin 區對齊。側欄改名：訂單／保健品／銷售方案。銷售方案列表與詳情／更新已接（`period_days` 可改；UI 30／60／90）；建立仍 Mock。商品列表／新增／更新已接。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**採檢服務／預約記錄**本地 mock（預約列表含 7 天行事曆 modal；未接 API）。**專家訓練**在側欄「平台」：權重與訓練批次皆為 mock（見 core spec 15）。登入仍接線中）
+**最後更新**：2026-10-05（與 candor-core `docs/04` Admin 區對齊。**Auth 切片已接**：`POST /admin/auth/login` 與 `GET /admin/me`；無示範帳號與略過登入；operator token 鍵 `candor.operator.token` 與前台 `candor.guest.token` 分開。銷售方案列表與詳情／更新已接（`period_days` 可改；UI 30／60／90）；建立仍 Mock。商品列表／新增／更新已接。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**採檢服務／預約記錄**本地 mock。**專家訓練**權重與訓練批次皆為 mock）

@@ -54,26 +54,7 @@
     "submit": "登入",
     "invalid": "帳號或密碼不正確。",
     "rateLimited": "嘗試次數過多，請稍後再試。",
-    "failed": "登入失敗，請稍後再試。",
-    "skip": "先進入後台（不打登入 API）",
-    "demo": {
-      "title": "示範帳號",
-      "note": "這段之後會拿掉。可複製，或直接填進上面的欄位。",
-      "name": "名稱",
-      "account": "帳號",
-      "password": "密碼",
-      "copy": "複製",
-      "copied": "已複製",
-      "fill": "填入欄位"
-    },
-    "pick": "示範帳號",
-    "candor": "坦見",
-    "roles": {
-      "platform_viewer": "業主／股東（唯讀）",
-      "platform_assist": "協助（可微調、留紀錄）",
-      "consultant_ops": "營運",
-      "consultant_admin": "管理員"
-    }
+    "failed": "登入失敗，請稍後再試。"
   },
   "operatorMe": {
     "loading": "讀取中…",
