@@ -387,7 +387,7 @@ function buildAppointmentSeedTemplates(): AppointmentSeedTemplate[] {
       day_offset: 5,
       window_start: '09:00',
       window_end: '12:00',
-      memberIndex: memberIndex++,
+      memberIndex,
       service: SEED_SERVICE_BASIC,
       items: bookedItems,
       booked_at: '2026-10-05T01:00:00.000Z'
