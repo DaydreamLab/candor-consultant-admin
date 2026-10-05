@@ -96,6 +96,20 @@ export function usePageCrumbs() {
       ]
     }
 
+    if (current === '/ai-assistant/site') {
+      return [
+        { label: t('nav.aiAssistant'), to: localePath('/ai-assistant') },
+        { label: t('aiAssistant.tabs.site') }
+      ]
+    }
+
+    if (current === '/ai-assistant/claim-terms') {
+      return [
+        { label: t('nav.aiAssistant'), to: localePath('/ai-assistant') },
+        { label: t('aiAssistant.tabs.claimTerms') }
+      ]
+    }
+
     if (current === '/expert-tuning/training') {
       return [
         { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },

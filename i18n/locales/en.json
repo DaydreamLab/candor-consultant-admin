@@ -17,6 +17,7 @@
     "packagePlans": "Sales plans",
     "labServices": "Collection services",
     "expertTuning": "Expert tuning",
+    "aiAssistant": "AI assistant",
     "selections": "Case selections",
     "shipping": "Shipping",
     "invoices": "Invoice Candor",
@@ -470,6 +471,67 @@
       "priority": "Priority"
     }
   },
+  "aiAssistant": {
+    "description": "Edit conversation copy, checkup suggestion link, and claim-guard terms.",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "loadFailed": "Could not load conversation copy. Please try again.",
+    "saveFailed": "Could not save copy. Check the content and try again.",
+    "tabs": {
+      "copies": "Conversation copy",
+      "site": "Checkup link",
+      "claimTerms": "Claim terms"
+    },
+    "columns": {
+      "code": "Code",
+      "category": "Category",
+      "preview": "Preview"
+    },
+    "categories": {
+      "greeting": "Greetings",
+      "option": "Options",
+      "prompt": "Prompts"
+    },
+    "categoryHints": {
+      "greeting": "Consult / renewal openings",
+      "option": "Renewal option labels",
+      "prompt": "Goals tip, checkup copy, system prompt"
+    },
+    "fields": {
+      "textZh": "Chinese",
+      "textEn": "English"
+    },
+    "site": {
+      "title": "Checkup suggestion links",
+      "hint": "Manage outbound links as key → URL. Younger’s checkup key is younger-tests (conversation checkup_offer / report “More tests”). Empty URL hides the matching button.",
+      "loadFailed": "Could not load checkup links. Please try again.",
+      "saveFailed": "Could not save checkup links. Check the key/URL and try again.",
+      "key": "Key",
+      "url": "URL",
+      "urlPlaceholder": "https://www.younger.tw/collections/individual-tests",
+      "addRow": "Add row",
+      "help": "younger-tests cannot be removed. Other keys start with a-z and may include 0-9, _, -. URLs must be http or https. Only ops/admin can save."
+    },
+    "claimTerms": {
+      "hint": "ClaimGuard vocabulary; inactive terms are not scanned. Changes apply immediately.",
+      "loadFailed": "Could not load claim terms. Please try again.",
+      "saveFailed": "Could not save claim term. Check the fields and try again.",
+      "createTitle": "Add claim term",
+      "editTitle": "Edit claim term",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "columns": {
+        "term": "Term",
+        "severity": "Severity",
+        "active": "Active"
+      },
+      "fields": {
+        "pattern": "Regex (optional)",
+        "replacement": "Replacement (rewritten)",
+        "note": "Note"
+      }
+    }
+  },
   "llmUsage": {
     "input": "Input",
     "output": "Output",
@@ -695,14 +757,6 @@
   },
   "settings": {
     "intro": "Settings cover notification email, the default warehouse, and which Candor label version to apply. Fulfillment work lives in the left-hand flow.",
-    "clientConfig": "Front-office site settings",
-    "clientConfigHint": "Outbound URL for Younger’s report dock “More tests” button. Leave blank to hide the button.",
-    "clientConfigFailed": "Could not load site settings. Please try again.",
-    "clientConfigSaveFailed": "Could not save site settings. Check the URL and try again.",
-    "individualTestsUrl": "More-tests URL",
-    "individualTestsUrlPlaceholder": "https://www.younger.tw/collections/individual-tests",
-    "individualTestsUrlHelp": "Must be http or https. Only ops/admin can save.",
-    "saving": "Saving…",
     "notice": "Notices",
     "noticeHint": "Missing items, low stock, and invoice status go to this inbox (demo — no real email yet).",
     "noticeEmail": "Notification email",

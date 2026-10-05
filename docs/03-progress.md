@@ -77,7 +77,10 @@
 | Weight sets | —（權重分頁仍 mock；HTTP 見 core） | 殼 | Mock | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
-| 設定頁 | `/settings` | 殼＋client-config | 已接（檢測更多外連） | 完成 |
+| 設定頁 | `/settings` | 殼（外連改掛 AI 助理） | 殼 | 完成 |
+| AI 助理／對話文案 | `/ai-assistant` | 可用 | 已接（conversation-copies） | 完成 |
+| AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
+| AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
 | 報告列表／詳情 | — | 無 | 不做 | 不做 |
 
 ### 明確不做（示範頁可暫留）
@@ -125,7 +128,9 @@
 | PackagePlan 建立 | `POST /admin/package-plans` | Mock（畫面未做；無刪除端點） |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock（畫面 `/lab-services` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/labs`） |
-| Client config | `GET`／`PATCH /admin/client-config` | 已接（`/settings`） |
+| Client config | `GET`／`PATCH /admin/client-config` | 已接（`/ai-assistant/site`；設定頁不再編） |
+| Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/ai-assistant`） |
+| Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/ai-assistant/claim-terms`） |
 
 ### Orders／shipments
 

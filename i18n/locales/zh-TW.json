@@ -17,6 +17,7 @@
     "packagePlans": "銷售方案",
     "labServices": "採檢服務",
     "expertTuning": "專家訓練",
+    "aiAssistant": "AI 助理",
     "selections": "案件選品",
     "shipping": "出貨",
     "invoices": "請款作業",
@@ -470,6 +471,67 @@
       "priority": "優先序"
     }
   },
+  "aiAssistant": {
+    "description": "編輯對話固定文案、採檢建議連結與合規詞庫。",
+    "loading": "載入中…",
+    "saving": "儲存中…",
+    "loadFailed": "無法載入對話文案，請稍後再試。",
+    "saveFailed": "無法儲存文案，請確認內容後再試。",
+    "tabs": {
+      "copies": "對話文案",
+      "site": "採檢建議連結",
+      "claimTerms": "合規詞庫"
+    },
+    "columns": {
+      "code": "代碼",
+      "category": "分類",
+      "preview": "預覽"
+    },
+    "categories": {
+      "greeting": "開場白",
+      "option": "選項",
+      "prompt": "提示詞"
+    },
+    "categoryHints": {
+      "greeting": "諮詢／續約開場",
+      "option": "續約選項標籤",
+      "prompt": "目標提示、檢查建議、system prompt"
+    },
+    "fields": {
+      "textZh": "中文",
+      "textEn": "英文"
+    },
+    "site": {
+      "title": "採檢建議連結",
+      "hint": "以 key → URL 管理外連。Younger 檢查外連鍵為 younger-tests（對話 checkup_offer／報告「檢測更多」）。URL 留空則隱藏對應按鈕。",
+      "loadFailed": "無法載入採檢建議連結，請稍後再試。",
+      "saveFailed": "無法儲存採檢建議連結，請確認 key／網址格式後再試。",
+      "key": "Key",
+      "url": "URL",
+      "urlPlaceholder": "https://www.younger.tw/collections/individual-tests",
+      "addRow": "新增一列",
+      "help": "younger-tests 不可刪除；其他 key 為小寫字母開頭，可含數字、_、-。須為 http 或 https；僅 ops／admin 可儲存。"
+    },
+    "claimTerms": {
+      "hint": "ClaimGuard 詞表；軟關後不再掃描。寫入後立即生效。",
+      "loadFailed": "無法載入合規詞庫，請稍後再試。",
+      "saveFailed": "無法儲存合規詞，請確認欄位後再試。",
+      "createTitle": "新增合規詞",
+      "editTitle": "編輯合規詞",
+      "activate": "啟用",
+      "deactivate": "停用",
+      "columns": {
+        "term": "詞",
+        "severity": "嚴重度",
+        "active": "啟用"
+      },
+      "fields": {
+        "pattern": "Regex（可選）",
+        "replacement": "替換文（rewritten）",
+        "note": "備註"
+      }
+    }
+  },
   "llmUsage": {
     "input": "輸入",
     "output": "輸出",
@@ -695,14 +757,6 @@
   },
   "settings": {
     "intro": "設定只處理公司通知、預設出貨倉，以及出貨時要貼的坦見標籤版本。履約、選品、出貨請走左側工作流程。",
-    "clientConfig": "前台站台設定",
-    "clientConfigHint": "Younger 報告判讀「檢測更多」外連。留空則前台不顯示該按鈕。",
-    "clientConfigFailed": "無法載入站台設定，請稍後再試。",
-    "clientConfigSaveFailed": "無法儲存站台設定，請確認網址格式後再試。",
-    "individualTestsUrl": "檢測更多網址",
-    "individualTestsUrlPlaceholder": "https://www.younger.tw/collections/individual-tests",
-    "individualTestsUrlHelp": "須為 http 或 https；僅 ops／admin 可儲存。",
-    "saving": "儲存中…",
     "notice": "通知",
     "noticeHint": "缺件、低庫存與請款狀態會寄到這個信箱（示範，尚未真正寄信）。",
     "noticeEmail": "通知信箱",

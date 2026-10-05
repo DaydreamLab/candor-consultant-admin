@@ -28,8 +28,13 @@ export async function adminGetMe(apiBase: string, token: string) {
   }
 }
 
+export type AdminClientConfigLink = {
+  key: string
+  url: string
+}
+
 export type AdminClientConfig = {
-  individual_tests_url: string
+  items: AdminClientConfigLink[]
   updated_at?: string | null
 }
 
@@ -43,9 +48,8 @@ export async function adminGetClientConfig(apiBase: string, token: string): Prom
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
     }
-    const url = body.data.individual_tests_url
     return {
-      individual_tests_url: typeof url === 'string' ? url : '',
+      items: parseClientConfigItems(body.data.items),
       updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
     }
   } catch (error) {
@@ -56,10 +60,208 @@ export async function adminGetClientConfig(apiBase: string, token: string): Prom
   }
 }
 
+export type AdminConversationCopy = {
+  code: string
+  category: string
+  text_zh: string
+  text_en: string
+  updated_at?: string | null
+}
+
+export async function adminListConversationCopies(
+  apiBase: string,
+  token: string
+): Promise<AdminConversationCopy[]> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/conversation-copies'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data) || !Array.isArray(body.data.items)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data.items.filter(isRecord).map(row => ({
+      code: typeof row.code === 'string' ? row.code : '',
+      category: typeof row.category === 'string' ? row.category : '',
+      text_zh: typeof row.text_zh === 'string' ? row.text_zh : '',
+      text_en: typeof row.text_en === 'string' ? row.text_en : '',
+      updated_at: typeof row.updated_at === 'string' ? row.updated_at : null
+    })).filter(row => row.code !== '')
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchConversationCopy(
+  apiBase: string,
+  token: string,
+  code: string,
+  payload: { text_zh?: string, text_en?: string }
+): Promise<AdminConversationCopy> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/conversation-copy/${encodeURIComponent(code)}`),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return {
+      code: typeof body.data.code === 'string' ? body.data.code : code,
+      category: typeof body.data.category === 'string' ? body.data.category : '',
+      text_zh: typeof body.data.text_zh === 'string' ? body.data.text_zh : '',
+      text_en: typeof body.data.text_en === 'string' ? body.data.text_en : '',
+      updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export type AdminClaimGuardTerm = {
+  id: string
+  term: string
+  severity: 'blocked' | 'rewritten'
+  pattern: string | null
+  replacement: string | null
+  active: boolean
+  note: string | null
+}
+
+export async function adminListClaimGuardTerms(
+  apiBase: string,
+  token: string
+): Promise<AdminClaimGuardTerm[]> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/claim-guard-terms'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data) || !Array.isArray(body.data.items)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data.items.filter(isRecord).map(parseClaimGuardTerm).filter((row): row is AdminClaimGuardTerm => row !== null)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminCreateClaimGuardTerm(
+  apiBase: string,
+  token: string,
+  payload: {
+    term: string
+    severity: 'blocked' | 'rewritten'
+    pattern?: string | null
+    replacement?: string | null
+    active?: boolean
+    note?: string | null
+  }
+): Promise<AdminClaimGuardTerm> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/claim-guard-terms'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const parsed = parseClaimGuardTerm(body.data)
+    if (!parsed) {
+      throw new AdminApiError(500, '')
+    }
+    return parsed
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchClaimGuardTerm(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: {
+    term?: string
+    severity?: 'blocked' | 'rewritten'
+    pattern?: string | null
+    replacement?: string | null
+    active?: boolean
+    note?: string | null
+  }
+): Promise<AdminClaimGuardTerm> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/claim-guard-term/${encodeURIComponent(id)}`),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const parsed = parseClaimGuardTerm(body.data)
+    if (!parsed) {
+      throw new AdminApiError(500, '')
+    }
+    return parsed
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+function parseClaimGuardTerm(row: Record<string, unknown>): AdminClaimGuardTerm | null {
+  if (typeof row.id !== 'string' || typeof row.term !== 'string') {
+    return null
+  }
+  const severity = row.severity === 'blocked' || row.severity === 'rewritten' ? row.severity : null
+  if (!severity) {
+    return null
+  }
+  return {
+    id: row.id,
+    term: row.term,
+    severity,
+    pattern: typeof row.pattern === 'string' ? row.pattern : null,
+    replacement: typeof row.replacement === 'string' ? row.replacement : null,
+    active: Boolean(row.active),
+    note: typeof row.note === 'string' ? row.note : null
+  }
+}
+
 export async function adminPatchClientConfig(
   apiBase: string,
   token: string,
-  payload: { individual_tests_url: string }
+  payload: { items: AdminClientConfigLink[] }
 ): Promise<AdminClientConfig> {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/client-config'), {
@@ -72,9 +274,8 @@ export async function adminPatchClientConfig(
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
     }
-    const url = body.data.individual_tests_url
     return {
-      individual_tests_url: typeof url === 'string' ? url : '',
+      items: parseClientConfigItems(body.data.items),
       updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
     }
   } catch (error) {
@@ -83,6 +284,16 @@ export async function adminPatchClientConfig(
     }
     throw new AdminApiError(readStatus(error), readMessage(error))
   }
+}
+
+function parseClientConfigItems(raw: unknown): AdminClientConfigLink[] {
+  if (!Array.isArray(raw)) {
+    return []
+  }
+  return raw.filter(isRecord).map(row => ({
+    key: typeof row.key === 'string' ? row.key : '',
+    url: typeof row.url === 'string' ? row.url : ''
+  })).filter(row => row.key !== '')
 }
 
 export type AdminOrderListQuery = {
