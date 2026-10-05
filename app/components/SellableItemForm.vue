@@ -90,6 +90,23 @@ const dismissedRemote = ref(false)
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
 
+const CATEGORY_VALUES = new Set(['排毒', '營養素', '腸道支持', '心血管'])
+
+const categoryOptions = computed(() => {
+  const options = [
+    { label: t('products.categories.detox'), value: '排毒' },
+    { label: t('products.categories.nutrients'), value: '營養素' },
+    { label: t('products.categories.gut'), value: '腸道支持' },
+    { label: t('products.categories.cardio'), value: '心血管' },
+    { label: t('products.categories.none'), value: '' }
+  ]
+  const current = state.category.trim()
+  if (current && !CATEGORY_VALUES.has(current)) {
+    options.splice(options.length - 1, 0, { label: current, value: current })
+  }
+  return options
+})
+
 watch(() => props.sellableItem, (item) => {
   applyItem(item)
   resetErrors()
@@ -659,8 +676,10 @@ function scalarText(value: unknown) {
 
             <div class="grid gap-4 sm:grid-cols-2">
               <UFormField :label="$t('products.fields.category')">
-                <UInput
+                <UInputMenu
                   v-model="state.category"
+                  :items="categoryOptions"
+                  value-key="value"
                   class="w-full"
                 />
               </UFormField>

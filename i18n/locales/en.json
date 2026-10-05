@@ -841,6 +841,13 @@
     "imageTooLarge": "Image must be 2MB or smaller.",
     "imageType": "Use a JPEG, PNG, or WebP image.",
     "categoryAll": "All categories",
+    "categories": {
+      "detox": "Detox",
+      "nutrients": "Nutrients",
+      "gut": "Gut support",
+      "cardio": "Cardiovascular",
+      "none": "Uncategorized"
+    },
     "loading": "Loading…",
     "failed": "Could not load products.",
     "saveFailed": "Could not save this product.",

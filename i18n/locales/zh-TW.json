@@ -841,6 +841,13 @@
     "imageTooLarge": "圖片需在 2MB 以內。",
     "imageType": "請使用 JPEG、PNG 或 WebP。",
     "categoryAll": "全部分類",
+    "categories": {
+      "detox": "排毒",
+      "nutrients": "營養素",
+      "gut": "腸道支持",
+      "cardio": "心血管",
+      "none": "未分類"
+    },
     "loading": "讀取中…",
     "failed": "無法讀取商品。",
     "saveFailed": "無法儲存商品。",
