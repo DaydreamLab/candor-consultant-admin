@@ -359,6 +359,7 @@
     "output": "輸出",
     "cost": "預估成本",
     "tokens": "{n} tokens",
+    "ntd": "NT${amount}",
     "usd": "${amount}"
   },
   "roles": {

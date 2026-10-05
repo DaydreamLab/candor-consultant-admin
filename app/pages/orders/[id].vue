@@ -728,7 +728,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
           :class="reportOpen ? 'border-b border-default' : ''"
           @click="reportOpen = !reportOpen"
         >
-          <div class="min-w-0 space-y-1">
+          <div class="flex min-w-0 flex-col gap-1">
             <span>{{ $t('orders.sections.reportReading') }}</span>
             <LlmUsageSummary :usage="reportUsage" />
           </div>
@@ -1246,7 +1246,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         </div>
 
         <section class="flex max-h-[50vh] min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-default bg-elevated lg:max-h-none">
-          <div class="flex shrink-0 flex-col gap-2 border-b border-default bg-elevated px-4 py-3">
+          <div class="flex shrink-0 flex-col gap-1 border-b border-default bg-elevated px-4 py-3">
             <span class="text-base font-semibold text-highlighted">{{ $t('orders.sections.messages') }}</span>
             <LlmUsageSummary :usage="conversationUsage" />
           </div>

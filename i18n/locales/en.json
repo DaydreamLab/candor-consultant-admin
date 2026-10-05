@@ -359,6 +359,7 @@
     "output": "Output",
     "cost": "Est. cost",
     "tokens": "{n} tokens",
+    "ntd": "NT${amount}",
     "usd": "${amount}"
   },
   "roles": {
