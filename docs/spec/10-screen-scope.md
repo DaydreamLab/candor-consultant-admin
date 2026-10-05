@@ -15,7 +15,7 @@
 | users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`） |
 | labs | `/labs` | **不做** | 案件式檢驗排程不採用（與下方 `labAppointments` 不同） |
-| labAppointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消）；無 HTTP。不是不做的 `labs` |
+| labAppointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消；列表含 7 天行事曆 modal）；無 HTTP。不是不做的 `labs` |
 | progress | `/progress` | **不做** | 履約看板不採用 |
 | reviews | `/reviews` | **不做** | 簽核不採用 |
 

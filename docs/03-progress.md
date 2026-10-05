@@ -70,7 +70,7 @@
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
 | 採檢服務（LabService） | `/lab-services`、`/lab-services/new`、`/lab-services/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
-| 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；本地 mock） | 可用 | Mock | M3 |
+| 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/expert-tuning`、`/expert-tuning/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
 | 專家訓練／訓練批次 | `/expert-tuning/training`、`/expert-tuning/training/{id}` | 殼 | Mock | M4 |
@@ -124,7 +124,7 @@
 | PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/package-plan/{id}` | 已接（畫面 `/package-plans/{id}`；`period_days` 可改且須 > 0；UI 選項 30／60／90） |
 | PackagePlan 建立 | `POST /admin/package-plans` | Mock（畫面未做；無刪除端點） |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock（畫面 `/lab-services` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
-| LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments`；不是不做的 `/labs`） |
+| LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/labs`） |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/settings`） |
 
 ### Orders／shipments
@@ -176,4 +176,4 @@
 
 ---
 
-**最後更新**：2026-10-05（與 candor-core `docs/04` Admin 區對齊。側欄改名：訂單／保健品／銷售方案。銷售方案列表與詳情／更新已接（`period_days` 可改；UI 30／60／90）；建立仍 Mock。商品列表／新增／更新已接。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**專家訓練**在側欄「平台」：權重與訓練批次皆為 mock（見 core spec 15）。登入仍接線中）
+**最後更新**：2026-10-05（與 candor-core `docs/04` Admin 區對齊。側欄改名：訂單／保健品／銷售方案。銷售方案列表與詳情／更新已接（`period_days` 可改；UI 30／60／90）；建立仍 Mock。商品列表／新增／更新已接。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**採檢服務／預約記錄**本地 mock（預約列表含 7 天行事曆 modal；未接 API）。**專家訓練**在側欄「平台」：權重與訓練批次皆為 mock（見 core spec 15）。登入仍接線中）
