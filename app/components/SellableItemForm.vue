@@ -5,15 +5,16 @@ import { isBottlePriceSaveError } from '~/utils/sellable-item-form'
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])
-const KNOWN_SALE_STATUS = ['on_sale', 'off_sale']
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   mode: 'create' | 'update'
-  editing: boolean
   sellableItem: Record<string, unknown> | null
   saving: boolean
   saveError?: string
-}>()
+  disabled?: boolean
+}>(), {
+  disabled: false
+})
 
 const emit = defineEmits<{
   save: [payload: SellableItemWrite]
@@ -27,8 +28,6 @@ type NutritionRow = {
   daily_reference_pct: string
 }
 
-type CopyKey = 'audience' | 'summary' | 'highlights' | 'usage_text' | 'usage_limit' | 'ingredients_text' | 'cautions' | 'risk_text' | 'contraindication_text'
-type SupplyKey = 'shelf_life_text' | 'distributor' | 'origin'
 type IntegerKey = 'servings_per_container' | 'daily_servings_min' | 'daily_servings_max' | 'unit_price' | 'bottle_price'
 
 type FormState = {
@@ -63,30 +62,6 @@ type FormState = {
   nutrition: NutritionRow[]
 }
 
-const copyLead: { key: CopyKey, label: string, rows: number }[] = [
-  { key: 'audience', label: 'products.fields.audience', rows: 2 },
-  { key: 'summary', label: 'products.fields.summary', rows: 4 },
-  { key: 'highlights', label: 'products.fields.highlights', rows: 4 }
-]
-
-const copyUsage: { key: CopyKey, label: string, rows: number }[] = [
-  { key: 'usage_text', label: 'products.fields.usage', rows: 3 },
-  { key: 'usage_limit', label: 'products.fields.usageLimit', rows: 3 }
-]
-
-const copyTail: { key: CopyKey, label: string, rows: number }[] = [
-  { key: 'ingredients_text', label: 'products.fields.ingredients', rows: 3 },
-  { key: 'cautions', label: 'products.fields.cautions', rows: 3 },
-  { key: 'risk_text', label: 'products.fields.riskText', rows: 3 },
-  { key: 'contraindication_text', label: 'products.fields.contraindicationText', rows: 3 }
-]
-
-const supplyFields: { key: SupplyKey, label: string }[] = [
-  { key: 'shelf_life_text', label: 'products.fields.shelfLife' },
-  { key: 'distributor', label: 'products.fields.distributor' },
-  { key: 'origin', label: 'products.fields.origin' }
-]
-
 const readoutFields = [
   { key: 'code', label: 'products.fields.code' },
   { key: 'daily_price', label: 'products.fields.dailyPrice' },
@@ -99,6 +74,8 @@ const imageError = ref('')
 const previewUrl = ref('')
 const localBottleError = ref('')
 const dismissedBottleError = ref(false)
+
+const fieldsLocked = computed(() => props.disabled || props.saving)
 
 watch(() => props.sellableItem, (item) => {
   applyItem(item)
@@ -133,28 +110,13 @@ const imageModel = computed({
 
 const savedImageSrc = computed(() => httpImage(props.sellableItem))
 const displaySrc = computed(() => previewUrl.value || savedImageSrc.value)
-const showPhoto = computed(() => props.editing || Boolean(displaySrc.value))
 
-const visibleCopyLead = computed(() => visibleOf(copyLead))
-const visibleCopyUsage = computed(() => visibleOf(copyUsage))
-const visibleCopyTail = computed(() => visibleOf(copyTail))
-const visibleSupply = computed(() => visibleOf(supplyFields))
-const showCopy = computed(() => {
-  return visibleCopyLead.value.length + visibleCopyUsage.value.length + visibleCopyTail.value.length > 0
-})
-const showSupply = computed(() => visibleSupply.value.length > 0)
-
-const showActive = computed(() => props.editing || typeof props.sellableItem?.active === 'boolean')
-const showCore = computed(() => props.editing || typeof props.sellableItem?.is_core === 'boolean')
-const showCoPack = computed(() => props.editing || typeof props.sellableItem?.can_co_pack === 'boolean')
-const showSaleStatus = computed(() => props.editing || Boolean(state.sale_status.trim()))
-const showStatus = computed(() => showActive.value || showCore.value || showCoPack.value || showSaleStatus.value)
-
-const saleStatusItems = computed(() => {
-  const current = state.sale_status.trim()
-  const known = current === 'on_sale' || current === 'off_sale' || !current
-  const values = known ? [...KNOWN_SALE_STATUS] : [current, ...KNOWN_SALE_STATUS]
-  return values.map(value => ({ label: saleStatusLabel(value), value }))
+const onSale = computed({
+  get: () => (state.sale_status.trim() || 'on_sale') === 'on_sale',
+  set: (value: boolean) => {
+    state.sale_status = value ? 'on_sale' : 'off_sale'
+    clearBottleError()
+  }
 })
 
 const readouts = computed(() => {
@@ -171,24 +133,6 @@ const readouts = computed(() => {
   })
 })
 
-const showDose = computed(() => {
-  if (props.editing) {
-    return true
-  }
-  return Boolean(
-    state.servings_per_container.trim()
-    || state.serving_size_text.trim()
-    || state.unit_size_text.trim()
-    || state.daily_servings_min.trim()
-    || state.daily_servings_max.trim()
-    || state.unit_price.trim()
-    || state.bottle_price.trim()
-    || readouts.value.length
-  )
-})
-
-const showNutrition = computed(() => props.editing || state.nutrition.length > 0)
-
 const bottlePriceError = computed(() => {
   if (localBottleError.value) {
     return localBottleError.value
@@ -201,7 +145,7 @@ const bottlePriceError = computed(() => {
 })
 
 function onSubmit() {
-  if (props.saving) {
+  if (props.saving || props.disabled) {
     return
   }
   if (imageFile.value) {
@@ -315,11 +259,6 @@ function setDigits(key: IntegerKey, value: string | number) {
   }
 }
 
-function setSaleStatus(value: unknown) {
-  state.sale_status = typeof value === 'string' ? value : ''
-  clearBottleError()
-}
-
 function clearBottleError() {
   localBottleError.value = ''
   dismissedBottleError.value = true
@@ -331,27 +270,6 @@ function addNutrition() {
 
 function removeNutrition(index: number) {
   state.nutrition.splice(index, 1)
-}
-
-function filled(value: string) {
-  return props.editing || Boolean(value.trim())
-}
-
-function visibleOf<T extends { key: CopyKey | SupplyKey }>(fields: T[]) {
-  if (props.editing) {
-    return fields
-  }
-  return fields.filter(field => state[field.key].trim())
-}
-
-function saleStatusLabel(value: string) {
-  if (value === 'on_sale') {
-    return t('products.onSale')
-  }
-  if (value === 'off_sale') {
-    return t('products.offSale')
-  }
-  return value
 }
 
 function applyItem(item: Record<string, unknown> | null) {
@@ -494,10 +412,6 @@ function scalarText(value: unknown) {
   }
   return ''
 }
-
-function yesNo(value: boolean) {
-  return value ? t('status.yes') : t('status.no')
-}
 </script>
 
 <template>
@@ -506,33 +420,26 @@ function yesNo(value: boolean) {
     @submit.prevent="onSubmit"
   >
     <fieldset
-      :disabled="saving"
+      :disabled="fieldsLocked"
       class="m-0 flex min-w-0 flex-col gap-4 border-0 p-0"
     >
       <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
           {{ $t('products.sections.identity') }}
         </h2>
-        <div
-          class="mt-4 flex flex-col gap-4"
-          :class="showPhoto ? 'sm:flex-row' : ''"
-        >
-          <div
-            v-if="showPhoto"
-            class="w-full shrink-0 space-y-3 sm:w-56"
-          >
+        <div class="mt-4 flex flex-col gap-4 sm:flex-row">
+          <div class="w-full shrink-0 space-y-3 sm:w-56">
             <UFormField
               :label="$t('products.fields.image')"
               :error="imageError || undefined"
             >
               <img
-                v-if="displaySrc && (!editing || !previewUrl)"
+                v-if="displaySrc && !previewUrl"
                 :src="displaySrc"
                 alt=""
-                class="size-56 max-w-full rounded-lg object-contain"
+                class="mb-3 size-56 max-w-full rounded-lg object-contain"
               >
               <UFileUpload
-                v-if="editing"
                 v-model="imageModel"
                 accept="image/png,image/jpeg,image/webp"
                 icon="i-lucide-image"
@@ -544,86 +451,37 @@ function yesNo(value: boolean) {
           </div>
 
           <div class="min-w-0 flex-1 space-y-4">
-            <UFormField
-              v-if="filled(state.name_zh)"
-              :label="$t('products.fields.nameZh')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium break-all text-highlighted"
-              >
-                {{ state.name_zh }}
-              </p>
+            <UFormField :label="$t('products.fields.nameZh')">
               <UInput
-                v-else
                 v-model="state.name_zh"
                 class="w-full"
               />
             </UFormField>
 
-            <UFormField
-              v-if="filled(state.name_en)"
-              :label="$t('products.fields.nameEn')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium break-all text-highlighted"
-              >
-                {{ state.name_en }}
-              </p>
+            <UFormField :label="$t('products.fields.nameEn')">
               <UInput
-                v-else
                 v-model="state.name_en"
                 class="w-full"
               />
             </UFormField>
 
-            <UFormField
-              v-if="mode === 'create' || state.sku"
-              :label="$t('products.fields.sku')"
-            >
+            <UFormField :label="$t('products.fields.sku')">
               <UInput
-                v-if="mode === 'create'"
                 v-model="state.sku"
                 class="w-full"
+                :disabled="mode === 'update'"
               />
-              <p
-                v-else
-                class="text-sm font-medium break-all text-highlighted"
-              >
-                {{ state.sku }}
-              </p>
             </UFormField>
 
             <div class="grid gap-4 sm:grid-cols-2">
-              <UFormField
-                v-if="filled(state.category)"
-                :label="$t('products.fields.category')"
-              >
-                <p
-                  v-if="!editing"
-                  class="text-sm font-medium text-highlighted"
-                >
-                  {{ state.category }}
-                </p>
+              <UFormField :label="$t('products.fields.category')">
                 <UInput
-                  v-else
                   v-model="state.category"
                   class="w-full"
                 />
               </UFormField>
-              <UFormField
-                v-if="filled(state.spec_text)"
-                :label="$t('products.fields.spec')"
-              >
-                <p
-                  v-if="!editing"
-                  class="text-sm font-medium text-highlighted"
-                >
-                  {{ state.spec_text }}
-                </p>
+              <UFormField :label="$t('products.fields.spec')">
                 <UInput
-                  v-else
                   v-model="state.spec_text"
                   class="w-full"
                 />
@@ -632,190 +490,66 @@ function yesNo(value: boolean) {
           </div>
         </div>
 
-        <div
-          v-if="showStatus"
-          class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          <UFormField
-            v-if="showActive"
-            :label="$t('products.fields.active')"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium text-highlighted"
-            >
-              {{ yesNo(state.active) }}
-            </p>
-            <USwitch
-              v-else
-              v-model="state.active"
-            />
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <UFormField :label="$t('products.fields.active')">
+            <USwitch v-model="state.active" />
           </UFormField>
-          <UFormField
-            v-if="showCore"
-            :label="$t('products.fields.isCore')"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium text-highlighted"
-            >
-              {{ yesNo(state.is_core) }}
-            </p>
-            <USwitch
-              v-else
-              v-model="state.is_core"
-            />
+          <UFormField :label="$t('products.fields.isCore')">
+            <USwitch v-model="state.is_core" />
           </UFormField>
-          <UFormField
-            v-if="showCoPack"
-            :label="$t('products.fields.canCoPack')"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium text-highlighted"
-            >
-              {{ yesNo(state.can_co_pack) }}
-            </p>
-            <USwitch
-              v-else
-              v-model="state.can_co_pack"
-            />
+          <UFormField :label="$t('products.fields.canCoPack')">
+            <USwitch v-model="state.can_co_pack" />
           </UFormField>
-          <UFormField
-            v-if="showSaleStatus"
-            :label="$t('products.fields.saleStatus')"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium text-highlighted"
-            >
-              {{ saleStatusLabel(state.sale_status) }}
-            </p>
-            <USelect
-              v-else
-              :model-value="state.sale_status"
-              :items="saleStatusItems"
-              value-key="value"
-              class="w-full"
-              @update:model-value="setSaleStatus"
-            />
+          <UFormField :label="$t('products.fields.saleStatus')">
+            <USwitch v-model="onSale" />
           </UFormField>
         </div>
       </section>
 
-      <section
-        v-if="showDose"
-        class="rounded-xl border border-default bg-elevated p-5"
-      >
+      <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
           {{ $t('products.sections.dose') }}
         </h2>
         <div class="mt-4 space-y-4">
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField
-              v-if="filled(state.servings_per_container)"
-              :label="$t('products.fields.servingsPerContainer')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.servings_per_container }}
-              </p>
+            <UFormField :label="$t('products.fields.servingsPerContainer')">
               <UInput
-                v-else
                 :model-value="state.servings_per_container"
                 inputmode="numeric"
                 class="w-full"
                 @update:model-value="setDigits('servings_per_container', $event)"
               />
             </UFormField>
-            <UFormField
-              v-if="filled(state.serving_size_text)"
-              :label="$t('products.fields.servingSize')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.serving_size_text }}
-              </p>
+            <UFormField :label="$t('products.fields.servingSize')">
               <UInput
-                v-else
                 v-model="state.serving_size_text"
                 class="w-full"
               />
             </UFormField>
-            <UFormField
-              v-if="filled(state.unit_size_text)"
-              :label="$t('products.fields.unitSizeText')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.unit_size_text }}
-              </p>
+            <UFormField :label="$t('products.fields.unitSizeText')">
               <UInput
-                v-else
                 v-model="state.unit_size_text"
                 class="w-full"
               />
             </UFormField>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField
-              v-if="filled(state.daily_servings_min)"
-              :label="$t('products.fields.dailyServingsMin')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.daily_servings_min }}
-              </p>
+            <UFormField :label="$t('products.fields.dailyServingsMin')">
               <UInput
-                v-else
                 :model-value="state.daily_servings_min"
                 inputmode="numeric"
                 class="w-full"
                 @update:model-value="setDigits('daily_servings_min', $event)"
               />
             </UFormField>
-            <UFormField
-              v-if="filled(state.daily_servings_max)"
-              :label="$t('products.fields.dailyServingsMax')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.daily_servings_max }}
-              </p>
+            <UFormField :label="$t('products.fields.dailyServingsMax')">
               <UInput
-                v-else
                 :model-value="state.daily_servings_max"
                 inputmode="numeric"
                 class="w-full"
                 @update:model-value="setDigits('daily_servings_max', $event)"
               />
             </UFormField>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField
-              v-if="filled(state.unit_price)"
-              :label="$t('products.fields.unitPrice')"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.unit_price }}
-              </p>
+            <UFormField :label="$t('products.fields.unitPrice')">
               <UInput
-                v-else
                 :model-value="state.unit_price"
                 inputmode="numeric"
                 class="w-full"
@@ -823,18 +557,10 @@ function yesNo(value: boolean) {
               />
             </UFormField>
             <UFormField
-              v-if="filled(state.bottle_price) || bottlePriceError"
               :label="$t('products.fields.bottlePrice')"
-              :error="editing ? (bottlePriceError || undefined) : undefined"
+              :error="bottlePriceError || undefined"
             >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ state.bottle_price }}
-              </p>
               <UInput
-                v-else
                 :model-value="state.bottle_price"
                 inputmode="numeric"
                 class="w-full"
@@ -862,149 +588,133 @@ function yesNo(value: boolean) {
         </div>
       </section>
 
-      <section
-        v-if="showCopy"
-        class="rounded-xl border border-default bg-elevated p-5"
-      >
+      <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
           {{ $t('products.sections.copy') }}
         </h2>
         <div class="mt-4 space-y-4">
-          <UFormField
-            v-for="field in visibleCopyLead"
-            :key="field.key"
-            :label="$t(field.label)"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium whitespace-pre-wrap text-highlighted"
-            >
-              {{ state[field.key] }}
-            </p>
+          <UFormField :label="$t('products.fields.audience')">
             <UTextarea
-              v-else
-              v-model="state[field.key]"
-              :rows="field.rows"
+              v-model="state.audience"
+              :rows="2"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField :label="$t('products.fields.summary')">
+            <UTextarea
+              v-model="state.summary"
+              :rows="4"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField :label="$t('products.fields.highlights')">
+            <UTextarea
+              v-model="state.highlights"
+              :rows="4"
               class="w-full"
             />
           </UFormField>
 
-          <div
-            v-if="visibleCopyUsage.length"
-            class="grid gap-4 sm:grid-cols-2"
-          >
-            <UFormField
-              v-for="field in visibleCopyUsage"
-              :key="field.key"
-              :label="$t(field.label)"
-            >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium whitespace-pre-wrap text-highlighted"
-              >
-                {{ state[field.key] }}
-              </p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField :label="$t('products.fields.usage')">
               <UTextarea
-                v-else
-                v-model="state[field.key]"
-                :rows="field.rows"
+                v-model="state.usage_text"
+                :rows="3"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField :label="$t('products.fields.usageLimit')">
+              <UTextarea
+                v-model="state.usage_limit"
+                :rows="3"
                 class="w-full"
               />
             </UFormField>
           </div>
 
-          <UFormField
-            v-for="field in visibleCopyTail"
-            :key="field.key"
-            :label="$t(field.label)"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium whitespace-pre-wrap text-highlighted"
-            >
-              {{ state[field.key] }}
-            </p>
-            <UTextarea
-              v-else
-              v-model="state[field.key]"
-              :rows="field.rows"
-              class="w-full"
-            />
-          </UFormField>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField :label="$t('products.fields.ingredients')">
+              <UTextarea
+                v-model="state.ingredients_text"
+                :rows="3"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField :label="$t('products.fields.cautions')">
+              <UTextarea
+                v-model="state.cautions"
+                :rows="3"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField :label="$t('products.fields.riskText')">
+              <UTextarea
+                v-model="state.risk_text"
+                :rows="3"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField :label="$t('products.fields.contraindicationText')">
+              <UTextarea
+                v-model="state.contraindication_text"
+                :rows="3"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
         </div>
       </section>
 
-      <section
-        v-if="showSupply"
-        class="rounded-xl border border-default bg-elevated p-5"
-      >
+      <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
           {{ $t('products.sections.supply') }}
         </h2>
         <div class="mt-4 grid gap-4 sm:grid-cols-3">
-          <UFormField
-            v-for="field in visibleSupply"
-            :key="field.key"
-            :label="$t(field.label)"
-          >
-            <p
-              v-if="!editing"
-              class="text-sm font-medium text-highlighted"
-            >
-              {{ state[field.key] }}
-            </p>
+          <UFormField :label="$t('products.fields.shelfLife')">
             <UInput
-              v-else
-              v-model="state[field.key]"
+              v-model="state.shelf_life_text"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField :label="$t('products.fields.distributor')">
+            <UInput
+              v-model="state.distributor"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField :label="$t('products.fields.origin')">
+            <UInput
+              v-model="state.origin"
               class="w-full"
             />
           </UFormField>
         </div>
       </section>
 
-      <section
-        v-if="showNutrition"
-        class="rounded-xl border border-default bg-elevated p-5"
-      >
+      <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
           {{ $t('products.fields.nutrition') }}
         </h2>
         <div class="mt-4 space-y-3">
           <div
             v-if="state.nutrition.length"
-            class="hidden gap-3 text-sm text-muted sm:grid"
-            :class="editing
-              ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
-              : 'sm:grid-cols-3'"
+            class="hidden gap-3 text-sm text-muted sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
           >
             <p>{{ $t('products.fields.nutritionName') }}</p>
             <p>{{ $t('products.fields.nutritionAmount') }}</p>
             <p>{{ $t('products.fields.nutritionPct') }}</p>
-            <span
-              v-if="editing"
-              class="size-8"
-            />
+            <span class="size-8" />
           </div>
           <div
             v-for="(row, index) in state.nutrition"
             :key="index"
-            class="grid gap-3 sm:items-center"
-            :class="editing
-              ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
-              : 'sm:grid-cols-3'"
+            class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center"
           >
             <UFormField
               :label="$t('products.fields.nutritionName')"
               class="sm:[&_label]:sr-only"
             >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ row.name }}
-              </p>
               <UInput
-                v-else
                 v-model="row.name"
                 class="w-full"
               />
@@ -1013,14 +723,7 @@ function yesNo(value: boolean) {
               :label="$t('products.fields.nutritionAmount')"
               class="sm:[&_label]:sr-only"
             >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ row.amount_per_serving }}
-              </p>
               <UInput
-                v-else
                 v-model="row.amount_per_serving"
                 class="w-full"
               />
@@ -1029,20 +732,12 @@ function yesNo(value: boolean) {
               :label="$t('products.fields.nutritionPct')"
               class="sm:[&_label]:sr-only"
             >
-              <p
-                v-if="!editing"
-                class="text-sm font-medium text-highlighted"
-              >
-                {{ row.daily_reference_pct }}
-              </p>
               <UInput
-                v-else
                 v-model="row.daily_reference_pct"
                 class="w-full"
               />
             </UFormField>
             <UButton
-              v-if="editing"
               type="button"
               color="neutral"
               variant="ghost"
@@ -1052,7 +747,6 @@ function yesNo(value: boolean) {
             />
           </div>
           <UButton
-            v-if="editing"
             type="button"
             color="neutral"
             variant="outline"

@@ -116,7 +116,7 @@
 | 能力 | 端點 | 狀態 |
 |------|------|------|
 | SellableItem 列表／建立／詳情／更新 | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH /admin/sellable-item/{id}` | 已接（含列表上下架 toggle、風險／禁忌／尺寸／可同封裝欄位） |
-| SellableItem 刪除 | `DELETE /admin/sellable-item/{id}` | 接線中（商品頁有按鈕；core 無此端點，停售走 `PATCH` `sale_status`） |
+| SellableItem 刪除 | `DELETE /admin/sellable-item/{id}` | 不做（詳情頁不提供刪除；停售走 `PATCH` `sale_status`） |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
 | PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
 | PackagePlan 建立、更新、單筆詳情 | `POST /admin/package-plans`、`GET`／`PATCH /admin/package-plan/{id}` | Mock（`GET` 單筆 core 已有，畫面未呼叫；無刪除端點） |

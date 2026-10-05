@@ -81,7 +81,6 @@ function failText(error: unknown) {
     </p>
     <SellableItemForm
       mode="create"
-      editing
       :sellable-item="null"
       :saving="saving"
       :save-error="errorMessage"
