@@ -37,7 +37,7 @@ const costUsd = computed(() => costText(props.usage?.estimated_cost_usd, 4))
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-normal text-muted">
+  <span class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-normal text-muted">
     <span>
       {{ t('llmUsage.input') }}:
       <span class="tabular-nums">{{ t('llmUsage.tokens', { n: inputTokens }) }}</span>
@@ -50,5 +50,5 @@ const costUsd = computed(() => costText(props.usage?.estimated_cost_usd, 4))
       {{ t('llmUsage.cost') }}:
       <span class="tabular-nums">{{ t('llmUsage.ntd', { amount: costNtd }) }} ({{ t('llmUsage.usd', { amount: costUsd }) }})</span>
     </span>
-  </div>
+  </span>
 </template>

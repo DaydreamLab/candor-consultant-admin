@@ -115,6 +115,7 @@
       "alert": "Alert",
       "pending": "Pending review",
       "colorHint": "Values colored by reference range",
+      "expand": "Expand report",
       "status": "Status",
       "item": "Item",
       "value": "Value",

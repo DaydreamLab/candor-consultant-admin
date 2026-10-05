@@ -115,6 +115,7 @@
       "alert": "警戒值",
       "pending": "待確認",
       "colorHint": "數值依參考區間著色",
+      "expand": "展開報告",
       "status": "狀態",
       "item": "項目",
       "value": "數值",
