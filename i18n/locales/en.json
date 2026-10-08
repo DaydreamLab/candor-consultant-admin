@@ -256,7 +256,7 @@
       "sort_order": "Sort order",
       "active": "Active"
     },
-    "packCapacityHint": "Sum of selected item capacities must not exceed this total",
+    "packCapacityHint": "Max total daily servings; sum of dose × per-unit capacity must not exceed this",
     "coreCountHint": "Pick this many top-scoring core SKUs before functional items; must be between 1 and total pack capacity",
     "columns": {
       "name": "Sales plan",
@@ -974,7 +974,7 @@
       "riskText": "Risk",
       "contraindicationText": "Contraindications",
       "packCapacity": "Pack occupancy (per unit)",
-      "packCapacityHint": "How much plan capacity one unit uses; dose bumps do not multiply this",
+      "packCapacityHint": "Capacity per serving/pill; occupied units = daily dose × this value",
       "shelfLife": "Shelf life",
       "distributor": "Distributor",
       "origin": "Origin",

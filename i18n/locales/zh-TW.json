@@ -256,7 +256,7 @@
       "sort_order": "排序",
       "active": "上架"
     },
-    "packCapacityHint": "組成時累加各品占用，不得超過此值",
+    "packCapacityHint": "每日總顆數上限；組成時累加各品劑量×單品占用，不得超過此值",
     "coreCountHint": "先依分數湊滿幾種核心，再撿功能性；須介於 1 與包裝總容量之間",
     "columns": {
       "name": "銷售方案",
@@ -974,7 +974,7 @@
       "riskText": "風險",
       "contraindicationText": "禁忌",
       "packCapacity": "包裝佔用容量 (單顆)",
-      "packCapacityHint": "一顆占多少方案容量；劑量上調不乘此數",
+      "packCapacityHint": "每份／每顆占多少方案容量；組成占用＝日劑量×此值",
       "shelfLife": "保存期限",
       "distributor": "經銷商",
       "origin": "產地",
