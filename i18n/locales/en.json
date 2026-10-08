@@ -236,7 +236,7 @@
     }
   },
   "packagePlans": {
-    "description": "Edit name, price, days, description, sort order, and active status. Plans do not include product lists.",
+    "description": "Edit name, price, days, total pack capacity, core count, description, sort order, and active status. Plans do not include product lists.",
     "loading": "Loading…",
     "failed": "Could not load sales plans.",
     "empty": "No sales plans yet",
@@ -250,10 +250,14 @@
       "name_en": "English name",
       "price": "Plan price",
       "period_days": "Days",
+      "pack_capacity": "Total pack capacity",
+      "core_count": "Core item quota",
       "description": "Description",
       "sort_order": "Sort order",
       "active": "Active"
     },
+    "packCapacityHint": "Sum of selected item capacities must not exceed this total",
+    "coreCountHint": "Pick this many top-scoring core SKUs before functional items; must be between 1 and total pack capacity",
     "columns": {
       "name": "Sales plan",
       "status": "Status",
@@ -969,7 +973,8 @@
       "cautions": "Cautions",
       "riskText": "Risk",
       "contraindicationText": "Contraindications",
-      "unitSizeText": "Unit size",
+      "packCapacity": "Pack occupancy (per unit)",
+      "packCapacityHint": "How much plan capacity one unit uses; dose bumps do not multiply this",
       "shelfLife": "Shelf life",
       "distributor": "Distributor",
       "origin": "Origin",

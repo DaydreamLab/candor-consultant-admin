@@ -30,7 +30,7 @@ type NutritionError = {
   amount: string
 }
 
-type IntegerKey = 'servings_per_container' | 'unit_price' | 'bottle_price'
+type IntegerKey = 'servings_per_container' | 'unit_price' | 'bottle_price' | 'pack_capacity'
 type DecimalKey = 'daily_servings_min' | 'daily_servings_max' | 'daily_dose'
 
 type FormState = {
@@ -60,7 +60,7 @@ type FormState = {
   cautions: string
   risk_text: string
   contraindication_text: string
-  unit_size_text: string
+  pack_capacity: string
   shelf_life_text: string
   distributor: string
   origin: string
@@ -202,6 +202,10 @@ function validate() {
     }
   }
 
+  if (!positiveInteger(state.pack_capacity)) {
+    state.pack_capacity = '1'
+  }
+
   if ((state.sale_status.trim() || 'on_sale') === 'on_sale') {
     if (!positiveInteger(state.bottle_price)) {
       localErrors.bottle_price = t('products.bottlePriceRequired')
@@ -262,7 +266,6 @@ function writeBody() {
     category: optionalText(state.category),
     spec_text: optionalText(state.spec_text),
     serving_size_text: optionalText(state.serving_size_text),
-    unit_size_text: optionalText(state.unit_size_text),
     audience: optionalText(state.audience),
     summary: optionalText(state.summary),
     highlights: optionalText(state.highlights),
@@ -291,6 +294,8 @@ function writeBody() {
   assignDecimal(body, 'daily_dose', state.daily_dose, updating)
   assignInteger(body, 'unit_price', state.unit_price, updating)
   assignInteger(body, 'bottle_price', state.bottle_price, updating)
+  const packCapacity = Number(state.pack_capacity.trim() || '1')
+  body.pack_capacity = Number.isInteger(packCapacity) && packCapacity >= 1 ? packCapacity : 1
   return body
 }
 
@@ -399,6 +404,7 @@ function emptyFieldErrors(): Record<SaveErrorField, string> {
     servings_per_container: '',
     bottle_price: '',
     unit_price: '',
+    pack_capacity: '',
     sku: '',
     code: ''
   }
@@ -464,7 +470,7 @@ function applyItem(item: Record<string, unknown> | null) {
     next.cautions = scalarText(item.cautions).trim()
     next.risk_text = scalarText(item.risk_text).trim()
     next.contraindication_text = scalarText(item.contraindication_text).trim()
-    next.unit_size_text = scalarText(item.unit_size_text).trim()
+    next.pack_capacity = integerText(item.pack_capacity) || '1'
     next.shelf_life_text = scalarText(item.shelf_life_text).trim()
     next.distributor = scalarText(item.distributor).trim()
     next.origin = scalarText(item.origin).trim()
@@ -502,7 +508,7 @@ function emptyState(): FormState {
     cautions: '',
     risk_text: '',
     contraindication_text: '',
-    unit_size_text: '',
+    pack_capacity: '1',
     shelf_life_text: '',
     distributor: '',
     origin: '',
@@ -749,11 +755,17 @@ function scalarText(value: unknown) {
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.unitSizeText')">
+            <UFormField :label="$t('products.fields.packCapacity')">
               <UInput
-                v-model="state.unit_size_text"
+                :model-value="state.pack_capacity"
+                inputmode="numeric"
+                min="1"
                 class="w-full"
+                @update:model-value="setDigits('pack_capacity', $event || '1')"
               />
+              <p class="mt-1 text-xs text-muted">
+                {{ $t('products.fields.packCapacityHint') }}
+              </p>
             </UFormField>
             <UFormField
               :label="$t('products.fields.dailyServingsMin')"

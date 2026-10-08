@@ -236,7 +236,7 @@
     }
   },
   "packagePlans": {
-    "description": "價格帶可改名稱、價格、天數、說明、排序與上下架；不含產品組成。",
+    "description": "價格帶可改名稱、價格、天數、包裝總容量、固定核心數量、說明、排序與上下架；不含產品組成。",
     "loading": "讀取中…",
     "failed": "無法讀取銷售方案。",
     "empty": "尚無銷售方案",
@@ -250,10 +250,14 @@
       "name_en": "英文名稱",
       "price": "方案總價",
       "period_days": "天數",
+      "pack_capacity": "包裝總容量",
+      "core_count": "固定核心數量",
       "description": "說明",
       "sort_order": "排序",
       "active": "上架"
     },
+    "packCapacityHint": "組成時累加各品占用，不得超過此值",
+    "coreCountHint": "先依分數湊滿幾種核心，再撿功能性；須介於 1 與包裝總容量之間",
     "columns": {
       "name": "銷售方案",
       "status": "狀態",
@@ -969,7 +973,8 @@
       "cautions": "注意事項",
       "riskText": "風險",
       "contraindicationText": "禁忌",
-      "unitSizeText": "單顆尺寸",
+      "packCapacity": "包裝佔用容量 (單顆)",
+      "packCapacityHint": "一顆占多少方案容量；劑量上調不乘此數",
       "shelfLife": "保存期限",
       "distributor": "經銷商",
       "origin": "產地",

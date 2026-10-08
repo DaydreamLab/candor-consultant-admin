@@ -559,6 +559,8 @@ export type PackagePlanWrite = {
   description: string | null
   price: number
   period_days: number
+  pack_capacity: number
+  core_count: number
   sort_order: number
   active: boolean
 }

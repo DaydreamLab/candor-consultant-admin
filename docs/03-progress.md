@@ -120,11 +120,11 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| SellableItem 列表／建立／詳情／更新 | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH /admin/sellable-item/{id}` | 已接（含列表上下架 toggle、風險／禁忌／尺寸／可同封裝欄位） |
+| SellableItem 列表／建立／詳情／更新 | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH /admin/sellable-item/{id}` | 已接（含列表上下架 toggle、風險／禁忌／包裝佔用容量 (單顆)／可同封裝；`unit_size_text` 已刪；表單已對齊） |
 | SellableItem 刪除 | `DELETE /admin/sellable-item/{id}` | 不做（詳情頁不提供刪除；停售走 `PATCH` `sale_status`） |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
-| PackagePlan 列表 | `GET /admin/package-plans` | 已接 |
-| PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/package-plan/{id}` | 已接（畫面 `/package-plans/{id}`；`period_days` 可改且須 > 0；UI 選項 30／60／90） |
+| PackagePlan 列表 | `GET /admin/package-plans` | 已接（列表顯示包裝總容量／固定核心數量） |
+| PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/package-plan/{id}` | 已接（畫面 `/package-plans/{id}`；`period_days`／包裝總容量／固定核心數量可改；天數 UI 選項 30／60／90） |
 | PackagePlan 建立 | `POST /admin/package-plans` | Mock（畫面未做；無刪除端點） |
 | LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock（畫面 `/lab-services` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/labs`） |
@@ -181,4 +181,4 @@
 
 ---
 
-**最後更新**：2026-10-05（與 candor-core `docs/04` Admin 區對齊。**Auth 切片已接**：`POST /admin/auth/login` 與 `GET /admin/me`；無示範帳號與略過登入；operator token 鍵 `candor.operator.token` 與前台 `candor.guest.token` 分開。銷售方案列表與詳情／更新已接（`period_days` 可改；UI 30／60／90）；建立仍 Mock。商品列表／新增／更新已接。訂單列表、詳情與對話已接。**會員列表／詳情／訂單／對話／報告**已接。**採檢服務／預約記錄**本地 mock。**專家訓練**權重與訓練批次皆為 mock）
+**最後更新**：2026-10-08（表單對齊 candor-core ADR 0023：保健品「包裝佔用容量 (單顆)」取代單顆尺寸；銷售方案「包裝總容量」「固定核心數量」。其餘與 candor-core `docs/04` Admin 區對齊）

@@ -29,6 +29,8 @@ type FormState = {
   description: string
   price: string
   period_days: number
+  pack_capacity: string
+  core_count: string
   sort_order: string
   active: boolean
 }
@@ -85,6 +87,16 @@ function onSubmit() {
     localError.value = t('packagePlans.saveFailed')
     return
   }
+  const packCapacity = Number(state.pack_capacity)
+  if (!Number.isInteger(packCapacity) || packCapacity < 1) {
+    localError.value = t('packagePlans.saveFailed')
+    return
+  }
+  const coreCount = Number(state.core_count)
+  if (!Number.isInteger(coreCount) || coreCount < 1 || coreCount > packCapacity) {
+    localError.value = t('packagePlans.saveFailed')
+    return
+  }
   const sortOrder = state.sort_order.trim() === '' ? 0 : Number(state.sort_order)
   if (!Number.isInteger(sortOrder)) {
     localError.value = t('packagePlans.saveFailed')
@@ -97,6 +109,8 @@ function onSubmit() {
     description: state.description.trim() || null,
     price,
     period_days: periodDays,
+    pack_capacity: packCapacity,
+    core_count: coreCount,
     sort_order: sortOrder,
     active: state.active
   })
@@ -109,6 +123,8 @@ function applyPlan(plan: Record<string, unknown>) {
   state.description = textOf(plan.description)
   state.price = numberText(plan.price)
   state.period_days = positiveInt(plan.period_days) ?? 30
+  state.pack_capacity = numberText(plan.pack_capacity, '8')
+  state.core_count = numberText(plan.core_count, '3')
   state.sort_order = numberText(plan.sort_order, '0')
   state.active = plan.active !== false
 }
@@ -121,6 +137,8 @@ function emptyState(): FormState {
     description: '',
     price: '',
     period_days: 30,
+    pack_capacity: '8',
+    core_count: '3',
     sort_order: '0',
     active: true
   }
@@ -223,6 +241,32 @@ function moneyText(value: number) {
           :disabled="fieldsLocked"
           class="w-full"
         />
+      </UFormField>
+      <UFormField :label="$t('packagePlans.fields.pack_capacity')">
+        <UInput
+          v-model="state.pack_capacity"
+          type="number"
+          min="1"
+          step="1"
+          :disabled="fieldsLocked"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ $t('packagePlans.packCapacityHint') }}
+        </p>
+      </UFormField>
+      <UFormField :label="$t('packagePlans.fields.core_count')">
+        <UInput
+          v-model="state.core_count"
+          type="number"
+          min="1"
+          step="1"
+          :disabled="fieldsLocked"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ $t('packagePlans.coreCountHint') }}
+        </p>
       </UFormField>
       <UFormField :label="$t('packagePlans.fields.sort_order')">
         <UInput

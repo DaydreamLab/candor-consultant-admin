@@ -6,6 +6,7 @@ export const SAVE_ERROR_FIELDS = [
   'servings_per_container',
   'bottle_price',
   'unit_price',
+  'pack_capacity',
   'sku',
   'code'
 ] as const

@@ -76,6 +76,14 @@ function periodDaysOf(row: Record<string, unknown>) {
   return textValue(row.period_days) || t('status.na')
 }
 
+function packCapacityOf(row: Record<string, unknown>) {
+  return textValue(row.pack_capacity) || t('status.na')
+}
+
+function coreCountOf(row: Record<string, unknown>) {
+  return textValue(row.core_count) || t('status.na')
+}
+
 function priceOf(row: Record<string, unknown>) {
   if (hasDisplayValue(row.price)) {
     return amountOf(row.price)
@@ -199,6 +207,22 @@ function amountOf(value: unknown) {
               </dt>
               <dd class="tabular-money mt-1 font-medium text-highlighted">
                 {{ priceOf(row) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                {{ $t('packagePlans.fields.pack_capacity') }}
+              </dt>
+              <dd class="mt-1 font-medium text-highlighted">
+                {{ packCapacityOf(row) }}
+              </dd>
+            </div>
+            <div class="text-right">
+              <dt class="text-muted">
+                {{ $t('packagePlans.fields.core_count') }}
+              </dt>
+              <dd class="mt-1 font-medium text-highlighted">
+                {{ coreCountOf(row) }}
               </dd>
             </div>
             <template v-if="budgetTexts(row)">
