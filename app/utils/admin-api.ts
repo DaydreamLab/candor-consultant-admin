@@ -345,6 +345,115 @@ export async function adminGetOrder(apiBase: string, token: string, id: string) 
   }
 }
 
+export type AdminPaymentSettings = {
+  provider: 'sandbox' | 'newebpay'
+  payment_methods: string[]
+  updated_at: string | null
+}
+
+export async function adminGetPaymentSettings(apiBase: string, token: string): Promise<AdminPaymentSettings> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/payment-settings'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const provider = body.data.provider === 'newebpay' ? 'newebpay' : 'sandbox'
+    const methods = Array.isArray(body.data.payment_methods)
+      ? body.data.payment_methods.filter((m): m is string => typeof m === 'string')
+      : []
+    return {
+      provider,
+      payment_methods: methods,
+      updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchPaymentSettings(
+  apiBase: string,
+  token: string,
+  provider: 'sandbox' | 'newebpay'
+): Promise<AdminPaymentSettings> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/payment-settings'), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: { provider }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const next = body.data.provider === 'newebpay' ? 'newebpay' : 'sandbox'
+    const methods = Array.isArray(body.data.payment_methods)
+      ? body.data.payment_methods.filter((m): m is string => typeof m === 'string')
+      : []
+    return {
+      provider: next,
+      payment_methods: methods,
+      updated_at: typeof body.data.updated_at === 'string' ? body.data.updated_at : null
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminRefundOrder(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/order/${encodeURIComponent(id)}/refund`), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminRetryOrderInvoice(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/order/${encodeURIComponent(id)}/invoice/retry`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminListOrderMessages(apiBase: string, token: string, id: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/order/${encodeURIComponent(id)}/message`), {

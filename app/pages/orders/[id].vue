@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { AdminApiError, adminGetOrder, adminGetOrderHealthReport, adminListOrderMessages } from '~/utils/admin-api'
+import {
+  AdminApiError,
+  adminGetOrder,
+  adminGetOrderHealthReport,
+  adminListOrderMessages,
+  adminRefundOrder,
+  adminRetryOrderInvoice
+} from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -49,9 +56,40 @@ const messagesError = ref('')
 const reportError = ref('')
 const reportOpen = ref(true)
 const reportSheetOpen = ref(false)
+const actionPending = ref(false)
+const actionError = ref('')
 let loadSeq = 0
 
+const session = useSessionStore()
+const canOps = computed(() => {
+  const role = session.operator?.role
+  return role === 'ops' || role === 'admin'
+})
+
 const reportSectionVisible = computed(() => Boolean(scalarId(order.value?.report_id)))
+
+const canRefund = computed(() => {
+  if (!canOps.value || !order.value) {
+    return false
+  }
+  const rows = recordsOf(order.value.payments)
+  return rows.some(row => row.status === 'succeeded' && row.method === 'card')
+})
+
+const canRetryInvoice = computed(() => {
+  if (!canOps.value || !order.value) {
+    return false
+  }
+  const status = String(order.value.invoice_status || '')
+  const payment = String(order.value.payment_status || '')
+  if (payment === 'paid' && ['none', 'pending', 'failed'].includes(status)) {
+    return true
+  }
+  if (payment === 'refunded' && ['void_pending', 'failed'].includes(status) && order.value.invoice_number) {
+    return true
+  }
+  return false
+})
 
 const summaryFields = computed(() => summaryOf(order.value))
 const recipientFields = computed(() => recipientOf(order.value))
@@ -274,7 +312,44 @@ function recipientOf(data: Record<string, unknown> | null): FieldRow[] {
   pushText(rows, 'recipient_email', recipient?.email ?? data.recipient_email)
   pushMapped(rows, 'invoice_type', data.invoice_type, value => mappedLabel('invoiceType', value))
   pushText(rows, 'invoice_carrier', data.invoice_carrier)
+  pushMapped(rows, 'invoice_status', data.invoice_status, value => mappedLabel('invoiceStatus', value))
+  pushText(rows, 'invoice_number', data.invoice_number)
+  pushText(rows, 'invoice_error', data.invoice_error)
   return rows
+}
+
+async function onRefund() {
+  const token = readOperatorToken()
+  if (!token || actionPending.value || !canRefund.value) {
+    return
+  }
+  actionPending.value = true
+  actionError.value = ''
+  try {
+    order.value = await adminRefundOrder(config.public.apiBase, token, orderId.value)
+  } catch (err) {
+    const message = err instanceof AdminApiError ? err.message.trim() : ''
+    actionError.value = message || t('orders.refundFailed')
+  } finally {
+    actionPending.value = false
+  }
+}
+
+async function onRetryInvoice() {
+  const token = readOperatorToken()
+  if (!token || actionPending.value || !canRetryInvoice.value) {
+    return
+  }
+  actionPending.value = true
+  actionError.value = ''
+  try {
+    order.value = await adminRetryOrderInvoice(config.public.apiBase, token, orderId.value)
+  } catch (err) {
+    const message = err instanceof AdminApiError ? err.message.trim() : ''
+    actionError.value = message || t('orders.invoiceRetryFailed')
+  } finally {
+    actionPending.value = false
+  }
 }
 
 function packageOf(data: Record<string, unknown> | null) {
@@ -654,6 +729,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     plain
   >
     <div class="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+      <div
+        v-if="canRefund || canRetryInvoice || actionError"
+        class="flex shrink-0 flex-wrap items-center gap-2"
+      >
+        <UButton
+          v-if="canRefund"
+          color="warning"
+          variant="soft"
+          size="sm"
+          :loading="actionPending"
+          @click="onRefund"
+        >
+          {{ $t('orders.refund') }}
+        </UButton>
+        <UButton
+          v-if="canRetryInvoice"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :loading="actionPending"
+          @click="onRetryInvoice"
+        >
+          {{ $t('orders.invoiceRetry') }}
+        </UButton>
+        <p
+          v-if="actionError"
+          class="text-sm text-error"
+        >
+          {{ actionError }}
+        </p>
+      </div>
       <ol
         v-if="timelineSteps.length"
         class="flex shrink-0 items-start overflow-x-auto rounded-xl border border-default bg-elevated px-4 py-4"

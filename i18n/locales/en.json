@@ -191,7 +191,10 @@
       "report_id": "Report",
       "recommendation_run_id": "Recommendation",
       "updated_at": "Updated",
-      "user_id": "User"
+      "user_id": "User",
+      "invoice_status": "Invoice status",
+      "invoice_number": "Invoice number",
+      "invoice_error": "Invoice error"
     },
     "orderStatus": {
       "created": "Created",
@@ -205,7 +208,17 @@
       "pending": "Pending",
       "paid": "Paid",
       "failed": "Failed",
-      "expired": "Expired"
+      "expired": "Expired",
+      "refunded": "Refunded"
+    },
+    "invoiceStatus": {
+      "none": "None",
+      "pending": "Issuing",
+      "issued": "Issued",
+      "void_pending": "Void pending",
+      "voided": "Voided",
+      "allowanced": "Allowanced",
+      "failed": "Invoice failed"
     },
     "paymentRecordStatus": {
       "pending": "Pending",
@@ -233,7 +246,11 @@
     "voucherStatus": {
       "pending": "Pending",
       "issued": "Issued"
-    }
+    },
+    "refund": "Full refund",
+    "refundFailed": "Refund failed.",
+    "invoiceRetry": "Retry invoice",
+    "invoiceRetryFailed": "Invoice retry failed."
   },
   "packagePlans": {
     "description": "Edit name, price, days, total pack capacity, core count, description, sort order, and active status. Plans do not include product lists.",
@@ -768,7 +785,16 @@
     "warehouseHint": "Picking and shipping start from this warehouse.",
     "labels": "Candor shipping-label versions",
     "labelsHintFirm": "Apply the Candor label before shipping. “Current” is the version to use now.",
-    "labelsHintPlatform": "Goods belong to the consultant firm; Candor labels are applied before shipping. “Current” is the version to use now."
+    "labelsHintPlatform": "Goods belong to the consultant firm; Candor labels are applied before shipping. “Current” is the version to use now.",
+    "payment": {
+      "title": "Payment gateway",
+      "hint": "Switch the active provider (sandbox / NewebPay). Test vs production hosts come from server env vars, not this screen.",
+      "loading": "Loading payment settings…",
+      "loadFailed": "Could not load payment settings.",
+      "saveFailed": "Could not save payment settings.",
+      "current": "Active",
+      "methods": "Available methods"
+    }
   },
   "actions": {
     "add": "Add",

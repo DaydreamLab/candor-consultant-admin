@@ -65,7 +65,8 @@
 | 出貨推進 | `/shipping`（語意 → shipment） | 殼 | Mock | M3 |
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
 | 訂單 | `/orders` | 可用 | 已接 | M3 |
-| 訂單詳情／取消／讀對話／報告判讀 | `/orders/{id}`（詳情、對話與報告判讀可讀；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
+| 訂單詳情／取消／讀對話／報告判讀／退款／發票 | `/orders/{id}`（詳情、對話與報告判讀可讀；整筆退款與發票重試已接；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
+| 金流設定 | `/settings`（sandbox／newebpay） | 可用 | 接線中 | Beta |
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
