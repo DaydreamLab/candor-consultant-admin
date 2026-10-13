@@ -27,7 +27,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: 'https://candor-core.dev.daydream-lab.com/api/v1'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://candor-core.dev.daydream-lab.com/api/v1',
+      feSha: process.env.NUXT_PUBLIC_FE_SHA || ''
     }
   },
 

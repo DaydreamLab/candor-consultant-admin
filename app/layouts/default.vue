@@ -245,6 +245,7 @@ onUnmounted(() => {
               @click="logout"
             />
           </div>
+          <BuildVersion :collapsed="collapsed" />
         </div>
       </template>
     </UDashboardSidebar>

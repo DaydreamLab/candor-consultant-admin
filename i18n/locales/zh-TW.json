@@ -6,6 +6,9 @@
   "brand": "坦見",
   "brandShort": "坦",
   "brandAdmin": "顧問後台",
+  "footer": {
+    "buildVersion": "前台 {fe}／核心 {core}"
+  },
   "nav": {
     "workbench": "總覽",
     "orders": "訂單",

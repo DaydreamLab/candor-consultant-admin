@@ -6,6 +6,9 @@
   "brand": "Candor",
   "brandShort": "C",
   "brandAdmin": "Consultant admin",
+  "footer": {
+    "buildVersion": "FE {fe} / core {core}"
+  },
   "nav": {
     "workbench": "Overview",
     "orders": "Orders",
