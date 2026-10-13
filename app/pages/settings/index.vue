@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import {
   AdminApiError,
+  adminGetInvoiceSettings,
   adminGetPaymentSettings,
+  adminPatchInvoiceSettings,
   adminPatchPaymentSettings,
+  type AdminInvoiceSettings,
   type AdminPaymentSettings
 } from '~/utils/admin-api'
 import { DEMO_LABELS } from '~/utils/demo'
@@ -21,13 +24,39 @@ const canEditPayment = computed(() => {
 })
 
 const payment = ref<AdminPaymentSettings | null>(null)
+const paymentDraft = ref<'sandbox' | 'newebpay'>('sandbox')
 const paymentPending = ref(true)
 const paymentSaving = ref(false)
 const paymentError = ref('')
 const paymentSaved = ref(false)
 
+const invoice = ref<AdminInvoiceSettings | null>(null)
+const invoiceDraft = ref<'sandbox' | 'ezpay'>('sandbox')
+const invoicePending = ref(true)
+const invoiceSaving = ref(false)
+const invoiceError = ref('')
+const invoiceSaved = ref(false)
+
+const paymentDirty = computed(() => payment.value !== null && paymentDraft.value !== payment.value.provider)
+const invoiceDirty = computed(() => invoice.value !== null && invoiceDraft.value !== invoice.value.issuer)
+
+const paymentItems = computed(() => [
+  { label: t('settings.payment.optionSandbox'), value: 'sandbox' },
+  { label: t('settings.payment.optionNewebpay'), value: 'newebpay' }
+])
+
+const invoiceItems = computed(() => [
+  { label: t('settings.invoice.optionSandbox'), value: 'sandbox' },
+  { label: t('settings.invoice.optionEzpay'), value: 'ezpay' }
+])
+
+const showInvoiceCredentialsWarning = computed(
+  () => invoiceDraft.value === 'ezpay' && invoice.value?.credentials_configured === false
+)
+
 if (import.meta.client) {
   void loadPayment()
+  void loadInvoice()
 }
 
 async function loadPayment() {
@@ -42,6 +71,7 @@ async function loadPayment() {
   paymentSaved.value = false
   try {
     payment.value = await adminGetPaymentSettings(config.public.apiBase, token)
+    paymentDraft.value = payment.value.provider
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
     paymentError.value = message || t('settings.payment.loadFailed')
@@ -50,22 +80,64 @@ async function loadPayment() {
   }
 }
 
-async function savePayment(provider: 'sandbox' | 'newebpay') {
+async function savePayment() {
   const token = readOperatorToken()
-  if (!token || paymentSaving.value || !canEditPayment.value) {
+  if (!token || paymentSaving.value || !canEditPayment.value || !paymentDirty.value) {
     return
   }
   paymentSaving.value = true
   paymentError.value = ''
   paymentSaved.value = false
   try {
-    payment.value = await adminPatchPaymentSettings(config.public.apiBase, token, provider)
+    payment.value = await adminPatchPaymentSettings(config.public.apiBase, token, paymentDraft.value)
+    paymentDraft.value = payment.value.provider
     paymentSaved.value = true
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
     paymentError.value = message || t('settings.payment.saveFailed')
   } finally {
     paymentSaving.value = false
+  }
+}
+
+async function loadInvoice() {
+  const token = readOperatorToken()
+  if (!token) {
+    invoiceError.value = t('settings.invoice.loadFailed')
+    invoicePending.value = false
+    return
+  }
+  invoicePending.value = true
+  invoiceError.value = ''
+  invoiceSaved.value = false
+  try {
+    invoice.value = await adminGetInvoiceSettings(config.public.apiBase, token)
+    invoiceDraft.value = invoice.value.issuer
+  } catch (err) {
+    const message = err instanceof AdminApiError ? err.message.trim() : ''
+    invoiceError.value = message || t('settings.invoice.loadFailed')
+  } finally {
+    invoicePending.value = false
+  }
+}
+
+async function saveInvoice() {
+  const token = readOperatorToken()
+  if (!token || invoiceSaving.value || !canEditPayment.value || !invoiceDirty.value) {
+    return
+  }
+  invoiceSaving.value = true
+  invoiceError.value = ''
+  invoiceSaved.value = false
+  try {
+    invoice.value = await adminPatchInvoiceSettings(config.public.apiBase, token, invoiceDraft.value)
+    invoiceDraft.value = invoice.value.issuer
+    invoiceSaved.value = true
+  } catch (err) {
+    const message = err instanceof AdminApiError ? err.message.trim() : ''
+    invoiceError.value = message || t('settings.invoice.saveFailed')
+  } finally {
+    invoiceSaving.value = false
   }
 }
 
@@ -78,6 +150,10 @@ function warehouseName() {
     return locale.value === 'en' ? 'Candor platform' : '坦見平台'
   }
   return locale.value === 'en' ? org.value.warehouseEn : org.value.warehouse
+}
+
+function methodLabel(method: string) {
+  return t(`settings.payment.method.${method}`, method)
 }
 </script>
 
@@ -117,45 +193,99 @@ function warehouseName() {
         {{ paymentError }}
       </p>
       <template v-else-if="payment">
-        <p class="mt-4 text-sm text-dimmed">
-          {{ $t('settings.payment.current') }}:
-          <span class="font-medium text-highlighted">{{ payment.provider }}</span>
+        <p class="mt-4 text-sm text-muted">
+          {{ $t('settings.payment.methods') }}:
+          {{ payment.payment_methods.map(methodLabel).join('、') }}
         </p>
-        <p class="mt-1 text-sm text-muted">
-          {{ $t('settings.payment.methods') }}: {{ payment.payment_methods.join(', ') }}
-        </p>
-        <div class="mt-4 flex flex-wrap gap-2">
+        <URadioGroup
+          v-model="paymentDraft"
+          class="mt-4"
+          :items="paymentItems"
+          :disabled="!canEditPayment || paymentSaving"
+          orientation="vertical"
+        />
+        <div class="mt-4 flex flex-wrap items-center gap-3">
           <UButton
-            color="neutral"
-            :variant="payment.provider === 'sandbox' ? 'solid' : 'outline'"
+            color="primary"
             size="sm"
-            :disabled="!canEditPayment || paymentSaving"
-            @click="savePayment('sandbox')"
+            :disabled="!canEditPayment || paymentSaving || !paymentDirty"
+            :loading="paymentSaving"
+            @click="savePayment"
           >
-            sandbox
+            {{ $t('actions.save') }}
           </UButton>
-          <UButton
-            color="neutral"
-            :variant="payment.provider === 'newebpay' ? 'solid' : 'outline'"
-            size="sm"
-            :disabled="!canEditPayment || paymentSaving"
-            @click="savePayment('newebpay')"
+          <p
+            v-if="!canEditPayment"
+            class="text-sm text-muted"
           >
-            newebpay
-          </UButton>
+            {{ $t('actions.readOnly') }}
+          </p>
+          <p
+            v-if="paymentSaved"
+            class="text-sm text-success"
+          >
+            {{ $t('actions.saved') }}
+          </p>
         </div>
+      </template>
+    </section>
+
+    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
+      <h2 class="text-base font-semibold text-highlighted">
+        {{ $t('settings.invoice.title') }}
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        {{ $t('settings.invoice.hint') }}
+      </p>
+      <p
+        v-if="invoicePending"
+        class="mt-4 text-sm text-muted"
+      >
+        {{ $t('settings.invoice.loading') }}
+      </p>
+      <p
+        v-else-if="invoiceError"
+        class="mt-4 text-sm text-error"
+      >
+        {{ invoiceError }}
+      </p>
+      <template v-else-if="invoice">
+        <URadioGroup
+          v-model="invoiceDraft"
+          class="mt-4"
+          :items="invoiceItems"
+          :disabled="!canEditPayment || invoiceSaving"
+          orientation="vertical"
+        />
         <p
-          v-if="!canEditPayment"
-          class="mt-2 text-sm text-muted"
+          v-if="showInvoiceCredentialsWarning"
+          class="mt-3 text-sm text-warning"
         >
-          {{ $t('actions.readOnly') }}
+          {{ $t('settings.invoice.credentialsMissing') }}
         </p>
-        <p
-          v-if="paymentSaved"
-          class="mt-2 text-sm text-success"
-        >
-          {{ $t('actions.saved') }}
-        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <UButton
+            color="primary"
+            size="sm"
+            :disabled="!canEditPayment || invoiceSaving || !invoiceDirty"
+            :loading="invoiceSaving"
+            @click="saveInvoice"
+          >
+            {{ $t('actions.save') }}
+          </UButton>
+          <p
+            v-if="!canEditPayment"
+            class="text-sm text-muted"
+          >
+            {{ $t('actions.readOnly') }}
+          </p>
+          <p
+            v-if="invoiceSaved"
+            class="text-sm text-success"
+          >
+            {{ $t('actions.saved') }}
+          </p>
+        </div>
       </template>
     </section>
 

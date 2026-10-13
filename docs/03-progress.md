@@ -66,7 +66,8 @@
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
 | 訂單 | `/orders` | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話／報告判讀／退款／發票 | `/orders/{id}`（詳情、對話與報告判讀可讀；整筆退款與發票重試已接；取消、出貨仍 Mock） | 可用 | 接線中 | M3 |
-| 金流設定 | `/settings`（sandbox／newebpay） | 可用 | 接線中 | Beta |
+| 金流設定 | `/settings`（radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存） | 可用 | 已接 | Beta-a |
+| 電子發票設定 | `/settings`（radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
@@ -142,6 +143,10 @@
 | 讀訂單對話 | `GET /admin/order/{id}/message` | 已接 |
 | 讀訂單報告判讀 | `GET /admin/order/{id}/health-report` | 已接 |
 | 取消 | `POST /admin/order/{id}/cancel` | Mock |
+| 整筆退款 | `POST /admin/order/{id}/refund` | 已接（訂單詳情） |
+| 發票重試 | `POST /admin/order/{id}/invoice/retry` | 已接（訂單詳情） |
+| 金流設定 | `GET`／`PATCH /admin/payment-settings` | 已接（設定頁 radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存才寫入） |
+| 電子發票設定 | `GET`／`PATCH /admin/invoice-settings` | 已接（設定頁 radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存才寫入） |
 | 出貨建立／推進 | `POST`／`PATCH /admin/order/{id}/shipment` | Mock |
 
 ### Health reports（校正）
@@ -182,4 +187,4 @@
 
 ---
 
-**最後更新**：2026-10-08（表單對齊 candor-core ADR 0023：保健品「包裝佔用容量 (單顆)」取代單顆尺寸；銷售方案「包裝總容量」「固定核心數量」。其餘與 candor-core `docs/04` Admin 區對齊）
+**最後更新**：2026-10-13（金流／電子發票設定已接，里程碑標 Beta-a；與 candor-core Beta 拆分對齊）

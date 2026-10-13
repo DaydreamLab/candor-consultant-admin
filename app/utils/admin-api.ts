@@ -411,6 +411,64 @@ export async function adminPatchPaymentSettings(
   }
 }
 
+export type AdminInvoiceSettings = {
+  issuer: 'sandbox' | 'ezpay'
+  credentials_configured: boolean
+  updated_at: string | null
+}
+
+function parseInvoiceSettings(data: Record<string, unknown>): AdminInvoiceSettings {
+  return {
+    issuer: data.issuer === 'ezpay' ? 'ezpay' : 'sandbox',
+    credentials_configured: data.credentials_configured === true,
+    updated_at: typeof data.updated_at === 'string' ? data.updated_at : null
+  }
+}
+
+export async function adminGetInvoiceSettings(apiBase: string, token: string): Promise<AdminInvoiceSettings> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/invoice-settings'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseInvoiceSettings(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchInvoiceSettings(
+  apiBase: string,
+  token: string,
+  issuer: 'sandbox' | 'ezpay'
+): Promise<AdminInvoiceSettings> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/invoice-settings'), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: { issuer }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseInvoiceSettings(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminRefundOrder(apiBase: string, token: string, id: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/order/${encodeURIComponent(id)}/refund`), {

@@ -793,13 +793,29 @@
       "title": "系統版本"
     },
     "payment": {
-      "title": "金流 gateway",
-      "hint": "切換現用 provider（sandbox／藍新）。測試／正式主機由伺服器環境變數決定，不在此切換。",
+      "title": "金流設定",
+      "hint": "選擇現用金流後按儲存。測試／正式主機由伺服器環境變數決定，不在此切換。",
       "loading": "讀取金流設定…",
       "loadFailed": "無法讀取金流設定。",
       "saveFailed": "無法儲存金流設定。",
-      "current": "現用",
-      "methods": "可用付款方式"
+      "methods": "可用付款方式",
+      "optionSandbox": "模擬金流 (sandbox)",
+      "optionNewebpay": "藍新金流 (newebpay)",
+      "method": {
+        "card": "信用卡",
+        "linepay": "LINE Pay",
+        "atm": "ATM"
+      }
+    },
+    "invoice": {
+      "title": "電子發票設定",
+      "hint": "選擇現用開票方式後按儲存。測試／正式主機由伺服器環境變數決定，不在此切換。",
+      "loading": "讀取電子發票設定…",
+      "loadFailed": "無法讀取電子發票設定。",
+      "saveFailed": "無法儲存電子發票設定。",
+      "optionSandbox": "模擬發票 (sandbox)",
+      "optionEzpay": "ezPay (ezpay)",
+      "credentialsMissing": "伺服器尚未設定 ezPay 金鑰；選此項後開票會失敗，可於訂單詳情重試。"
     }
   },
   "actions": {

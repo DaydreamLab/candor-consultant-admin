@@ -793,13 +793,29 @@
       "title": "System version"
     },
     "payment": {
-      "title": "Payment gateway",
-      "hint": "Switch the active provider (sandbox / NewebPay). Test vs production hosts come from server env vars, not this screen.",
+      "title": "Payment settings",
+      "hint": "Choose the active gateway, then save. Test vs production hosts come from server env vars, not this screen.",
       "loading": "Loading payment settings…",
       "loadFailed": "Could not load payment settings.",
       "saveFailed": "Could not save payment settings.",
-      "current": "Active",
-      "methods": "Available methods"
+      "methods": "Available methods",
+      "optionSandbox": "Sandbox (sandbox)",
+      "optionNewebpay": "NewebPay (newebpay)",
+      "method": {
+        "card": "Card",
+        "linepay": "LINE Pay",
+        "atm": "ATM"
+      }
+    },
+    "invoice": {
+      "title": "E-invoice settings",
+      "hint": "Choose the active invoice issuer, then save. Test vs production hosts come from server env vars, not this screen.",
+      "loading": "Loading e-invoice settings…",
+      "loadFailed": "Could not load e-invoice settings.",
+      "saveFailed": "Could not save e-invoice settings.",
+      "optionSandbox": "Sandbox invoice (sandbox)",
+      "optionEzpay": "ezPay (ezpay)",
+      "credentialsMissing": "ezPay credentials are not configured on the server. Issuing will fail; retry from the order detail."
     }
   },
   "actions": {
