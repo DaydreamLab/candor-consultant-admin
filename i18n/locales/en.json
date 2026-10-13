@@ -789,6 +789,9 @@
     "labels": "Candor shipping-label versions",
     "labelsHintFirm": "Apply the Candor label before shipping. “Current” is the version to use now.",
     "labelsHintPlatform": "Goods belong to the consultant firm; Candor labels are applied before shipping. “Current” is the version to use now.",
+    "version": {
+      "title": "System version"
+    },
     "payment": {
       "title": "Payment gateway",
       "hint": "Switch the active provider (sandbox / NewebPay). Test vs production hosts come from server env vars, not this screen.",

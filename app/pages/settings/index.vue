@@ -92,6 +92,13 @@ function warehouseName() {
 
     <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
       <h2 class="text-base font-semibold text-highlighted">
+        {{ $t('settings.version.title') }}
+      </h2>
+      <BuildVersion class="mt-4" />
+    </section>
+
+    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
+      <h2 class="text-base font-semibold text-highlighted">
         {{ $t('settings.payment.title') }}
       </h2>
       <p class="mt-2 text-sm text-muted">

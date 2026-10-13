@@ -789,6 +789,9 @@
     "labels": "坦見出貨標籤版本",
     "labelsHintFirm": "商品屬顧問公司；出貨前請改貼坦見標籤。下面「現行」是現在要套用的版本。",
     "labelsHintPlatform": "商品屬各顧問公司；出貨前改貼坦見標籤。下面「現行」是現在要套用的版本。",
+    "version": {
+      "title": "系統版本"
+    },
     "payment": {
       "title": "金流 gateway",
       "hint": "切換現用 provider（sandbox／藍新）。測試／正式主機由伺服器環境變數決定，不在此切換。",
