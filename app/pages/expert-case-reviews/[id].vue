@@ -64,6 +64,43 @@ const workingByKey = computed(() => {
   return map
 })
 
+/** Right-hand scheme: immutable revised when reviewed; else original + working_decisions preview. */
+const comparisonPackages = computed((): Record<string, unknown>[] => {
+  if (revisedPackages.value.length) {
+    return revisedPackages.value
+  }
+  return packages.value.map((pkg) => {
+    const plan = planCode(pkg)
+    const items: Record<string, unknown>[] = packageItems(pkg).map((item) => {
+      const key = lineKey(plan, itemId(item))
+      const row = workingByKey.value.get(key)
+      if (!row) {
+        return { ...item }
+      }
+      const decision = typeof row.decision === 'string' ? row.decision : ''
+      const doseAfter
+        = typeof row.dose_after === 'number'
+          ? row.dose_after
+          : item.daily_dose
+      return {
+        ...item,
+        daily_dose: decision === 'adjust' ? doseAfter : item.daily_dose,
+        removed: decision === 'reject' || row.removed === true,
+        decision,
+        display_reason: typeof row.reason === 'string' ? row.reason : undefined
+      }
+    })
+    return { ...pkg, items }
+  })
+})
+
+const comparisonTitle = computed(() => {
+  if (revisedPackages.value.length) {
+    return t('expertCaseReviews.revised')
+  }
+  return t('expertCaseReviews.workingPreview')
+})
+
 onMounted(() => {
   void load()
 })
@@ -327,136 +364,177 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         <span>{{ $t('expertCaseReviews.colConversation') }}：{{ detail.conversation_id }}</span>
       </div>
 
-      <section class="mb-8 space-y-4">
-        <h2 class="text-lg font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.original') }}
-        </h2>
-        <div
-          v-for="pkg in packages"
-          :key="planCode(pkg)"
-          class="rounded-xl border border-default p-4"
-        >
-          <h3 class="font-medium text-highlighted">
-            {{ pkg.package_plan_name || planCode(pkg) }}
-          </h3>
-          <p
-            v-if="!packageItems(pkg).length"
-            class="mt-2 text-sm text-muted"
-          >
-            {{ $t('expertCaseReviews.noItems') }}
+      <!-- Left: original_snapshot · Right: revised_snapshot or working_decisions preview -->
+      <section
+        class="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2"
+        data-testid="expert-case-scheme-compare"
+      >
+        <div class="min-w-0 rounded-xl border border-default bg-elevated p-4">
+          <h2 class="text-lg font-semibold text-highlighted">
+            {{ $t('expertCaseReviews.original') }}
+          </h2>
+          <p class="mt-1 text-xs text-muted">
+            {{ $t('expertCaseReviews.originalHint') }}
           </p>
-          <ul
-            v-else
-            class="mt-3 divide-y divide-default"
+          <div
+            v-if="!packages.length"
+            class="mt-4 text-sm text-muted"
           >
-            <li
-              v-for="item in packageItems(pkg)"
-              :key="itemId(item)"
-              class="py-3"
+            {{ $t('expertCaseReviews.noPackages') }}
+          </div>
+          <div
+            v-for="pkg in packages"
+            :key="planCode(pkg)"
+            class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
+          >
+            <h3 class="font-medium text-highlighted">
+              {{ pkg.package_plan_name || planCode(pkg) }}
+            </h3>
+            <p
+              v-if="!packageItems(pkg).length"
+              class="mt-2 text-sm text-muted"
             >
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p class="font-medium text-highlighted">
-                    {{ item.name || item.code }}
-                  </p>
-                  <p class="text-xs text-muted">
-                    {{ $t('expertCaseReviews.dose') }}：{{ item.daily_dose }}
-                    <span
-                      v-if="decisionLabel(lineKey(planCode(pkg), itemId(item)))"
-                      class="ms-2"
+              {{ $t('expertCaseReviews.noItems') }}
+            </p>
+            <ul
+              v-else
+              class="mt-3 divide-y divide-default"
+            >
+              <li
+                v-for="item in packageItems(pkg)"
+                :key="itemId(item)"
+                class="py-3"
+              >
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p class="font-medium text-highlighted">
+                      {{ item.name || item.code }}
+                    </p>
+                    <p class="text-xs text-muted">
+                      {{ $t('expertCaseReviews.dose') }}：{{ item.daily_dose }}
+                      <span
+                        v-if="decisionLabel(lineKey(planCode(pkg), itemId(item)))"
+                        class="ms-2"
+                      >
+                        · {{ decisionLabel(lineKey(planCode(pkg), itemId(item))) }}
+                      </span>
+                    </p>
+                  </div>
+                  <div
+                    v-if="awaiting"
+                    class="flex flex-wrap gap-2"
+                  >
+                    <UButton
+                      size="xs"
+                      variant="soft"
+                      :disabled="busy"
+                      @click="decide(pkg, item, 'approve')"
                     >
-                      · {{ decisionLabel(lineKey(planCode(pkg), itemId(item))) }}
-                    </span>
-                  </p>
+                      {{ $t('expertCaseReviews.approve') }}
+                    </UButton>
+                    <UButton
+                      size="xs"
+                      color="error"
+                      variant="soft"
+                      :disabled="busy"
+                      @click="decide(pkg, item, 'reject')"
+                    >
+                      {{ $t('expertCaseReviews.reject') }}
+                    </UButton>
+                    <UButton
+                      size="xs"
+                      color="warning"
+                      variant="soft"
+                      :disabled="busy"
+                      @click="decide(pkg, item, 'adjust')"
+                    >
+                      {{ $t('expertCaseReviews.adjust') }}
+                    </UButton>
+                  </div>
                 </div>
                 <div
                   v-if="awaiting"
-                  class="flex flex-wrap gap-2"
+                  class="mt-2 grid gap-2 sm:grid-cols-2"
                 >
-                  <UButton
-                    size="xs"
-                    variant="soft"
-                    :disabled="busy"
-                    @click="decide(pkg, item, 'approve')"
-                  >
-                    {{ $t('expertCaseReviews.approve') }}
-                  </UButton>
-                  <UButton
-                    size="xs"
-                    color="error"
-                    variant="soft"
-                    :disabled="busy"
-                    @click="decide(pkg, item, 'reject')"
-                  >
-                    {{ $t('expertCaseReviews.reject') }}
-                  </UButton>
-                  <UButton
-                    size="xs"
-                    color="warning"
-                    variant="soft"
-                    :disabled="busy"
-                    @click="decide(pkg, item, 'adjust')"
-                  >
-                    {{ $t('expertCaseReviews.adjust') }}
-                  </UButton>
+                  <UInput
+                    v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
+                    :placeholder="$t('expertCaseReviews.reason')"
+                    size="sm"
+                  />
+                  <UInput
+                    v-model="doseByLine[lineKey(planCode(pkg), itemId(item))]"
+                    :placeholder="String(item.daily_dose ?? '')"
+                    size="sm"
+                    type="number"
+                    step="0.1"
+                  />
                 </div>
-              </div>
-              <div
-                v-if="awaiting"
-                class="mt-2 grid gap-2 sm:grid-cols-2"
-              >
-                <UInput
-                  v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
-                  :placeholder="$t('expertCaseReviews.reason')"
-                  size="sm"
-                />
-                <UInput
-                  v-model="doseByLine[lineKey(planCode(pkg), itemId(item))]"
-                  :placeholder="String(item.daily_dose ?? '')"
-                  size="sm"
-                  type="number"
-                  step="0.1"
-                />
-              </div>
-            </li>
-          </ul>
+              </li>
+            </ul>
+          </div>
         </div>
-      </section>
 
-      <section
-        v-if="revisedPackages.length"
-        class="mb-8 space-y-4"
-      >
-        <h2 class="text-lg font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.revised') }}
-        </h2>
-        <div
-          v-for="pkg in revisedPackages"
-          :key="`rev-${planCode(pkg)}`"
-          class="rounded-xl border border-default p-4"
-        >
-          <h3 class="font-medium">
-            {{ pkg.package_plan_name || planCode(pkg) }}
-          </h3>
+        <div class="min-w-0 rounded-xl border border-default bg-elevated p-4">
+          <h2 class="text-lg font-semibold text-highlighted">
+            {{ comparisonTitle }}
+          </h2>
           <p class="mt-1 text-xs text-muted">
-            hash：{{ pkg.composition_hash }}
+            {{ revisedPackages.length
+              ? $t('expertCaseReviews.revisedHint')
+              : $t('expertCaseReviews.workingPreviewHint') }}
           </p>
-          <ul class="mt-3 space-y-2 text-sm">
-            <li
-              v-for="item in packageItems(pkg)"
-              :key="`rev-item-${itemId(item)}`"
+          <div
+            v-if="!comparisonPackages.length"
+            class="mt-4 text-sm text-muted"
+          >
+            {{ $t('expertCaseReviews.noPackages') }}
+          </div>
+          <div
+            v-for="pkg in comparisonPackages"
+            :key="`cmp-${planCode(pkg)}`"
+            class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
+          >
+            <h3 class="font-medium text-highlighted">
+              {{ pkg.package_plan_name || planCode(pkg) }}
+            </h3>
+            <p
+              v-if="pkg.composition_hash"
+              class="mt-1 text-xs text-muted"
             >
-              <span :class="{ 'line-through text-muted': item.removed === true }">
-                {{ item.name || item.code }} · {{ item.daily_dose }}
-              </span>
-              <span
-                v-if="item.display_reason"
-                class="ms-2 text-muted"
+              hash：{{ pkg.composition_hash }}
+            </p>
+            <p
+              v-if="!packageItems(pkg).length"
+              class="mt-2 text-sm text-muted"
+            >
+              {{ $t('expertCaseReviews.noItems') }}
+            </p>
+            <ul
+              v-else
+              class="mt-3 space-y-2 text-sm"
+            >
+              <li
+                v-for="item in packageItems(pkg)"
+                :key="`cmp-item-${itemId(item)}`"
               >
-                — {{ item.display_reason }}
-              </span>
-            </li>
-          </ul>
+                <span :class="{ 'line-through text-muted': item.removed === true }">
+                  {{ item.name || item.code }} · {{ item.daily_dose }}
+                </span>
+                <span
+                  v-if="item.decision && !revisedPackages.length"
+                  class="ms-2 text-xs text-muted"
+                >
+                  · {{ item.decision }}
+                </span>
+                <span
+                  v-if="item.display_reason"
+                  class="ms-2 text-muted"
+                >
+                  — {{ item.display_reason }}
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 

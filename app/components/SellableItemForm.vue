@@ -67,7 +67,7 @@ type FormState = {
   nutrition: NutritionRow[]
 }
 
-const requiredMark = { label: "after:!text-red-500" }
+const requiredMark = { label: 'after:!text-red-500' }
 
 const onSaleFields: SaveErrorField[] = [
   'bottle_price',
