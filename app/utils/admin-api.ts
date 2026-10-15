@@ -306,6 +306,232 @@ export type AdminOrderListQuery = {
   offset?: number
 }
 
+export type AdminExpertCaseReviewListQuery = {
+  status?: string
+  limit?: number
+  offset?: number
+}
+
+export type AdminExpertCaseReviewDecisionBody = {
+  line_key?: string | null
+  package_plan_code: string
+  decision: 'approve' | 'reject' | 'adjust'
+  sellable_item_id?: string | null
+  sellable_item_after?: string | null
+  daily_dose?: number | null
+  reason?: string | null
+  is_new?: boolean
+}
+
+export async function adminListExpertCaseReviews(
+  apiBase: string,
+  token: string,
+  query: AdminExpertCaseReviewListQuery = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/expert-case-reviews'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: compactQuery(query)
+    })
+    if (body?.status !== 'success' || !isRecord(body.data) || !Array.isArray(body.data.expert_case_reviews)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data.expert_case_reviews.filter(isRecord)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetExpertCaseReview(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchExpertCaseReviewItem(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: AdminExpertCaseReviewDecisionBody
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/items`),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminResetExpertCaseReviewItems(
+  apiBase: string,
+  token: string,
+  id: string,
+  lineKey?: string | null
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/items/reset`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: lineKey ? { line_key: lineKey } : {}
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminSubmitExpertCaseReview(
+  apiBase: string,
+  token: string,
+  id: string,
+  decisions?: AdminExpertCaseReviewDecisionBody[]
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/submit`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: decisions ? { decisions } : {}
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminConfirmExpertCaseReviewKnowledge(
+  apiBase: string,
+  token: string,
+  caseId: string,
+  knowledgeId: string,
+  classification: 'reusable' | 'personal_risk'
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(
+        apiBase,
+        `/expert-case-review/${encodeURIComponent(caseId)}/knowledge/${encodeURIComponent(knowledgeId)}`
+      ),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: {
+          classification,
+          classification_confirmed: true
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminExportExpertCaseReview(apiBase: string, token: string, id: string) {
+  try {
+    const response = await $fetch.raw(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/export`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        responseType: 'blob'
+      }
+    )
+    return {
+      blob: response._data as Blob,
+      filename: readContentDispositionFilename(response.headers.get('content-disposition'))
+        || `expert-case-review-${id}.xlsx`
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+function readContentDispositionFilename(header: string | null): string | null {
+  if (!header) {
+    return null
+  }
+  const utf = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (utf?.[1]) {
+    try {
+      return decodeURIComponent(utf[1])
+    } catch {
+      return utf[1]
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header)
+  return plain?.[1] ?? null
+}
+
 export async function adminListOrders(apiBase: string, token: string, query: AdminOrderListQuery = {}) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/orders'), {
@@ -1073,7 +1299,7 @@ function adminUrl(apiBase: string, path: string) {
   return `${base}/admin${path}`
 }
 
-function compactQuery(query: AdminOrderListQuery) {
+function compactQuery(query: AdminOrderListQuery | AdminExpertCaseReviewListQuery) {
   const params: Record<string, string | number> = {}
   for (const [key, value] of Object.entries(query)) {
     if (typeof value === 'number' && Number.isFinite(value)) {

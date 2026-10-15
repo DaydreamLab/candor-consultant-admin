@@ -26,7 +26,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'labs', to: '/labs', icon: 'i-lucide-flask-conical' },
       { key: 'labAppointments', to: '/lab-appointments', icon: 'i-lucide-calendar-clock' },
       { key: 'progress', to: '/progress', icon: 'i-lucide-list-checks' },
-      { key: 'reviews', to: '/reviews', icon: 'i-lucide-badge-check' }
+      { key: 'reviews', to: '/expert-case-reviews', icon: 'i-lucide-badge-check', developing: false }
     ]
   },
   {
@@ -86,6 +86,9 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/ai-assistant' || current.startsWith('/ai-assistant/')) {
+    return false
+  }
+  if (current === '/expert-case-reviews' || current.startsWith('/expert-case-reviews/')) {
     return false
   }
   return true
