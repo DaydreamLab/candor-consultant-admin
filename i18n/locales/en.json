@@ -1089,7 +1089,10 @@
       "datasets": "Datasets",
       "chunks": "Chunk review",
       "retrievalPreview": "Retrieval preview",
-      "audit": "Audit"
+      "audit": "Audit",
+      "datasetGroups": "Dataset groups",
+      "overview": "Overview",
+      "config": "Config"
     },
     "datasets": {
       "title": "Knowledge datasets",
@@ -1215,6 +1218,46 @@
         "action": "Action",
         "source": "Source",
         "actor": "Actor"
+      }
+    },
+    "overview": {
+      "title": "Knowledge overview",
+      "subtitle": "Per-dataset document and chunk totals (read-only).",
+      "loading": "Loading…",
+      "failed": "Could not load overview.",
+      "emptyTitle": "No summary",
+      "empty": "Overview response has no dataset list to display."
+    },
+    "config": {
+      "title": "Knowledge config",
+      "subtitle": "Effective embedding and service settings (no secrets).",
+      "loading": "Loading…",
+      "failed": "Could not load config.",
+      "emptyTitle": "No fields",
+      "empty": "Config response is empty."
+    },
+    "datasetGroups": {
+      "title": "Dataset groups",
+      "subtitle": "Source group registry; admins can add groups.",
+      "loading": "Loading…",
+      "failed": "Could not load groups.",
+      "create": "Add group",
+      "createTitle": "New dataset group",
+      "createConfirm": "Create",
+      "createFailed": "Create failed.",
+      "emptyTitle": "No groups",
+      "empty": "No dataset groups yet.",
+      "columns": {
+        "key": "group_key",
+        "name": "Display name",
+        "datasets": "Datasets",
+        "sort": "Sort"
+      },
+      "form": {
+        "key": "group_key",
+        "name": "display_name",
+        "reason": "Reason (required)",
+        "sort": "sort_order"
       }
     }
   },
