@@ -1,11 +1,14 @@
 import type { Role } from '~/types/admin'
 import { isPlatformRole } from '~/types/admin'
+import type { OperatorRole } from '~/types/operator'
 
 export interface NavItem {
   key: string
   to: string
   icon: string
   platformOnly?: boolean
+  /** 對應 `session.operator.role`；列出的角色不顯示此 nav 項。 */
+  hideForOperatorRoles?: OperatorRole[]
   /** false：側欄不加「開發中」。未設視為開發中。 */
   developing?: boolean
 }
@@ -56,7 +59,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'orgs', to: '/orgs', icon: 'i-lucide-building-2', platformOnly: true },
       { key: 'aiAssistant', to: '/ai-assistant', icon: 'i-lucide-bot', developing: false },
-      { key: 'knowledge', to: '/knowledge/datasets', icon: 'i-lucide-book-open', developing: false },
+      {
+        key: 'knowledge',
+        to: '/knowledge/datasets',
+        icon: 'i-lucide-book-open',
+        developing: false,
+        hideForOperatorRoles: ['expert']
+      },
       { key: 'expertTuning', to: '/expert-tuning', icon: 'i-lucide-sliders-horizontal' },
       { key: 'settings', to: '/settings', icon: 'i-lucide-settings' }
     ]
@@ -119,7 +128,10 @@ export function isDevelopingPath(path: string): boolean {
   return true
 }
 
-export function visibleNavGroups(role: Role | null): NavGroup[] {
+export function visibleNavGroups(
+  role: Role | null,
+  operatorRole: OperatorRole | null = null
+): NavGroup[] {
   if (!role) {
     return []
   }
@@ -127,7 +139,21 @@ export function visibleNavGroups(role: Role | null): NavGroup[] {
   return NAV_GROUPS
     .map(group => ({
       ...group,
-      items: group.items.filter(item => !item.platformOnly || isPlatformRole(role))
+      items: group.items.filter((item) => {
+        if (item.platformOnly && !isPlatformRole(role)) {
+          return false
+        }
+        if (operatorRole && item.hideForOperatorRoles?.includes(operatorRole)) {
+          return false
+        }
+        return true
+      })
     }))
     .filter(group => group.items.length > 0)
+}
+
+/** operator JWT 角色為 expert 時不可進入知識管理路由（側欄亦隱藏）。 */
+export function isKnowledgePathBlockedForExpert(path: string): boolean {
+  const current = normalizeAdminPath(path)
+  return current === '/knowledge' || current.startsWith('/knowledge/')
 }

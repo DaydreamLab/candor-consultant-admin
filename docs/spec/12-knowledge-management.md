@@ -34,7 +34,9 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 未登入或 member JWT：401。角色不足：403。畫面依 `session.operator.role` 隱藏動作；仍以 API 為準。
 
-**待與產品確認**：早期 Notion 草稿曾寫「僅 ops／admin 可進知識管理」；現行 OpenAPI 多數讀取端點含 **expert**。本專案依 OpenAPI 實作，expert 可進入唯讀頁；若產品要限縮入口，需先改 core spec 29／OpenAPI。
+**後台 UI 入口（本 repo）**：`operator.role === expert` 時隱藏側欄「知識管理」，並以路由守衛拒絕 `/knowledge/**`（導向首頁）。**ops** 與 **admin** 可進入。此與現行 OpenAPI `x-required-roles`（多數讀取仍含 expert）不一致；若產品要前後端一致，**candor-core 待辦**：調整 spec 29／OpenAPI 角色矩陣（或明訂 expert 僅能透過其他流程如 expert-case-review 接觸知識，不得打 admin knowledge API）。
+
+**待與產品確認**：expert 是否仍應在後台核可片段（`POST …/chunks/{id}/approve`）；目前 UI 入口已關閉，但 API 仍可能允許 expert 直打。
 
 ## 頁面清單與優先順序
 
