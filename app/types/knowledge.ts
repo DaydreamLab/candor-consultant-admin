@@ -57,3 +57,43 @@ export type KnowledgeChunk = {
 export type KnowledgeChunkListQuery = {
   group?: string
 }
+
+export type KnowledgeRetrievalMode = 'keyword' | 'vector' | 'hybrid'
+
+export type KnowledgeGapReason = 'no_matching_hits' | 'insufficient_multi_nutrient_hits' | 'partial_multi_nutrient_hits'
+
+export type KnowledgeRetrievalPreviewRequest = {
+  corpus: 'public_knowledge'
+  query: string
+  mode?: KnowledgeRetrievalMode
+  top_k?: number
+  filters?: Record<string, unknown>
+}
+
+export type KnowledgeRetrievalPreviewResult = {
+  hits: Record<string, unknown>[]
+  query_info: Record<string, unknown> | null
+  knowledge_gap: Record<string, unknown> | null
+  raw: Record<string, unknown>
+}
+
+export type KnowledgeAuditListQuery = {
+  from?: string
+  to?: string
+  action?: string
+  actor_id?: string
+  limit?: number
+  offset?: number
+}
+
+export type KnowledgeAuditEvent = {
+  id: string
+  source?: string | null
+  level?: string | null
+  action?: string | null
+  actor_id?: string | null
+  created_at?: string | null
+  dataset_id?: string | null
+  chunk_id?: string | null
+  raw: Record<string, unknown>
+}

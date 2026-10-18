@@ -1087,7 +1087,9 @@
   "knowledge": {
     "tabs": {
       "datasets": "Datasets",
-      "chunks": "Chunk review"
+      "chunks": "Chunk review",
+      "retrievalPreview": "Retrieval preview",
+      "audit": "Audit"
     },
     "datasets": {
       "title": "Knowledge datasets",
@@ -1162,6 +1164,57 @@
         "rejected": "Rejected",
         "draft": "Draft",
         "retired": "Retired"
+      }
+    },
+    "retrievalPreview": {
+      "title": "Retrieval preview",
+      "subtitle": "Debug public reference retrieval (not the member chat path).",
+      "query": "Query",
+      "modeLabel": "Mode",
+      "topK": "top_k",
+      "run": "Run preview",
+      "failed": "Retrieval preview failed.",
+      "detectedNutrients": "Detected nutrients",
+      "noHits": "No matching chunks.",
+      "mode": {
+        "hybrid": "hybrid",
+        "vector": "vector",
+        "keyword": "keyword"
+      },
+      "gap": {
+        "no_matching_hits": {
+          "title": "No matching hits",
+          "body": "Guards or retrieval returned no usable chunks for this query."
+        },
+        "insufficient_multi_nutrient_hits": {
+          "title": "Insufficient multi-nutrient hits",
+          "body": "Multiple nutrients were detected but hits do not cover enough of them."
+        },
+        "partial_multi_nutrient_hits": {
+          "title": "Partial multi-nutrient hits",
+          "body": "Only some detected nutrients have hits; review results and the nutrient list."
+        },
+        "partialBComplex": {
+          "title": "B-complex partially covered",
+          "body": "This query targets B vitamins but results may only cover part of the complex (e.g. B6 only). Do not treat as full B-complex coverage."
+        }
+      }
+    },
+    "audit": {
+      "title": "Knowledge audit",
+      "subtitle": "Chunk review and dataset admin actions (default last 30 days).",
+      "loading": "Loading…",
+      "failed": "Could not load audit events.",
+      "refresh": "Refresh",
+      "filterAction": "Action",
+      "filterActor": "Actor ID",
+      "emptyTitle": "No events",
+      "empty": "No audit events for this filter.",
+      "columns": {
+        "time": "Time",
+        "action": "Action",
+        "source": "Source",
+        "actor": "Actor"
       }
     }
   },

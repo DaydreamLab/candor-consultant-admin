@@ -1087,7 +1087,9 @@
   "knowledge": {
     "tabs": {
       "datasets": "資料集",
-      "chunks": "片段審核"
+      "chunks": "片段審核",
+      "retrievalPreview": "檢索預覽",
+      "audit": "稽核"
     },
     "datasets": {
       "title": "知識資料集",
@@ -1162,6 +1164,57 @@
         "rejected": "已退回",
         "draft": "草稿",
         "retired": "已下架"
+      }
+    },
+    "retrievalPreview": {
+      "title": "檢索預覽",
+      "subtitle": "除錯與評測公開參考知識檢索（非會員對話路徑）。",
+      "query": "查詢",
+      "modeLabel": "模式",
+      "topK": "top_k",
+      "run": "執行預覽",
+      "failed": "檢索預覽失敗。",
+      "detectedNutrients": "偵測到的成分",
+      "noHits": "沒有命中片段。",
+      "mode": {
+        "hybrid": "hybrid",
+        "vector": "vector",
+        "keyword": "keyword"
+      },
+      "gap": {
+        "no_matching_hits": {
+          "title": "無匹配結果",
+          "body": "守門或檢索未找到可用片段；請確認查詢與資料集內容。"
+        },
+        "insufficient_multi_nutrient_hits": {
+          "title": "多成分命中不足",
+          "body": "查詢偵測到多個成分，但命中片段不足以涵蓋。"
+        },
+        "partial_multi_nutrient_hits": {
+          "title": "多成分僅部分命中",
+          "body": "僅部分偵測成分有對應片段；請檢視下方結果與成分列表。"
+        },
+        "partialBComplex": {
+          "title": "B 群僅部分命中",
+          "body": "此查詢涉及 B 群維生素，但結果可能只涵蓋部分 B 成員（例如僅 B6）。請勿視為完整 B 群覆蓋。"
+        }
+      }
+    },
+    "audit": {
+      "title": "知識稽核",
+      "subtitle": "片段審核紀錄與資料集管理動作（預設最近 30 日）。",
+      "loading": "載入中…",
+      "failed": "無法載入稽核紀錄。",
+      "refresh": "重新查詢",
+      "filterAction": "動作",
+      "filterActor": "操作者 ID",
+      "emptyTitle": "沒有紀錄",
+      "empty": "此條件下沒有稽核事件。",
+      "columns": {
+        "time": "時間",
+        "action": "動作",
+        "source": "來源",
+        "actor": "操作者"
       }
     }
   },
