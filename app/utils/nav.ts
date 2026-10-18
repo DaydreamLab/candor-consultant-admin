@@ -56,6 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'orgs', to: '/orgs', icon: 'i-lucide-building-2', platformOnly: true },
       { key: 'aiAssistant', to: '/ai-assistant', icon: 'i-lucide-bot', developing: false },
+      { key: 'knowledge', to: '/knowledge/datasets', icon: 'i-lucide-book-open' },
       { key: 'expertTuning', to: '/expert-tuning', icon: 'i-lucide-sliders-horizontal' },
       { key: 'settings', to: '/settings', icon: 'i-lucide-settings' }
     ]
@@ -89,6 +90,12 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/expert-case-reviews' || current.startsWith('/expert-case-reviews/')) {
+    return false
+  }
+  if (current === '/knowledge/datasets' || current.startsWith('/knowledge/datasets/')) {
+    return false
+  }
+  if (current === '/knowledge/chunks' || current.startsWith('/knowledge/chunks/')) {
     return false
   }
   return true

@@ -83,8 +83,8 @@
 | AI 助理／對話文案 | `/ai-assistant` | 可用 | 已接（conversation-copies） | 完成 |
 | AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
 | AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
-| 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 無 | Mock | KM1 |
-| 知識管理／片段審核 | `/knowledge/chunks` | 無 | Mock | KM1 |
+| 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 可用 | 接線中 | KM1 |
+| 知識管理／片段審核 | `/knowledge/chunks` | 可用 | 接線中 | KM1 |
 | 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 無 | Mock | KM2 |
 | 知識管理／稽核 | `/knowledge/audit` | 無 | Mock | KM2 |
 | 知識管理／群組 | `/knowledge/dataset-groups` | 無 | Mock | KM3 |
@@ -167,11 +167,11 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 片段列表 | `GET /admin/knowledge/chunks` | Mock |
-| 片段核可／退回 | `POST /admin/knowledge/chunks/{id}/approve`、`…/reject` | Mock |
+| 片段列表 | `GET /admin/knowledge/chunks` | 接線中 |
+| 片段核可／退回 | `POST /admin/knowledge/chunks/{id}/approve`、`…/reject` | 接線中 |
 | 總覽 | `GET /admin/knowledge/overview` | Mock |
 | 資料集群組 | `GET`／`POST /admin/knowledge/dataset-groups` | Mock |
-| 資料集列表／詳情／更新 | `GET`／`PATCH /admin/knowledge/datasets`、`GET /admin/knowledge/datasets/{id}` | Mock |
+| 資料集列表／詳情／更新 | `GET`／`PATCH /admin/knowledge/datasets`、`GET /admin/knowledge/datasets/{id}` | 接線中 |
 | 設定 | `GET /admin/knowledge/config` | Mock |
 | 檢索預覽 | `POST /admin/knowledge/retrieval-preview` | Mock |
 | 稽核 | `GET /admin/knowledge/audit`、`GET /admin/knowledge/audit/chunks/{id}`、`GET /admin/knowledge/audit/datasets/{id}` | Mock |

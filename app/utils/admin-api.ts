@@ -1,3 +1,10 @@
+import type {
+  KnowledgeChunk,
+  KnowledgeChunkListQuery,
+  KnowledgeDataset,
+  KnowledgeDatasetListQuery,
+  KnowledgeDatasetPatch
+} from '~/types/knowledge'
 import type { AdminFailure, AdminSuccess, OperatorLoginData } from '~/types/operator'
 
 export class AdminApiError extends Error {
@@ -1288,6 +1295,298 @@ function readOrderMessagesPayload(data: unknown): {
     }
   }
   throw new AdminApiError(500, '')
+}
+
+export async function adminListKnowledgeDatasets(
+  apiBase: string,
+  token: string,
+  query: KnowledgeDatasetListQuery = {}
+): Promise<KnowledgeDataset[]> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/datasets'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: compactKnowledgeDatasetQuery(query)
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readKnowledgeDatasetRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetKnowledgeDataset(
+  apiBase: string,
+  token: string,
+  id: string
+): Promise<KnowledgeDataset> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/knowledge/datasets/${encodeURIComponent(id)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseKnowledgeDataset(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchKnowledgeDataset(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: KnowledgeDatasetPatch
+): Promise<KnowledgeDataset> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/knowledge/datasets/${encodeURIComponent(id)}`),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseKnowledgeDataset(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminListKnowledgeChunks(
+  apiBase: string,
+  token: string,
+  query: KnowledgeChunkListQuery = {}
+): Promise<KnowledgeChunk[]> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/chunks'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: compactKnowledgeChunkQuery(query)
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readKnowledgeChunkRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminApproveKnowledgeChunk(
+  apiBase: string,
+  token: string,
+  id: string
+): Promise<KnowledgeChunk> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/knowledge/chunks/${encodeURIComponent(id)}/approve`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseKnowledgeChunk(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminRejectKnowledgeChunk(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: { reason: string }
+): Promise<KnowledgeChunk> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/knowledge/chunks/${encodeURIComponent(id)}/reject`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseKnowledgeChunk(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+function readKnowledgeDatasetRows(data: unknown): KnowledgeDataset[] {
+  const rows = knowledgeDatasetListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord).map(parseKnowledgeDataset)
+}
+
+function knowledgeDatasetListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.datasets)) {
+    return data.datasets
+  }
+  if (Array.isArray(data.items)) {
+    return data.items
+  }
+  return null
+}
+
+function parseKnowledgeDataset(row: Record<string, unknown>): KnowledgeDataset {
+  return {
+    id: stringField(row.id),
+    code: stringField(row.code),
+    name: stringField(row.name),
+    corpus: optionalString(row.corpus),
+    status: stringField(row.status) as KnowledgeDataset['status'],
+    group_key: optionalString(row.group_key),
+    source_url: optionalString(row.source_url),
+    license: optionalString(row.license),
+    license_url: optionalString(row.license_url),
+    attribution: optionalString(row.attribution),
+    allow_third_party: typeof row.allow_third_party === 'boolean' ? row.allow_third_party : null,
+    document_count: optionalNumber(row.document_count),
+    chunk_count: optionalNumber(row.chunk_count),
+    chunks_by_review_status: isRecord(row.chunks_by_review_status)
+      ? row.chunks_by_review_status as KnowledgeDataset['chunks_by_review_status']
+      : null,
+    last_ingested_at: optionalString(row.last_ingested_at)
+  }
+}
+
+function readKnowledgeChunkRows(data: unknown): KnowledgeChunk[] {
+  const rows = knowledgeChunkListOf(data)
+  if (!rows) {
+    throw new AdminApiError(500, '')
+  }
+  return rows.filter(isRecord).map(parseKnowledgeChunk)
+}
+
+function knowledgeChunkListOf(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) {
+    return data
+  }
+  if (!isRecord(data)) {
+    return null
+  }
+  if (Array.isArray(data.chunks)) {
+    return data.chunks
+  }
+  if (Array.isArray(data.items)) {
+    return data.items
+  }
+  return null
+}
+
+function parseKnowledgeChunk(row: Record<string, unknown>): KnowledgeChunk {
+  const text = optionalString(row.text_preview) ?? optionalString(row.text) ?? optionalString(row.content)
+  return {
+    id: stringField(row.id),
+    review_status: stringField(row.review_status) as KnowledgeChunk['review_status'],
+    dataset_id: optionalString(row.dataset_id),
+    dataset_code: optionalString(row.dataset_code),
+    dataset_name: optionalString(row.dataset_name),
+    document_title: optionalString(row.document_title) ?? optionalString(row.title),
+    text_preview: text,
+    source_url: optionalString(row.source_url),
+    license: optionalString(row.license),
+    attribution: optionalString(row.attribution),
+    chunk_kind: optionalString(row.chunk_kind),
+    group_key: optionalString(row.group_key)
+  }
+}
+
+function stringField(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  return ''
+}
+
+function optionalString(value: unknown): string | null {
+  const text = stringField(value).trim()
+  return text ? text : null
+}
+
+function optionalNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+function compactKnowledgeDatasetQuery(query: KnowledgeDatasetListQuery) {
+  const params: Record<string, string> = {}
+  for (const key of ['group', 'status', 'corpus', 'code'] as const) {
+    const value = query[key]
+    if (typeof value === 'string' && value.trim()) {
+      params[key] = value.trim()
+    }
+  }
+  return params
+}
+
+function compactKnowledgeChunkQuery(query: KnowledgeChunkListQuery) {
+  const params: Record<string, string> = {}
+  if (typeof query.group === 'string' && query.group.trim()) {
+    params.group = query.group.trim()
+  }
+  return params
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
