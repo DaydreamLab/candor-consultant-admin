@@ -38,7 +38,16 @@ const statusOptions = computed(() => [
   { label: t('knowledge.chunks.status.retired'), value: 'retired' }
 ])
 
+/** UI 對已登入 operator 顯示；API 依 OpenAPI 僅 expert／admin 可 approve／reject。 */
 const canReview = computed(() => session.isLoggedIn)
+
+const reviewRoleHint = computed(() => {
+  const role = session.operator?.role
+  if (role === 'ops') {
+    return t('knowledge.chunks.reviewRoleOps')
+  }
+  return ''
+})
 
 const displayRows = computed(() => {
   let list = rows.value
@@ -198,6 +207,13 @@ async function confirmReject() {
     </p>
 
     <p
+      v-if="reviewRoleHint"
+      class="mb-3 text-sm text-muted"
+    >
+      {{ reviewRoleHint }}
+    </p>
+
+    <p
       v-if="actionError"
       class="mb-3 text-sm text-error"
     >
@@ -240,6 +256,9 @@ async function confirmReject() {
       >
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0 flex-1 space-y-2">
+            <p class="font-mono text-xs text-muted">
+              {{ $t('knowledge.chunks.chunkId') }}: {{ row.id }}
+            </p>
             <div class="flex flex-wrap items-center gap-2">
               <UBadge
                 size="sm"
@@ -255,6 +274,12 @@ async function confirmReject() {
                 {{ $t('knowledge.chunks.summaryDerived') }}
               </span>
             </div>
+            <p
+              v-if="row.reject_reason"
+              class="text-xs text-warning"
+            >
+              {{ $t('knowledge.chunks.rejectReasonStored') }}: {{ row.reject_reason }}
+            </p>
             <p class="text-sm font-medium">
               {{ row.document_title || row.dataset_name || row.dataset_code || '—' }}
             </p>

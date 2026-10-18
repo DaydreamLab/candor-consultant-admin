@@ -58,7 +58,7 @@ OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或
 ### P1 — 資料集列表
 
 - 查詢參數（OpenAPI `adminKnowledgeDatasets`）：`group`、`status`（`pending_review`｜`active`｜`disabled`）、`corpus`、`code`（精確比對）。
-- 列表欄位（`data[]`；OpenAPI 為 `additionalProperties: true`，以下為已部署行為／產品需求，實作時以 live `data` 與 OpenAPI 同步驗證）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`source_url`、`license`、`license_url`、`attribution`、`allow_third_party`（`null` → UI 文案「待決（視為不允許）」）、`document_count`、`chunk_count`、`chunks_by_review_status`（`draft`／`pending`／`approved`／`rejected`／`retired` 計數）、`last_ingested_at`。
+- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等；**`allow_third_party` 僅在詳情頁顯示**（`null` →「待決（視為不允許）」）。OpenAPI `PATCH` 目前未宣告 `allow_third_party`，詳情唯讀。
 - 點列進詳情。空列表：`EmptyPanel` + 說明尚無資料集。
 - 錯誤：載入失敗顯示 `error_message` 或 i18n 預設；401 由 auth middleware 處理。
 

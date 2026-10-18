@@ -1111,6 +1111,8 @@
       "filterStatus": "狀態",
       "filterGroup": "群組",
       "filterGroupPlaceholder": "group_key",
+      "groupDatasetCount": "{count} 個資料集",
+      "emptyInGroup": "此群組目前沒有符合篩選的資料集。",
       "columns": {
         "code": "代號",
         "name": "名稱",
@@ -1134,6 +1136,7 @@
         "chunks": "片段數",
         "sourceUrl": "來源連結",
         "reviewBreakdown": "審核狀態分布",
+        "allowThirdPartyHint": "對應 API 欄位 allow_third_party；目前 OpenAPI PATCH 未提供修改，僅供檢視。",
         "editTitle": "代號、名稱與授權"
       },
       "form": {
@@ -1165,6 +1168,9 @@
       "rejectTitle": "退回片段",
       "rejectReason": "原因",
       "rejectConfirm": "確認退回",
+      "chunkId": "片段 ID",
+      "rejectReasonStored": "退回原因",
+      "reviewRoleOps": "OpenAPI：approve／reject 僅 expert 與 admin；ops 若操作可能收到 403。",
       "pendingFilterEmptyTitle": "沒有待審片段",
       "pendingFilterEmpty": "API 已回傳 {count} 筆片段，但沒有 review_status=pending；與 beta 全數 approved 一致，非篩選錯誤。",
       "status": {
@@ -1238,6 +1244,7 @@
       },
       "eventIdHint": "chunk 審核列可能為整數 id；admin 稽核列可能為 UUID。",
       "loadMore": "載入更多",
+      "totalHint": "已載入 {shown} 筆（API 回報總計 {total} 筆）",
       "chunkTitle": "片段稽核歷程",
       "chunkSubtitle": "單一公開參考知識片段的審核與相關動作（OpenAPI：chunk id 為 UUID）。",
       "datasetTitle": "資料集稽核",
@@ -1272,7 +1279,56 @@
       "loading": "載入中…",
       "failed": "無法載入設定。",
       "emptyTitle": "沒有設定欄位",
-      "empty": "config 回應為空。"
+      "empty": "config 回應為空。",
+      "sections": {
+        "embedding": "Embedding／向量",
+        "retrieval": "檢索參數",
+        "corpus": "Corpus",
+        "service": "服務預設",
+        "other": "其他設定"
+      },
+      "fields": {
+        "embeddingProvider": {
+          "label": "Embedding 供應商",
+          "desc": "向量嵌入服務供應商（如 openai、azure）。"
+        },
+        "embeddingModel": {
+          "label": "Embedding 模型",
+          "desc": "產生向量的模型名稱。"
+        },
+        "embeddingDimensions": {
+          "label": "向量維度",
+          "desc": "embedding 向量維度，須與索引空間一致。"
+        },
+        "activeSpace": {
+          "label": "生效向量空間",
+          "desc": "目前檢索使用的向量空間／namespace。"
+        },
+        "topK": {
+          "label": "top_k",
+          "desc": "檢索預覽與對話路徑預設取回片段數上限。"
+        },
+        "minScore": {
+          "label": "最低相關分數",
+          "desc": "低於此分數的命中可能被過濾。"
+        },
+        "reviewMode": {
+          "label": "預設審核模式",
+          "desc": "新匯入片段的預設 review 流程。"
+        },
+        "corpus": {
+          "label": "可搜 corpus",
+          "desc": "允許檢索的知識庫 corpus 列表或預設值。"
+        },
+        "allowThirdPartyDefault": {
+          "label": "外送預設",
+          "desc": "資料集 allow_third_party 的系統預設（若後端提供）。"
+        },
+        "unknown": {
+          "label": "其他欄位",
+          "desc": "後端設定鍵「{key}」（OpenAPI 寬型別）。"
+        }
+      }
     },
     "datasetGroups": {
       "title": "資料集群組",

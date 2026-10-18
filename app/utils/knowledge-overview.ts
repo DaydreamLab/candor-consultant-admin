@@ -24,32 +24,58 @@ export type KnowledgeOverviewTotals = {
   datasetsActive: number | null
 }
 
+const DATASET_LIST_KEYS = [
+  'datasets',
+  'items',
+  'dataset_summaries',
+  'dataset_overview',
+  'public_datasets',
+  'knowledge_datasets'
+] as const
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** 從 overview `data` 取出資料集列（多鍵名 fallback）。 */
+export function extractOverviewDatasetRows(data: Record<string, unknown>): Record<string, unknown>[] {
+  for (const key of DATASET_LIST_KEYS) {
+    const value = data[key]
+    if (Array.isArray(value)) {
+      return value.filter(row => row && typeof row === 'object') as Record<string, unknown>[]
+    }
+  }
+  return []
+}
+
 /** 從 overview `data` 寬物件推斷全庫計數（多鍵名 fallback）。 */
 export function extractKnowledgeOverviewTotals(data: Record<string, unknown>): KnowledgeOverviewTotals {
   const totals = isRecord(data.totals) ? data.totals : null
   const summary = isRecord(data.summary) ? data.summary : null
+  const counts = isRecord(data.counts) ? data.counts : null
 
-  const chunks = pickFromRecord(data, ['total_chunks', 'chunk_count', 'chunks'])
+  const chunks = pickFromRecord(data, ['total_chunks', 'chunk_count', 'chunks', 'total_chunk_count'])
     ?? (totals ? pickFromRecord(totals, ['chunks', 'total_chunks', 'chunk_count']) : null)
     ?? (summary ? pickFromRecord(summary, ['chunks', 'total_chunks']) : null)
+    ?? (counts ? pickFromRecord(counts, ['chunks', 'chunk_count']) : null)
 
-  const documents = pickFromRecord(data, ['total_documents', 'document_count', 'documents'])
+  const documents = pickFromRecord(data, ['total_documents', 'document_count', 'documents', 'total_document_count'])
     ?? (totals ? pickFromRecord(totals, ['documents', 'total_documents', 'document_count']) : null)
     ?? (summary ? pickFromRecord(summary, ['documents', 'total_documents']) : null)
+    ?? (counts ? pickFromRecord(counts, ['documents', 'document_count']) : null)
 
-  let datasetsActive = pickFromRecord(data, ['datasets_active', 'active_datasets'])
-    ?? (totals ? pickFromRecord(totals, ['datasets_active', 'active']) : null)
+  let datasetsActive = pickFromRecord(data, ['datasets_active', 'active_datasets', 'active_dataset_count'])
+    ?? (totals ? pickFromRecord(totals, ['datasets_active', 'active', 'active_datasets']) : null)
+    ?? (counts ? pickFromRecord(counts, ['active_datasets', 'datasets_active']) : null)
 
   const byStatus = data.datasets_by_status ?? data.dataset_status_counts ?? totals?.datasets_by_status
   if (datasetsActive === null && isRecord(byStatus)) {
     datasetsActive = readNumber(byStatus.active)
   }
 
-  if (datasetsActive === null && Array.isArray(data.datasets)) {
-    datasetsActive = data.datasets.filter((row) => {
-      if (!isRecord(row)) {
-        return false
-      }
+  const rows = extractOverviewDatasetRows(data)
+  if (datasetsActive === null && rows.length) {
+    datasetsActive = rows.filter((row) => {
       const status = row.status ?? row.dataset_status
       return status === 'active'
     }).length
@@ -58,8 +84,15 @@ export function extractKnowledgeOverviewTotals(data: Record<string, unknown>): K
   return { chunks, documents, datasetsActive }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+export function overviewHasVisibleContent(data: Record<string, unknown> | null): boolean {
+  if (!data) {
+    return false
+  }
+  const totals = extractKnowledgeOverviewTotals(data)
+  if (totals.chunks != null || totals.documents != null || totals.datasetsActive != null) {
+    return true
+  }
+  return extractOverviewDatasetRows(data).length > 0
 }
 
 export function readConfigTopK(config: Record<string, unknown> | null): number | null {

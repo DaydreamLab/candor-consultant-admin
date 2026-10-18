@@ -52,6 +52,24 @@ export default defineNuxtConfig({
     }
   },
 
+  hooks: {
+    close: async () => {
+      if (process.env.npm_lifecycle_event !== 'generate') {
+        return
+      }
+      const { copyFile, access } = await import('node:fs/promises')
+      const { join } = await import('node:path')
+      const index = join(process.cwd(), '.output/public/index.html')
+      const dest = join(process.cwd(), '.output/public/404.html')
+      try {
+        await access(index)
+        await copyFile(index, dest)
+      } catch {
+        // generate 未完成時略過
+      }
+    }
+  },
+
   eslint: {
     config: {
       stylistic: {

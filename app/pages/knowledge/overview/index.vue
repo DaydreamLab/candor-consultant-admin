@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { AdminApiError, adminGetKnowledgeOverview } from '~/utils/admin-api'
 import { readOperatorToken } from '~/utils/operator-session'
-import { extractKnowledgeOverviewTotals } from '~/utils/knowledge-overview'
+import {
+  extractKnowledgeOverviewTotals,
+  extractOverviewDatasetRows,
+  overviewHasVisibleContent
+} from '~/utils/knowledge-overview'
 import { datasetStatusBadgeColor } from '~/utils/knowledge-labels'
 import type { KnowledgeDatasetStatus } from '~/types/knowledge'
 
@@ -40,19 +44,9 @@ async function load() {
 
 const totals = computed(() => extractKnowledgeOverviewTotals(overview.value ?? {}))
 
-const datasetRows = computed(() => {
-  const data = overview.value
-  if (!data) {
-    return []
-  }
-  if (Array.isArray(data.datasets)) {
-    return data.datasets.filter(row => row && typeof row === 'object') as Record<string, unknown>[]
-  }
-  if (Array.isArray(data.items)) {
-    return data.items.filter(row => row && typeof row === 'object') as Record<string, unknown>[]
-  }
-  return []
-})
+const datasetRows = computed(() => extractOverviewDatasetRows(overview.value ?? {}))
+
+const hasContent = computed(() => overviewHasVisibleContent(overview.value))
 
 function formatTotal(value: number | null) {
   return value == null ? '—' : String(value)
@@ -87,6 +81,11 @@ function statusLabel(status: unknown) {
     >
       {{ errorMessage }}
     </p>
+    <EmptyPanel
+      v-else-if="!hasContent"
+      :title="$t('knowledge.overview.emptyTitle')"
+      :description="$t('knowledge.overview.empty')"
+    />
     <template v-else>
       <div class="mb-6 grid gap-3 sm:grid-cols-3">
         <UCard class="bg-elevated">
@@ -115,13 +114,8 @@ function statusLabel(status: unknown) {
         </UCard>
       </div>
 
-      <EmptyPanel
-        v-if="!datasetRows.length"
-        :title="$t('knowledge.overview.emptyTitle')"
-        :description="$t('knowledge.overview.empty')"
-      />
       <AdminTable
-        v-else
+        v-if="datasetRows.length"
         compact
       >
         <template #head>

@@ -15,6 +15,7 @@ const filterAction = ref('')
 const filterActor = ref('')
 const offset = ref(0)
 const hasMore = ref(false)
+const totalCount = ref<number | null>(null)
 
 async function load(reset: boolean) {
   const token = readOperatorToken()
@@ -38,6 +39,7 @@ async function load(reset: boolean) {
     })
     const batch = response.items
     items.value = reset ? batch : [...items.value, ...batch]
+    totalCount.value = response.total
     hasMore.value = batch.length >= PAGE_SIZE
     offset.value += batch.length
   } catch (error) {
@@ -75,6 +77,13 @@ if (import.meta.client) {
     plain
   >
     <KnowledgeTabs />
+
+    <p
+      v-if="totalCount != null && items.length"
+      class="mb-2 text-xs text-muted"
+    >
+      {{ $t('knowledge.audit.totalHint', { shown: items.length, total: totalCount }) }}
+    </p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
       <div class="min-w-52">

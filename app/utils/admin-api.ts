@@ -13,10 +13,16 @@ import type {
 } from '~/types/knowledge'
 import type { AdminFailure, AdminSuccess, OperatorLoginData } from '~/types/operator'
 import {
+  knowledgeAuditRawObject,
+  readAuditTotalCount,
+  readKnowledgeAuditEvents
+} from '~/utils/knowledge-audit-parse'
+import {
   parseAllowThirdParty,
   parseKnowledgeDatasetStatus,
   parseKnowledgeReviewStatus
 } from '~/utils/knowledge-field-parse'
+import { parseKnowledgeGapPayload, parseRetrievalHits } from '~/utils/knowledge-retrieval-parse'
 
 export class AdminApiError extends Error {
   statusCode: number
@@ -1560,13 +1566,9 @@ export async function adminKnowledgeRetrievalPreview(
       throw new AdminApiError(500, '')
     }
     const data = body.data
-    const hits = Array.isArray(data.hits)
-      ? data.hits.filter(isRecord)
-      : Array.isArray(data.results)
-        ? data.results.filter(isRecord)
-        : []
-    const queryInfo = isRecord(data.query_info) ? data.query_info : null
-    const gap = isRecord(data.knowledge_gap) ? data.knowledge_gap : null
+    const hits = parseRetrievalHits(data)
+    const queryInfo = isRecord(data.query_info) ? data.query_info : isRecord(data.queryInfo) ? data.queryInfo : null
+    const gap = parseKnowledgeGapPayload(data)
     return {
       hits,
       query_info: queryInfo,
@@ -1585,7 +1587,7 @@ export async function adminListKnowledgeAudit(
   apiBase: string,
   token: string,
   query: KnowledgeAuditListQuery = {}
-): Promise<{ items: KnowledgeAuditEvent[], raw: Record<string, unknown> }> {
+): Promise<{ items: KnowledgeAuditEvent[], raw: Record<string, unknown>, total: number | null }> {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/audit'), {
       headers: {
@@ -1593,12 +1595,13 @@ export async function adminListKnowledgeAudit(
       },
       query: compactKnowledgeAuditQuery(query)
     })
-    if (body?.status !== 'success' || !isRecord(body.data)) {
+    if (body?.status !== 'success' || body.data == null) {
       throw new AdminApiError(500, '')
     }
     return {
-      items: readKnowledgeAuditRows(body.data),
-      raw: body.data
+      items: readKnowledgeAuditEvents(body.data),
+      raw: knowledgeAuditRawObject(body.data),
+      total: readAuditTotalCount(body.data)
     }
   } catch (error) {
     if (error instanceof AdminApiError) {
@@ -1628,12 +1631,12 @@ export async function adminGetKnowledgeAuditChunk(
         query: params
       }
     )
-    if (body?.status !== 'success' || !isRecord(body.data)) {
+    if (body?.status !== 'success' || body.data == null) {
       throw new AdminApiError(500, '')
     }
     return {
-      items: readKnowledgeAuditRows(body.data),
-      raw: body.data
+      items: readKnowledgeAuditEvents(body.data),
+      raw: knowledgeAuditRawObject(body.data)
     }
   } catch (error) {
     if (error instanceof AdminApiError) {
@@ -1659,12 +1662,12 @@ export async function adminGetKnowledgeAuditDataset(
         query: compactKnowledgeAuditQuery(query)
       }
     )
-    if (body?.status !== 'success' || !isRecord(body.data)) {
+    if (body?.status !== 'success' || body.data == null) {
       throw new AdminApiError(500, '')
     }
     return {
-      items: readKnowledgeAuditRows(body.data),
-      raw: body.data
+      items: readKnowledgeAuditEvents(body.data),
+      raw: knowledgeAuditRawObject(body.data)
     }
   } catch (error) {
     if (error instanceof AdminApiError) {
@@ -1798,7 +1801,8 @@ function parseKnowledgeChunk(row: Record<string, unknown>): KnowledgeChunk {
     license: optionalString(row.license),
     attribution: optionalString(row.attribution),
     chunk_kind: optionalString(row.chunk_kind),
-    group_key: optionalString(row.group_key)
+    group_key: optionalString(row.group_key),
+    reject_reason: optionalString(row.reject_reason ?? row.rejection_reason ?? row.rejectReason)
   }
 }
 
@@ -1837,34 +1841,6 @@ function compactKnowledgeDatasetQuery(query: KnowledgeDatasetListQuery) {
     }
   }
   return params
-}
-
-function readKnowledgeAuditRows(data: Record<string, unknown>): KnowledgeAuditEvent[] {
-  const rows = Array.isArray(data.items)
-    ? data.items
-    : Array.isArray(data.events)
-      ? data.events
-      : Array.isArray(data)
-        ? data
-        : null
-  if (!rows) {
-    return []
-  }
-  return rows.filter(isRecord).map(parseKnowledgeAuditEvent)
-}
-
-function parseKnowledgeAuditEvent(row: Record<string, unknown>): KnowledgeAuditEvent {
-  return {
-    id: stringField(row.id),
-    source: optionalString(row.source),
-    level: optionalString(row.level),
-    action: optionalString(row.action),
-    actor_id: optionalString(row.actor_id),
-    created_at: optionalString(row.created_at),
-    dataset_id: optionalString(row.dataset_id),
-    chunk_id: optionalString(row.chunk_id),
-    raw: row
-  }
 }
 
 function compactKnowledgeAuditQuery(query: KnowledgeAuditListQuery) {

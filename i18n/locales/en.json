@@ -1111,6 +1111,8 @@
       "filterStatus": "Status",
       "filterGroup": "Group",
       "filterGroupPlaceholder": "group_key",
+      "groupDatasetCount": "{count} datasets",
+      "emptyInGroup": "No datasets in this group for the current filter.",
       "columns": {
         "code": "Code",
         "name": "Name",
@@ -1134,6 +1136,7 @@
         "chunks": "Chunks",
         "sourceUrl": "Source URL",
         "reviewBreakdown": "Review status breakdown",
+        "allowThirdPartyHint": "API field allow_third_party; not in OpenAPI PATCH body yet — read-only here.",
         "editTitle": "Code, name, and licensing"
       },
       "form": {
@@ -1165,6 +1168,9 @@
       "rejectTitle": "Reject chunk",
       "rejectReason": "Reason",
       "rejectConfirm": "Confirm reject",
+      "chunkId": "Chunk ID",
+      "rejectReasonStored": "Reject reason",
+      "reviewRoleOps": "OpenAPI: approve/reject is expert and admin only; ops may get 403.",
       "pendingFilterEmptyTitle": "No pending chunks",
       "pendingFilterEmpty": "API returned {count} chunks with none in review_status=pending (expected when all are approved).",
       "status": {
@@ -1238,6 +1244,7 @@
       },
       "eventIdHint": "Chunk review rows may use integer ids; admin audit rows may use UUIDs.",
       "loadMore": "Load more",
+      "totalHint": "Loaded {shown} of {total} events reported by API",
       "chunkTitle": "Chunk audit trail",
       "chunkSubtitle": "Review history for one public knowledge chunk (OpenAPI path id is UUID).",
       "datasetTitle": "Dataset audit",
@@ -1272,7 +1279,56 @@
       "loading": "Loading…",
       "failed": "Could not load config.",
       "emptyTitle": "No fields",
-      "empty": "Config response is empty."
+      "empty": "Config response is empty.",
+      "sections": {
+        "embedding": "Embedding / vectors",
+        "retrieval": "Retrieval",
+        "corpus": "Corpus",
+        "service": "Service defaults",
+        "other": "Other settings"
+      },
+      "fields": {
+        "embeddingProvider": {
+          "label": "Embedding provider",
+          "desc": "Vector embedding vendor."
+        },
+        "embeddingModel": {
+          "label": "Embedding model",
+          "desc": "Model name used for embeddings."
+        },
+        "embeddingDimensions": {
+          "label": "Vector dimensions",
+          "desc": "Embedding dimension; must match the active index."
+        },
+        "activeSpace": {
+          "label": "Active vector space",
+          "desc": "Namespace or space used for retrieval."
+        },
+        "topK": {
+          "label": "top_k",
+          "desc": "Default max hits for retrieval preview and chat paths."
+        },
+        "minScore": {
+          "label": "Minimum relevance score",
+          "desc": "Hits below this score may be filtered out."
+        },
+        "reviewMode": {
+          "label": "Default review mode",
+          "desc": "Default workflow for newly ingested chunks."
+        },
+        "corpus": {
+          "label": "Searchable corpus",
+          "desc": "Allowed corpora for retrieval."
+        },
+        "allowThirdPartyDefault": {
+          "label": "Third-party default",
+          "desc": "System default for dataset allow_third_party when provided."
+        },
+        "unknown": {
+          "label": "Other field",
+          "desc": "Backend key \"{key}\" (OpenAPI additionalProperties)."
+        }
+      }
     },
     "datasetGroups": {
       "title": "Dataset groups",
