@@ -85,8 +85,8 @@
 | AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
 | 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 可用 | 接線中 | KM1 |
 | 知識管理／片段審核 | `/knowledge/chunks` | 可用 | 接線中 | KM1 |
-| 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 無 | Mock | KM2 |
-| 知識管理／稽核 | `/knowledge/audit` | 無 | Mock | KM2 |
+| 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 可用 | 接線中 | KM2 |
+| 知識管理／稽核 | `/knowledge/audit` | 可用 | 接線中 | KM2 |
 | 知識管理／群組 | `/knowledge/dataset-groups` | 無 | Mock | KM3 |
 | 知識管理／總覽與設定 | `/knowledge/overview`、`/knowledge/config` | 無 | Mock | KM3 |
 | 報告列表／詳情 | — | 無 | 不做 | 不做 |
@@ -173,8 +173,8 @@
 | 資料集群組 | `GET`／`POST /admin/knowledge/dataset-groups` | Mock |
 | 資料集列表／詳情／更新 | `GET`／`PATCH /admin/knowledge/datasets`、`GET /admin/knowledge/datasets/{id}` | 接線中 |
 | 設定 | `GET /admin/knowledge/config` | Mock |
-| 檢索預覽 | `POST /admin/knowledge/retrieval-preview` | Mock |
-| 稽核 | `GET /admin/knowledge/audit`、`GET /admin/knowledge/audit/chunks/{id}`、`GET /admin/knowledge/audit/datasets/{id}` | Mock |
+| 檢索預覽 | `POST /admin/knowledge/retrieval-preview` | 接線中 |
+| 稽核 | `GET /admin/knowledge/audit`、`GET /admin/knowledge/audit/chunks/{id}`、`GET /admin/knowledge/audit/datasets/{id}` | 接線中（全域列表；單筆 chunks／datasets 頁 KM2 未做） |
 
 ### Weight sets
 

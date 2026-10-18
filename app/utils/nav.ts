@@ -98,6 +98,12 @@ export function isDevelopingPath(path: string): boolean {
   if (current === '/knowledge/chunks' || current.startsWith('/knowledge/chunks/')) {
     return false
   }
+  if (current === '/knowledge/retrieval-preview' || current.startsWith('/knowledge/retrieval-preview/')) {
+    return false
+  }
+  if (current === '/knowledge/audit' || current.startsWith('/knowledge/audit/')) {
+    return false
+  }
   return true
 }
 

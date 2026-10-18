@@ -4,10 +4,11 @@ import { normalizeAdminPath } from '~/utils/nav'
 const localePath = useLocalePath()
 const route = useRoute()
 
-/** KM1：資料集與片段；KM2／KM3 PR 會補齊其餘 Tab 與頁面。 */
 const tabs = [
   { key: 'datasets', to: '/knowledge/datasets' },
-  { key: 'chunks', to: '/knowledge/chunks' }
+  { key: 'chunks', to: '/knowledge/chunks' },
+  { key: 'retrievalPreview', to: '/knowledge/retrieval-preview' },
+  { key: 'audit', to: '/knowledge/audit' }
 ] as const
 
 function active(to: string) {
