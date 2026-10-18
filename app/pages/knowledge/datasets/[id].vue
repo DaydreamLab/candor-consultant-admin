@@ -11,6 +11,7 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const { t } = useI18n()
 const session = useSessionStore()
+const localePath = useLocalePath()
 
 const datasetId = computed(() => String(route.params.id ?? ''))
 const dataset = ref<KnowledgeDataset | null>(null)
@@ -142,6 +143,19 @@ function reviewCount(key: string) {
     plain
   >
     <KnowledgeTabs />
+
+    <div
+      v-if="dataset && !pending"
+      class="mb-4"
+    >
+      <UButton
+        :to="localePath(`/knowledge/audit/datasets/${datasetId}`)"
+        variant="outline"
+        size="sm"
+      >
+        {{ $t('knowledge.audit.viewDatasetAudit') }}
+      </UButton>
+    </div>
 
     <p
       v-if="errorMessage && !dataset"

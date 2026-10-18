@@ -88,48 +88,10 @@ if (import.meta.client) {
       :title="$t('knowledge.audit.emptyTitle')"
       :description="$t('knowledge.audit.empty')"
     />
-    <div
+    <KnowledgeAuditEventsTable
       v-else
-      class="overflow-x-auto rounded-lg border border-default"
-    >
-      <table class="min-w-full text-sm">
-        <thead class="bg-muted/40 text-left text-muted">
-          <tr>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.audit.columns.time') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.audit.columns.action') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.audit.columns.source') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.audit.columns.actor') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in items"
-            :key="row.id"
-            class="border-t border-default"
-          >
-            <td class="px-3 py-2 whitespace-nowrap text-muted">
-              {{ row.created_at || '—' }}
-            </td>
-            <td class="px-3 py-2 font-mono text-xs">
-              {{ row.action || '—' }}
-            </td>
-            <td class="px-3 py-2 text-muted">
-              {{ row.source || '—' }}<span v-if="row.level"> / {{ row.level }}</span>
-            </td>
-            <td class="px-3 py-2 font-mono text-xs">
-              {{ row.actor_id || '—' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      :items="items"
+      show-entity-links
+    />
   </PageHeader>
 </template>

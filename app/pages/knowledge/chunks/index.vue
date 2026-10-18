@@ -14,6 +14,7 @@ const DEFAULT_STATUS = 'pending'
 const config = useRuntimeConfig()
 const { t } = useI18n()
 const session = useSessionStore()
+const localePath = useLocalePath()
 
 const rows = ref<KnowledgeChunk[]>([])
 const pending = ref(true)
@@ -246,10 +247,18 @@ async function confirmReject() {
             >
               {{ row.attribution }}
             </p>
+            <UButton
+              :to="localePath(`/knowledge/audit/chunks/${row.id}`)"
+              variant="link"
+              size="xs"
+              class="px-0"
+            >
+              {{ $t('knowledge.audit.viewChunkAudit') }}
+            </UButton>
           </div>
           <div
             v-if="canReview && row.review_status === 'pending'"
-            class="flex shrink-0 gap-2"
+            class="flex shrink-0 flex-col items-end gap-2"
           >
             <UButton
               size="sm"

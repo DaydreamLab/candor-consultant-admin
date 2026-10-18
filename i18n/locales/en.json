@@ -1217,8 +1217,22 @@
         "time": "Time",
         "action": "Action",
         "source": "Source",
-        "actor": "Actor"
-      }
+        "actor": "Actor",
+        "related": "Related"
+      },
+      "chunkTitle": "Chunk audit trail",
+      "chunkSubtitle": "Review history for one public knowledge chunk (OpenAPI path id is UUID).",
+      "datasetTitle": "Dataset audit",
+      "datasetSubtitle": "Chunk reviews and dataset admin actions for this dataset (event row id: integer for chunk rows, UUID for admin rows).",
+      "backToList": "Back to global audit",
+      "backToDataset": "Back to dataset",
+      "viewChunkAudit": "Audit trail",
+      "viewDatasetAudit": "View audit log",
+      "linkChunk": "Chunk",
+      "linkDataset": "Dataset",
+      "invalidChunkId": "Chunk id must be a UUID.",
+      "invalidDatasetId": "Dataset id must be a UUID.",
+      "forbidden": "You do not have permission to view this audit."
     },
     "overview": {
       "title": "Knowledge overview",

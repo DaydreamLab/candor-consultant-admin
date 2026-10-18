@@ -86,7 +86,7 @@
 | 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 可用 | 接線中 | KM1 |
 | 知識管理／片段審核 | `/knowledge/chunks` | 可用 | 接線中 | KM1 |
 | 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 可用 | 接線中 | KM2 |
-| 知識管理／稽核 | `/knowledge/audit` | 可用 | 接線中 | KM2 |
+| 知識管理／稽核 | `/knowledge/audit`、`/knowledge/audit/chunks/{id}`、`/knowledge/audit/datasets/{id}` | 可用 | 接線中 | KM2 |
 | 知識管理／群組 | `/knowledge/dataset-groups` | 可用 | 接線中 | KM3 |
 | 知識管理／總覽與設定 | `/knowledge/overview`、`/knowledge/config` | 可用 | 接線中 | KM3 |
 | 報告列表／詳情 | — | 無 | 不做 | 不做 |
@@ -174,7 +174,7 @@
 | 資料集列表／詳情／更新 | `GET`／`PATCH /admin/knowledge/datasets`、`GET /admin/knowledge/datasets/{id}` | 接線中 |
 | 設定 | `GET /admin/knowledge/config` | 接線中 |
 | 檢索預覽 | `POST /admin/knowledge/retrieval-preview` | 接線中 |
-| 稽核 | `GET /admin/knowledge/audit`、`GET /admin/knowledge/audit/chunks/{id}`、`GET /admin/knowledge/audit/datasets/{id}` | 接線中（全域列表；單筆 chunks／datasets 頁 KM2 未做） |
+| 稽核 | `GET /admin/knowledge/audit`、`GET /admin/knowledge/audit/chunks/{id}`、`GET /admin/knowledge/audit/datasets/{id}` | 接線中（含全域列表與 chunks／datasets 專頁） |
 
 ### Weight sets
 

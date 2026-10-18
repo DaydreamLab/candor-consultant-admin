@@ -1217,8 +1217,22 @@
         "time": "時間",
         "action": "動作",
         "source": "來源",
-        "actor": "操作者"
-      }
+        "actor": "操作者",
+        "related": "相關"
+      },
+      "chunkTitle": "片段稽核歷程",
+      "chunkSubtitle": "單一公開參考知識片段的審核與相關動作（OpenAPI：chunk id 為 UUID）。",
+      "datasetTitle": "資料集稽核",
+      "datasetSubtitle": "該資料集底下的片段審核與資料集管理動作（列表事件 id：chunk 列為整數、admin 列為 UUID）。",
+      "backToList": "返回全域稽核",
+      "backToDataset": "返回資料集",
+      "viewChunkAudit": "稽核歷程",
+      "viewDatasetAudit": "查看稽核紀錄",
+      "linkChunk": "片段",
+      "linkDataset": "資料集",
+      "invalidChunkId": "片段 id 須為 UUID。",
+      "invalidDatasetId": "資料集 id 須為 UUID。",
+      "forbidden": "目前角色無權查看此稽核。"
     },
     "overview": {
       "title": "知識總覽",

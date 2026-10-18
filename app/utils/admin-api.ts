@@ -1603,6 +1603,72 @@ export async function adminListKnowledgeAudit(
   }
 }
 
+export async function adminGetKnowledgeAuditChunk(
+  apiBase: string,
+  token: string,
+  id: string,
+  query: { limit?: number } = {}
+): Promise<{ items: KnowledgeAuditEvent[], raw: Record<string, unknown> }> {
+  try {
+    const params: Record<string, number> = {}
+    if (typeof query.limit === 'number' && Number.isFinite(query.limit)) {
+      params.limit = query.limit
+    }
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/knowledge/audit/chunks/${encodeURIComponent(id)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        query: params
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return {
+      items: readKnowledgeAuditRows(body.data),
+      raw: body.data
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetKnowledgeAuditDataset(
+  apiBase: string,
+  token: string,
+  id: string,
+  query: KnowledgeAuditListQuery = {}
+): Promise<{ items: KnowledgeAuditEvent[], raw: Record<string, unknown> }> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/knowledge/audit/datasets/${encodeURIComponent(id)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        query: compactKnowledgeAuditQuery(query)
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return {
+      items: readKnowledgeAuditRows(body.data),
+      raw: body.data
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminRejectKnowledgeChunk(
   apiBase: string,
   token: string,
