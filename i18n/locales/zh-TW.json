@@ -21,6 +21,7 @@
     "labServices": "採檢服務",
     "expertTuning": "專家訓練",
     "aiAssistant": "AI 助理",
+    "knowledge": "知識管理",
     "selections": "案件選品",
     "shipping": "出貨",
     "invoices": "請款作業",
@@ -1081,6 +1082,87 @@
       "onHand": "現有",
       "reserved": "預留",
       "reorderAt": "補貨點"
+    }
+  },
+  "knowledge": {
+    "tabs": {
+      "datasets": "資料集",
+      "chunks": "片段審核"
+    },
+    "datasets": {
+      "title": "知識資料集",
+      "subtitle": "公開參考知識庫的資料集、授權與匯入狀態。",
+      "loading": "載入中…",
+      "failed": "無法載入資料集。",
+      "saveFailed": "儲存失敗，請稍後再試。",
+      "emptyTitle": "尚無資料集",
+      "empty": "目前沒有任何知識資料集。",
+      "readOnly": "目前角色無法編輯資料集。",
+      "filterAny": "全部狀態",
+      "filterStatus": "狀態",
+      "filterGroup": "群組",
+      "filterGroupPlaceholder": "group_key",
+      "columns": {
+        "code": "代號",
+        "name": "名稱",
+        "status": "狀態",
+        "chunks": "片段數",
+        "allowThirdParty": "允許外送"
+      },
+      "status": {
+        "pending_review": "待審核",
+        "active": "使用中",
+        "disabled": "已停用"
+      },
+      "allowThirdParty": {
+        "yes": "允許",
+        "no": "不允許",
+        "undecided": "待決（視為不允許）"
+      },
+      "detail": {
+        "stats": "摘要",
+        "documents": "文件數",
+        "chunks": "片段數",
+        "sourceUrl": "來源連結",
+        "reviewBreakdown": "審核狀態分布",
+        "editTitle": "代號、名稱與授權"
+      },
+      "form": {
+        "code": "代號 (code)",
+        "name": "顯示名稱",
+        "license": "授權",
+        "licenseUrl": "授權連結",
+        "attribution": "出處／署名",
+        "status": "資料集狀態",
+        "reason": "狀態變更備註",
+        "reasonHint": "變更 status 時建議填寫"
+      }
+    },
+    "chunks": {
+      "title": "片段審核",
+      "subtitle": "核可後片段才可被檢索與對話引用。",
+      "loading": "載入中…",
+      "failed": "無法載入片段。",
+      "emptyTitle": "沒有符合的片段",
+      "empty": "調整篩選或等待匯入產生待審片段。",
+      "filterAny": "全部狀態",
+      "filterStatus": "審核狀態",
+      "summaryDerived": "摘要（衍生）",
+      "sourceLink": "來源",
+      "approve": "核可",
+      "reject": "退回",
+      "approveFailed": "核可失敗。",
+      "rejectFailed": "退回失敗。",
+      "rejectTitle": "退回片段",
+      "rejectReason": "原因",
+      "rejectConfirm": "確認退回",
+      "status": {
+        "pending": "待審",
+        "approved": "已核可",
+        "rejected": "已退回",
+        "draft": "草稿",
+        "retired": "已下架"
+      }
     }
   },
   "shipping": {

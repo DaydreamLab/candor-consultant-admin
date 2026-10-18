@@ -21,6 +21,7 @@
     "labServices": "Collection services",
     "expertTuning": "Expert tuning",
     "aiAssistant": "AI assistant",
+    "knowledge": "Knowledge",
     "selections": "Case selections",
     "shipping": "Shipping",
     "invoices": "Invoice Candor",
@@ -1081,6 +1082,87 @@
       "onHand": "On hand",
       "reserved": "Reserved",
       "reorderAt": "Reorder at"
+    }
+  },
+  "knowledge": {
+    "tabs": {
+      "datasets": "Datasets",
+      "chunks": "Chunk review"
+    },
+    "datasets": {
+      "title": "Knowledge datasets",
+      "subtitle": "Public reference corpora, licensing, and ingest status.",
+      "loading": "Loading…",
+      "failed": "Could not load datasets.",
+      "saveFailed": "Save failed. Try again later.",
+      "emptyTitle": "No datasets",
+      "empty": "No knowledge datasets yet.",
+      "readOnly": "Your role cannot edit datasets.",
+      "filterAny": "All statuses",
+      "filterStatus": "Status",
+      "filterGroup": "Group",
+      "filterGroupPlaceholder": "group_key",
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "status": "Status",
+        "chunks": "Chunks",
+        "allowThirdParty": "Third party"
+      },
+      "status": {
+        "pending_review": "Pending review",
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "allowThirdParty": {
+        "yes": "Allowed",
+        "no": "Not allowed",
+        "undecided": "Undecided (treated as disallowed)"
+      },
+      "detail": {
+        "stats": "Summary",
+        "documents": "Documents",
+        "chunks": "Chunks",
+        "sourceUrl": "Source URL",
+        "reviewBreakdown": "Review status breakdown",
+        "editTitle": "Code, name, and licensing"
+      },
+      "form": {
+        "code": "Code",
+        "name": "Display name",
+        "license": "License",
+        "licenseUrl": "License URL",
+        "attribution": "Attribution",
+        "status": "Dataset status",
+        "reason": "Status change note",
+        "reasonHint": "Recommended when changing status"
+      }
+    },
+    "chunks": {
+      "title": "Chunk review",
+      "subtitle": "Approved chunks are eligible for retrieval and citations.",
+      "loading": "Loading…",
+      "failed": "Could not load chunks.",
+      "emptyTitle": "No matching chunks",
+      "empty": "Adjust filters or wait for ingest to produce pending chunks.",
+      "filterAny": "All statuses",
+      "filterStatus": "Review status",
+      "summaryDerived": "Summary (derived)",
+      "sourceLink": "Source",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveFailed": "Approve failed.",
+      "rejectFailed": "Reject failed.",
+      "rejectTitle": "Reject chunk",
+      "rejectReason": "Reason",
+      "rejectConfirm": "Confirm reject",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "draft": "Draft",
+        "retired": "Retired"
+      }
     }
   },
   "shipping": {
