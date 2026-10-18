@@ -27,7 +27,7 @@ export function knowledgeCrumbs(
     to: localePath('/knowledge/datasets')
   }
 
-  if (current === '/knowledge' || current === '/knowledge/datasets') {
+  if (current === '/knowledge') {
     return [{ label: t('nav.knowledge') }]
   }
 

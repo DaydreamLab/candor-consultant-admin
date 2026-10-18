@@ -79,6 +79,7 @@ OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或
 
 - 列表：`GET /knowledge/chunks`；查詢參數目前 OpenAPI 僅 **`group`**（`group_key` 須存在 registry）。**待 candor-core**：`dataset_id`、`review_status`、`limit`／`offset`（或等效分頁）；回應是否保證完整 `text` 或僅 `text_preview` 亦待契約明確化。
 - **資料集詳情**（`/knowledge/datasets/{id}`）：有 `group_key` 時以 `group` 查詢後 **client** 依 `dataset_id`／`dataset_code` 篩選；審核狀態與分頁亦為 client，直到上述查詢參數上線。
+- **頁面標題**：知識子頁以 `KnowledgeTabs` **路由**切換；頂欄與瀏覽器 title 由 `usePageCrumbs`／`knowledge-nav`（`nav.knowledge` + tab 標籤）與 `useAdminPageHead` 同步，勿依 `NAV_GROUPS` 的 `to: /knowledge/datasets` 單點比對。
 - 預設 UI 篩選：**pending**（產品）；若 API 未支援 query，取全量後前端篩選（資料量大時需 core 分頁參數）。
 - 列欄位（依 `data[]` 實際鍵）：片段 `id`、所屬資料集、`review_status`、文件標題、`text` 預覽、`source_url`、`license`、`attribution`；摘要片段標「摘要（衍生）」若 `chunk_kind`／類似欄位存在。
 - **approve**：`POST /knowledge/chunks/{id}/approve`（expert／admin）。**reject**：`POST /knowledge/chunks/{id}/reject`（摘要寫「原因必填」；OpenAPI 未宣告 body — **待確認** `reason` 欄位名與 422 規則，UI 仍應強制填原因再送出）。
