@@ -29,6 +29,7 @@ Operator 端：商品／庫存／價格帶、訂單出貨、報告校正與權�
 | [docs/03-progress.md](docs/03-progress.md) | 接線進度（與 core 04 雙寫） |
 | [docs/spec/10-screen-scope.md](docs/spec/10-screen-scope.md) | 側欄 in-scope vs 不做 |
 | [docs/spec/11-operator-session.md](docs/spec/11-operator-session.md) | 示範角色 vs expert／ops／admin |
+| [docs/spec/12-knowledge-management.md](docs/spec/12-knowledge-management.md) | 知識管理頁面、API 與 KM1–KM3 |
 | [AGENTS.md](AGENTS.md) | AI／貢獻者硬規則 |
 
 Core 側：[docs/04](https://github.com/DaydreamLab/candor-core/blob/main/docs/04-integration-progress.md)、[docs/05](https://github.com/DaydreamLab/candor-core/blob/main/docs/05-integration-architecture.md)、[spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)、[spec 31](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/31-client-integration.md)。

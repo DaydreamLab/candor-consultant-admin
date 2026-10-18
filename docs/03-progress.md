@@ -29,7 +29,7 @@
 ## M0 — 文件
 
 - [x] AGENTS.md
-- [x] docs/00–03、spec/10–11
+- [x] docs/00–03、spec/10–12
 - [x] README 文件索引
 
 ## M1 — 示範 Mock
@@ -83,6 +83,12 @@
 | AI 助理／對話文案 | `/ai-assistant` | 可用 | 已接（conversation-copies） | 完成 |
 | AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
 | AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
+| 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 無 | Mock | KM1 |
+| 知識管理／片段審核 | `/knowledge/chunks` | 無 | Mock | KM1 |
+| 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 無 | Mock | KM2 |
+| 知識管理／稽核 | `/knowledge/audit` | 無 | Mock | KM2 |
+| 知識管理／群組 | `/knowledge/dataset-groups` | 無 | Mock | KM3 |
+| 知識管理／總覽與設定 | `/knowledge/overview`、`/knowledge/config` | 無 | Mock | KM3 |
 | 報告列表／詳情 | — | 無 | 不做 | 不做 |
 
 ### 明確不做（示範頁可暫留）
@@ -157,6 +163,19 @@
 | 重試擷取 | `POST /admin/health-reports/{id}/retry` | Mock |
 | 列表／詳情 | `GET /admin/health-reports`、`GET /admin/health-reports/{id}` | 不做 |
 
+### Knowledge（公開參考知識庫）
+
+| 能力 | 端點 | 狀態 |
+|------|------|------|
+| 片段列表 | `GET /admin/knowledge/chunks` | Mock |
+| 片段核可／退回 | `POST /admin/knowledge/chunks/{id}/approve`、`…/reject` | Mock |
+| 總覽 | `GET /admin/knowledge/overview` | Mock |
+| 資料集群組 | `GET`／`POST /admin/knowledge/dataset-groups` | Mock |
+| 資料集列表／詳情／更新 | `GET`／`PATCH /admin/knowledge/datasets`、`GET /admin/knowledge/datasets/{id}` | Mock |
+| 設定 | `GET /admin/knowledge/config` | Mock |
+| 檢索預覽 | `POST /admin/knowledge/retrieval-preview` | Mock |
+| 稽核 | `GET /admin/knowledge/audit`、`GET /admin/knowledge/audit/chunks/{id}`、`GET /admin/knowledge/audit/datasets/{id}` | Mock |
+
 ### Weight sets
 
 | 能力 | 端點 | 狀態 |
@@ -187,4 +206,6 @@
 
 ---
 
-**最後更新**：2026-10-13（金流／電子發票設定已接，里程碑標 Beta-a；與 candor-core Beta 拆分對齊）
+**最後更新**：2026-10-18（新增 spec/12 知識管理；功能表與 Knowledge 切片掛 KM1–KM3，接線皆 Mock）
+
+**KM 里程碑**：KM1 資料集＋片段審核；KM2 檢索預覽＋稽核；KM3 群組＋overview／config。細項見 [spec/12-knowledge-management.md](spec/12-knowledge-management.md)。
