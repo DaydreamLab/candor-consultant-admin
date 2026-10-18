@@ -282,6 +282,13 @@ function reviewCount(key: string) {
         </UCard>
       </div>
 
+      <KnowledgeDatasetChunksPanel
+        class="mb-6"
+        :dataset-id="datasetId"
+        :dataset-code="dataset.code"
+        :group-key="dataset.group_key"
+      />
+
       <UCard v-if="canEdit">
         <template #header>
           <h2 class="text-sm font-semibold">

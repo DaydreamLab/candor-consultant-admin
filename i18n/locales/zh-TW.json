@@ -1137,6 +1137,13 @@
         "sourceUrl": "來源連結",
         "reviewBreakdown": "審核狀態分布",
         "allowThirdPartyHint": "對應 API 欄位 allow_third_party；目前 OpenAPI PATCH 未提供修改，僅供檢視。",
+        "chunksSectionTitle": "片段列表",
+        "chunksLoadFailed": "無法載入此資料集的片段。",
+        "chunksEmptyTitle": "沒有符合的片段",
+        "chunksEmpty": "調整審核狀態篩選，或此資料集尚無片段。",
+        "chunksShowing": "顯示 {filtered} 筆（自本頁已載入的 {loaded} 筆中篩選）",
+        "chunksClientScopeTitle": "後端尚未支援依資料集查詢",
+        "chunksClientScopeHint": "GET /knowledge/chunks 目前 OpenAPI 僅支援 group；無 group_key 時會載入全部片段並在前端依 dataset_id 篩選，大型知識庫可能較慢。待 candor-core 補 dataset_id、review_status、limit／offset。",
         "editTitle": "代號、名稱與授權"
       },
       "form": {

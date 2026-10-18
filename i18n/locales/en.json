@@ -1137,6 +1137,13 @@
         "sourceUrl": "Source URL",
         "reviewBreakdown": "Review status breakdown",
         "allowThirdPartyHint": "API field allow_third_party; not in OpenAPI PATCH body yet — read-only here.",
+        "chunksSectionTitle": "Chunks",
+        "chunksLoadFailed": "Could not load chunks for this dataset.",
+        "chunksEmptyTitle": "No matching chunks",
+        "chunksEmpty": "Adjust the review filter, or this dataset has no chunks yet.",
+        "chunksShowing": "Showing {filtered} (from {loaded} loaded on this page)",
+        "chunksClientScopeTitle": "No server-side dataset filter yet",
+        "chunksClientScopeHint": "GET /knowledge/chunks only documents the group query param in OpenAPI. Without group_key we load all chunks and filter by dataset_id in the browser, which may be slow at scale. candor-core should add dataset_id, review_status, and limit/offset.",
         "editTitle": "Code, name, and licensing"
       },
       "form": {
