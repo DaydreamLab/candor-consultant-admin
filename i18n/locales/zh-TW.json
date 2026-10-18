@@ -1089,7 +1089,10 @@
       "datasets": "資料集",
       "chunks": "片段審核",
       "retrievalPreview": "檢索預覽",
-      "audit": "稽核"
+      "audit": "稽核",
+      "datasetGroups": "資料集群組",
+      "overview": "總覽",
+      "config": "設定"
     },
     "datasets": {
       "title": "知識資料集",
@@ -1215,6 +1218,46 @@
         "action": "動作",
         "source": "來源",
         "actor": "操作者"
+      }
+    },
+    "overview": {
+      "title": "知識總覽",
+      "subtitle": "各資料集文件與片段彙總（唯讀）。",
+      "loading": "載入中…",
+      "failed": "無法載入總覽。",
+      "emptyTitle": "沒有彙總資料",
+      "empty": "overview 回應中沒有可顯示的資料集列表。"
+    },
+    "config": {
+      "title": "知識設定",
+      "subtitle": "生效中的 embedding 與服務設定（不含金鑰）。",
+      "loading": "載入中…",
+      "failed": "無法載入設定。",
+      "emptyTitle": "沒有設定欄位",
+      "empty": "config 回應為空。"
+    },
+    "datasetGroups": {
+      "title": "資料集群組",
+      "subtitle": "來源群組 registry；admin 可新增群組。",
+      "loading": "載入中…",
+      "failed": "無法載入群組。",
+      "create": "新增群組",
+      "createTitle": "新增資料集群組",
+      "createConfirm": "建立",
+      "createFailed": "建立失敗。",
+      "emptyTitle": "沒有群組",
+      "empty": "尚無資料集群組。",
+      "columns": {
+        "key": "group_key",
+        "name": "顯示名稱",
+        "datasets": "資料集數",
+        "sort": "排序"
+      },
+      "form": {
+        "key": "group_key",
+        "name": "display_name",
+        "reason": "原因（必填）",
+        "sort": "sort_order"
       }
     }
   },

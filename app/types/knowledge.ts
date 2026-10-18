@@ -86,6 +86,20 @@ export type KnowledgeAuditListQuery = {
   offset?: number
 }
 
+export type KnowledgeDatasetGroup = {
+  group_key: string
+  display_name: string
+  sort_order?: number | null
+  dataset_count?: number | null
+}
+
+export type KnowledgeDatasetGroupCreate = {
+  group_key: string
+  display_name: string
+  reason: string
+  sort_order?: number
+}
+
 export type KnowledgeAuditEvent = {
   id: string
   source?: string | null

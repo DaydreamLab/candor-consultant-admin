@@ -8,7 +8,10 @@ const tabs = [
   { key: 'datasets', to: '/knowledge/datasets' },
   { key: 'chunks', to: '/knowledge/chunks' },
   { key: 'retrievalPreview', to: '/knowledge/retrieval-preview' },
-  { key: 'audit', to: '/knowledge/audit' }
+  { key: 'audit', to: '/knowledge/audit' },
+  { key: 'datasetGroups', to: '/knowledge/dataset-groups' },
+  { key: 'overview', to: '/knowledge/overview' },
+  { key: 'config', to: '/knowledge/config' }
 ] as const
 
 function active(to: string) {

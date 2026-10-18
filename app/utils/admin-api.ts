@@ -4,6 +4,8 @@ import type {
   KnowledgeAuditListQuery,
   KnowledgeChunkListQuery,
   KnowledgeDataset,
+  KnowledgeDatasetGroup,
+  KnowledgeDatasetGroupCreate,
   KnowledgeDatasetListQuery,
   KnowledgeDatasetPatch,
   KnowledgeRetrievalPreviewRequest,
@@ -1431,6 +1433,105 @@ export async function adminApproveKnowledgeChunk(
   }
 }
 
+export async function adminGetKnowledgeOverview(
+  apiBase: string,
+  token: string
+): Promise<Record<string, unknown>> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/overview'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetKnowledgeConfig(
+  apiBase: string,
+  token: string
+): Promise<Record<string, unknown>> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/config'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminListKnowledgeDatasetGroups(
+  apiBase: string,
+  token: string
+): Promise<KnowledgeDatasetGroup[]> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/dataset-groups'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    const rows = Array.isArray(body.data)
+      ? body.data
+      : isRecord(body.data) && Array.isArray(body.data.items)
+        ? body.data.items
+        : null
+    if (!rows) {
+      throw new AdminApiError(500, '')
+    }
+    return rows.filter(isRecord).map(parseKnowledgeDatasetGroup)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminCreateKnowledgeDatasetGroup(
+  apiBase: string,
+  token: string,
+  payload: KnowledgeDatasetGroupCreate
+): Promise<KnowledgeDatasetGroup> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/knowledge/dataset-groups'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseKnowledgeDatasetGroup(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminKnowledgeRetrievalPreview(
   apiBase: string,
   token: string,
@@ -1553,6 +1654,15 @@ function knowledgeDatasetListOf(data: unknown): unknown[] | null {
     return data.items
   }
   return null
+}
+
+function parseKnowledgeDatasetGroup(row: Record<string, unknown>): KnowledgeDatasetGroup {
+  return {
+    group_key: stringField(row.group_key),
+    display_name: stringField(row.display_name),
+    sort_order: optionalNumber(row.sort_order),
+    dataset_count: optionalNumber(row.dataset_count)
+  }
 }
 
 function parseKnowledgeDataset(row: Record<string, unknown>): KnowledgeDataset {
