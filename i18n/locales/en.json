@@ -1085,6 +1085,9 @@
     }
   },
   "knowledge": {
+    "filters": {
+      "groupAll": "All groups"
+    },
     "tabs": {
       "datasets": "Datasets",
       "chunks": "Chunk review",
@@ -1100,6 +1103,7 @@
       "loading": "Loading…",
       "failed": "Could not load datasets.",
       "saveFailed": "Save failed. Try again later.",
+      "saveOk": "Dataset saved.",
       "emptyTitle": "No datasets",
       "empty": "No knowledge datasets yet.",
       "readOnly": "Your role cannot edit datasets.",
@@ -1161,6 +1165,8 @@
       "rejectTitle": "Reject chunk",
       "rejectReason": "Reason",
       "rejectConfirm": "Confirm reject",
+      "pendingFilterEmptyTitle": "No pending chunks",
+      "pendingFilterEmpty": "API returned {count} chunks with none in review_status=pending (expected when all are approved).",
       "status": {
         "pending": "Pending",
         "approved": "Approved",
@@ -1175,6 +1181,15 @@
       "query": "Query",
       "modeLabel": "Mode",
       "topK": "top_k",
+      "topKFromConfig": "Default from GET /knowledge/config top_k.",
+      "topKFallback": "Defaults to 5 when config has no top_k.",
+      "corpusLabel": "corpus",
+      "corpus": {
+        "public_knowledge": "public_knowledge"
+      },
+      "score": "Score",
+      "hitDataset": "Source dataset",
+      "gapRaw": "knowledge_gap (raw JSON)",
       "run": "Run preview",
       "failed": "Retrieval preview failed.",
       "detectedNutrients": "Detected nutrients",
@@ -1214,12 +1229,15 @@
       "emptyTitle": "No events",
       "empty": "No audit events for this filter.",
       "columns": {
+        "eventId": "Event id",
         "time": "Time",
         "action": "Action",
         "source": "Source",
         "actor": "Actor",
         "related": "Related"
       },
+      "eventIdHint": "Chunk review rows may use integer ids; admin audit rows may use UUIDs.",
+      "loadMore": "Load more",
       "chunkTitle": "Chunk audit trail",
       "chunkSubtitle": "Review history for one public knowledge chunk (OpenAPI path id is UUID).",
       "datasetTitle": "Dataset audit",
@@ -1237,6 +1255,11 @@
     "overview": {
       "title": "Knowledge overview",
       "subtitle": "Per-dataset document and chunk totals (read-only).",
+      "totals": {
+        "chunks": "Total chunks",
+        "documents": "Total documents",
+        "datasetsActive": "Active datasets"
+      },
       "loading": "Loading…",
       "failed": "Could not load overview.",
       "emptyTitle": "No summary",
@@ -1245,6 +1268,7 @@
     "config": {
       "title": "Knowledge config",
       "subtitle": "Effective embedding and service settings (no secrets).",
+      "topKHint": "config.top_k = {value} (retrieval preview default aligns with this).",
       "loading": "Loading…",
       "failed": "Could not load config.",
       "emptyTitle": "No fields",

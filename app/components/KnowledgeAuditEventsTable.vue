@@ -27,77 +27,82 @@ function datasetAuditPath(row: KnowledgeAuditEvent): string | null {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-lg border border-default">
-    <table class="min-w-full text-sm">
-      <thead class="bg-muted/40 text-left text-muted">
-        <tr>
-          <th class="px-3 py-2 font-medium">
-            {{ $t('knowledge.audit.columns.time') }}
-          </th>
-          <th class="px-3 py-2 font-medium">
-            {{ $t('knowledge.audit.columns.action') }}
-          </th>
-          <th class="px-3 py-2 font-medium">
-            {{ $t('knowledge.audit.columns.source') }}
-          </th>
-          <th class="px-3 py-2 font-medium">
-            {{ $t('knowledge.audit.columns.actor') }}
-          </th>
-          <th
-            v-if="props.showEntityLinks"
-            class="px-3 py-2 font-medium"
-          >
-            {{ $t('knowledge.audit.columns.related') }}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="row in props.items"
-          :key="`${row.id}-${row.created_at ?? ''}-${row.action ?? ''}`"
-          class="border-t border-default"
+  <AdminTable compact>
+    <template #head>
+      <tr>
+        <th class="px-4 py-3 font-medium">
+          {{ $t('knowledge.audit.columns.eventId') }}
+        </th>
+        <th class="px-4 py-3 font-medium">
+          {{ $t('knowledge.audit.columns.time') }}
+        </th>
+        <th class="px-4 py-3 font-medium">
+          {{ $t('knowledge.audit.columns.action') }}
+        </th>
+        <th class="px-4 py-3 font-medium">
+          {{ $t('knowledge.audit.columns.source') }}
+        </th>
+        <th class="px-4 py-3 font-medium">
+          {{ $t('knowledge.audit.columns.actor') }}
+        </th>
+        <th
+          v-if="props.showEntityLinks"
+          class="px-4 py-3 font-medium"
         >
-          <td class="px-3 py-2 whitespace-nowrap text-muted">
-            {{ row.created_at || '—' }}
-          </td>
-          <td class="px-3 py-2 font-mono text-xs">
-            {{ row.action || '—' }}
-          </td>
-          <td class="px-3 py-2 text-muted">
-            {{ row.source || '—' }}<span v-if="row.level"> / {{ row.level }}</span>
-          </td>
-          <td class="px-3 py-2 font-mono text-xs">
-            {{ row.actor_id || '—' }}
-          </td>
-          <td
-            v-if="props.showEntityLinks"
-            class="px-3 py-2 text-xs"
-          >
-            <NuxtLink
-              v-if="chunkAuditPath(row)"
-              :to="chunkAuditPath(row)!"
-              class="text-primary underline"
-            >
-              {{ $t('knowledge.audit.linkChunk') }}
-            </NuxtLink>
-            <span
-              v-if="chunkAuditPath(row) && datasetAuditPath(row)"
-              class="text-muted"
-            > · </span>
-            <NuxtLink
-              v-if="datasetAuditPath(row)"
-              :to="datasetAuditPath(row)!"
-              class="text-primary underline"
-            >
-              {{ $t('knowledge.audit.linkDataset') }}
-            </NuxtLink>
-            <span
-              v-if="!chunkAuditPath(row) && !datasetAuditPath(row)"
-              class="text-muted"
-            >—</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+          {{ $t('knowledge.audit.columns.related') }}
+        </th>
+      </tr>
+    </template>
+    <tr
+      v-for="row in props.items"
+      :key="`${row.id}-${row.created_at ?? ''}-${row.action ?? ''}`"
+      class="border-b border-default last:border-0"
+    >
+      <td
+        class="px-4 py-3 font-mono text-xs text-muted"
+        :title="$t('knowledge.audit.eventIdHint')"
+      >
+        {{ row.id || '—' }}
+      </td>
+      <td class="px-4 py-3 whitespace-nowrap text-muted">
+        {{ row.created_at || '—' }}
+      </td>
+      <td class="px-4 py-3 font-mono text-xs">
+        {{ row.action || '—' }}
+      </td>
+      <td class="px-4 py-3 text-muted">
+        {{ row.source || '—' }}<span v-if="row.level"> / {{ row.level }}</span>
+      </td>
+      <td class="px-4 py-3 font-mono text-xs">
+        {{ row.actor_id || '—' }}
+      </td>
+      <td
+        v-if="props.showEntityLinks"
+        class="px-4 py-3 text-xs"
+      >
+        <NuxtLink
+          v-if="chunkAuditPath(row)"
+          :to="chunkAuditPath(row)!"
+          class="text-primary underline"
+        >
+          {{ $t('knowledge.audit.linkChunk') }}
+        </NuxtLink>
+        <span
+          v-if="chunkAuditPath(row) && datasetAuditPath(row)"
+          class="text-muted"
+        > · </span>
+        <NuxtLink
+          v-if="datasetAuditPath(row)"
+          :to="datasetAuditPath(row)!"
+          class="text-primary underline"
+        >
+          {{ $t('knowledge.audit.linkDataset') }}
+        </NuxtLink>
+        <span
+          v-if="!chunkAuditPath(row) && !datasetAuditPath(row)"
+          class="text-muted"
+        >—</span>
+      </td>
+    </tr>
+  </AdminTable>
 </template>

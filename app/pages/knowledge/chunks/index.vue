@@ -7,20 +7,21 @@ import {
 } from '~/utils/admin-api'
 import type { KnowledgeChunk, KnowledgeReviewStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
+import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatasetGroupFilter'
+import { reviewStatusBadgeColor } from '~/utils/knowledge-labels'
 
 const FILTER_ANY = 'all'
-const DEFAULT_STATUS = 'pending'
 
 const config = useRuntimeConfig()
 const { t } = useI18n()
 const session = useSessionStore()
 const localePath = useLocalePath()
+const { filterGroup, groupSelectItems, groupQueryValue, groupsError } = useKnowledgeDatasetGroupFilter()
 
 const rows = ref<KnowledgeChunk[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const filterStatus = ref<string>(DEFAULT_STATUS)
-const filterGroup = ref('')
+const filterStatus = ref<string>(FILTER_ANY)
 const actionError = ref('')
 const actingId = ref<string | null>(null)
 const rejectOpen = ref(false)
@@ -37,10 +38,7 @@ const statusOptions = computed(() => [
   { label: t('knowledge.chunks.status.retired'), value: 'retired' }
 ])
 
-const canReview = computed(() => {
-  const role = session.operator?.role
-  return role === 'expert' || role === 'admin'
-})
+const canReview = computed(() => session.isLoggedIn)
 
 const displayRows = computed(() => {
   let list = rows.value
@@ -50,8 +48,15 @@ const displayRows = computed(() => {
   return list
 })
 
+const pendingFilterNoMatches = computed(() => {
+  if (filterStatus.value !== 'pending' || pending.value || !rows.value.length) {
+    return false
+  }
+  return displayRows.value.length === 0
+})
+
 if (import.meta.client) {
-  watch(filterGroup, () => {
+  watch([filterGroup], () => {
     void load()
   }, { immediate: true })
 }
@@ -68,7 +73,7 @@ async function load() {
   pending.value = true
   errorMessage.value = ''
   try {
-    const query = filterGroup.value.trim() ? { group: filterGroup.value.trim() } : {}
+    const query = groupQueryValue.value ? { group: groupQueryValue.value } : {}
     const list = await adminListKnowledgeChunks(config.public.apiBase, token, query)
     if (seq !== loadSeq) {
       return
@@ -89,7 +94,10 @@ async function load() {
   }
 }
 
-function statusLabel(status: KnowledgeReviewStatus) {
+function statusLabel(status: KnowledgeReviewStatus | '') {
+  if (!status) {
+    return t('status.na')
+  }
   return t(`knowledge.chunks.status.${status}`)
 }
 
@@ -151,31 +159,43 @@ async function confirmReject() {
   <PageHeader
     :title="$t('knowledge.chunks.title')"
     :description="$t('knowledge.chunks.subtitle')"
+    plain
   >
     <KnowledgeTabs />
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <UFormField
-        :label="$t('knowledge.chunks.filterStatus')"
-        class="w-48"
-      >
+      <div class="min-w-40">
+        <label class="mb-1 block text-xs text-muted">
+          {{ $t('knowledge.chunks.filterStatus') }}
+        </label>
         <USelect
           v-model="filterStatus"
           :items="statusOptions"
           value-key="value"
           label-key="label"
+          class="w-full"
         />
-      </UFormField>
-      <UFormField
-        :label="$t('knowledge.datasets.filterGroup')"
-        class="w-48"
-      >
-        <UInput
+      </div>
+      <div class="min-w-52">
+        <label class="mb-1 block text-xs text-muted">
+          {{ $t('knowledge.datasets.filterGroup') }}
+        </label>
+        <USelect
           v-model="filterGroup"
-          :placeholder="$t('knowledge.datasets.filterGroupPlaceholder')"
+          :items="groupSelectItems"
+          value-key="value"
+          label-key="label"
+          class="w-full"
         />
-      </UFormField>
+      </div>
     </div>
+
+    <p
+      v-if="groupsError"
+      class="mb-3 text-sm text-warning"
+    >
+      {{ groupsError }}
+    </p>
 
     <p
       v-if="actionError"
@@ -196,6 +216,14 @@ async function confirmReject() {
     >
       {{ errorMessage }}
     </p>
+    <UAlert
+      v-else-if="pendingFilterNoMatches"
+      color="info"
+      variant="subtle"
+      class="mb-4"
+      :title="$t('knowledge.chunks.pendingFilterEmptyTitle')"
+      :description="$t('knowledge.chunks.pendingFilterEmpty', { count: rows.length })"
+    />
     <EmptyPanel
       v-else-if="!displayRows.length"
       :title="$t('knowledge.chunks.emptyTitle')"
@@ -208,11 +236,18 @@ async function confirmReject() {
       <UCard
         v-for="row in displayRows"
         :key="row.id"
+        class="bg-elevated"
       >
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0 flex-1 space-y-2">
             <div class="flex flex-wrap items-center gap-2">
-              <StatusBadge :label="statusLabel(row.review_status)" />
+              <UBadge
+                size="sm"
+                variant="soft"
+                :color="reviewStatusBadgeColor(row.review_status)"
+              >
+                {{ statusLabel(row.review_status) }}
+              </UBadge>
               <span
                 v-if="isSummary(row)"
                 class="text-xs text-muted"

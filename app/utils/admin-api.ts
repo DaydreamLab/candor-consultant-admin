@@ -12,6 +12,11 @@ import type {
   KnowledgeRetrievalPreviewResult
 } from '~/types/knowledge'
 import type { AdminFailure, AdminSuccess, OperatorLoginData } from '~/types/operator'
+import {
+  parseAllowThirdParty,
+  parseKnowledgeDatasetStatus,
+  parseKnowledgeReviewStatus
+} from '~/utils/knowledge-field-parse'
 
 export class AdminApiError extends Error {
   statusCode: number
@@ -1732,18 +1737,19 @@ function parseKnowledgeDatasetGroup(row: Record<string, unknown>): KnowledgeData
 }
 
 function parseKnowledgeDataset(row: Record<string, unknown>): KnowledgeDataset {
+  const statusParsed = parseKnowledgeDatasetStatus(row)
   return {
     id: stringField(row.id),
     code: stringField(row.code),
     name: stringField(row.name),
     corpus: optionalString(row.corpus),
-    status: stringField(row.status) as KnowledgeDataset['status'],
+    status: (statusParsed || stringField(row.status)) as KnowledgeDataset['status'],
     group_key: optionalString(row.group_key),
     source_url: optionalString(row.source_url),
     license: optionalString(row.license),
     license_url: optionalString(row.license_url),
     attribution: optionalString(row.attribution),
-    allow_third_party: typeof row.allow_third_party === 'boolean' ? row.allow_third_party : null,
+    allow_third_party: parseAllowThirdParty(row),
     document_count: optionalNumber(row.document_count),
     chunk_count: optionalNumber(row.chunk_count),
     chunks_by_review_status: isRecord(row.chunks_by_review_status)
@@ -1779,9 +1785,10 @@ function knowledgeChunkListOf(data: unknown): unknown[] | null {
 
 function parseKnowledgeChunk(row: Record<string, unknown>): KnowledgeChunk {
   const text = optionalString(row.text_preview) ?? optionalString(row.text) ?? optionalString(row.content)
+  const reviewStatus = parseKnowledgeReviewStatus(row)
   return {
     id: stringField(row.id),
-    review_status: stringField(row.review_status) as KnowledgeChunk['review_status'],
+    review_status: (reviewStatus || stringField(row.review_status)) as KnowledgeChunk['review_status'],
     dataset_id: optionalString(row.dataset_id),
     dataset_code: optionalString(row.dataset_code),
     dataset_name: optionalString(row.dataset_name),

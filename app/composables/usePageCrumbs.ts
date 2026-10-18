@@ -1,4 +1,5 @@
 import type { BreadcrumbItem } from '@nuxt/ui'
+import { knowledgeCrumbs } from '~/utils/knowledge-nav'
 import { NAV_GROUPS, normalizeAdminPath } from '~/utils/nav'
 
 export function useSellableItemCrumbLabel() {
@@ -132,6 +133,35 @@ export function usePageCrumbs() {
         { label: t('nav.users'), to: localePath('/users') },
         { label: userLabel.value || id }
       ]
+    }
+
+    if (current.startsWith('/knowledge/datasets/') && current !== '/knowledge/datasets') {
+      const id = String(route.params.id ?? '')
+      const knowledge = knowledgeCrumbs(current, t, localePath, id)
+      if (knowledge) {
+        return knowledge
+      }
+    }
+
+    if (current.startsWith('/knowledge/audit/chunks/')) {
+      const id = String(route.params.id ?? '')
+      const knowledge = knowledgeCrumbs(current, t, localePath, id)
+      if (knowledge) {
+        return knowledge
+      }
+    }
+
+    if (current.startsWith('/knowledge/audit/datasets/')) {
+      const id = String(route.params.id ?? '')
+      const knowledge = knowledgeCrumbs(current, t, localePath, id)
+      if (knowledge) {
+        return knowledge
+      }
+    }
+
+    const knowledge = knowledgeCrumbs(current, t, localePath)
+    if (knowledge) {
+      return knowledge
     }
 
     return [{ label: pageLabel(current) }]

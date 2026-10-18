@@ -2,18 +2,23 @@
 import { AdminApiError, adminListKnowledgeDatasets } from '~/utils/admin-api'
 import type { KnowledgeDataset, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
+import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatasetGroupFilter'
+import {
+  allowThirdPartyBadgeColor,
+  datasetStatusBadgeColor
+} from '~/utils/knowledge-labels'
 
 const FILTER_ANY = 'all'
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const { t } = useI18n()
+const { filterGroup, groupSelectItems, groupQueryValue, groupsError } = useKnowledgeDatasetGroupFilter()
 
 const rows = ref<KnowledgeDataset[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
 const filterStatus = ref<string>(FILTER_ANY)
-const filterGroup = ref('')
 let loadSeq = 0
 
 const statusOptions = computed(() => [
@@ -42,8 +47,9 @@ async function load() {
   errorMessage.value = ''
   try {
     const query: { group?: string, status?: KnowledgeDatasetStatus } = {}
-    if (filterGroup.value.trim()) {
-      query.group = filterGroup.value.trim()
+    const group = groupQueryValue.value
+    if (group) {
+      query.group = group
     }
     if (filterStatus.value !== FILTER_ANY) {
       query.status = filterStatus.value as KnowledgeDatasetStatus
@@ -68,7 +74,10 @@ async function load() {
   }
 }
 
-function statusLabel(status: KnowledgeDatasetStatus) {
+function statusLabel(status: KnowledgeDatasetStatus | '') {
+  if (!status) {
+    return t('status.na')
+  }
   return t(`knowledge.datasets.status.${status}`)
 }
 
@@ -94,101 +103,123 @@ function openRow(row: KnowledgeDataset) {
   <PageHeader
     :title="$t('knowledge.datasets.title')"
     :description="$t('knowledge.datasets.subtitle')"
+    plain
   >
     <KnowledgeTabs />
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <UFormField
-        :label="$t('knowledge.datasets.filterStatus')"
-        class="w-48"
-      >
+      <div class="min-w-40">
+        <label class="mb-1 block text-xs text-muted">
+          {{ $t('knowledge.datasets.filterStatus') }}
+        </label>
         <USelect
           v-model="filterStatus"
           :items="statusOptions"
           value-key="value"
           label-key="label"
+          class="w-full"
         />
-      </UFormField>
-      <UFormField
-        :label="$t('knowledge.datasets.filterGroup')"
-        class="w-48"
-      >
-        <UInput
+      </div>
+      <div class="min-w-52">
+        <label class="mb-1 block text-xs text-muted">
+          {{ $t('knowledge.datasets.filterGroup') }}
+        </label>
+        <USelect
           v-model="filterGroup"
-          :placeholder="$t('knowledge.datasets.filterGroupPlaceholder')"
+          :items="groupSelectItems"
+          value-key="value"
+          label-key="label"
+          class="w-full"
         />
-      </UFormField>
+      </div>
     </div>
 
     <p
-      v-if="pending"
+      v-if="groupsError"
+      class="mb-3 text-sm text-warning"
+    >
+      {{ groupsError }}
+    </p>
+    <p
+      v-if="errorMessage"
+      class="text-sm text-error"
+    >
+      {{ errorMessage }}
+    </p>
+    <p
+      v-else-if="pending && !rows.length"
       class="text-sm text-muted"
     >
       {{ $t('knowledge.datasets.loading') }}
     </p>
     <p
-      v-else-if="errorMessage"
-      class="text-sm text-error"
+      v-else-if="!pending && !rows.length"
+      class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
     >
-      {{ errorMessage }}
+      {{ $t('knowledge.datasets.empty') }}
     </p>
-    <EmptyPanel
-      v-else-if="!rows.length"
-      :title="$t('knowledge.datasets.emptyTitle')"
-      :description="$t('knowledge.datasets.empty')"
-    />
-    <div
+    <AdminTable
       v-else
-      class="overflow-x-auto rounded-lg border border-default"
+      compact
     >
-      <table class="min-w-full text-sm">
-        <thead class="bg-muted/40 text-left text-muted">
-          <tr>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.code') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.name') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.status') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.chunks') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.allowThirdParty') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in rows"
-            :key="row.id"
-            class="cursor-pointer border-t border-default hover:bg-muted/20"
-            @click="openRow(row)"
+      <template #head>
+        <tr>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasets.columns.code') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasets.columns.name') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasets.columns.status') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasets.columns.chunks') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasets.columns.allowThirdParty') }}
+          </th>
+        </tr>
+      </template>
+      <tr
+        v-for="row in rows"
+        :key="row.id"
+        class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+        @click="openRow(row)"
+      >
+        <td class="px-4 py-3 font-mono text-xs">
+          {{ row.code || '—' }}
+        </td>
+        <td class="px-4 py-3">
+          {{ row.name || '—' }}
+        </td>
+        <td class="px-4 py-3">
+          <UBadge
+            v-if="row.status"
+            size="sm"
+            variant="soft"
+            :color="datasetStatusBadgeColor(row.status)"
           >
-            <td class="px-3 py-2 font-mono text-xs">
-              {{ row.code || '—' }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.name || '—' }}
-            </td>
-            <td class="px-3 py-2">
-              <StatusBadge
-                v-if="row.status"
-                :label="statusLabel(row.status)"
-              />
-            </td>
-            <td class="px-3 py-2">
-              {{ row.chunk_count ?? '—' }}
-            </td>
-            <td class="px-3 py-2 text-muted">
-              {{ allowThirdPartyLabel(row.allow_third_party) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            {{ statusLabel(row.status) }}
+          </UBadge>
+          <span
+            v-else
+            class="text-muted"
+          >{{ $t('status.na') }}</span>
+        </td>
+        <td class="px-4 py-3">
+          {{ row.chunk_count ?? '—' }}
+        </td>
+        <td class="px-4 py-3">
+          <UBadge
+            size="sm"
+            variant="subtle"
+            :color="allowThirdPartyBadgeColor(row.allow_third_party)"
+          >
+            {{ allowThirdPartyLabel(row.allow_third_party) }}
+          </UBadge>
+        </td>
+      </tr>
+    </AdminTable>
   </PageHeader>
 </template>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting…</title>
+    <script>
+      (function () {
+        var base = '/candor-consultant-admin/'
+        var path = window.location.pathname
+        var search = window.location.search || ''
+        var hash = window.location.hash || ''
+        var target = path
+        if (path.indexOf(base) === 0) {
+          target = path.slice(base.length - 1)
+        }
+        try {
+          sessionStorage.setItem('candor-gh-pages-path', target + search + hash)
+        } catch (e) {}
+        window.location.replace(base)
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>

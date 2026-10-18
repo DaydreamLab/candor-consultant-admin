@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AdminApiError, adminGetKnowledgeConfig } from '~/utils/admin-api'
 import { readOperatorToken } from '~/utils/operator-session'
+import { readConfigTopK } from '~/utils/knowledge-overview'
 
 const config = useRuntimeConfig()
 const { t } = useI18n()
@@ -18,9 +19,12 @@ const displayEntries = computed(() => {
     .filter(([key]) => !hidden.has(key.toLowerCase()) && !key.toLowerCase().includes('key'))
     .map(([key, value]) => ({
       key,
-      value: formatValue(value)
+      value,
+      display: formatValue(value)
     }))
 })
+
+const configTopK = computed(() => readConfigTopK(settings.value))
 
 if (import.meta.client) {
   void load()
@@ -53,7 +57,7 @@ function formatValue(value: unknown) {
     return '—'
   }
   if (typeof value === 'object') {
-    return JSON.stringify(value)
+    return JSON.stringify(value, null, 2)
   }
   return String(value)
 }
@@ -63,8 +67,16 @@ function formatValue(value: unknown) {
   <PageHeader
     :title="$t('knowledge.config.title')"
     :description="$t('knowledge.config.subtitle')"
+    plain
   >
     <KnowledgeTabs />
+
+    <p
+      v-if="configTopK != null"
+      class="mb-4 text-sm text-muted"
+    >
+      {{ $t('knowledge.config.topKHint', { value: configTopK }) }}
+    </p>
 
     <p
       v-if="pending"
@@ -85,18 +97,21 @@ function formatValue(value: unknown) {
     />
     <dl
       v-else
-      class="grid max-w-2xl gap-3 text-sm"
+      class="grid max-w-3xl gap-4 text-sm"
     >
       <div
         v-for="row in displayEntries"
         :key="row.key"
-        class="grid grid-cols-[10rem_1fr] gap-3 border-b border-default pb-2"
+        class="rounded-xl border border-default bg-elevated p-4"
       >
-        <dt class="font-mono text-xs text-muted">
+        <dt class="mb-2 font-mono text-xs text-muted">
           {{ row.key }}
         </dt>
-        <dd class="break-all">
-          {{ row.value }}
+        <dd
+          class="break-all whitespace-pre-wrap font-mono text-xs"
+          :class="typeof row.value === 'object' ? 'rounded-lg bg-muted/30 p-3' : ''"
+        >
+          {{ row.display }}
         </dd>
       </div>
     </dl>

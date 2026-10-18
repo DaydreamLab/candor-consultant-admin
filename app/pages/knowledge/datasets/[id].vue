@@ -18,6 +18,7 @@ const dataset = ref<KnowledgeDataset | null>(null)
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
+const saveSuccess = ref(false)
 
 const draftCode = ref('')
 const draftName = ref('')
@@ -27,10 +28,7 @@ const draftAttribution = ref('')
 const draftStatus = ref<KnowledgeDatasetStatus>('pending_review')
 const draftReason = ref('')
 
-const canEdit = computed(() => {
-  const role = session.operator?.role
-  return role === 'expert' || role === 'ops' || role === 'admin'
-})
+const canEdit = computed(() => session.isLoggedIn)
 
 const statusOptions = computed(() => [
   { label: t('knowledge.datasets.status.pending_review'), value: 'pending_review' },
@@ -82,7 +80,9 @@ function syncDraft(row: KnowledgeDataset) {
   draftLicense.value = row.license ?? ''
   draftLicenseUrl.value = row.license_url ?? ''
   draftAttribution.value = row.attribution ?? ''
-  draftStatus.value = row.status ?? 'pending_review'
+  draftStatus.value = row.status && ['pending_review', 'active', 'disabled'].includes(row.status)
+    ? row.status
+    : 'pending_review'
   draftReason.value = ''
 }
 
@@ -94,6 +94,7 @@ async function save() {
   }
   saving.value = true
   errorMessage.value = ''
+  saveSuccess.value = false
   const payload: KnowledgeDatasetPatch = {
     code: draftCode.value.trim(),
     name: draftName.value.trim(),
@@ -113,6 +114,7 @@ async function save() {
     }
     dataset.value = row
     syncDraft(row)
+    saveSuccess.value = true
   } catch (error) {
     if (datasetId.value !== id) {
       return
@@ -176,6 +178,13 @@ function reviewCount(key: string) {
       >
         {{ errorMessage }}
       </p>
+      <UAlert
+        v-if="saveSuccess"
+        color="success"
+        variant="subtle"
+        class="mb-4"
+        :title="$t('knowledge.datasets.saveOk')"
+      />
 
       <div class="mb-6 grid gap-4 md:grid-cols-2">
         <UCard>

@@ -95,6 +95,7 @@ async function submitCreate() {
   <PageHeader
     :title="$t('knowledge.datasetGroups.title')"
     :description="$t('knowledge.datasetGroups.subtitle')"
+    plain
   >
     <KnowledgeTabs />
 
@@ -124,49 +125,45 @@ async function submitCreate() {
       :title="$t('knowledge.datasetGroups.emptyTitle')"
       :description="$t('knowledge.datasetGroups.empty')"
     />
-    <div
+    <AdminTable
       v-else
-      class="overflow-x-auto rounded-lg border border-default"
+      compact
     >
-      <table class="min-w-full text-sm">
-        <thead class="bg-muted/40 text-left text-muted">
-          <tr>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasetGroups.columns.key') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasetGroups.columns.name') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasetGroups.columns.datasets') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasetGroups.columns.sort') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in rows"
-            :key="row.group_key"
-            class="border-t border-default"
-          >
-            <td class="px-3 py-2 font-mono text-xs">
-              {{ row.group_key }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.display_name }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.dataset_count ?? '—' }}
-            </td>
-            <td class="px-3 py-2 text-muted">
-              {{ row.sort_order ?? '—' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <template #head>
+        <tr>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasetGroups.columns.key') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasetGroups.columns.name') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasetGroups.columns.datasets') }}
+          </th>
+          <th class="px-4 py-3 font-medium">
+            {{ $t('knowledge.datasetGroups.columns.sort') }}
+          </th>
+        </tr>
+      </template>
+      <tr
+        v-for="row in rows"
+        :key="row.group_key"
+        class="border-b border-default last:border-0"
+      >
+        <td class="px-4 py-3 font-mono text-xs">
+          {{ row.group_key }}
+        </td>
+        <td class="px-4 py-3">
+          {{ row.display_name }}
+        </td>
+        <td class="px-4 py-3">
+          {{ row.dataset_count ?? '—' }}
+        </td>
+        <td class="px-4 py-3 text-muted">
+          {{ row.sort_order ?? '—' }}
+        </td>
+      </tr>
+    </AdminTable>
 
     <UModal v-model:open="createOpen">
       <template #content>

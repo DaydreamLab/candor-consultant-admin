@@ -23,7 +23,11 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 - 知識缺口收集後台（`GET /admin/knowledge/gaps*`；Beta 後、另 spec）
 - 觸發匯入／重嵌／成本與健康儀表（進階卡）
 
-## 角色與權限（對齊 OpenAPI `x-required-roles`）
+## 角色與權限
+
+**後台 UI（本 repo，目前不分角色）**：已登入 operator 可使用知識管理全部子頁；片段 approve／reject 按鈕對所有已登入角色顯示（API 403 時顯示錯誤）。
+
+OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或 API，先改 core。
 
 | 能力 | expert | ops | admin |
 |------|--------|-----|-------|
@@ -32,9 +36,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 | 寫入：datasets PATCH（code／name／授權／status） | ✓ | ✓ | ✓ |
 | 寫入：dataset-groups POST | — | — | ✓ |
 
-未登入或 member JWT：401。角色不足：403。畫面依 `session.operator.role` 隱藏動作；仍以 API 為準。
-
-**待與產品確認**：早期 Notion 草稿曾寫「僅 ops／admin 可進知識管理」；現行 OpenAPI 多數讀取端點含 **expert**。本專案依 OpenAPI 實作，expert 可進入唯讀頁；若產品要限縮入口，需先改 core spec 29／OpenAPI。
+未登入或 member JWT：401。角色不足：403。
 
 ## 頁面清單與優先順序
 
