@@ -7,7 +7,8 @@ import {
   buildPackagePlanPatch,
   emptyPackagePlanFormState,
   moveFeatureRow,
-  originalPriceIssue,
+  originalPriceErrorMessage,
+  packagePlanFormIsDirty,
   packagePlanFormStateFromPlan,
   snapshotFromPlan,
   validatePackagePlanForm,
@@ -28,7 +29,9 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  save: [payload: PackagePlanWrite]
+  'save': [payload: PackagePlanWrite]
+  'dirty-change': [dirty: boolean]
+  'cancel': []
 }>()
 
 const { t } = useI18n()
@@ -57,24 +60,10 @@ const budget = computed(() => {
   return packagePlanBudget(price, state.period_days)
 })
 
-const originalPriceError = computed(() => {
-  if (!originalPriceIssue(state)) {
-    return ''
-  }
-  const trimmed = state.original_price.trim()
-  const original = Number(trimmed)
-  const price = Number(state.price)
-  if (!trimmed) {
-    return ''
-  }
-  if (!Number.isInteger(original) || original <= 0) {
-    return t('packagePlans.validation.originalPriceInteger')
-  }
-  if (Number.isInteger(price) && price > 0 && original < price) {
-    return t('packagePlans.validation.originalPriceMin', { price })
-  }
-  return t('packagePlans.validation.originalPriceInteger')
-})
+const originalPriceError = computed(() => originalPriceErrorMessage(state, {
+  emptyInvalid: t('packagePlans.validation.originalPriceInteger'),
+  belowPrice: price => t('packagePlans.validation.originalPriceMin', { price })
+}) ?? undefined)
 
 watch(() => props.packagePlan, (plan) => {
   applyPlan(plan)
@@ -84,6 +73,25 @@ watch(() => props.packagePlan, (plan) => {
 watch(() => props.saveError, () => {
   localError.value = ''
 })
+
+watch(() => packagePlanFormIsDirty(baseline.value, state), (dirty) => {
+  emit('dirty-change', dirty)
+}, { immediate: true })
+
+function onCancel() {
+  if (fieldsLocked.value) {
+    return
+  }
+  emit('cancel')
+}
+
+function resetToBaseline() {
+  if (!baseline.value || !props.packagePlan) {
+    return
+  }
+  applyPlan(props.packagePlan)
+  localError.value = ''
+}
 
 function onSubmit() {
   if (fieldsLocked.value || !baseline.value) {
@@ -111,6 +119,11 @@ function applyPlan(plan: Record<string, unknown>) {
   baseline.value = snapshotFromPlan(plan)
 }
 
+defineExpose({
+  resetToBaseline,
+  isDirty: () => packagePlanFormIsDirty(baseline.value, state)
+})
+
 function addFeature(localeKey: 'home_features_zh' | 'home_features_en') {
   state[localeKey].push('')
 }
@@ -136,6 +149,7 @@ function moneyText(value: number) {
   <form
     :id="PACKAGE_PLAN_FORM_ID"
     class="flex flex-col gap-6"
+    novalidate
     @submit.prevent="onSubmit"
   >
     <p
@@ -190,7 +204,7 @@ function moneyText(value: number) {
         <UInput
           v-model="state.original_price"
           type="number"
-          min="1"
+          inputmode="numeric"
           step="1"
           :disabled="fieldsLocked"
           class="w-full"
@@ -449,5 +463,19 @@ function moneyText(value: number) {
         </p>
       </div>
     </dl>
+
+    <div
+      v-if="!disabled"
+      class="flex flex-wrap gap-2"
+    >
+      <UButton
+        type="button"
+        variant="outline"
+        :disabled="fieldsLocked"
+        @click="onCancel"
+      >
+        {{ $t('actions.cancel') }}
+      </UButton>
+    </div>
   </form>
 </template>

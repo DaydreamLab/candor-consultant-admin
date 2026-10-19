@@ -2,6 +2,11 @@
 import { AdminApiError, adminListPackagePlans } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { packagePlanBudget } from '~/utils/package-plan-budget'
+import {
+  packagePlanBadge,
+  packagePlanHighlight,
+  packagePlanHomeFeatures
+} from '~/utils/package-plan-list-display'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
@@ -200,10 +205,40 @@ function amountOf(value: unknown) {
         @click="openPlan(row)"
       >
         <UCard
-          :title="nameOf(row)"
-          :description="descriptionOf(row)"
-          class="h-full transition hover:border-primary"
+          :class="[
+            'h-full transition hover:border-primary',
+            packagePlanHighlight(row) ? 'ring-2 ring-primary border-primary' : ''
+          ]"
         >
+          <template #header>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-semibold text-highlighted">{{ nameOf(row) }}</span>
+              <UBadge
+                v-if="packagePlanBadge(row, String(locale))"
+                color="primary"
+                variant="subtle"
+              >
+                {{ packagePlanBadge(row, String(locale)) }}
+              </UBadge>
+            </div>
+          </template>
+          <p
+            v-if="descriptionOf(row) !== t('status.na')"
+            class="mb-3 text-sm text-muted"
+          >
+            {{ descriptionOf(row) }}
+          </p>
+          <ul
+            v-if="packagePlanHomeFeatures(row, String(locale)).length"
+            class="mb-3 list-disc pl-5 text-sm text-muted"
+          >
+            <li
+              v-for="(feature, featureIndex) in packagePlanHomeFeatures(row, String(locale))"
+              :key="`${rowKey(row, index)}-feature-${featureIndex}`"
+            >
+              {{ feature }}
+            </li>
+          </ul>
           <dl class="grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt class="text-muted">
