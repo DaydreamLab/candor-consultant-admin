@@ -1747,7 +1747,7 @@ function parseKnowledgeDataset(row: Record<string, unknown>): KnowledgeDataset {
     name: stringField(row.name),
     corpus: optionalString(row.corpus),
     status: (statusParsed || stringField(row.status)) as KnowledgeDataset['status'],
-    group_key: optionalString(row.group_key),
+    group_key: optionalString(row.group_key) ?? optionalString(row.group),
     source_url: optionalString(row.source_url),
     license: optionalString(row.license),
     license_url: optionalString(row.license_url),
@@ -1801,7 +1801,7 @@ function parseKnowledgeChunk(row: Record<string, unknown>): KnowledgeChunk {
     license: optionalString(row.license),
     attribution: optionalString(row.attribution),
     chunk_kind: optionalString(row.chunk_kind),
-    group_key: optionalString(row.group_key),
+    group_key: optionalString(row.group_key) ?? optionalString(row.group),
     reject_reason: optionalString(row.reject_reason ?? row.rejection_reason ?? row.rejectReason)
   }
 }

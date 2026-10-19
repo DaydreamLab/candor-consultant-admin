@@ -1,0 +1,78 @@
+{
+  "datasetRow": {
+    "id": "a07d857d-79f8-4797-bb4c-660eca8ffc7c",
+    "code": "fda-daily-value",
+    "corpus": "public_knowledge",
+    "name": "FDA Daily Value on the Nutrition and Supplement Facts Labels",
+    "status": "active",
+    "group": "fda",
+    "document_count": 1,
+    "chunk_count": 3
+  },
+  "overview": {
+    "documents_total": 72,
+    "chunks_total": 1262,
+    "chunks_by_review_status": { "approved": 1262 },
+    "datasets_active": 38,
+    "datasets_disabled": 0,
+    "datasets_by_group": { "hpa": 18, "ods": 14, "fda": 1, "other": 1, "tfda": 5 }
+  },
+  "config": {
+    "embedding": {
+      "provider": "http",
+      "model": "bge-m3",
+      "dimensions": 1024,
+      "third_party": false
+    },
+    "active_space": {
+      "id": 1,
+      "name": "bge-m3-1024-v1",
+      "vector_table": "rag_vec_bge_m3_1024_v1",
+      "status": "active",
+      "model": "bge-m3",
+      "dim": 1024
+    },
+    "corpora": [
+      { "name": "public_knowledge", "search_api": true },
+      { "name": "expert_knowledge", "search_api": false }
+    ],
+    "search": {
+      "default_top_k": 5,
+      "default_candidates": 30,
+      "rrf_k": 60,
+      "min_vector_similarity": 0.6,
+      "filter_whitelist": ["source_name", "language", "license", "document_id", "metadata", "dataset_id"]
+    }
+  },
+  "retrievalGap": {
+    "query_info": {
+      "detected_nutrients": ["copper"],
+      "knowledge_gap": {
+        "nutrient_keys": ["copper"],
+        "message": "目前公開參考知識庫尚無與您所問營養素相關的已核可來源；建議改述問題或稍後再試。",
+        "reason": "no_matching_hits"
+      }
+    },
+    "results": [],
+    "warnings": ["knowledge_gap"]
+  },
+  "retrievalHit": {
+    "chunk_id": "60875da3-ca18-4795-bb03-92b57692f1b3",
+    "text": "本次第七版 DRI 葉酸之修訂",
+    "heading_path": "葉酸(Folate)|國人膳食營養素參考攝取量第八版 > 前言",
+    "document": {
+      "id": "b7469f4b-4268-4a1b-9a31-303e0d46d7e4",
+      "title": "葉酸（Folate）— 國人膳食營養素參考攝取量第八版",
+      "source_name": "HPA 衛生福利部國民健康署 國人膳食營養素參考攝取量第八版：葉酸（Folate）",
+      "source_url": "https://www.hpa.gov.tw/Pages/Detail.aspx?nodeid=42",
+      "language": "zh-Hant",
+      "license": "OGDL-Taiwan-1.0"
+    },
+    "scores": {
+      "rrf": 0,
+      "vector": null,
+      "keyword": null,
+      "tagged_supplement": 1
+    }
+  }
+}

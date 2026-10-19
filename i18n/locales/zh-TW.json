@@ -1202,6 +1202,15 @@
       },
       "score": "分數",
       "hitDataset": "來源資料集",
+      "hitSource": "來源",
+      "headingPath": "章節路徑",
+      "scores": {
+        "rrf": "RRF",
+        "vector": "向量",
+        "keyword": "關鍵字",
+        "taggedSupplement": "標籤補撈",
+        "referenceRescue": "參考標籤救援"
+      },
       "gapRaw": "knowledge_gap（原始 JSON）",
       "run": "執行預覽",
       "failed": "檢索預覽失敗。",
@@ -1310,6 +1319,38 @@
         "activeSpace": {
           "label": "生效向量空間",
           "desc": "目前檢索使用的向量空間／namespace。"
+        },
+        "embeddingThirdParty": {
+          "label": "第三方 embedding",
+          "desc": "是否使用第三方嵌入服務。"
+        },
+        "activeSpaceName": {
+          "label": "向量空間名稱",
+          "desc": "active_space.name"
+        },
+        "activeSpaceTable": {
+          "label": "向量表",
+          "desc": "active_space.vector_table"
+        },
+        "activeSpaceStatus": {
+          "label": "向量空間狀態",
+          "desc": "active_space.status"
+        },
+        "defaultCandidates": {
+          "label": "候選數",
+          "desc": "search.default_candidates"
+        },
+        "rrfK": {
+          "label": "RRF k",
+          "desc": "search.rrf_k"
+        },
+        "filterWhitelist": {
+          "label": "篩選白名單",
+          "desc": "search.filter_whitelist"
+        },
+        "corpusEntry": {
+          "label": "Corpus",
+          "desc": "corpora[] 項目"
         },
         "topK": {
           "label": "top_k",

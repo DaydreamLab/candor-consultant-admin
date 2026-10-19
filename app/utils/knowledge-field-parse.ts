@@ -47,6 +47,15 @@ export function parseKnowledgeReviewStatus(row: Record<string, unknown>): Knowle
   return ''
 }
 
+export function resolveKnowledgeGroupKey(row: Record<string, unknown>): string | null {
+  const fromKey = typeof row.group_key === 'string' ? row.group_key.trim() : ''
+  if (fromKey) {
+    return fromKey
+  }
+  const fromGroup = typeof row.group === 'string' ? row.group.trim() : ''
+  return fromGroup || null
+}
+
 export function parseAllowThirdParty(row: Record<string, unknown>): boolean | null {
   const direct = parseLooseBoolean(row.allow_third_party)
   if (direct !== null) {

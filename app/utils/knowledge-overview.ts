@@ -54,15 +54,15 @@ export function extractKnowledgeOverviewTotals(data: Record<string, unknown>): K
   const summary = isRecord(data.summary) ? data.summary : null
   const counts = isRecord(data.counts) ? data.counts : null
 
-  const chunks = pickFromRecord(data, ['total_chunks', 'chunk_count', 'chunks', 'total_chunk_count'])
-    ?? (totals ? pickFromRecord(totals, ['chunks', 'total_chunks', 'chunk_count']) : null)
-    ?? (summary ? pickFromRecord(summary, ['chunks', 'total_chunks']) : null)
-    ?? (counts ? pickFromRecord(counts, ['chunks', 'chunk_count']) : null)
+  const chunks = pickFromRecord(data, ['chunks_total', 'total_chunks', 'chunk_count', 'chunks', 'total_chunk_count'])
+    ?? (totals ? pickFromRecord(totals, ['chunks', 'chunks_total', 'total_chunks', 'chunk_count']) : null)
+    ?? (summary ? pickFromRecord(summary, ['chunks', 'chunks_total', 'total_chunks']) : null)
+    ?? (counts ? pickFromRecord(counts, ['chunks', 'chunk_count', 'chunks_total']) : null)
 
-  const documents = pickFromRecord(data, ['total_documents', 'document_count', 'documents', 'total_document_count'])
-    ?? (totals ? pickFromRecord(totals, ['documents', 'total_documents', 'document_count']) : null)
-    ?? (summary ? pickFromRecord(summary, ['documents', 'total_documents']) : null)
-    ?? (counts ? pickFromRecord(counts, ['documents', 'document_count']) : null)
+  const documents = pickFromRecord(data, ['documents_total', 'total_documents', 'document_count', 'documents', 'total_document_count'])
+    ?? (totals ? pickFromRecord(totals, ['documents', 'documents_total', 'total_documents', 'document_count']) : null)
+    ?? (summary ? pickFromRecord(summary, ['documents', 'documents_total', 'total_documents']) : null)
+    ?? (counts ? pickFromRecord(counts, ['documents', 'document_count', 'documents_total']) : null)
 
   let datasetsActive = pickFromRecord(data, ['datasets_active', 'active_datasets', 'active_dataset_count'])
     ?? (totals ? pickFromRecord(totals, ['datasets_active', 'active', 'active_datasets']) : null)
@@ -99,5 +99,13 @@ export function readConfigTopK(config: Record<string, unknown> | null): number |
   if (!config) {
     return null
   }
-  return pickFromRecord(config, ['top_k', 'retrieval_top_k', 'default_top_k', 'preview_top_k'])
+  const topLevel = pickFromRecord(config, ['top_k', 'retrieval_top_k', 'default_top_k', 'preview_top_k'])
+  if (topLevel != null) {
+    return topLevel
+  }
+  const search = isRecord(config.search) ? config.search : null
+  if (search) {
+    return pickFromRecord(search, ['default_top_k', 'top_k', 'retrieval_top_k'])
+  }
+  return null
 }

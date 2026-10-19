@@ -1202,6 +1202,15 @@
       },
       "score": "Score",
       "hitDataset": "Source dataset",
+      "hitSource": "Source",
+      "headingPath": "Heading path",
+      "scores": {
+        "rrf": "RRF",
+        "vector": "Vector",
+        "keyword": "Keyword",
+        "taggedSupplement": "Tagged supplement",
+        "referenceRescue": "Reference-tagged rescue"
+      },
       "gapRaw": "knowledge_gap (raw JSON)",
       "run": "Run preview",
       "failed": "Retrieval preview failed.",
@@ -1310,6 +1319,38 @@
         "activeSpace": {
           "label": "Active vector space",
           "desc": "Namespace or space used for retrieval."
+        },
+        "embeddingThirdParty": {
+          "label": "Third-party embedding",
+          "desc": "Whether embeddings use a third-party service."
+        },
+        "activeSpaceName": {
+          "label": "Vector space name",
+          "desc": "active_space.name"
+        },
+        "activeSpaceTable": {
+          "label": "Vector table",
+          "desc": "active_space.vector_table"
+        },
+        "activeSpaceStatus": {
+          "label": "Vector space status",
+          "desc": "active_space.status"
+        },
+        "defaultCandidates": {
+          "label": "Candidate pool",
+          "desc": "search.default_candidates"
+        },
+        "rrfK": {
+          "label": "RRF k",
+          "desc": "search.rrf_k"
+        },
+        "filterWhitelist": {
+          "label": "Filter whitelist",
+          "desc": "search.filter_whitelist"
+        },
+        "corpusEntry": {
+          "label": "Corpus",
+          "desc": "corpora[] entry"
         },
         "topK": {
           "label": "top_k",
