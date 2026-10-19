@@ -12,6 +12,7 @@ import { readConfigTopK } from '~/utils/knowledge-overview'
 import {
   buildKnowledgeDatasetLookup,
   knowledgeGapDetailRows,
+  representedNutrientsForPreview,
   retrievalHitDatasetDisplay,
   retrievalHitIsRescue,
   retrievalHitScoreLines,
@@ -81,11 +82,8 @@ const detectedNutrients = computed(() => {
 })
 
 const representedNutrients = computed(() => {
-  const info = result.value?.query_info
-  if (!info || !Array.isArray(info.represented_nutrients)) {
-    return [] as unknown[]
-  }
-  return info.represented_nutrients
+  const hits = result.value?.hits ?? []
+  return representedNutrientsForPreview(result.value?.query_info ?? null, hits.length)
 })
 
 function nutrientKeyLabel(key: string) {

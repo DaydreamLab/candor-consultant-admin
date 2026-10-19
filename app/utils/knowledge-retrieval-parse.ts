@@ -243,6 +243,29 @@ export function retrievalHitDatasetDisplay(
   return retrievalHitDatasetLabel(hit, lookup) ?? '—'
 }
 
+/**
+ * Nutrients covered by hits for the preview panel.
+ * Prefer API `represented_nutrients`; when absent but hits exist, fall back to `detected_nutrients`
+ * (single-nutrient queries often omit represented_nutrients).
+ */
+export function representedNutrientsForPreview(
+  queryInfo: Record<string, unknown> | null | undefined,
+  hitCount: number
+): unknown[] {
+  if (hitCount <= 0 || !queryInfo) {
+    return []
+  }
+  const represented = queryInfo.represented_nutrients
+  if (Array.isArray(represented) && represented.length) {
+    return represented
+  }
+  const detected = queryInfo.detected_nutrients
+  if (Array.isArray(detected) && detected.length) {
+    return detected
+  }
+  return []
+}
+
 export function retrievalHitSourceLabel(hit: Record<string, unknown>): string | null {
   const title = optionalString(hit.document_title)
   if (title) {

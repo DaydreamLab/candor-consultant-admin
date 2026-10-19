@@ -30,6 +30,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'save': [payload: PackagePlanWrite]
+  'no-changes': []
   'dirty-change': [dirty: boolean]
   'cancel': []
 }>()
@@ -109,6 +110,7 @@ function onSubmit() {
   }
   const patch = buildPackagePlanPatch(baseline.value, state)
   if (!Object.keys(patch).length) {
+    emit('no-changes')
     return
   }
   emit('save', patch)

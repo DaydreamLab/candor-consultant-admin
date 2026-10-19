@@ -9,6 +9,7 @@ import {
   parseKnowledgeGapPayload,
   parseRetrievalHits,
   retrievalHitDatasetDisplay,
+  representedNutrientsForPreview,
   retrievalHitDatasetLabel,
   retrievalHitIsRescue,
   retrievalHitScoreLines
@@ -74,6 +75,27 @@ describe('rescue hits', () => {
     expect(lines.find(line => line.key === 'vector')?.missingLabelKey).toBe(
       'knowledge.retrievalPreview.rescueBadge'
     )
+  })
+})
+
+describe('representedNutrientsForPreview', () => {
+  it('falls back to detected_nutrients when hits exist but represented is omitted', () => {
+    const info = {
+      detected_nutrients: ['sodium', 'iodine'],
+      represented_nutrients: undefined
+    }
+    expect(representedNutrientsForPreview(info, 3)).toEqual(['sodium', 'iodine'])
+  })
+
+  it('prefers represented_nutrients for partial multi-nutrient queries', () => {
+    const info = fixtures.retrievalBComplex.query_info as Record<string, unknown>
+    const list = representedNutrientsForPreview(info, 1)
+    expect(list).toEqual(info.represented_nutrients)
+  })
+
+  it('returns empty when there are no hits', () => {
+    const info = { detected_nutrients: ['copper'] }
+    expect(representedNutrientsForPreview(info, 0)).toEqual([])
   })
 })
 

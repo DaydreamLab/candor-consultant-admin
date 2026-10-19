@@ -22,8 +22,9 @@ const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
 const formDirty = ref(false)
+const saveNotice = ref<'success' | 'noChanges' | null>(null)
 
-const { confirmLeave } = usePackagePlanLeaveGuard(
+const { confirmLeave, allowNavigationWithoutConfirm } = usePackagePlanLeaveGuard(
   formDirty,
   () => t('packagePlans.leaveConfirm')
 )
@@ -63,6 +64,7 @@ async function load(id: string) {
   packagePlan.value = null
   errorMessage.value = ''
   formDirty.value = false
+  saveNotice.value = null
 
   const token = readOperatorToken()
   if (!token || !id) {
@@ -103,6 +105,7 @@ async function onSave(payload: PackagePlanWrite) {
 
   saving.value = true
   errorMessage.value = ''
+  saveNotice.value = null
   try {
     const row = await adminUpdatePackagePlan(config.public.apiBase, token, id, payload)
     if (packagePlanId.value !== id) {
@@ -111,6 +114,7 @@ async function onSave(payload: PackagePlanWrite) {
     packagePlan.value = row
     crumbLabel.value = planName(row)
     formDirty.value = false
+    saveNotice.value = 'success'
   } catch (error) {
     if (packagePlanId.value !== id) {
       return
@@ -123,12 +127,24 @@ async function onSave(payload: PackagePlanWrite) {
   }
 }
 
+function onNoChanges() {
+  saveNotice.value = 'noChanges'
+  errorMessage.value = ''
+}
+
 function onCancel() {
   if (!confirmLeave()) {
     return
   }
+  allowNavigationWithoutConfirm()
   void navigateTo(localePath('/package-plans'))
 }
+
+watch(formDirty, (dirty) => {
+  if (dirty) {
+    saveNotice.value = null
+  }
+})
 
 function planName(row: Record<string, unknown>) {
   return scalarText(row.name_zh).trim() || scalarText(row.name).trim() || null
@@ -155,8 +171,28 @@ function failText(error: unknown, fallback: string) {
     :title="title"
     plain
   >
+    <UAlert
+      v-if="saveNotice === 'success' && packagePlan"
+      color="success"
+      variant="subtle"
+      class="mb-4"
+      :title="$t('packagePlans.saveOk')"
+    />
+    <UAlert
+      v-if="saveNotice === 'noChanges' && packagePlan"
+      color="neutral"
+      variant="subtle"
+      class="mb-4"
+      :title="$t('packagePlans.noChanges')"
+    />
     <p
       v-if="errorMessage && !packagePlan"
+      class="mb-4 text-sm text-error"
+    >
+      {{ errorMessage }}
+    </p>
+    <p
+      v-else-if="errorMessage"
       class="mb-4 text-sm text-error"
     >
       {{ errorMessage }}
@@ -175,6 +211,7 @@ function failText(error: unknown, fallback: string) {
       :save-error="errorMessage"
       @dirty-change="formDirty = $event"
       @cancel="onCancel"
+      @no-changes="onNoChanges"
       @save="onSave"
     />
   </PageHeader>
