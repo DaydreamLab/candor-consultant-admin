@@ -1209,6 +1209,34 @@
         "retired": "已下架"
       }
     },
+    "nutrients": {
+      "copper": "銅",
+      "folate": "葉酸",
+      "thiamin": "維生素 B1（硫胺素）",
+      "riboflavin": "維生素 B2（核黃素）",
+      "niacin": "菸鹼素（維生素 B3）",
+      "pantothenic_acid": "泛酸（維生素 B5）",
+      "vitamin_b6": "維生素 B6",
+      "vitamin_b12": "維生素 B12",
+      "vitamin_c": "維生素 C",
+      "vitamin_d": "維生素 D",
+      "vitamin_e": "維生素 E",
+      "vitamin_k": "維生素 K",
+      "iron": "鐵",
+      "zinc": "鋅",
+      "magnesium": "鎂",
+      "calcium": "鈣",
+      "selenium": "硒",
+      "iodine": "碘",
+      "chromium": "鉻",
+      "manganese": "錳",
+      "molybdenum": "鉬",
+      "phosphorus": "磷",
+      "potassium": "鉀",
+      "sodium": "鈉",
+      "biotin": "生物素",
+      "choline": "膽鹼"
+    },
     "retrievalPreview": {
       "title": "檢索預覽",
       "subtitle": "除錯與評測公開參考知識檢索（非會員對話路徑）。",
@@ -1243,6 +1271,7 @@
       "run": "執行預覽",
       "failed": "檢索預覽失敗。",
       "detectedNutrients": "偵測到的成分",
+      "representedNutrients": "命中涵蓋的成分",
       "noHits": "沒有命中片段。",
       "mode": {
         "hybrid": "hybrid",
