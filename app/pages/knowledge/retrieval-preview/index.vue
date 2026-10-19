@@ -2,23 +2,31 @@
 import {
   AdminApiError,
   adminGetKnowledgeConfig,
-  adminKnowledgeRetrievalPreview
+  adminKnowledgeRetrievalPreview,
+  adminListKnowledgeDatasets
 } from '~/utils/admin-api'
 import type { KnowledgeGapReason, KnowledgeRetrievalMode } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
 import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatasetGroupFilter'
 import { readConfigTopK } from '~/utils/knowledge-overview'
 import {
+  buildKnowledgeDatasetLookup,
   knowledgeGapDetailRows,
-  retrievalHitDatasetLabel,
+  retrievalHitDatasetDisplay,
   retrievalHitIsRescue,
   retrievalHitScoreLines,
-  retrievalHitSourceLabel
+  retrievalHitSourceLabel,
+  type KnowledgeDatasetLookup
 } from '~/utils/knowledge-retrieval-parse'
+import { formatNutrientItem } from '~/utils/nutrient-display'
 
 const config = useRuntimeConfig()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const { filterGroup, groupSelectItems, groupQueryValue } = useKnowledgeDatasetGroupFilter()
+
+const requiredFieldUi = { label: 'after:!text-red-500 after:ms-0.5' }
+
+const datasetLookup = ref<KnowledgeDatasetLookup | null>(null)
 
 const queryText = ref('')
 const corpus = ref<'public_knowledge'>('public_knowledge')
@@ -57,7 +65,11 @@ const gapDetailRows = computed(() => {
   if (!gap || !isRecord(gap)) {
     return []
   }
-  return knowledgeGapDetailRows(gap, reason => t(`knowledge.retrievalPreview.gap.${reason}.title`))
+  return knowledgeGapDetailRows(
+    gap,
+    reason => t(`knowledge.retrievalPreview.gap.${reason}.title`),
+    nutrientKeyLabel
+  )
 })
 
 const detectedNutrients = computed(() => {
@@ -67,6 +79,23 @@ const detectedNutrients = computed(() => {
   }
   return info.detected_nutrients
 })
+
+const representedNutrients = computed(() => {
+  const info = result.value?.query_info
+  if (!info || !Array.isArray(info.represented_nutrients)) {
+    return [] as unknown[]
+  }
+  return info.represented_nutrients
+})
+
+function nutrientKeyLabel(key: string) {
+  const i18nKey = `knowledge.nutrients.${key}`
+  return te(i18nKey) ? t(i18nKey) : key
+}
+
+function nutrientLabel(item: unknown) {
+  return formatNutrientItem(item, nutrientKeyLabel)
+}
 
 const showBComplexPartialHint = computed(() => {
   if (gapReason.value !== 'partial_multi_nutrient_hits') {
@@ -99,6 +128,12 @@ async function loadConfigDefaults() {
     return
   }
   try {
+    const datasets = await adminListKnowledgeDatasets(config.public.apiBase, token)
+    datasetLookup.value = buildKnowledgeDatasetLookup(datasets)
+  } catch {
+    datasetLookup.value = null
+  }
+  try {
     const cfg = await adminGetKnowledgeConfig(config.public.apiBase, token)
     const fromConfig = readConfigTopK(cfg)
     if (fromConfig != null) {
@@ -117,24 +152,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
-function nutrientLabel(item: unknown) {
-  if (typeof item === 'string') {
-    return item
-  }
-  if (isRecord(item)) {
-    const key = item.nutrient_key ?? item.key ?? item.code
-    const name = item.name ?? item.label
-    if (typeof key === 'string' && typeof name === 'string') {
-      return `${name} (${key})`
-    }
-    if (typeof key === 'string') {
-      return key
-    }
-    if (typeof name === 'string') {
-      return name
-    }
-  }
-  return String(item ?? '')
+function hitDatasetLabel(hit: Record<string, unknown>) {
+  return retrievalHitDatasetDisplay(hit, datasetLookup.value ?? undefined)
 }
 
 async function runPreview() {
@@ -192,6 +211,7 @@ function hitPreview(row: Record<string, unknown>) {
       <UFormField
         :label="$t('knowledge.retrievalPreview.query')"
         required
+        :ui="requiredFieldUi"
       >
         <UTextarea
           v-model="queryText"
@@ -264,7 +284,23 @@ function hitPreview(row: Record<string, unknown>) {
         <ul class="mt-1 list-disc pl-5 text-muted">
           <li
             v-for="(item, index) in detectedNutrients"
-            :key="`nutrient-${index}`"
+            :key="`detected-nutrient-${index}`"
+          >
+            {{ nutrientLabel(item) }}
+          </li>
+        </ul>
+      </div>
+      <div
+        v-if="representedNutrients.length"
+        class="mb-4 rounded-xl border border-default bg-elevated p-3 text-sm"
+      >
+        <p class="font-medium">
+          {{ $t('knowledge.retrievalPreview.representedNutrients') }}
+        </p>
+        <ul class="mt-1 list-disc pl-5 text-muted">
+          <li
+            v-for="(item, index) in representedNutrients"
+            :key="`represented-nutrient-${index}`"
           >
             {{ nutrientLabel(item) }}
           </li>
@@ -348,8 +384,8 @@ function hitPreview(row: Record<string, unknown>) {
                 {{ $t(line.labelKey) }}: {{ $t(line.missingLabelKey) }}
               </span>
             </template>
-            <span v-if="retrievalHitDatasetLabel(hit)">
-              {{ $t('knowledge.retrievalPreview.hitDataset') }}: {{ retrievalHitDatasetLabel(hit) }}
+            <span>
+              {{ $t('knowledge.retrievalPreview.hitDataset') }}: {{ hitDatasetLabel(hit) }}
             </span>
             <span v-if="retrievalHitSourceLabel(hit)">
               {{ $t('knowledge.retrievalPreview.hitSource') }}: {{ retrievalHitSourceLabel(hit) }}

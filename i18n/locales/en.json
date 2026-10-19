@@ -1210,6 +1210,34 @@
         "retired": "Retired"
       }
     },
+    "nutrients": {
+      "copper": "Copper",
+      "folate": "Folate",
+      "thiamin": "Thiamin",
+      "riboflavin": "Riboflavin",
+      "niacin": "Niacin",
+      "pantothenic_acid": "Pantothenic acid",
+      "vitamin_b6": "Vitamin B6",
+      "vitamin_b12": "Vitamin B12",
+      "vitamin_c": "Vitamin C",
+      "vitamin_d": "Vitamin D",
+      "vitamin_e": "Vitamin E",
+      "vitamin_k": "Vitamin K",
+      "iron": "Iron",
+      "zinc": "Zinc",
+      "magnesium": "Magnesium",
+      "calcium": "Calcium",
+      "selenium": "Selenium",
+      "iodine": "Iodine",
+      "chromium": "Chromium",
+      "manganese": "Manganese",
+      "molybdenum": "Molybdenum",
+      "phosphorus": "Phosphorus",
+      "potassium": "Potassium",
+      "sodium": "Sodium",
+      "biotin": "Biotin",
+      "choline": "Choline"
+    },
     "retrievalPreview": {
       "title": "Retrieval preview",
       "subtitle": "Debug public reference retrieval (not the member chat path).",
@@ -1244,6 +1272,7 @@
       "run": "Run preview",
       "failed": "Retrieval preview failed.",
       "detectedNutrients": "Detected nutrients",
+      "representedNutrients": "Nutrients covered in hits",
       "noHits": "No matching chunks.",
       "mode": {
         "hybrid": "hybrid",

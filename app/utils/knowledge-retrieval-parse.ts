@@ -1,4 +1,4 @@
-import type { KnowledgeGapReason } from '~/types/knowledge'
+import type { KnowledgeDataset, KnowledgeGapReason } from '~/types/knowledge'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -84,10 +84,14 @@ export function normalizeRetrievalHit(hit: Record<string, unknown>): Record<stri
   if (optionalString(hit.dataset_name)) {
     flat.dataset_name = hit.dataset_name
   }
+  if (optionalString(hit.dataset_id)) {
+    flat.dataset_id = hit.dataset_id
+  }
   if (dataset) {
     flat.dataset_code = flat.dataset_code ?? dataset.code
     flat.dataset_name = flat.dataset_name ?? dataset.name
     flat.dataset_id = flat.dataset_id ?? dataset.id
+    flat.dataset = dataset
   }
   if (document) {
     flat.document_title = flat.document_title ?? document.title
@@ -167,28 +171,76 @@ export function retrievalHitSupplementLabelKey(hit: Record<string, unknown>): st
   return null
 }
 
-export function retrievalHitDatasetLabel(hit: Record<string, unknown>): string | null {
-  const name = optionalString(hit.dataset_name)
-  const code = optionalString(hit.dataset_code)
+export type KnowledgeDatasetLookup = {
+  byId: Map<string, Pick<KnowledgeDataset, 'name' | 'code'>>
+}
+
+export function buildKnowledgeDatasetLookup(datasets: KnowledgeDataset[]): KnowledgeDatasetLookup {
+  const byId = new Map<string, Pick<KnowledgeDataset, 'name' | 'code'>>()
+  for (const row of datasets) {
+    byId.set(row.id, { name: row.name, code: row.code })
+  }
+  return { byId }
+}
+
+function formatDatasetNameAndCode(name: string | null, code: string | null): string | null {
   if (name && code && name !== code) {
     return `${name} (${code})`
   }
-  if (name) {
-    return name
-  }
-  if (code) {
-    return code
+  return name ?? code
+}
+
+export function readRetrievalHitDatasetId(hit: Record<string, unknown>): string | null {
+  const direct = optionalString(hit.dataset_id)
+  if (direct) {
+    return direct
   }
   const dataset = isRecord(hit.dataset) ? hit.dataset : null
   if (dataset) {
-    const nestedName = optionalString(dataset.name)
-    const nestedCode = optionalString(dataset.code)
-    if (nestedName && nestedCode) {
-      return `${nestedName} (${nestedCode})`
-    }
-    return nestedName ?? nestedCode
+    return optionalString(dataset.id)
   }
   return null
+}
+
+export function retrievalHitDatasetLabel(
+  hit: Record<string, unknown>,
+  lookup?: KnowledgeDatasetLookup
+): string | null {
+  const name = optionalString(hit.dataset_name)
+  const code = optionalString(hit.dataset_code)
+  const fromFlat = formatDatasetNameAndCode(name, code)
+  if (fromFlat) {
+    return fromFlat
+  }
+  const dataset = isRecord(hit.dataset) ? hit.dataset : null
+  if (dataset) {
+    const nested = formatDatasetNameAndCode(
+      optionalString(dataset.name),
+      optionalString(dataset.code)
+    )
+    if (nested) {
+      return nested
+    }
+  }
+  const datasetId = readRetrievalHitDatasetId(hit)
+  if (datasetId && lookup) {
+    const row = lookup.byId.get(datasetId)
+    if (row) {
+      return formatDatasetNameAndCode(
+        optionalString(row.name),
+        optionalString(row.code)
+      )
+    }
+  }
+  return null
+}
+
+/** 卡片上永遠顯示資料集欄時使用；無識別時為 em dash。 */
+export function retrievalHitDatasetDisplay(
+  hit: Record<string, unknown>,
+  lookup?: KnowledgeDatasetLookup
+): string {
+  return retrievalHitDatasetLabel(hit, lookup) ?? '—'
 }
 
 export function retrievalHitSourceLabel(hit: Record<string, unknown>): string | null {
@@ -201,7 +253,8 @@ export function retrievalHitSourceLabel(hit: Record<string, unknown>): string | 
 
 export function knowledgeGapDetailRows(
   gap: Record<string, unknown>,
-  reasonLabel: (reason: KnowledgeGapReason) => string
+  reasonLabel: (reason: KnowledgeGapReason) => string,
+  formatNutrientKey?: (key: string) => string
 ): KnowledgeGapDetailRow[] {
   const rows: KnowledgeGapDetailRow[] = []
   const reason = gap.reason
@@ -220,7 +273,16 @@ export function knowledgeGapDetailRows(
   const keys = gap.nutrient_keys ?? gap.nutrientKeys
   if (Array.isArray(keys) && keys.length) {
     const text = keys
-      .map(item => (typeof item === 'string' ? item.trim() : ''))
+      .map((item) => {
+        if (typeof item !== 'string') {
+          return ''
+        }
+        const trimmed = item.trim()
+        if (!trimmed) {
+          return ''
+        }
+        return formatNutrientKey ? formatNutrientKey(trimmed) : trimmed
+      })
       .filter(Boolean)
       .join('、')
     if (text) {

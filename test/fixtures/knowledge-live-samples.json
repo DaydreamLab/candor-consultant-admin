@@ -87,6 +87,15 @@
       "tagged_supplement": 1
     }
   },
+  "retrievalHitDatasetIdOnly": {
+    "chunk_id": "sample-dataset-id",
+    "text": "僅帶 dataset_id",
+    "dataset_id": "a07d857d-79f8-4797-bb4c-660eca8ffc7c",
+    "document": {
+      "title": "FDA Daily Value"
+    },
+    "scores": { "rrf": 0.05, "vector": 0.1, "keyword": 0.02 }
+  },
   "retrievalHitWithDataset": {
     "chunk_id": "60875da3-ca18-4795-bb03-92b57692f1b3",
     "text": "葉酸修訂",
