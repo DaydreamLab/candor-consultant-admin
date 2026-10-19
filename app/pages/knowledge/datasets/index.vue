@@ -7,6 +7,7 @@ import {
 import type { KnowledgeDataset, KnowledgeDatasetGroup, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
 import { datasetStatusBadgeColor } from '~/utils/knowledge-labels'
+import { resolveKnowledgeGroupKey } from '~/utils/knowledge-field-parse'
 
 const FILTER_ANY = 'all'
 
@@ -42,7 +43,7 @@ const filteredRows = computed(() => {
 })
 
 function datasetsInGroup(groupKey: string) {
-  return filteredRows.value.filter(row => (row.group_key ?? '').trim() === groupKey)
+  return filteredRows.value.filter(row => resolveKnowledgeGroupKey(row as Record<string, unknown>) === groupKey)
 }
 
 function groupDatasetCount(groupKey: string) {

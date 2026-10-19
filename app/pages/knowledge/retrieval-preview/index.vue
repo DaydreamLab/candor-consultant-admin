@@ -8,6 +8,10 @@ import type { KnowledgeGapReason, KnowledgeRetrievalMode } from '~/types/knowled
 import { readOperatorToken } from '~/utils/operator-session'
 import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatasetGroupFilter'
 import { readConfigTopK } from '~/utils/knowledge-overview'
+import {
+  retrievalHitScoreLines,
+  retrievalHitSourceLabel
+} from '~/utils/knowledge-retrieval-parse'
 
 const config = useRuntimeConfig()
 const { t } = useI18n()
@@ -120,32 +124,6 @@ function nutrientLabel(item: unknown) {
     }
   }
   return String(item ?? '')
-}
-
-function hitScore(hit: Record<string, unknown>) {
-  const score = hit.score ?? hit.relevance_score ?? hit.similarity
-  if (typeof score === 'number' && Number.isFinite(score)) {
-    return score.toFixed(4)
-  }
-  if (typeof score === 'string' && score.trim()) {
-    return score.trim()
-  }
-  return null
-}
-
-function hitDatasetLabel(hit: Record<string, unknown>) {
-  const name = hit.dataset_name ?? hit.dataset_title
-  const code = hit.dataset_code ?? hit.dataset
-  if (typeof name === 'string' && typeof code === 'string') {
-    return `${name} (${code})`
-  }
-  if (typeof name === 'string') {
-    return name
-  }
-  if (typeof code === 'string') {
-    return code
-  }
-  return null
 }
 
 async function runPreview() {
@@ -323,13 +301,27 @@ function hitPreview(row: Record<string, unknown>) {
           :key="String(hit.id ?? hit.chunk_id ?? index)"
           class="bg-elevated"
         >
-          <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span>#{{ index + 1 }}</span>
-            <span v-if="hitScore(hit)">
-              {{ $t('knowledge.retrievalPreview.score') }}: {{ hitScore(hit) }}
+            <template
+              v-for="line in retrievalHitScoreLines(hit)"
+              :key="line.key"
+            >
+              <span v-if="line.value">
+                {{ $t(line.labelKey) }}: {{ line.value }}
+              </span>
+              <span
+                v-else-if="line.missingLabelKey"
+                class="text-warning"
+              >
+                {{ $t(line.labelKey) }}: {{ $t(line.missingLabelKey) }}
+              </span>
+            </template>
+            <span v-if="retrievalHitSourceLabel(hit)">
+              {{ $t('knowledge.retrievalPreview.hitSource') }}: {{ retrievalHitSourceLabel(hit) }}
             </span>
-            <span v-if="hitDatasetLabel(hit)">
-              {{ $t('knowledge.retrievalPreview.hitDataset') }}: {{ hitDatasetLabel(hit) }}
+            <span v-if="typeof hit.heading_path === 'string' && hit.heading_path.trim()">
+              {{ $t('knowledge.retrievalPreview.headingPath') }}: {{ hit.heading_path }}
             </span>
           </div>
           <p class="mt-2 text-sm whitespace-pre-wrap">
