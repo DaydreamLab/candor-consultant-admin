@@ -38,6 +38,7 @@ const menuGroups = computed(() =>
 )
 
 const { items: crumbs } = usePageCrumbs()
+useAdminPageHead(crumbs)
 const navbarStore = useNavbarActions()
 const navbarActions = computed(() => navbarStore.value.current)
 

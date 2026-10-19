@@ -1085,6 +1085,9 @@
     }
   },
   "knowledge": {
+    "filters": {
+      "groupAll": "全部群組"
+    },
     "tabs": {
       "datasets": "資料集",
       "chunks": "片段審核",
@@ -1100,6 +1103,7 @@
       "loading": "載入中…",
       "failed": "無法載入資料集。",
       "saveFailed": "儲存失敗，請稍後再試。",
+      "saveOk": "已儲存資料集變更。",
       "emptyTitle": "尚無資料集",
       "empty": "目前沒有任何知識資料集。",
       "readOnly": "目前角色無法編輯資料集。",
@@ -1107,6 +1111,8 @@
       "filterStatus": "狀態",
       "filterGroup": "群組",
       "filterGroupPlaceholder": "group_key",
+      "groupDatasetCount": "{count} 個資料集",
+      "emptyInGroup": "此群組目前沒有符合篩選的資料集。",
       "columns": {
         "code": "代號",
         "name": "名稱",
@@ -1130,6 +1136,14 @@
         "chunks": "片段數",
         "sourceUrl": "來源連結",
         "reviewBreakdown": "審核狀態分布",
+        "allowThirdPartyHint": "對應 API 欄位 allow_third_party；目前 OpenAPI PATCH 未提供修改，僅供檢視。",
+        "chunksSectionTitle": "片段列表",
+        "chunksLoadFailed": "無法載入此資料集的片段。",
+        "chunksEmptyTitle": "沒有符合的片段",
+        "chunksEmpty": "調整審核狀態篩選，或此資料集尚無片段。",
+        "chunksShowing": "顯示 {filtered} 筆（自本頁已載入的 {loaded} 筆中篩選）",
+        "chunksClientScopeTitle": "後端尚未支援依資料集查詢",
+        "chunksClientScopeHint": "GET /knowledge/chunks 目前 OpenAPI 僅支援 group；無 group_key 時會載入全部片段並在前端依 dataset_id 篩選，大型知識庫可能較慢。待 candor-core 補 dataset_id、review_status、limit／offset。",
         "editTitle": "代號、名稱與授權"
       },
       "form": {
@@ -1161,6 +1175,11 @@
       "rejectTitle": "退回片段",
       "rejectReason": "原因",
       "rejectConfirm": "確認退回",
+      "chunkId": "片段 ID",
+      "rejectReasonStored": "退回原因",
+      "reviewRoleOps": "OpenAPI：approve／reject 僅 expert 與 admin；ops 若操作可能收到 403。",
+      "pendingFilterEmptyTitle": "沒有待審片段",
+      "pendingFilterEmpty": "API 已回傳 {count} 筆片段，但沒有 review_status=pending；與 beta 全數 approved 一致，非篩選錯誤。",
       "status": {
         "pending": "待審",
         "approved": "已核可",
@@ -1175,6 +1194,15 @@
       "query": "查詢",
       "modeLabel": "模式",
       "topK": "top_k",
+      "topKFromConfig": "預設取自 GET /knowledge/config 的 top_k。",
+      "topKFallback": "config 無 top_k 時預設 5。",
+      "corpusLabel": "corpus",
+      "corpus": {
+        "public_knowledge": "public_knowledge（公開參考知識）"
+      },
+      "score": "分數",
+      "hitDataset": "來源資料集",
+      "gapRaw": "knowledge_gap（原始 JSON）",
       "run": "執行預覽",
       "failed": "檢索預覽失敗。",
       "detectedNutrients": "偵測到的成分",
@@ -1214,15 +1242,38 @@
       "emptyTitle": "沒有紀錄",
       "empty": "此條件下沒有稽核事件。",
       "columns": {
+        "eventId": "事件 id",
         "time": "時間",
         "action": "動作",
         "source": "來源",
-        "actor": "操作者"
-      }
+        "actor": "操作者",
+        "related": "相關"
+      },
+      "eventIdHint": "chunk 審核列可能為整數 id；admin 稽核列可能為 UUID。",
+      "loadMore": "載入更多",
+      "totalHint": "已載入 {shown} 筆（API 回報總計 {total} 筆）",
+      "chunkTitle": "片段稽核歷程",
+      "chunkSubtitle": "單一公開參考知識片段的審核與相關動作（OpenAPI：chunk id 為 UUID）。",
+      "datasetTitle": "資料集稽核",
+      "datasetSubtitle": "該資料集底下的片段審核與資料集管理動作（列表事件 id：chunk 列為整數、admin 列為 UUID）。",
+      "backToList": "返回全域稽核",
+      "backToDataset": "返回資料集",
+      "viewChunkAudit": "稽核歷程",
+      "viewDatasetAudit": "查看稽核紀錄",
+      "linkChunk": "片段",
+      "linkDataset": "資料集",
+      "invalidChunkId": "片段 id 須為 UUID。",
+      "invalidDatasetId": "資料集 id 須為 UUID。",
+      "forbidden": "目前角色無權查看此稽核。"
     },
     "overview": {
       "title": "知識總覽",
       "subtitle": "各資料集文件與片段彙總（唯讀）。",
+      "totals": {
+        "chunks": "全庫片段",
+        "documents": "全庫文件",
+        "datasetsActive": "active 資料集"
+      },
       "loading": "載入中…",
       "failed": "無法載入總覽。",
       "emptyTitle": "沒有彙總資料",
@@ -1231,10 +1282,60 @@
     "config": {
       "title": "知識設定",
       "subtitle": "生效中的 embedding 與服務設定（不含金鑰）。",
+      "topKHint": "config.top_k = {value}（檢索預覽預設 top_k 與此對齊）。",
       "loading": "載入中…",
       "failed": "無法載入設定。",
       "emptyTitle": "沒有設定欄位",
-      "empty": "config 回應為空。"
+      "empty": "config 回應為空。",
+      "sections": {
+        "embedding": "Embedding／向量",
+        "retrieval": "檢索參數",
+        "corpus": "Corpus",
+        "service": "服務預設",
+        "other": "其他設定"
+      },
+      "fields": {
+        "embeddingProvider": {
+          "label": "Embedding 供應商",
+          "desc": "向量嵌入服務供應商（如 openai、azure）。"
+        },
+        "embeddingModel": {
+          "label": "Embedding 模型",
+          "desc": "產生向量的模型名稱。"
+        },
+        "embeddingDimensions": {
+          "label": "向量維度",
+          "desc": "embedding 向量維度，須與索引空間一致。"
+        },
+        "activeSpace": {
+          "label": "生效向量空間",
+          "desc": "目前檢索使用的向量空間／namespace。"
+        },
+        "topK": {
+          "label": "top_k",
+          "desc": "檢索預覽與對話路徑預設取回片段數上限。"
+        },
+        "minScore": {
+          "label": "最低相關分數",
+          "desc": "低於此分數的命中可能被過濾。"
+        },
+        "reviewMode": {
+          "label": "預設審核模式",
+          "desc": "新匯入片段的預設 review 流程。"
+        },
+        "corpus": {
+          "label": "可搜 corpus",
+          "desc": "允許檢索的知識庫 corpus 列表或預設值。"
+        },
+        "allowThirdPartyDefault": {
+          "label": "外送預設",
+          "desc": "資料集 allow_third_party 的系統預設（若後端提供）。"
+        },
+        "unknown": {
+          "label": "其他欄位",
+          "desc": "後端設定鍵「{key}」（OpenAPI 寬型別）。"
+        }
+      }
     },
     "datasetGroups": {
       "title": "資料集群組",
