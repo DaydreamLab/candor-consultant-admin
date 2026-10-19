@@ -104,23 +104,66 @@ export function snapshotFromPlan(plan: Record<string, unknown>): PackagePlanSnap
   }
 }
 
-export function originalPriceIssue(state: PackagePlanFormState): PackagePlanValidationIssue | null {
-  const trimmed = state.original_price.trim()
+export function formFieldText(value: unknown): string {
+  if (value == null) {
+    return ''
+  }
+  return String(value).trim()
+}
+
+/** 表單數字欄（含 type=number 回傳的 number）轉正整數；空值為 null。 */
+export function parsePositiveIntegerField(value: unknown): number | null {
+  const trimmed = formFieldText(value)
   if (!trimmed) {
     return null
   }
-  const original = Number(trimmed)
-  const price = Number(state.price)
-  if (!Number.isInteger(original) || original <= 0) {
-    return { field: 'original_price' }
+  const n = Number(trimmed)
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0) {
+    return null
   }
-  if (!Number.isInteger(price) || price <= 0) {
+  return n
+}
+
+export type OriginalPriceErrorMessages = {
+  emptyInvalid: string
+  belowPrice: (price: number) => string
+}
+
+/** 即時驗證文案；空 original_price 合法。有值時須為正整數且 original >= price（與 core CHECK 一致）。 */
+export function originalPriceErrorMessage(
+  state: PackagePlanFormState,
+  messages: OriginalPriceErrorMessages
+): string | null {
+  if (!formFieldText(state.original_price)) {
+    return null
+  }
+  const original = parsePositiveIntegerField(state.original_price)
+  if (original == null) {
+    return messages.emptyInvalid
+  }
+  const price = parsePositiveIntegerField(state.price)
+  if (price == null) {
     return null
   }
   if (original < price) {
-    return { field: 'original_price' }
+    return messages.belowPrice(price)
   }
   return null
+}
+
+export function originalPriceIssue(state: PackagePlanFormState): PackagePlanValidationIssue | null {
+  const stub = { emptyInvalid: 'x', belowPrice: () => 'y' }
+  return originalPriceErrorMessage(state, stub) ? { field: 'original_price' } : null
+}
+
+export function packagePlanFormIsDirty(
+  snapshot: PackagePlanSnapshot | null,
+  state: PackagePlanFormState
+): boolean {
+  if (!snapshot) {
+    return false
+  }
+  return Object.keys(buildPackagePlanPatch(snapshot, state)).length > 0
 }
 
 export function validatePackagePlanForm(state: PackagePlanFormState): PackagePlanValidationIssue | null {
@@ -238,16 +281,11 @@ export function moveFeatureRow(rows: string[], index: number, direction: -1 | 1)
   return next
 }
 
-function parseOriginalPriceField(value: string): number | null {
-  const trimmed = value.trim()
-  if (!trimmed) {
+function parseOriginalPriceField(value: unknown): number | null {
+  if (!formFieldText(value)) {
     return null
   }
-  const n = Number(trimmed)
-  if (!Number.isInteger(n)) {
-    return null
-  }
-  return n
+  return parsePositiveIntegerField(value)
 }
 
 function normalizeFeatureList(rows: string[]): string[] | null {

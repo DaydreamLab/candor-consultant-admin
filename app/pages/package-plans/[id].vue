@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { AdminApiError, adminGetPackagePlan, adminUpdatePackagePlan, type PackagePlanWrite } from '~/utils/admin-api'
 import { PACKAGE_PLAN_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
+import { usePackagePlanLeaveGuard } from '~/composables/usePackagePlanLeaveGuard'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
 const route = useRoute()
+const localePath = useLocalePath()
 const { t, locale } = useI18n()
 const session = useSessionStore()
 const crumbLabel = usePackagePlanCrumbLabel()
@@ -19,6 +21,12 @@ const packagePlan = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
+const formDirty = ref(false)
+
+const { confirmLeave } = usePackagePlanLeaveGuard(
+  formDirty,
+  () => t('packagePlans.leaveConfirm')
+)
 
 watch([saving, pending, packagePlan, locale, canEdit], () => {
   if (pending.value || !packagePlan.value || !canEdit.value) {
@@ -54,6 +62,7 @@ async function load(id: string) {
   crumbLabel.value = null
   packagePlan.value = null
   errorMessage.value = ''
+  formDirty.value = false
 
   const token = readOperatorToken()
   if (!token || !id) {
@@ -101,6 +110,7 @@ async function onSave(payload: PackagePlanWrite) {
     }
     packagePlan.value = row
     crumbLabel.value = planName(row)
+    formDirty.value = false
   } catch (error) {
     if (packagePlanId.value !== id) {
       return
@@ -111,6 +121,13 @@ async function onSave(payload: PackagePlanWrite) {
       saving.value = false
     }
   }
+}
+
+function onCancel() {
+  if (!confirmLeave()) {
+    return
+  }
+  void navigateTo(localePath('/package-plans'))
 }
 
 function planName(row: Record<string, unknown>) {
@@ -156,6 +173,8 @@ function failText(error: unknown, fallback: string) {
       :package-plan="packagePlan"
       :saving="saving"
       :save-error="errorMessage"
+      @dirty-change="formDirty = $event"
+      @cancel="onCancel"
       @save="onSave"
     />
   </PageHeader>
