@@ -6,17 +6,21 @@ import {
 } from '~/utils/admin-api'
 import type { KnowledgeDataset, KnowledgeDatasetPatch, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
+import { allowThirdPartyBadgeColor } from '~/utils/knowledge-labels'
 
 const config = useRuntimeConfig()
 const route = useRoute()
 const { t } = useI18n()
 const session = useSessionStore()
+const localePath = useLocalePath()
+const toast = useToast()
 
 const datasetId = computed(() => String(route.params.id ?? ''))
 const dataset = ref<KnowledgeDataset | null>(null)
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
+const saveSuccess = ref(false)
 
 const draftCode = ref('')
 const draftName = ref('')
@@ -26,10 +30,7 @@ const draftAttribution = ref('')
 const draftStatus = ref<KnowledgeDatasetStatus>('pending_review')
 const draftReason = ref('')
 
-const canEdit = computed(() => {
-  const role = session.operator?.role
-  return role === 'expert' || role === 'ops' || role === 'admin'
-})
+const canEdit = computed(() => session.isLoggedIn)
 
 const statusOptions = computed(() => [
   { label: t('knowledge.datasets.status.pending_review'), value: 'pending_review' },
@@ -81,7 +82,9 @@ function syncDraft(row: KnowledgeDataset) {
   draftLicense.value = row.license ?? ''
   draftLicenseUrl.value = row.license_url ?? ''
   draftAttribution.value = row.attribution ?? ''
-  draftStatus.value = row.status ?? 'pending_review'
+  draftStatus.value = row.status && ['pending_review', 'active', 'disabled'].includes(row.status)
+    ? row.status
+    : 'pending_review'
   draftReason.value = ''
 }
 
@@ -93,6 +96,7 @@ async function save() {
   }
   saving.value = true
   errorMessage.value = ''
+  saveSuccess.value = false
   const payload: KnowledgeDatasetPatch = {
     code: draftCode.value.trim(),
     name: draftName.value.trim(),
@@ -112,6 +116,11 @@ async function save() {
     }
     dataset.value = row
     syncDraft(row)
+    saveSuccess.value = true
+    toast.add({
+      title: t('knowledge.datasets.saveOk'),
+      color: 'success'
+    })
   } catch (error) {
     if (datasetId.value !== id) {
       return
@@ -124,6 +133,16 @@ async function save() {
       saving.value = false
     }
   }
+}
+
+function allowThirdPartyLabel(value: boolean | null | undefined) {
+  if (value === true) {
+    return t('knowledge.datasets.allowThirdParty.yes')
+  }
+  if (value === false) {
+    return t('knowledge.datasets.allowThirdParty.no')
+  }
+  return t('knowledge.datasets.allowThirdParty.undecided')
 }
 
 function reviewCount(key: string) {
@@ -142,6 +161,19 @@ function reviewCount(key: string) {
     plain
   >
     <KnowledgeTabs />
+
+    <div
+      v-if="dataset && !pending"
+      class="mb-4"
+    >
+      <UButton
+        :to="localePath(`/knowledge/audit/datasets/${datasetId}`)"
+        variant="outline"
+        size="sm"
+      >
+        {{ $t('knowledge.audit.viewDatasetAudit') }}
+      </UButton>
+    </div>
 
     <p
       v-if="errorMessage && !dataset"
@@ -162,6 +194,13 @@ function reviewCount(key: string) {
       >
         {{ errorMessage }}
       </p>
+      <UAlert
+        v-if="saveSuccess"
+        color="success"
+        variant="subtle"
+        class="mb-4"
+        :title="$t('knowledge.datasets.saveOk')"
+      />
 
       <div class="mb-6 grid gap-4 md:grid-cols-2">
         <UCard>
@@ -191,6 +230,23 @@ function reviewCount(key: string) {
               </dt>
               <dd>{{ dataset.chunk_count ?? '—' }}</dd>
             </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">
+                {{ $t('knowledge.datasets.columns.allowThirdParty') }}
+              </dt>
+              <dd>
+                <UBadge
+                  size="sm"
+                  variant="subtle"
+                  :color="allowThirdPartyBadgeColor(dataset.allow_third_party)"
+                >
+                  {{ allowThirdPartyLabel(dataset.allow_third_party) }}
+                </UBadge>
+              </dd>
+            </div>
+            <p class="text-xs text-muted">
+              {{ $t('knowledge.datasets.detail.allowThirdPartyHint') }}
+            </p>
             <div
               v-if="dataset.source_url"
               class="flex flex-col gap-1"
@@ -225,6 +281,13 @@ function reviewCount(key: string) {
           </ul>
         </UCard>
       </div>
+
+      <KnowledgeDatasetChunksPanel
+        class="mb-6"
+        :dataset-id="datasetId"
+        :dataset-code="dataset.code"
+        :group-key="dataset.group_key"
+      />
 
       <UCard v-if="canEdit">
         <template #header>

@@ -1,4 +1,5 @@
 import type { BreadcrumbItem } from '@nuxt/ui'
+import { knowledgeCrumbs } from '~/utils/knowledge-nav'
 import { NAV_GROUPS, normalizeAdminPath } from '~/utils/nav'
 
 export function useSellableItemCrumbLabel() {
@@ -30,8 +31,32 @@ export function usePageCrumbs() {
   const trainingBatchLabel = useState<string | null>('candor-training-batch-label', () => null)
   const weightSetLabel = useState<string | null>('candor-weight-set-label', () => null)
 
+  function knowledgeTailLabel(current: string): string | undefined {
+    if (current.startsWith('/knowledge/datasets/') && current !== '/knowledge/datasets') {
+      const id = String(route.params.id ?? '').trim()
+      return id || undefined
+    }
+    if (current.startsWith('/knowledge/audit/chunks/')) {
+      const id = String(route.params.id ?? '').trim()
+      return id || undefined
+    }
+    if (current.startsWith('/knowledge/audit/datasets/')) {
+      const id = String(route.params.id ?? '').trim()
+      return id || undefined
+    }
+    return undefined
+  }
+
   const items = computed<BreadcrumbItem[]>(() => {
     const current = normalizeAdminPath(route.path)
+
+    if (current === '/knowledge' || current.startsWith('/knowledge/')) {
+      const knowledge = knowledgeCrumbs(current, t, localePath, knowledgeTailLabel(current))
+      if (knowledge?.length) {
+        return knowledge
+      }
+      return [{ label: t('nav.knowledge') }]
+    }
 
     if (current === '/products/new') {
       return [
@@ -143,6 +168,9 @@ export function usePageCrumbs() {
     }
     if (current === '/account') {
       return t('nav.account')
+    }
+    if (current.startsWith('/knowledge/')) {
+      return t('nav.knowledge')
     }
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {

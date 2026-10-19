@@ -52,6 +52,7 @@ export type KnowledgeChunk = {
   attribution?: string | null
   chunk_kind?: string | null
   group_key?: string | null
+  reject_reason?: string | null
 }
 
 export type KnowledgeChunkListQuery = {

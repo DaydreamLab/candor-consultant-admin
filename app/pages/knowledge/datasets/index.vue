@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { AdminApiError, adminListKnowledgeDatasets } from '~/utils/admin-api'
-import type { KnowledgeDataset, KnowledgeDatasetStatus } from '~/types/knowledge'
+import {
+  AdminApiError,
+  adminListKnowledgeDatasetGroups,
+  adminListKnowledgeDatasets
+} from '~/utils/admin-api'
+import type { KnowledgeDataset, KnowledgeDatasetGroup, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
+import { datasetStatusBadgeColor } from '~/utils/knowledge-labels'
+import { resolveKnowledgeGroupKey } from '~/utils/knowledge-field-parse'
 
 const FILTER_ANY = 'all'
 
@@ -9,11 +15,13 @@ const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
+const groups = ref<KnowledgeDatasetGroup[]>([])
 const rows = ref<KnowledgeDataset[]>([])
 const pending = ref(true)
+const groupsError = ref('')
 const errorMessage = ref('')
 const filterStatus = ref<string>(FILTER_ANY)
-const filterGroup = ref('')
+const expandedGroup = ref<string | null>(null)
 let loadSeq = 0
 
 const statusOptions = computed(() => [
@@ -23,13 +31,55 @@ const statusOptions = computed(() => [
   { label: t('knowledge.datasets.status.disabled'), value: 'disabled' }
 ])
 
-if (import.meta.client) {
-  watch([filterStatus, filterGroup], () => {
-    void load()
-  }, { immediate: true })
+const sortedGroups = computed(() =>
+  [...groups.value].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+)
+
+const filteredRows = computed(() => {
+  if (filterStatus.value === FILTER_ANY) {
+    return rows.value
+  }
+  return rows.value.filter(row => row.status === filterStatus.value)
+})
+
+function datasetsInGroup(groupKey: string) {
+  return filteredRows.value.filter(row => resolveKnowledgeGroupKey(row as Record<string, unknown>) === groupKey)
 }
 
-async function load() {
+function groupDatasetCount(groupKey: string) {
+  return datasetsInGroup(groupKey).length
+}
+
+if (import.meta.client) {
+  watch(filterStatus, () => {
+    void loadDatasets()
+  })
+  void loadGroups()
+  void loadDatasets()
+}
+
+async function loadGroups() {
+  const token = readOperatorToken()
+  if (!token) {
+    groups.value = []
+    groupsError.value = t('knowledge.datasetGroups.failed')
+    return
+  }
+  groupsError.value = ''
+  try {
+    groups.value = await adminListKnowledgeDatasetGroups(config.public.apiBase, token)
+    if (!expandedGroup.value && groups.value.length) {
+      expandedGroup.value = groups.value[0]?.group_key ?? null
+    }
+  } catch (error) {
+    groups.value = []
+    groupsError.value = error instanceof AdminApiError && error.message
+      ? error.message
+      : t('knowledge.datasetGroups.failed')
+  }
+}
+
+async function loadDatasets() {
   const seq = ++loadSeq
   const token = readOperatorToken()
   if (!token) {
@@ -41,10 +91,7 @@ async function load() {
   pending.value = true
   errorMessage.value = ''
   try {
-    const query: { group?: string, status?: KnowledgeDatasetStatus } = {}
-    if (filterGroup.value.trim()) {
-      query.group = filterGroup.value.trim()
-    }
+    const query: { status?: KnowledgeDatasetStatus } = {}
     if (filterStatus.value !== FILTER_ANY) {
       query.status = filterStatus.value as KnowledgeDatasetStatus
     }
@@ -68,18 +115,15 @@ async function load() {
   }
 }
 
-function statusLabel(status: KnowledgeDatasetStatus) {
-  return t(`knowledge.datasets.status.${status}`)
+function toggleGroup(groupKey: string) {
+  expandedGroup.value = expandedGroup.value === groupKey ? null : groupKey
 }
 
-function allowThirdPartyLabel(value: boolean | null | undefined) {
-  if (value === true) {
-    return t('knowledge.datasets.allowThirdParty.yes')
+function statusLabel(status: KnowledgeDatasetStatus | '') {
+  if (!status) {
+    return t('status.na')
   }
-  if (value === false) {
-    return t('knowledge.datasets.allowThirdParty.no')
-  }
-  return t('knowledge.datasets.allowThirdParty.undecided')
+  return t(`knowledge.datasets.status.${status}`)
 }
 
 function openRow(row: KnowledgeDataset) {
@@ -94,101 +138,136 @@ function openRow(row: KnowledgeDataset) {
   <PageHeader
     :title="$t('knowledge.datasets.title')"
     :description="$t('knowledge.datasets.subtitle')"
+    plain
   >
     <KnowledgeTabs />
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <UFormField
-        :label="$t('knowledge.datasets.filterStatus')"
-        class="w-48"
-      >
+      <div class="min-w-40">
+        <label class="mb-1 block text-xs text-muted">
+          {{ $t('knowledge.datasets.filterStatus') }}
+        </label>
         <USelect
           v-model="filterStatus"
           :items="statusOptions"
           value-key="value"
           label-key="label"
+          class="w-full"
         />
-      </UFormField>
-      <UFormField
-        :label="$t('knowledge.datasets.filterGroup')"
-        class="w-48"
-      >
-        <UInput
-          v-model="filterGroup"
-          :placeholder="$t('knowledge.datasets.filterGroupPlaceholder')"
-        />
-      </UFormField>
+      </div>
     </div>
 
     <p
-      v-if="pending"
-      class="text-sm text-muted"
+      v-if="groupsError"
+      class="mb-3 text-sm text-warning"
     >
-      {{ $t('knowledge.datasets.loading') }}
+      {{ groupsError }}
     </p>
     <p
-      v-else-if="errorMessage"
+      v-if="errorMessage"
       class="text-sm text-error"
     >
       {{ errorMessage }}
     </p>
+    <p
+      v-else-if="pending && !rows.length"
+      class="text-sm text-muted"
+    >
+      {{ $t('knowledge.datasets.loading') }}
+    </p>
     <EmptyPanel
-      v-else-if="!rows.length"
-      :title="$t('knowledge.datasets.emptyTitle')"
-      :description="$t('knowledge.datasets.empty')"
+      v-else-if="!sortedGroups.length"
+      :title="$t('knowledge.datasetGroups.emptyTitle')"
+      :description="$t('knowledge.datasetGroups.empty')"
     />
     <div
       v-else
-      class="overflow-x-auto rounded-lg border border-default"
+      class="space-y-3"
     >
-      <table class="min-w-full text-sm">
-        <thead class="bg-muted/40 text-left text-muted">
-          <tr>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.code') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.name') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.status') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.chunks') }}
-            </th>
-            <th class="px-3 py-2 font-medium">
-              {{ $t('knowledge.datasets.columns.allowThirdParty') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in rows"
-            :key="row.id"
-            class="cursor-pointer border-t border-default hover:bg-muted/20"
-            @click="openRow(row)"
+      <UCard
+        v-for="group in sortedGroups"
+        :key="group.group_key"
+        class="bg-elevated"
+      >
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-3 text-left"
+          @click="toggleGroup(group.group_key)"
+        >
+          <div>
+            <p class="font-medium">
+              {{ group.display_name || group.group_key }}
+            </p>
+            <p class="text-xs text-muted font-mono">
+              {{ group.group_key }}
+              · {{ $t('knowledge.datasets.groupDatasetCount', { count: groupDatasetCount(group.group_key) }) }}
+            </p>
+          </div>
+          <UIcon
+            :name="expandedGroup === group.group_key ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+            class="size-5 text-muted"
+          />
+        </button>
+
+        <div
+          v-if="expandedGroup === group.group_key"
+          class="mt-4 border-t border-default pt-4"
+        >
+          <p
+            v-if="!datasetsInGroup(group.group_key).length"
+            class="text-sm text-muted"
           >
-            <td class="px-3 py-2 font-mono text-xs">
-              {{ row.code || '—' }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.name || '—' }}
-            </td>
-            <td class="px-3 py-2">
-              <StatusBadge
-                v-if="row.status"
-                :label="statusLabel(row.status)"
-              />
-            </td>
-            <td class="px-3 py-2">
-              {{ row.chunk_count ?? '—' }}
-            </td>
-            <td class="px-3 py-2 text-muted">
-              {{ allowThirdPartyLabel(row.allow_third_party) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            {{ $t('knowledge.datasets.emptyInGroup') }}
+          </p>
+          <AdminTable
+            v-else
+            compact
+          >
+            <template #head>
+              <tr>
+                <th class="px-4 py-3 font-medium">
+                  {{ $t('knowledge.datasets.columns.code') }}
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  {{ $t('knowledge.datasets.columns.name') }}
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  {{ $t('knowledge.datasets.columns.status') }}
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  {{ $t('knowledge.datasets.columns.chunks') }}
+                </th>
+              </tr>
+            </template>
+            <tr
+              v-for="row in datasetsInGroup(group.group_key)"
+              :key="row.id"
+              class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+              @click="openRow(row)"
+            >
+              <td class="px-4 py-3 font-mono text-xs">
+                {{ row.code || '—' }}
+              </td>
+              <td class="px-4 py-3">
+                {{ row.name || '—' }}
+              </td>
+              <td class="px-4 py-3">
+                <UBadge
+                  v-if="row.status"
+                  size="sm"
+                  variant="soft"
+                  :color="datasetStatusBadgeColor(row.status)"
+                >
+                  {{ statusLabel(row.status) }}
+                </UBadge>
+              </td>
+              <td class="px-4 py-3">
+                {{ row.chunk_count ?? '—' }}
+              </td>
+            </tr>
+          </AdminTable>
+        </div>
+      </UCard>
     </div>
   </PageHeader>
 </template>

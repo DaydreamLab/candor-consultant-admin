@@ -21,21 +21,38 @@ const basePlan = {
   sort_order: 0,
   active: true,
   original_price: 3600,
-  home_features_zh: ['功能一', '功能二'],
-  home_features_en: ['Feature A'],
-  home_badge_zh: '推薦',
-  home_badge_en: 'Recommended',
-  home_highlight: true
+  features: ['功能一', '功能二'],
+  features_en: ['Feature A'],
+  badge: '推薦',
+  badge_en: 'Recommended',
+  highlight: true
 }
 
 describe('packagePlanFormStateFromPlan', () => {
+  it('reads deployed API field names (features, badge, highlight)', () => {
+    const state = packagePlanFormStateFromPlan({
+      ...basePlan,
+      features: ['A'],
+      features_en: ['B'],
+      badge: '熱門',
+      badge_en: 'Hot',
+      highlight: true,
+      price: 8000,
+      original_price: 8000
+    })
+    expect(state.home_features_zh).toEqual(['A'])
+    expect(state.home_badge_zh).toBe('熱門')
+    expect(state.home_highlight).toBe(true)
+    expect(state.original_price).toBe('8000')
+  })
+
   it('tolerates missing home and original_price fields', () => {
     const state = packagePlanFormStateFromPlan({
       ...basePlan,
       original_price: undefined,
-      home_features_zh: undefined,
-      home_badge_zh: undefined,
-      home_highlight: undefined
+      features: undefined,
+      badge: undefined,
+      highlight: undefined
     })
     expect(state.original_price).toBe('')
     expect(state.home_features_zh).toEqual([])
@@ -75,8 +92,8 @@ describe('buildPackagePlanPatch', () => {
     expect(buildPackagePlanPatch(snapshot, state)).toEqual({
       name_zh: '新名稱',
       original_price: null,
-      home_features_zh: ['功能一', '功能二', '功能三'],
-      home_highlight: false
+      features: ['功能一', '功能二', '功能三'],
+      highlight: false
     })
   })
 
@@ -85,7 +102,7 @@ describe('buildPackagePlanPatch', () => {
     const state = packagePlanFormStateFromPlan(basePlan)
     state.home_features_en = []
     expect(buildPackagePlanPatch(snapshot, state)).toEqual({
-      home_features_en: null
+      features_en: null
     })
   })
 })

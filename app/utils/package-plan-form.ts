@@ -75,11 +75,11 @@ export function packagePlanFormStateFromPlan(plan: Record<string, unknown>): Pac
     sort_order: numberText(plan.sort_order, '0'),
     active: plan.active !== false,
     original_price: optionalIntText(plan.original_price),
-    home_features_zh: stringListToForm(plan.home_features_zh),
-    home_features_en: stringListToForm(plan.home_features_en),
-    home_badge_zh: textOf(plan.home_badge_zh),
-    home_badge_en: textOf(plan.home_badge_en),
-    home_highlight: plan.home_highlight === true
+    home_features_zh: stringListToForm(featuresZhFromPlan(plan)),
+    home_features_en: stringListToForm(featuresEnFromPlan(plan)),
+    home_badge_zh: textOf(badgeZhFromPlan(plan)),
+    home_badge_en: textOf(badgeEnFromPlan(plan)),
+    home_highlight: highlightSwitchFromPlan(plan)
   }
 }
 
@@ -96,11 +96,11 @@ export function snapshotFromPlan(plan: Record<string, unknown>): PackagePlanSnap
     sort_order: requiredInt(plan.sort_order) ?? 0,
     active: plan.active !== false,
     original_price: optionalInt(plan.original_price),
-    home_features_zh: optionalStringList(plan.home_features_zh),
-    home_features_en: optionalStringList(plan.home_features_en),
-    home_badge_zh: nullableTrimmed(plan.home_badge_zh),
-    home_badge_en: nullableTrimmed(plan.home_badge_en),
-    home_highlight: optionalBoolean(plan.home_highlight)
+    home_features_zh: featuresZhFromPlan(plan),
+    home_features_en: featuresEnFromPlan(plan),
+    home_badge_zh: badgeZhFromPlan(plan),
+    home_badge_en: badgeEnFromPlan(plan),
+    home_highlight: highlightFromPlan(plan)
   }
 }
 
@@ -198,27 +198,27 @@ export function buildPackagePlanPatch(
 
   const featuresZh = normalizeFeatureList(state.home_features_zh)
   if (!stringListEqual(featuresZh, snapshot.home_features_zh)) {
-    patch.home_features_zh = featuresZh
+    patch.features = featuresZh
   }
   const featuresEn = normalizeFeatureList(state.home_features_en)
   if (!stringListEqual(featuresEn, snapshot.home_features_en)) {
-    patch.home_features_en = featuresEn
+    patch.features_en = featuresEn
   }
 
   const badgeZh = state.home_badge_zh.trim() || null
   if (badgeZh !== snapshot.home_badge_zh) {
-    patch.home_badge_zh = badgeZh
+    patch.badge = badgeZh
   }
   const badgeEn = state.home_badge_en.trim() || null
   if (badgeEn !== snapshot.home_badge_en) {
-    patch.home_badge_en = badgeEn
+    patch.badge_en = badgeEn
   }
 
   const highlight = state.home_highlight
   const snapshotHighlight = snapshot.home_highlight === true
   const normalizedHighlight = snapshot.home_highlight === null ? false : snapshotHighlight
   if (highlight !== normalizedHighlight) {
-    patch.home_highlight = highlight
+    patch.highlight = highlight
   }
 
   return patch
@@ -289,6 +289,34 @@ function stringListEqual(left: string[] | null, right: string[] | null) {
     return false
   }
   return a.every((item, index) => item === b[index])
+}
+
+function featuresZhFromPlan(plan: Record<string, unknown>): string[] | null {
+  return optionalStringList(plan.features) ?? optionalStringList(plan.home_features_zh)
+}
+
+function featuresEnFromPlan(plan: Record<string, unknown>): string[] | null {
+  return optionalStringList(plan.features_en) ?? optionalStringList(plan.home_features_en)
+}
+
+function badgeZhFromPlan(plan: Record<string, unknown>): string | null {
+  return nullableTrimmed(plan.badge) ?? nullableTrimmed(plan.home_badge_zh)
+}
+
+function badgeEnFromPlan(plan: Record<string, unknown>): string | null {
+  return nullableTrimmed(plan.badge_en) ?? nullableTrimmed(plan.home_badge_en)
+}
+
+function highlightFromPlan(plan: Record<string, unknown>): boolean | null {
+  const direct = optionalBoolean(plan.highlight)
+  if (direct !== null) {
+    return direct
+  }
+  return optionalBoolean(plan.home_highlight)
+}
+
+function highlightSwitchFromPlan(plan: Record<string, unknown>): boolean {
+  return highlightFromPlan(plan) === true
 }
 
 function optionalBoolean(value: unknown): boolean | null {

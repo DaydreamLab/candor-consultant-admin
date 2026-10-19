@@ -23,7 +23,11 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 - 知識缺口收集後台（`GET /admin/knowledge/gaps*`；Beta 後、另 spec）
 - 觸發匯入／重嵌／成本與健康儀表（進階卡）
 
-## 角色與權限（對齊 OpenAPI `x-required-roles`）
+## 角色與權限
+
+**後台 UI（本 repo，目前不分角色）**：已登入 operator 可使用知識管理全部子頁；片段 approve／reject 按鈕對所有已登入角色顯示（API 403 時顯示錯誤）。
+
+OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或 API，先改 core。
 
 | 能力 | expert | ops | admin |
 |------|--------|-----|-------|
@@ -32,9 +36,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 | 寫入：datasets PATCH（code／name／授權／status） | ✓ | ✓ | ✓ |
 | 寫入：dataset-groups POST | — | — | ✓ |
 
-未登入或 member JWT：401。角色不足：403。畫面依 `session.operator.role` 隱藏動作；仍以 API 為準。
-
-**待與產品確認**：早期 Notion 草稿曾寫「僅 ops／admin 可進知識管理」；現行 OpenAPI 多數讀取端點含 **expert**。本專案依 OpenAPI 實作，expert 可進入唯讀頁；若產品要限縮入口，需先改 core spec 29／OpenAPI。
+未登入或 member JWT：401。角色不足：403。
 
 ## 頁面清單與優先順序
 
@@ -56,7 +58,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 ### P1 — 資料集列表
 
 - 查詢參數（OpenAPI `adminKnowledgeDatasets`）：`group`、`status`（`pending_review`｜`active`｜`disabled`）、`corpus`、`code`（精確比對）。
-- 列表欄位（`data[]`；OpenAPI 為 `additionalProperties: true`，以下為已部署行為／產品需求，實作時以 live `data` 與 OpenAPI 同步驗證）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`source_url`、`license`、`license_url`、`attribution`、`allow_third_party`（`null` → UI 文案「待決（視為不允許）」）、`document_count`、`chunk_count`、`chunks_by_review_status`（`draft`／`pending`／`approved`／`rejected`／`retired` 計數）、`last_ingested_at`。
+- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等；**`allow_third_party` 僅在詳情頁顯示**（`null` →「待決（視為不允許）」）。OpenAPI `PATCH` 目前未宣告 `allow_third_party`，詳情唯讀。
 - 點列進詳情。空列表：`EmptyPanel` + 說明尚無資料集。
 - 錯誤：載入失敗顯示 `error_message` 或 i18n 預設；401 由 auth middleware 處理。
 
@@ -75,7 +77,9 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 ### P1 — 片段審核
 
-- 列表：`GET /knowledge/chunks`；查詢參數目前 OpenAPI 僅 **`group`**（`group_key` 須存在 registry）。**待確認**：產品需求之 `review_status`／`dataset_id` 篩選是否將補進 OpenAPI；KM1 可先 client 篩選或僅 `group`。
+- 列表：`GET /knowledge/chunks`；查詢參數目前 OpenAPI 僅 **`group`**（`group_key` 須存在 registry）。**待 candor-core**：`dataset_id`、`review_status`、`limit`／`offset`（或等效分頁）；回應是否保證完整 `text` 或僅 `text_preview` 亦待契約明確化。
+- **資料集詳情**（`/knowledge/datasets/{id}`）：有 `group_key` 時以 `group` 查詢後 **client** 依 `dataset_id`／`dataset_code` 篩選；審核狀態與分頁亦為 client，直到上述查詢參數上線。
+- **頁面標題**：知識子頁以 `KnowledgeTabs` **路由**切換；頂欄與瀏覽器 title 由 `usePageCrumbs`／`knowledge-nav`（`nav.knowledge` + tab 標籤）與 `useAdminPageHead` 同步，勿依 `NAV_GROUPS` 的 `to: /knowledge/datasets` 單點比對。
 - 預設 UI 篩選：**pending**（產品）；若 API 未支援 query，取全量後前端篩選（資料量大時需 core 分頁參數）。
 - 列欄位（依 `data[]` 實際鍵）：片段 `id`、所屬資料集、`review_status`、文件標題、`text` 預覽、`source_url`、`license`、`attribution`；摘要片段標「摘要（衍生）」若 `chunk_kind`／類似欄位存在。
 - **approve**：`POST /knowledge/chunks/{id}/approve`（expert／admin）。**reject**：`POST /knowledge/chunks/{id}/reject`（摘要寫「原因必填」；OpenAPI 未宣告 body — **待確認** `reason` 欄位名與 422 規則，UI 仍應強制填原因再送出）。

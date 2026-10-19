@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { AdminApiError, adminGetKnowledgeOverview } from '~/utils/admin-api'
 import { readOperatorToken } from '~/utils/operator-session'
+import {
+  extractKnowledgeOverviewTotals,
+  extractOverviewDatasetRows,
+  overviewHasVisibleContent
+} from '~/utils/knowledge-overview'
+import { datasetStatusBadgeColor } from '~/utils/knowledge-labels'
+import type { KnowledgeDatasetStatus } from '~/types/knowledge'
 
 const config = useRuntimeConfig()
 const { t } = useI18n()
@@ -35,25 +42,30 @@ async function load() {
   }
 }
 
-const datasetRows = computed(() => {
-  const data = overview.value
-  if (!data) {
-    return []
+const totals = computed(() => extractKnowledgeOverviewTotals(overview.value ?? {}))
+
+const datasetRows = computed(() => extractOverviewDatasetRows(overview.value ?? {}))
+
+const hasContent = computed(() => overviewHasVisibleContent(overview.value))
+
+function formatTotal(value: number | null) {
+  return value == null ? '—' : String(value)
+}
+
+function statusLabel(status: unknown) {
+  if (typeof status !== 'string' || !status) {
+    return t('status.na')
   }
-  if (Array.isArray(data.datasets)) {
-    return data.datasets.filter(row => row && typeof row === 'object') as Record<string, unknown>[]
-  }
-  if (Array.isArray(data.items)) {
-    return data.items.filter(row => row && typeof row === 'object') as Record<string, unknown>[]
-  }
-  return []
-})
+  const key = `knowledge.datasets.status.${status}`
+  return t(key) === key ? status : t(key)
+}
 </script>
 
 <template>
   <PageHeader
     :title="$t('knowledge.overview.title')"
     :description="$t('knowledge.overview.subtitle')"
+    plain
   >
     <KnowledgeTabs />
 
@@ -70,52 +82,94 @@ const datasetRows = computed(() => {
       {{ errorMessage }}
     </p>
     <EmptyPanel
-      v-else-if="!datasetRows.length"
+      v-else-if="!hasContent"
       :title="$t('knowledge.overview.emptyTitle')"
       :description="$t('knowledge.overview.empty')"
     />
-    <div
-      v-else
-      class="overflow-x-auto rounded-lg border border-default"
-    >
-      <table class="min-w-full text-sm">
-        <thead class="bg-muted/40 text-left text-muted">
+    <template v-else>
+      <div class="mb-6 grid gap-3 sm:grid-cols-3">
+        <UCard class="bg-elevated">
+          <p class="text-xs text-muted">
+            {{ $t('knowledge.overview.totals.chunks') }}
+          </p>
+          <p class="text-2xl font-semibold">
+            {{ formatTotal(totals.chunks) }}
+          </p>
+        </UCard>
+        <UCard class="bg-elevated">
+          <p class="text-xs text-muted">
+            {{ $t('knowledge.overview.totals.documents') }}
+          </p>
+          <p class="text-2xl font-semibold">
+            {{ formatTotal(totals.documents) }}
+          </p>
+        </UCard>
+        <UCard class="bg-elevated">
+          <p class="text-xs text-muted">
+            {{ $t('knowledge.overview.totals.datasetsActive') }}
+          </p>
+          <p class="text-2xl font-semibold">
+            {{ formatTotal(totals.datasetsActive) }}
+          </p>
+        </UCard>
+      </div>
+
+      <AdminTable
+        v-if="datasetRows.length"
+        compact
+      >
+        <template #head>
           <tr>
-            <th class="px-3 py-2 font-medium">
+            <th class="px-4 py-3 font-medium">
               {{ $t('knowledge.datasets.columns.code') }}
             </th>
-            <th class="px-3 py-2 font-medium">
+            <th class="px-4 py-3 font-medium">
               {{ $t('knowledge.datasets.columns.name') }}
             </th>
-            <th class="px-3 py-2 font-medium">
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.datasets.columns.status') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
               {{ $t('knowledge.datasets.detail.documents') }}
             </th>
-            <th class="px-3 py-2 font-medium">
+            <th class="px-4 py-3 font-medium">
               {{ $t('knowledge.datasets.detail.chunks') }}
             </th>
           </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(row, index) in datasetRows"
-            :key="String(row.id ?? row.code ?? index)"
-            class="border-t border-default"
-          >
-            <td class="px-3 py-2 font-mono text-xs">
-              {{ row.code ?? '—' }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.name ?? '—' }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.document_count ?? '—' }}
-            </td>
-            <td class="px-3 py-2">
-              {{ row.chunk_count ?? '—' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        </template>
+        <tr
+          v-for="(row, index) in datasetRows"
+          :key="String(row.id ?? row.code ?? index)"
+          class="border-b border-default last:border-0"
+        >
+          <td class="px-4 py-3 font-mono text-xs">
+            {{ row.code ?? '—' }}
+          </td>
+          <td class="px-4 py-3">
+            {{ row.name ?? '—' }}
+          </td>
+          <td class="px-4 py-3">
+            <UBadge
+              v-if="typeof row.status === 'string' && row.status"
+              size="sm"
+              variant="soft"
+              :color="datasetStatusBadgeColor(row.status as KnowledgeDatasetStatus)"
+            >
+              {{ statusLabel(row.status) }}
+            </UBadge>
+            <span
+              v-else
+              class="text-muted"
+            >{{ $t('status.na') }}</span>
+          </td>
+          <td class="px-4 py-3">
+            {{ row.document_count ?? '—' }}
+          </td>
+          <td class="px-4 py-3">
+            {{ row.chunk_count ?? '—' }}
+          </td>
+        </tr>
+      </AdminTable>
+    </template>
   </PageHeader>
 </template>
