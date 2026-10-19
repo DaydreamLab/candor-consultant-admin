@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPackagePlanPatch,
   moveFeatureRow,
+  originalPriceErrorMessage,
   originalPriceIssue,
+  packagePlanFormIsDirty,
   packagePlanFormStateFromPlan,
   snapshotFromPlan,
   validatePackagePlanForm
@@ -61,21 +63,46 @@ describe('packagePlanFormStateFromPlan', () => {
   })
 })
 
-describe('originalPriceIssue', () => {
-  it('accepts empty original price', () => {
+const priceMessages = {
+  emptyInvalid: 'invalid-int',
+  belowPrice: (price: number) => `below:${price}`
+}
+
+describe('originalPriceErrorMessage', () => {
+  it('accepts empty original price string', () => {
     const state = packagePlanFormStateFromPlan(basePlan)
     state.original_price = ''
-    expect(originalPriceIssue(state)).toBeNull()
+    expect(originalPriceErrorMessage(state, priceMessages)).toBeNull()
+  })
+
+  it('accepts equal and greater original vs sale price (string and number inputs)', () => {
+    const state = packagePlanFormStateFromPlan({ ...basePlan, price: 8000 })
+    state.original_price = '8000'
+    expect(originalPriceErrorMessage(state, priceMessages)).toBeNull()
+    state.original_price = 12000 as unknown as string
+    expect(originalPriceErrorMessage(state, priceMessages)).toBeNull()
+    state.price = 6000 as unknown as string
+    expect(originalPriceErrorMessage(state, priceMessages)).toBeNull()
   })
 
   it('rejects non-integer and values below plan price', () => {
     const state = packagePlanFormStateFromPlan(basePlan)
     state.original_price = '2999.5'
-    expect(originalPriceIssue(state)).toEqual({ field: 'original_price' })
+    expect(originalPriceErrorMessage(state, priceMessages)).toBe('invalid-int')
     state.original_price = '2500'
-    expect(originalPriceIssue(state)).toEqual({ field: 'original_price' })
+    expect(originalPriceErrorMessage(state, priceMessages)).toBe('below:3000')
     state.original_price = '3000'
     expect(originalPriceIssue(state)).toBeNull()
+  })
+})
+
+describe('packagePlanFormIsDirty', () => {
+  it('is false when state matches snapshot and true after edits', () => {
+    const snapshot = snapshotFromPlan(basePlan)
+    const state = packagePlanFormStateFromPlan(basePlan)
+    expect(packagePlanFormIsDirty(snapshot, state)).toBe(false)
+    state.name_zh = '變更'
+    expect(packagePlanFormIsDirty(snapshot, state)).toBe(true)
   })
 })
 

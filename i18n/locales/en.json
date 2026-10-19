@@ -293,6 +293,7 @@
       "moveFeatureDown": "Move down"
     },
     "originalPriceHint": "Leave empty to clear; must be a whole number not below plan price.",
+    "leaveConfirm": "You have unsaved changes. Leave this page?",
     "homeFeaturesHint": "About three short lines; an empty list clears the field.",
     "validation": {
       "originalPriceInteger": "Strikethrough price must be a whole number greater than 0.",

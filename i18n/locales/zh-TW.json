@@ -293,6 +293,7 @@
       "moveFeatureDown": "下移"
     },
     "originalPriceHint": "留空表示清除；須為整數且不得低於方案總價。",
+    "leaveConfirm": "尚有未儲存的變更，確定要離開嗎？",
     "homeFeaturesHint": "約三條簡短說明；留空列表會清除。",
     "validation": {
       "originalPriceInteger": "折扣前展示價須為大於 0 的整數。",
