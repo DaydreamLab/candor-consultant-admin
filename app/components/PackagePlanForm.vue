@@ -3,6 +3,17 @@ import type { PackagePlanWrite } from '~/utils/admin-api'
 import { PACKAGE_PLAN_FORM_ID } from '~/composables/useNavbarActions'
 import { money } from '~/utils/format'
 import { packagePlanBudget } from '~/utils/package-plan-budget'
+import {
+  buildPackagePlanPatch,
+  emptyPackagePlanFormState,
+  moveFeatureRow,
+  originalPriceIssue,
+  packagePlanFormStateFromPlan,
+  snapshotFromPlan,
+  validatePackagePlanForm,
+  type PackagePlanFormState,
+  type PackagePlanSnapshot
+} from '~/utils/package-plan-form'
 
 const PRESET_DAYS = [30, 60, 90] as const
 
@@ -22,20 +33,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-type FormState = {
-  code: string
-  name_zh: string
-  name_en: string
-  description: string
-  price: string
-  period_days: number
-  pack_capacity: string
-  core_count: string
-  sort_order: string
-  active: boolean
-}
-
-const state = reactive<FormState>(emptyState())
+const state = reactive<PackagePlanFormState>(emptyPackagePlanFormState())
+const baseline = ref<PackagePlanSnapshot | null>(null)
 const localError = ref('')
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
@@ -58,6 +57,25 @@ const budget = computed(() => {
   return packagePlanBudget(price, state.period_days)
 })
 
+const originalPriceError = computed(() => {
+  if (!originalPriceIssue(state)) {
+    return ''
+  }
+  const trimmed = state.original_price.trim()
+  const original = Number(trimmed)
+  const price = Number(state.price)
+  if (!trimmed) {
+    return ''
+  }
+  if (!Number.isInteger(original) || original <= 0) {
+    return t('packagePlans.validation.originalPriceInteger')
+  }
+  if (Number.isInteger(price) && price > 0 && original < price) {
+    return t('packagePlans.validation.originalPriceMin', { price })
+  }
+  return t('packagePlans.validation.originalPriceInteger')
+})
+
 watch(() => props.packagePlan, (plan) => {
   applyPlan(plan)
   localError.value = ''
@@ -68,113 +86,45 @@ watch(() => props.saveError, () => {
 })
 
 function onSubmit() {
-  if (fieldsLocked.value) {
+  if (fieldsLocked.value || !baseline.value) {
     return
   }
   localError.value = ''
-  const nameZh = state.name_zh.trim()
-  if (!nameZh) {
+  const issue = validatePackagePlanForm(state)
+  if (issue) {
+    if (issue.field === 'original_price') {
+      localError.value = originalPriceError.value || t('packagePlans.saveFailed')
+      return
+    }
     localError.value = t('packagePlans.saveFailed')
     return
   }
-  const price = Number(state.price)
-  if (!Number.isInteger(price) || price <= 0) {
-    localError.value = t('packagePlans.saveFailed')
+  const patch = buildPackagePlanPatch(baseline.value, state)
+  if (!Object.keys(patch).length) {
     return
   }
-  const periodDays = Math.trunc(state.period_days)
-  if (!Number.isFinite(periodDays) || periodDays <= 0) {
-    localError.value = t('packagePlans.saveFailed')
-    return
-  }
-  const packCapacity = Number(state.pack_capacity)
-  if (!Number.isInteger(packCapacity) || packCapacity < 1) {
-    localError.value = t('packagePlans.saveFailed')
-    return
-  }
-  const coreCount = Number(state.core_count)
-  if (!Number.isInteger(coreCount) || coreCount < 1 || coreCount > packCapacity) {
-    localError.value = t('packagePlans.saveFailed')
-    return
-  }
-  const sortOrder = state.sort_order.trim() === '' ? 0 : Number(state.sort_order)
-  if (!Number.isInteger(sortOrder)) {
-    localError.value = t('packagePlans.saveFailed')
-    return
-  }
-
-  emit('save', {
-    name_zh: nameZh,
-    name_en: state.name_en.trim() || null,
-    description: state.description.trim() || null,
-    price,
-    period_days: periodDays,
-    pack_capacity: packCapacity,
-    core_count: coreCount,
-    sort_order: sortOrder,
-    active: state.active
-  })
+  emit('save', patch)
 }
 
 function applyPlan(plan: Record<string, unknown>) {
-  state.code = textOf(plan.code)
-  state.name_zh = textOf(plan.name_zh) || textOf(plan.name)
-  state.name_en = textOf(plan.name_en)
-  state.description = textOf(plan.description)
-  state.price = numberText(plan.price)
-  state.period_days = positiveInt(plan.period_days) ?? 30
-  state.pack_capacity = numberText(plan.pack_capacity, '8')
-  state.core_count = numberText(plan.core_count, '3')
-  state.sort_order = numberText(plan.sort_order, '0')
-  state.active = plan.active !== false
+  Object.assign(state, packagePlanFormStateFromPlan(plan))
+  baseline.value = snapshotFromPlan(plan)
 }
 
-function emptyState(): FormState {
-  return {
-    code: '',
-    name_zh: '',
-    name_en: '',
-    description: '',
-    price: '',
-    period_days: 30,
-    pack_capacity: '8',
-    core_count: '3',
-    sort_order: '0',
-    active: true
-  }
+function addFeature(localeKey: 'home_features_zh' | 'home_features_en') {
+  state[localeKey].push('')
 }
 
-function textOf(value: unknown) {
-  if (typeof value === 'string') {
-    return value
-  }
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return String(value)
-  }
-  return ''
+function removeFeature(localeKey: 'home_features_zh' | 'home_features_en', index: number) {
+  state[localeKey].splice(index, 1)
 }
 
-function numberText(value: unknown, fallback = '') {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return String(value)
-  }
-  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
-    return String(Number(value))
-  }
-  return fallback
-}
-
-function positiveInt(value: unknown) {
-  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
-    return value
-  }
-  if (typeof value === 'string' && value.trim()) {
-    const n = Number(value)
-    if (Number.isInteger(n) && n > 0) {
-      return n
-    }
-  }
-  return null
+function shiftFeature(
+  localeKey: 'home_features_zh' | 'home_features_en',
+  index: number,
+  direction: -1 | 1
+) {
+  state[localeKey] = moveFeatureRow(state[localeKey], index, direction)
 }
 
 function moneyText(value: number) {
@@ -233,6 +183,22 @@ function moneyText(value: number) {
           class="w-full"
         />
       </UFormField>
+      <UFormField
+        :label="$t('packagePlans.fields.original_price')"
+        :error="originalPriceError"
+      >
+        <UInput
+          v-model="state.original_price"
+          type="number"
+          min="1"
+          step="1"
+          :disabled="fieldsLocked"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ $t('packagePlans.originalPriceHint') }}
+        </p>
+      </UFormField>
       <UFormField :label="$t('packagePlans.fields.period_days')">
         <USelect
           v-model="state.period_days"
@@ -289,6 +255,159 @@ function moneyText(value: number) {
         />
       </UFormField>
     </div>
+
+    <section class="flex flex-col gap-4 rounded-xl border border-default bg-elevated p-4">
+      <h2 class="text-sm font-semibold text-highlighted">
+        {{ $t('packagePlans.sections.home') }}
+      </h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <UFormField :label="$t('packagePlans.fields.home_badge_zh')">
+          <UInput
+            v-model="state.home_badge_zh"
+            :disabled="fieldsLocked"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField :label="$t('packagePlans.fields.home_badge_en')">
+          <UInput
+            v-model="state.home_badge_en"
+            :disabled="fieldsLocked"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          class="md:col-span-2"
+          :label="$t('packagePlans.fields.home_highlight')"
+        >
+          <USwitch
+            v-model="state.home_highlight"
+            :disabled="fieldsLocked"
+          />
+        </UFormField>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-2">
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-medium text-highlighted">
+              {{ $t('packagePlans.fields.home_features_zh') }}
+            </h3>
+            <UButton
+              type="button"
+              size="xs"
+              variant="soft"
+              icon="i-lucide-plus"
+              :disabled="fieldsLocked"
+              @click="addFeature('home_features_zh')"
+            >
+              {{ $t('packagePlans.actions.addFeature') }}
+            </UButton>
+          </div>
+          <p class="text-xs text-muted">
+            {{ $t('packagePlans.homeFeaturesHint') }}
+          </p>
+          <div
+            v-for="(_, index) in state.home_features_zh"
+            :key="`zh-${index}`"
+            class="flex items-center gap-2"
+          >
+            <UInput
+              v-model="state.home_features_zh[index]"
+              :disabled="fieldsLocked"
+              class="min-w-0 flex-1"
+            />
+            <UButton
+              type="button"
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-arrow-up"
+              :disabled="fieldsLocked || index === 0"
+              :aria-label="$t('packagePlans.actions.moveFeatureUp')"
+              @click="shiftFeature('home_features_zh', index, -1)"
+            />
+            <UButton
+              type="button"
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-arrow-down"
+              :disabled="fieldsLocked || index === state.home_features_zh.length - 1"
+              :aria-label="$t('packagePlans.actions.moveFeatureDown')"
+              @click="shiftFeature('home_features_zh', index, 1)"
+            />
+            <UButton
+              type="button"
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-trash-2"
+              :disabled="fieldsLocked"
+              :aria-label="$t('packagePlans.actions.removeFeature')"
+              @click="removeFeature('home_features_zh', index)"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-medium text-highlighted">
+              {{ $t('packagePlans.fields.home_features_en') }}
+            </h3>
+            <UButton
+              type="button"
+              size="xs"
+              variant="soft"
+              icon="i-lucide-plus"
+              :disabled="fieldsLocked"
+              @click="addFeature('home_features_en')"
+            >
+              {{ $t('packagePlans.actions.addFeature') }}
+            </UButton>
+          </div>
+          <p class="text-xs text-muted">
+            {{ $t('packagePlans.homeFeaturesHint') }}
+          </p>
+          <div
+            v-for="(_, index) in state.home_features_en"
+            :key="`en-${index}`"
+            class="flex items-center gap-2"
+          >
+            <UInput
+              v-model="state.home_features_en[index]"
+              :disabled="fieldsLocked"
+              class="min-w-0 flex-1"
+            />
+            <UButton
+              type="button"
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-arrow-up"
+              :disabled="fieldsLocked || index === 0"
+              :aria-label="$t('packagePlans.actions.moveFeatureUp')"
+              @click="shiftFeature('home_features_en', index, -1)"
+            />
+            <UButton
+              type="button"
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-arrow-down"
+              :disabled="fieldsLocked || index === state.home_features_en.length - 1"
+              :aria-label="$t('packagePlans.actions.moveFeatureDown')"
+              @click="shiftFeature('home_features_en', index, 1)"
+            />
+            <UButton
+              type="button"
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-trash-2"
+              :disabled="fieldsLocked"
+              :aria-label="$t('packagePlans.actions.removeFeature')"
+              @click="removeFeature('home_features_en', index)"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
 
     <dl
       v-if="budget"

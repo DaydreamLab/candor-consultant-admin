@@ -959,7 +959,9 @@ export async function adminListPackagePlans(apiBase: string, token: string) {
   }
 }
 
-export type PackagePlanWrite = {
+export type AdminPackagePlan = {
+  id: string
+  code: string
   name_zh: string
   name_en: string | null
   description: string | null
@@ -969,6 +971,30 @@ export type PackagePlanWrite = {
   core_count: number
   sort_order: number
   active: boolean
+  original_price?: number | null
+  home_features_zh?: string[] | null
+  home_features_en?: string[] | null
+  home_badge_zh?: string | null
+  home_badge_en?: string | null
+  home_highlight?: boolean | null
+}
+
+export type PackagePlanWrite = {
+  name_zh?: string
+  name_en?: string | null
+  description?: string | null
+  price?: number
+  period_days?: number
+  pack_capacity?: number
+  core_count?: number
+  sort_order?: number
+  active?: boolean
+  original_price?: number | null
+  home_features_zh?: string[] | null
+  home_features_en?: string[] | null
+  home_badge_zh?: string | null
+  home_badge_en?: string | null
+  home_highlight?: boolean | null
 }
 
 export async function adminGetPackagePlan(apiBase: string, token: string, id: string) {

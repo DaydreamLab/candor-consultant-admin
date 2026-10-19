@@ -270,12 +270,33 @@
       "name_zh": "中文名稱",
       "name_en": "英文名稱",
       "price": "方案總價",
+      "original_price": "折扣前展示價",
       "period_days": "天數",
       "pack_capacity": "包裝總容量",
       "core_count": "固定核心數量",
       "description": "說明",
       "sort_order": "排序",
-      "active": "上架"
+      "active": "上架",
+      "home_features_zh": "首頁功能（中文）",
+      "home_features_en": "首頁功能（英文）",
+      "home_badge_zh": "首頁徽章（中文）",
+      "home_badge_en": "首頁徽章（英文）",
+      "home_highlight": "首頁強調"
+    },
+    "sections": {
+      "home": "首頁展示"
+    },
+    "actions": {
+      "addFeature": "加一條",
+      "removeFeature": "移除",
+      "moveFeatureUp": "上移",
+      "moveFeatureDown": "下移"
+    },
+    "originalPriceHint": "留空表示清除；須為整數且不得低於方案總價。",
+    "homeFeaturesHint": "約三條簡短說明；留空列表會清除。",
+    "validation": {
+      "originalPriceInteger": "折扣前展示價須為大於 0 的整數。",
+      "originalPriceMin": "折扣前展示價不得低於方案總價（{price}）。"
     },
     "packCapacityHint": "每日總顆數上限；組成時累加各品劑量×單品占用，不得超過此值",
     "coreCountHint": "先依分數湊滿幾種核心，再撿功能性；須介於 1 與包裝總容量之間",
