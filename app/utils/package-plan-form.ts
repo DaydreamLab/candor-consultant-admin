@@ -5,6 +5,7 @@ export type PackagePlanFormState = {
   name_zh: string
   name_en: string
   description: string
+  description_en: string
   price: string
   period_days: number
   pack_capacity: string
@@ -23,6 +24,7 @@ export type PackagePlanSnapshot = {
   name_zh: string
   name_en: string | null
   description: string | null
+  description_en: string | null
   price: number
   period_days: number
   pack_capacity: number
@@ -47,6 +49,7 @@ export function emptyPackagePlanFormState(): PackagePlanFormState {
     name_zh: '',
     name_en: '',
     description: '',
+    description_en: '',
     price: '',
     period_days: 30,
     pack_capacity: '8',
@@ -68,6 +71,7 @@ export function packagePlanFormStateFromPlan(plan: Record<string, unknown>): Pac
     name_zh: textOf(plan.name_zh) || textOf(plan.name),
     name_en: textOf(plan.name_en),
     description: textOf(plan.description),
+    description_en: textOf(plan.description_en),
     price: numberText(plan.price),
     period_days: positiveInt(plan.period_days) ?? 30,
     pack_capacity: numberText(plan.pack_capacity, '8'),
@@ -89,6 +93,7 @@ export function snapshotFromPlan(plan: Record<string, unknown>): PackagePlanSnap
     name_zh: textOf(plan.name_zh) || textOf(plan.name),
     name_en: nullableTrimmed(plan.name_en),
     description: nullableTrimmed(plan.description),
+    description_en: nullableTrimmed(plan.description_en),
     price,
     period_days: positiveInt(plan.period_days) ?? 30,
     pack_capacity: requiredInt(plan.pack_capacity) ?? 8,
@@ -166,6 +171,10 @@ export function buildPackagePlanPatch(
   const description = state.description.trim() || null
   if (description !== snapshot.description) {
     patch.description = description
+  }
+  const descriptionEn = state.description_en.trim() || null
+  if (descriptionEn !== snapshot.description_en) {
+    patch.description_en = descriptionEn
   }
   const price = Number(state.price)
   if (price !== snapshot.price) {

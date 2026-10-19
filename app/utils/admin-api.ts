@@ -976,6 +976,7 @@ export type AdminPackagePlan = {
   name_zh: string
   name_en: string | null
   description: string | null
+  description_en: string | null
   price: number
   period_days: number
   pack_capacity: number
@@ -994,6 +995,7 @@ export type PackagePlanWrite = {
   name_zh?: string
   name_en?: string | null
   description?: string | null
+  description_en?: string | null
   price?: number
   period_days?: number
   pack_capacity?: number

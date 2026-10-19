@@ -14,6 +14,7 @@ const basePlan = {
   name_zh: '標準方案',
   name_en: 'Standard',
   description: '說明',
+  description_en: 'English desc',
   price: 3000,
   period_days: 30,
   pack_capacity: 8,
@@ -44,6 +45,19 @@ describe('packagePlanFormStateFromPlan', () => {
     expect(state.home_badge_zh).toBe('熱門')
     expect(state.home_highlight).toBe(true)
     expect(state.original_price).toBe('8000')
+  })
+
+  it('reads description_en from GET payload', () => {
+    const state = packagePlanFormStateFromPlan({
+      ...basePlan,
+      description_en: 'Plan overview'
+    })
+    expect(state.description_en).toBe('Plan overview')
+    const snapshot = snapshotFromPlan({
+      ...basePlan,
+      description_en: null
+    })
+    expect(snapshot.description_en).toBeNull()
   })
 
   it('tolerates missing home and original_price fields', () => {
@@ -94,6 +108,37 @@ describe('buildPackagePlanPatch', () => {
       original_price: null,
       features: ['功能一', '功能二', '功能三'],
       highlight: false
+    })
+  })
+
+  it('patches description_en with null when cleared to empty string', () => {
+    const snapshot = snapshotFromPlan(basePlan)
+    const state = packagePlanFormStateFromPlan(basePlan)
+    state.description_en = '   '
+    expect(buildPackagePlanPatch(snapshot, state)).toEqual({
+      description_en: null
+    })
+  })
+
+  it('omits description_en when unchanged including null', () => {
+    const snapshot = snapshotFromPlan({
+      ...basePlan,
+      description_en: null
+    })
+    const state = packagePlanFormStateFromPlan({
+      ...basePlan,
+      description_en: null
+    })
+    state.description_en = ''
+    expect(buildPackagePlanPatch(snapshot, state)).toEqual({})
+  })
+
+  it('sends description_en when text changes', () => {
+    const snapshot = snapshotFromPlan(basePlan)
+    const state = packagePlanFormStateFromPlan(basePlan)
+    state.description_en = 'Updated EN'
+    expect(buildPackagePlanPatch(snapshot, state)).toEqual({
+      description_en: 'Updated EN'
     })
   })
 
