@@ -55,4 +55,33 @@ describe('PackagePlanForm', () => {
     expect(events).toBeTruthy()
     expect(events?.[0]?.[0]).toEqual({ name_zh: '更新名稱' })
   })
+
+  it('emits no-changes when submit without edits', async () => {
+    const wrapper = mount(PackagePlanForm, {
+      props: {
+        packagePlan: plan,
+        saving: false
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key
+        },
+        stubs: {
+          UFormField: stub,
+          UInput: stub,
+          USelect: stub,
+          UTextarea: stub,
+          USwitch: stub,
+          UButton: stub
+        }
+      }
+    })
+
+    await flushPromises()
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.emitted('save')).toBeUndefined()
+    expect(wrapper.emitted('no-changes')).toHaveLength(1)
+  })
 })
