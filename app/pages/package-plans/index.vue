@@ -94,6 +94,18 @@ function priceOf(row: Record<string, unknown>) {
   return t('status.na')
 }
 
+function originalPriceOf(row: Record<string, unknown>) {
+  if (!hasDisplayValue(row.original_price)) {
+    return null
+  }
+  const price = numberOf(row.price) ?? numberOf(row.amount)
+  const original = numberOf(row.original_price)
+  if (original == null || price == null || original <= price) {
+    return null
+  }
+  return amountOf(row.original_price)
+}
+
 function budgetTexts(row: Record<string, unknown>) {
   const price = numberOf(row.price) ?? numberOf(row.amount)
   const days = numberOf(row.period_days)
@@ -206,6 +218,12 @@ function amountOf(value: unknown) {
                 {{ $t('packagePlans.fields.price') }}
               </dt>
               <dd class="tabular-money mt-1 font-medium text-highlighted">
+                <span
+                  v-if="originalPriceOf(row)"
+                  class="mr-2 text-muted line-through"
+                >
+                  {{ originalPriceOf(row) }}
+                </span>
                 {{ priceOf(row) }}
               </dd>
             </div>
