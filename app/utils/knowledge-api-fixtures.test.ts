@@ -10,6 +10,8 @@ import {
   normalizeRetrievalHit,
   parseKnowledgeGapPayload,
   parseRetrievalHits,
+  retrievalHitDatasetLabel,
+  retrievalHitIsRescue,
   retrievalHitScoreLines,
   retrievalHitSourceLabel
 } from '~/utils/knowledge-retrieval-parse'
@@ -65,14 +67,13 @@ describe('retrieval preview parsing', () => {
     const hits = parseRetrievalHits({ results: [fixtures.retrievalHit] })
     expect(hits).toHaveLength(1)
     const hit = hits[0]!
-    expect(hit.dataset_name).toContain('HPA')
+    expect(retrievalHitDatasetLabel(hit)).toBeNull()
     expect(retrievalHitSourceLabel(hit)).toContain('葉酸')
+    expect(retrievalHitIsRescue(hit)).toBe(true)
     const lines = retrievalHitScoreLines(hit)
-    expect(lines.find(line => line.key === 'vector')?.missingLabelKey).toBe(
-      'knowledge.retrievalPreview.scores.taggedSupplement'
-    )
+    expect(lines.find(line => line.key === 'rrf')).toBeUndefined()
     const normalized = normalizeRetrievalHit(fixtures.retrievalHit)
-    expect(normalized.dataset_name).toContain('HPA')
+    expect(normalized.document_source_name).toContain('HPA')
     expect(normalized.score_rrf).toBe(0)
   })
 })

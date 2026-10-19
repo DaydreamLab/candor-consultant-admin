@@ -60,6 +60,13 @@ function readScore(value: unknown): number | null {
   return null
 }
 
+function optionalString(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim()
+  }
+  return null
+}
+
 /** 扁平化常見的 { chunk, score, dataset } 與真實 API 的 document／scores 結構。 */
 export function normalizeRetrievalHit(hit: Record<string, unknown>): Record<string, unknown> {
   const chunk = isRecord(hit.chunk) ? hit.chunk : null
@@ -71,6 +78,12 @@ export function normalizeRetrievalHit(hit: Record<string, unknown>): Record<stri
     Object.assign(flat, chunk)
     flat.chunk_id = flat.chunk_id ?? chunk.id
   }
+  if (optionalString(hit.dataset_code)) {
+    flat.dataset_code = hit.dataset_code
+  }
+  if (optionalString(hit.dataset_name)) {
+    flat.dataset_name = hit.dataset_name
+  }
   if (dataset) {
     flat.dataset_code = flat.dataset_code ?? dataset.code
     flat.dataset_name = flat.dataset_name ?? dataset.name
@@ -78,7 +91,7 @@ export function normalizeRetrievalHit(hit: Record<string, unknown>): Record<stri
   }
   if (document) {
     flat.document_title = flat.document_title ?? document.title
-    flat.dataset_name = flat.dataset_name ?? document.source_name ?? document.title
+    flat.document_source_name = document.source_name ?? document.title
     flat.source_url = flat.source_url ?? document.source_url
     flat.license = flat.license ?? document.license
     flat.document_id = flat.document_id ?? document.id
@@ -104,18 +117,44 @@ export type RetrievalHitScoreLine = {
   missingLabelKey?: string | null
 }
 
+export type KnowledgeGapDetailRow = {
+  labelKey: string
+  value: string
+}
+
+export function retrievalHitIsRescue(hit: Record<string, unknown>): boolean {
+  if (readScore(hit.score_vector) != null) {
+    return false
+  }
+  return readScore(hit.tagged_supplement) != null || readScore(hit.reference_tagged_rescue) != null
+}
+
 export function retrievalHitScoreLines(hit: Record<string, unknown>): RetrievalHitScoreLine[] {
+  const rescue = retrievalHitIsRescue(hit)
   const lines: RetrievalHitScoreLine[] = [
-    { key: 'rrf', labelKey: 'knowledge.retrievalPreview.scores.rrf', value: formatScore(hit.score_rrf) },
+    {
+      key: 'rrf',
+      labelKey: 'knowledge.retrievalPreview.scores.rrf',
+      value: rescue && readScore(hit.score_rrf) === 0 ? null : formatScore(hit.score_rrf)
+    },
     {
       key: 'vector',
       labelKey: 'knowledge.retrievalPreview.scores.vector',
       value: formatScore(hit.score_vector),
-      missingLabelKey: retrievalHitSupplementLabelKey(hit)
+      missingLabelKey: rescue ? 'knowledge.retrievalPreview.rescueBadge' : retrievalHitSupplementLabelKey(hit)
     },
-    { key: 'keyword', labelKey: 'knowledge.retrievalPreview.scores.keyword', value: formatScore(hit.score_keyword) }
+    {
+      key: 'keyword',
+      labelKey: 'knowledge.retrievalPreview.scores.keyword',
+      value: formatScore(hit.score_keyword)
+    }
   ]
-  return lines
+  return lines.filter((line) => {
+    if (line.value) {
+      return true
+    }
+    return Boolean(line.missingLabelKey)
+  })
 }
 
 export function retrievalHitSupplementLabelKey(hit: Record<string, unknown>): string | null {
@@ -128,26 +167,79 @@ export function retrievalHitSupplementLabelKey(hit: Record<string, unknown>): st
   return null
 }
 
-export function retrievalHitSourceLabel(hit: Record<string, unknown>): string | null {
-  const title = hit.document_title
-  const name = hit.dataset_name ?? hit.dataset_title
-  if (typeof title === 'string' && title.trim()) {
-    return title.trim()
+export function retrievalHitDatasetLabel(hit: Record<string, unknown>): string | null {
+  const name = optionalString(hit.dataset_name)
+  const code = optionalString(hit.dataset_code)
+  if (name && code && name !== code) {
+    return `${name} (${code})`
   }
-  if (typeof name === 'string' && name.trim()) {
-    return name.trim()
+  if (name) {
+    return name
   }
-  const code = hit.dataset_code ?? hit.dataset
-  if (typeof code === 'string' && code.trim()) {
-    return code.trim()
+  if (code) {
+    return code
+  }
+  const dataset = isRecord(hit.dataset) ? hit.dataset : null
+  if (dataset) {
+    const nestedName = optionalString(dataset.name)
+    const nestedCode = optionalString(dataset.code)
+    if (nestedName && nestedCode) {
+      return `${nestedName} (${nestedCode})`
+    }
+    return nestedName ?? nestedCode
   }
   return null
 }
 
+export function retrievalHitSourceLabel(hit: Record<string, unknown>): string | null {
+  const title = optionalString(hit.document_title)
+  if (title) {
+    return title
+  }
+  return optionalString(hit.document_source_name)
+}
+
+export function knowledgeGapDetailRows(
+  gap: Record<string, unknown>,
+  reasonLabel: (reason: KnowledgeGapReason) => string
+): KnowledgeGapDetailRow[] {
+  const rows: KnowledgeGapDetailRow[] = []
+  const reason = gap.reason
+  if (typeof reason === 'string' && GAP_REASONS.has(reason as KnowledgeGapReason)) {
+    rows.push({
+      labelKey: 'knowledge.retrievalPreview.gapFields.reason',
+      value: reasonLabel(reason as KnowledgeGapReason)
+    })
+  }
+  if (typeof gap.message === 'string' && gap.message.trim()) {
+    rows.push({
+      labelKey: 'knowledge.retrievalPreview.gapFields.message',
+      value: gap.message.trim()
+    })
+  }
+  const keys = gap.nutrient_keys ?? gap.nutrientKeys
+  if (Array.isArray(keys) && keys.length) {
+    const text = keys
+      .map(item => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean)
+      .join('、')
+    if (text) {
+      rows.push({
+        labelKey: 'knowledge.retrievalPreview.gapFields.nutrientKeys',
+        value: text
+      })
+    }
+  }
+  return rows
+}
+
 function formatScore(value: unknown): string | null {
   const n = readScore(value)
-  if (n != null) {
-    return n.toFixed(4)
+  if (n == null) {
+    return null
   }
-  return null
+  if (n === 0) {
+    return null
+  }
+  return n.toFixed(4)
 }

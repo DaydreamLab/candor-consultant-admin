@@ -1212,6 +1212,13 @@
         "referenceRescue": "參考標籤救援"
       },
       "gapRaw": "knowledge_gap（原始 JSON）",
+      "gapDetailTitle": "知識缺口詳情",
+      "rescueBadge": "補撈",
+      "gapFields": {
+        "reason": "原因",
+        "message": "說明",
+        "nutrientKeys": "相關營養素"
+      },
       "run": "執行預覽",
       "failed": "檢索預覽失敗。",
       "detectedNutrients": "偵測到的成分",
