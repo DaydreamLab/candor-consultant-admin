@@ -1233,6 +1233,13 @@
         "referenceRescue": "Reference-tagged rescue"
       },
       "gapRaw": "knowledge_gap (raw JSON)",
+      "gapDetailTitle": "Knowledge gap details",
+      "rescueBadge": "Rescued",
+      "gapFields": {
+        "reason": "Reason",
+        "message": "Message",
+        "nutrientKeys": "Nutrient keys"
+      },
       "run": "Run preview",
       "failed": "Retrieval preview failed.",
       "detectedNutrients": "Detected nutrients",

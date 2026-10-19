@@ -9,6 +9,9 @@ import { readOperatorToken } from '~/utils/operator-session'
 import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatasetGroupFilter'
 import { readConfigTopK } from '~/utils/knowledge-overview'
 import {
+  knowledgeGapDetailRows,
+  retrievalHitDatasetLabel,
+  retrievalHitIsRescue,
   retrievalHitScoreLines,
   retrievalHitSourceLabel
 } from '~/utils/knowledge-retrieval-parse'
@@ -48,6 +51,14 @@ const gapReason = computed<KnowledgeGapReason | null>(() => {
 })
 
 const gapPayload = computed(() => result.value?.knowledge_gap ?? null)
+
+const gapDetailRows = computed(() => {
+  const gap = gapPayload.value
+  if (!gap || !isRecord(gap)) {
+    return []
+  }
+  return knowledgeGapDetailRows(gap, reason => t(`knowledge.retrievalPreview.gap.${reason}.title`))
+})
 
 const detectedNutrients = computed(() => {
   const info = result.value?.query_info
@@ -268,15 +279,27 @@ function hitPreview(row: Record<string, unknown>) {
         :title="$t(`knowledge.retrievalPreview.gap.${gapReason}.title`)"
         :description="$t(`knowledge.retrievalPreview.gap.${gapReason}.body`)"
       />
-      <details
-        v-if="gapPayload"
-        class="mb-4 rounded-xl border border-default bg-muted/20 p-3 text-xs"
+      <div
+        v-if="gapDetailRows.length"
+        class="mb-4 rounded-xl border border-default bg-muted/20 p-3 text-sm"
       >
-        <summary class="cursor-pointer font-medium text-sm">
-          {{ $t('knowledge.retrievalPreview.gapRaw') }}
-        </summary>
-        <pre class="mt-2 overflow-x-auto whitespace-pre-wrap font-mono">{{ JSON.stringify(gapPayload, null, 2) }}</pre>
-      </details>
+        <p class="font-medium text-highlighted">
+          {{ $t('knowledge.retrievalPreview.gapDetailTitle') }}
+        </p>
+        <dl class="mt-2 space-y-2">
+          <div
+            v-for="(row, rowIndex) in gapDetailRows"
+            :key="`gap-row-${rowIndex}`"
+          >
+            <dt class="text-xs text-muted">
+              {{ $t(row.labelKey) }}
+            </dt>
+            <dd class="mt-0.5 whitespace-pre-wrap text-highlighted">
+              {{ row.value }}
+            </dd>
+          </div>
+        </dl>
+      </div>
       <UAlert
         v-if="showBComplexPartialHint"
         color="warning"
@@ -303,6 +326,14 @@ function hitPreview(row: Record<string, unknown>) {
         >
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span>#{{ index + 1 }}</span>
+            <UBadge
+              v-if="retrievalHitIsRescue(hit)"
+              color="warning"
+              variant="subtle"
+              size="sm"
+            >
+              {{ $t('knowledge.retrievalPreview.rescueBadge') }}
+            </UBadge>
             <template
               v-for="line in retrievalHitScoreLines(hit)"
               :key="line.key"
@@ -311,12 +342,15 @@ function hitPreview(row: Record<string, unknown>) {
                 {{ $t(line.labelKey) }}: {{ line.value }}
               </span>
               <span
-                v-else-if="line.missingLabelKey"
+                v-else-if="line.missingLabelKey && !retrievalHitIsRescue(hit)"
                 class="text-warning"
               >
                 {{ $t(line.labelKey) }}: {{ $t(line.missingLabelKey) }}
               </span>
             </template>
+            <span v-if="retrievalHitDatasetLabel(hit)">
+              {{ $t('knowledge.retrievalPreview.hitDataset') }}: {{ retrievalHitDatasetLabel(hit) }}
+            </span>
             <span v-if="retrievalHitSourceLabel(hit)">
               {{ $t('knowledge.retrievalPreview.hitSource') }}: {{ retrievalHitSourceLabel(hit) }}
             </span>

@@ -56,6 +56,18 @@
     "results": [],
     "warnings": ["knowledge_gap"]
   },
+  "retrievalBComplex": {
+    "query_info": {
+      "detected_nutrients": ["thiamin", "riboflavin", "niacin", "pantothenic_acid", "vitamin_b6", "folate"],
+      "nutrient_filter_applied": true,
+      "multi_nutrient_balance": true,
+      "multi_nutrient_min_per": 2,
+      "tagged_corpus_supplement": true,
+      "represented_nutrients": ["thiamin", "riboflavin", "niacin", "pantothenic_acid", "vitamin_b6"]
+    },
+    "results": [{ "chunk_id": "sample", "text": "B 群相關", "document": { "title": "doc" }, "scores": { "rrf": 0.01, "vector": 0.2, "keyword": 0.1 } }],
+    "warnings": []
+  },
   "retrievalHit": {
     "chunk_id": "60875da3-ca18-4795-bb03-92b57692f1b3",
     "text": "本次第七版 DRI 葉酸之修訂",
@@ -74,5 +86,19 @@
       "keyword": null,
       "tagged_supplement": 1
     }
+  },
+  "retrievalHitWithDataset": {
+    "chunk_id": "60875da3-ca18-4795-bb03-92b57692f1b3",
+    "text": "葉酸修訂",
+    "document": {
+      "title": "葉酸（Folate）— 國人膳食營養素參考攝取量第八版",
+      "source_name": "HPA 衛生福利部國民健康署 國人膳食營養素參考攝取量第八版：葉酸（Folate）"
+    },
+    "dataset": {
+      "id": "c7688f03-ee82-44c4-a77a-b199cce8dc53",
+      "code": "hpa-dri8-folate-zh",
+      "name": "HPA 葉酸 DRI8"
+    },
+    "scores": { "rrf": 0.12, "vector": 0.34, "keyword": 0.05 }
   }
 }
