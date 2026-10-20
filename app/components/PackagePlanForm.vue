@@ -270,6 +270,20 @@ function moneyText(value: number) {
           class="w-full"
         />
       </UFormField>
+      <UFormField
+        class="md:col-span-2"
+        :label="$t('packagePlans.fields.description_en')"
+      >
+        <UTextarea
+          v-model="state.description_en"
+          :disabled="fieldsLocked"
+          :rows="3"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ $t('packagePlans.descriptionEnHint') }}
+        </p>
+      </UFormField>
     </div>
 
     <section class="flex flex-col gap-4 rounded-xl border border-default bg-elevated p-4">
