@@ -58,14 +58,14 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 ### P1 — 資料集列表
 
 - 查詢參數（OpenAPI `adminKnowledgeDatasets`）：`group`、`status`（`pending_review`｜`active`｜`disabled`）、`corpus`、`code`（精確比對）。
-- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等；**`allow_third_party` 僅在詳情頁顯示**（`null` →「待決（視為不允許）」）。OpenAPI `PATCH` 目前未宣告 `allow_third_party`，詳情唯讀。
+- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等。是否外送由環境的 embedding 設定決定，後台不設定（core 將移除資料集欄位 `allow_third_party`／`allow_in_account_managed`）。
 - 點列進詳情。空列表：`EmptyPanel` + 說明尚無資料集。
 - 錯誤：載入失敗顯示 `error_message` 或 i18n 預設；401 由 auth middleware 處理。
 
 ### P1 — 資料集詳情
 
 - 讀取：`GET /knowledge/datasets/{id}`（404 → 詳情錯誤、無表單）。
-- 可編輯（expert／ops／admin）：`PATCH` body（OpenAPI `adminKnowledgeDatasetPatch`）：
+- 可編輯（僅 **ops／admin**；**expert → 403**）：`PATCH` body（OpenAPI `adminKnowledgeDatasetPatch`）：
   - `code`：pattern `^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$`；大寫或非法字元 → **422**（不自動轉小寫）
   - `name`
   - `license`、`license_url`、`attribution`（可 `null` 清除）
@@ -126,7 +126,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 ### P3 — 總覽與設定
 
 - **overview**：`GET /knowledge/overview` — 各資料集彙總、全庫片段／文件計數等（`data` 寬型別；KM3 依 live 回應排版）。
-- **config**：`GET /knowledge/config` — embedding 供應商、模型、維度、`active_space` 等；**不得**顯示 API key，僅「已設定／未設定」。`allow_third_party`／`default_review_mode` 若嵌在 dataset 層則在資料集頁展示。
+- **config**：`GET /knowledge/config` — embedding 供應商、模型、維度、`active_space` 等；**不得**顯示 API key，僅「已設定／未設定」。`default_review_mode` 若嵌在 dataset 層則在資料集頁展示。是否外送由環境的 embedding adaptor 決定，後台不設定。
 
 ## API 一覽（`/api/v1/admin`）
 

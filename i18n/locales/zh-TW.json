@@ -1143,18 +1143,12 @@
         "code": "代號",
         "name": "名稱",
         "status": "狀態",
-        "chunks": "片段數",
-        "allowThirdParty": "允許外送"
+        "chunks": "片段數"
       },
       "status": {
         "pending_review": "待審核",
         "active": "使用中",
         "disabled": "已停用"
-      },
-      "allowThirdParty": {
-        "yes": "允許",
-        "no": "不允許",
-        "undecided": "待決（視為不允許）"
       },
       "detail": {
         "stats": "摘要",
@@ -1162,7 +1156,6 @@
         "chunks": "片段數",
         "sourceUrl": "來源連結",
         "reviewBreakdown": "審核狀態分布",
-        "allowThirdPartyHint": "對應 API 欄位 allow_third_party；目前 OpenAPI PATCH 未提供修改，僅供檢視。",
         "chunksSectionTitle": "片段列表",
         "chunksLoadFailed": "無法載入此資料集的片段。",
         "chunksEmptyTitle": "沒有符合的片段",
@@ -1433,10 +1426,6 @@
         "corpus": {
           "label": "可搜 corpus",
           "desc": "允許檢索的知識庫 corpus 列表或預設值。"
-        },
-        "allowThirdPartyDefault": {
-          "label": "外送預設",
-          "desc": "資料集 allow_third_party 的系統預設（若後端提供）。"
         },
         "unknown": {
           "label": "其他欄位",
