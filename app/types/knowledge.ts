@@ -57,6 +57,8 @@ export type KnowledgeChunk = {
 
 export type KnowledgeChunkListQuery = {
   group?: string
+  /** Backend query `status` (review_status values). Invalid values → 422. */
+  status?: KnowledgeReviewStatus
 }
 
 export type KnowledgeRetrievalMode = 'keyword' | 'vector' | 'hybrid'

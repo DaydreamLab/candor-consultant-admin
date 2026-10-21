@@ -1204,8 +1204,6 @@
       "chunkId": "片段 ID",
       "rejectReasonStored": "退回原因",
       "reviewRoleOps": "OpenAPI：approve／reject 僅 expert 與 admin；ops 若操作可能收到 403。",
-      "pendingFilterEmptyTitle": "沒有待審片段",
-      "pendingFilterEmpty": "API 已回傳 {count} 筆片段，但沒有 review_status=pending；與 beta 全數 approved 一致，非篩選錯誤。",
       "status": {
         "pending": "待審",
         "approved": "已核可",
