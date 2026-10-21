@@ -4,10 +4,19 @@ import {
   adminConfirmExpertCaseReviewKnowledge,
   adminExportExpertCaseReview,
   adminGetExpertCaseReview,
+  adminListSellableItems,
   adminPatchExpertCaseReviewItem,
   adminResetExpertCaseReviewItems,
   adminSubmitExpertCaseReview
 } from '~/utils/admin-api'
+import {
+  defaultDoseForItem,
+  parseSellablePickRow,
+  reasonIsFilled,
+  validateDailyDose,
+  type ExpertCaseItemChangeMode,
+  type SellablePickRow
+} from '~/utils/expert-case-sellable'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
@@ -22,6 +31,23 @@ const busy = ref(false)
 const errorMessage = ref('')
 const reasonByLine = ref<Record<string, string>>({})
 const doseByLine = ref<Record<string, string>>({})
+const inlineErrorByLine = ref<Record<string, string>>({})
+
+const catalog = ref<SellablePickRow[]>([])
+const catalogPending = ref(false)
+const catalogError = ref('')
+const catalogById = computed(() => {
+  const map = new Map<string, SellablePickRow>()
+  for (const row of catalog.value) {
+    map.set(row.id, row)
+  }
+  return map
+})
+
+const changeOpen = ref(false)
+const changeMode = ref<ExpertCaseItemChangeMode>('swap')
+const changePlanCode = ref('')
+const changeOriginalSellableId = ref<string | null>(null)
 
 const caseId = computed(() => String(route.params.id || ''))
 
@@ -78,18 +104,44 @@ const comparisonPackages = computed((): Record<string, unknown>[] => {
         return { ...item }
       }
       const decision = typeof row.decision === 'string' ? row.decision : ''
+      const afterId = typeof row.sellable_item_after === 'string' ? row.sellable_item_after : ''
+      const catalogHit = afterId ? catalogById.value.get(afterId) : undefined
       const doseAfter
         = typeof row.dose_after === 'number'
           ? row.dose_after
           : item.daily_dose
+      const name
+        = catalogHit?.name
+          || (typeof item.name === 'string' ? item.name : undefined)
+          || item.code
       return {
         ...item,
+        name: afterId && afterId !== itemId(item) ? name : item.name,
+        sellable_item_id: afterId || item.sellable_item_id,
         daily_dose: decision === 'adjust' ? doseAfter : item.daily_dose,
         removed: decision === 'reject' || row.removed === true,
         decision,
         display_reason: typeof row.reason === 'string' ? row.reason : undefined
       }
     })
+
+    for (const [key, row] of workingByKey.value) {
+      if (!key.startsWith(`${plan}:`) || row.is_new !== true) {
+        continue
+      }
+      const afterId = typeof row.sellable_item_after === 'string' ? row.sellable_item_after : ''
+      const catalogHit = afterId ? catalogById.value.get(afterId) : undefined
+      items.push({
+        sellable_item_id: afterId,
+        name: catalogHit?.name || afterId,
+        code: catalogHit?.code,
+        daily_dose: typeof row.dose_after === 'number' ? row.dose_after : null,
+        decision: typeof row.decision === 'string' ? row.decision : 'adjust',
+        display_reason: typeof row.reason === 'string' ? row.reason : undefined,
+        is_new: true
+      })
+    }
+
     return { ...pkg, items }
   })
 })
@@ -103,6 +155,7 @@ const comparisonTitle = computed(() => {
 
 onMounted(() => {
   void load()
+  void loadCatalog()
 })
 
 async function load() {
@@ -127,8 +180,32 @@ async function load() {
   }
 }
 
-function lineKey(planCode: string, itemId: string) {
-  return `${planCode}:orig:${itemId}`
+async function loadCatalog() {
+  const token = readOperatorToken()
+  if (!token) {
+    catalog.value = []
+    catalogError.value = t('expertCaseReviews.pickerLoadFailed')
+    return
+  }
+  catalogPending.value = true
+  catalogError.value = ''
+  try {
+    const rows = await adminListSellableItems(config.public.apiBase, token)
+    catalog.value = rows
+      .map(row => parseSellablePickRow(row))
+      .filter((row): row is SellablePickRow => row !== null)
+  } catch (error) {
+    catalog.value = []
+    catalogError.value = error instanceof AdminApiError && error.message
+      ? error.message
+      : t('expertCaseReviews.pickerLoadFailed')
+  } finally {
+    catalogPending.value = false
+  }
+}
+
+function lineKey(planCodeValue: string, itemIdValue: string) {
+  return `${planCodeValue}:orig:${itemIdValue}`
 }
 
 function itemId(item: Record<string, unknown>) {
@@ -143,6 +220,19 @@ function packageItems(pkg: Record<string, unknown>) {
   return Array.isArray(pkg.items) ? pkg.items.filter(isRecord) : []
 }
 
+function ensureInlineReason(key: string): boolean {
+  if (reasonIsFilled(reasonByLine.value[key])) {
+    inlineErrorByLine.value[key] = ''
+    return true
+  }
+  inlineErrorByLine.value[key] = t('expertCaseReviews.reasonRequiredAdminOnly')
+  feedback.notify({
+    title: t('expertCaseReviews.reasonRequiredAdminOnly'),
+    color: 'error'
+  })
+  return false
+}
+
 async function decide(
   pkg: Record<string, unknown>,
   item: Record<string, unknown>,
@@ -155,26 +245,116 @@ async function decide(
   const plan = planCode(pkg)
   const sellableId = itemId(item)
   const key = lineKey(plan, sellableId)
-  const reason = (reasonByLine.value[key] || '').trim()
-  if ((decision === 'reject' || decision === 'adjust') && reason === '') {
-    feedback.notify({
-      title: t('expertCaseReviews.reasonRequired'),
-      color: 'error'
-    })
-    return
+
+  if (decision === 'reject' || decision === 'adjust') {
+    if (!ensureInlineReason(key)) {
+      return
+    }
   }
-  const doseRaw = doseByLine.value[key]
-  const dose = doseRaw !== undefined && doseRaw !== '' ? Number(doseRaw) : Number(item.daily_dose ?? 0)
+
+  let dose: number | null = null
+  if (decision === 'adjust') {
+    const catalogItem = catalogById.value.get(sellableId)
+      ?? parseSellablePickRow({
+        id: sellableId,
+        sale_status: 'on_sale',
+        daily_servings_min: null,
+        daily_servings_max: null,
+        daily_dose: item.daily_dose
+      })
+    const doseRaw = doseByLine.value[key]
+    const fallback = doseRaw !== undefined && doseRaw !== ''
+      ? doseRaw
+      : String(item.daily_dose ?? catalogItem?.daily_dose ?? '')
+    const doseCheck = validateDailyDose(fallback, catalogItem)
+    if (!doseCheck.ok) {
+      const message = doseCheck.code === 'below_min'
+        ? t('expertCaseReviews.doseBelowMin', { min: doseCheck.min })
+        : doseCheck.code === 'above_max'
+          ? t('expertCaseReviews.doseAboveMax', { max: doseCheck.max })
+          : t('expertCaseReviews.doseInvalid')
+      inlineErrorByLine.value[key] = message
+      feedback.notify({ title: message, color: 'error' })
+      return
+    }
+    dose = doseCheck.dose
+  }
+
+  const reason = (reasonByLine.value[key] || '').trim()
   busy.value = true
   try {
     detail.value = await adminPatchExpertCaseReviewItem(config.public.apiBase, token, caseId.value, {
       package_plan_code: plan,
       sellable_item_id: sellableId,
       decision,
-      reason: reason || null,
+      reason: decision === 'approve' ? (reason || null) : reason,
       daily_dose: decision === 'adjust' ? dose : null,
       sellable_item_after: decision === 'adjust' ? sellableId : null
     })
+    inlineErrorByLine.value[key] = ''
+  } catch (error) {
+    feedback.notify({
+      title: error instanceof AdminApiError && error.message
+        ? error.message
+        : t('expertCaseReviews.failed'),
+      color: 'error'
+    })
+  } finally {
+    busy.value = false
+  }
+}
+
+function openSwap(pkg: Record<string, unknown>, item: Record<string, unknown>) {
+  changeMode.value = 'swap'
+  changePlanCode.value = planCode(pkg)
+  changeOriginalSellableId.value = itemId(item)
+  const key = lineKey(changePlanCode.value, changeOriginalSellableId.value || '')
+  // Seed dose field from line input if present; never from member profile.
+  if (!doseByLine.value[key] && item.daily_dose != null) {
+    doseByLine.value[key] = String(item.daily_dose)
+  }
+  changeOpen.value = true
+}
+
+function openAdd(pkg: Record<string, unknown>) {
+  changeMode.value = 'add'
+  changePlanCode.value = planCode(pkg)
+  changeOriginalSellableId.value = null
+  changeOpen.value = true
+}
+
+async function onChangeConfirm(payload: {
+  sellableItemId: string
+  dailyDose: number
+  reason: string
+}) {
+  const token = readOperatorToken()
+  if (!token || !awaiting.value || !changePlanCode.value) {
+    return
+  }
+  busy.value = true
+  try {
+    if (changeMode.value === 'add') {
+      detail.value = await adminPatchExpertCaseReviewItem(config.public.apiBase, token, caseId.value, {
+        package_plan_code: changePlanCode.value,
+        decision: 'adjust',
+        is_new: true,
+        sellable_item_id: null,
+        sellable_item_after: payload.sellableItemId,
+        daily_dose: payload.dailyDose,
+        reason: payload.reason
+      })
+    } else {
+      detail.value = await adminPatchExpertCaseReviewItem(config.public.apiBase, token, caseId.value, {
+        package_plan_code: changePlanCode.value,
+        decision: 'adjust',
+        sellable_item_id: changeOriginalSellableId.value,
+        sellable_item_after: payload.sellableItemId,
+        daily_dose: payload.dailyDose,
+        reason: payload.reason
+      })
+    }
+    changeOpen.value = false
   } catch (error) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
@@ -197,6 +377,7 @@ async function resetAll() {
     detail.value = await adminResetExpertCaseReviewItems(config.public.apiBase, token, caseId.value)
     reasonByLine.value = {}
     doseByLine.value = {}
+    inlineErrorByLine.value = {}
   } catch (error) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
@@ -298,6 +479,24 @@ function decisionLabel(key: string) {
   return typeof row?.decision === 'string' ? row.decision : ''
 }
 
+function seedDoseIfEmpty(pkg: Record<string, unknown>, item: Record<string, unknown>) {
+  const key = lineKey(planCode(pkg), itemId(item))
+  if (doseByLine.value[key] !== undefined) {
+    return
+  }
+  const catalogItem = catalogById.value.get(itemId(item))
+  if (item.daily_dose != null && item.daily_dose !== '') {
+    doseByLine.value[key] = String(item.daily_dose)
+    return
+  }
+  doseByLine.value[key] = defaultDoseForItem(catalogItem ?? null)
+}
+
+function adjustDose(pkg: Record<string, unknown>, item: Record<string, unknown>) {
+  seedDoseIfEmpty(pkg, item)
+  void decide(pkg, item, 'adjust')
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
@@ -387,9 +586,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
             :key="planCode(pkg)"
             class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
           >
-            <h3 class="font-medium text-highlighted">
-              {{ pkg.package_plan_name || planCode(pkg) }}
-            </h3>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-medium text-highlighted">
+                {{ pkg.package_plan_name || planCode(pkg) }}
+              </h3>
+              <UButton
+                v-if="awaiting"
+                size="xs"
+                variant="soft"
+                color="primary"
+                :disabled="busy"
+                data-testid="expert-case-add-item"
+                @click="openAdd(pkg)"
+              >
+                {{ $t('expertCaseReviews.addItem') }}
+              </UButton>
+            </div>
             <p
               v-if="!packageItems(pkg).length"
               class="mt-2 text-sm text-muted"
@@ -404,6 +616,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                 v-for="item in packageItems(pkg)"
                 :key="itemId(item)"
                 class="py-3"
+                :data-testid="`expert-case-item-${itemId(item)}`"
               >
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -428,6 +641,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                       size="xs"
                       variant="soft"
                       :disabled="busy"
+                      data-testid="expert-case-approve"
                       @click="decide(pkg, item, 'approve')"
                     >
                       {{ $t('expertCaseReviews.approve') }}
@@ -437,6 +651,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                       color="error"
                       variant="soft"
                       :disabled="busy"
+                      data-testid="expert-case-reject"
                       @click="decide(pkg, item, 'reject')"
                     >
                       {{ $t('expertCaseReviews.reject') }}
@@ -446,9 +661,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                       color="warning"
                       variant="soft"
                       :disabled="busy"
-                      @click="decide(pkg, item, 'adjust')"
+                      data-testid="expert-case-adjust-dose"
+                      @click="adjustDose(pkg, item)"
                     >
                       {{ $t('expertCaseReviews.adjust') }}
+                    </UButton>
+                    <UButton
+                      size="xs"
+                      color="primary"
+                      variant="soft"
+                      :disabled="busy"
+                      data-testid="expert-case-swap"
+                      @click="openSwap(pkg, item)"
+                    >
+                      {{ $t('expertCaseReviews.swapItem') }}
                     </UButton>
                   </div>
                 </div>
@@ -456,19 +682,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                   v-if="awaiting"
                   class="mt-2 grid gap-2 sm:grid-cols-2"
                 >
-                  <UInput
-                    v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
-                    :placeholder="$t('expertCaseReviews.reason')"
-                    size="sm"
-                  />
+                  <div>
+                    <UInput
+                      v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
+                      :placeholder="$t('expertCaseReviews.reason')"
+                      size="sm"
+                      data-testid="expert-case-inline-reason"
+                    />
+                    <p
+                      class="mt-1 text-xs text-muted"
+                      data-testid="expert-case-inline-reason-hint"
+                    >
+                      {{ $t('expertCaseReviews.reasonAdminOnlyHint') }}
+                    </p>
+                  </div>
                   <UInput
                     v-model="doseByLine[lineKey(planCode(pkg), itemId(item))]"
                     :placeholder="String(item.daily_dose ?? '')"
                     size="sm"
                     type="number"
                     step="0.1"
+                    data-testid="expert-case-inline-dose"
                   />
                 </div>
+                <p
+                  v-if="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))]"
+                  class="mt-2 text-sm text-error"
+                  data-testid="expert-case-inline-error"
+                >
+                  {{ inlineErrorByLine[lineKey(planCode(pkg), itemId(item))] }}
+                </p>
               </li>
             </ul>
           </div>
@@ -515,10 +758,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
             >
               <li
                 v-for="item in packageItems(pkg)"
-                :key="`cmp-item-${itemId(item)}`"
+                :key="`cmp-item-${itemId(item)}-${item.is_new ? 'new' : 'orig'}`"
               >
                 <span :class="{ 'line-through text-muted': item.removed === true }">
                   {{ item.name || item.code }} · {{ item.daily_dose }}
+                </span>
+                <span
+                  v-if="item.is_new"
+                  class="ms-2 text-xs text-primary"
+                >
+                  · {{ $t('expertCaseReviews.addedBadge') }}
                 </span>
                 <span
                   v-if="item.decision && !revisedPackages.length"
@@ -586,5 +835,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
         </div>
       </section>
     </template>
+
+    <ExpertCaseItemChangeModal
+      v-model:open="changeOpen"
+      :mode="changeMode"
+      :items="catalog"
+      :catalog-pending="catalogPending"
+      :catalog-error="catalogError"
+      :busy="busy"
+      :initial-sellable-id="changeOriginalSellableId"
+      @confirm="onChangeConfirm"
+    />
   </PageHeader>
 </template>
