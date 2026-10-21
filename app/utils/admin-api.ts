@@ -513,42 +513,6 @@ export async function adminSubmitExpertCaseReview(
   }
 }
 
-export async function adminConfirmExpertCaseReviewKnowledge(
-  apiBase: string,
-  token: string,
-  caseId: string,
-  knowledgeId: string,
-  classification: 'reusable' | 'personal_risk'
-) {
-  try {
-    const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(
-        apiBase,
-        `/expert-case-review/${encodeURIComponent(caseId)}/knowledge/${encodeURIComponent(knowledgeId)}`
-      ),
-      {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: {
-          classification,
-          classification_confirmed: true
-        }
-      }
-    )
-    if (body?.status !== 'success' || !isRecord(body.data)) {
-      throw new AdminApiError(500, '')
-    }
-    return body.data
-  } catch (error) {
-    if (error instanceof AdminApiError) {
-      throw error
-    }
-    throw new AdminApiError(readStatus(error), readMessage(error))
-  }
-}
-
 export async function adminExportExpertCaseReview(apiBase: string, token: string, id: string) {
   try {
     const response = await $fetch.raw(
@@ -565,6 +529,172 @@ export async function adminExportExpertCaseReview(apiBase: string, token: string
       filename: readContentDispositionFilename(response.headers.get('content-disposition'))
         || `expert-case-review-${id}.xlsx`
     }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+/** POST /weight-sets/daily-learning-draft — clone published + proposals (core #75; not auto-publish). */
+export async function adminDailyLearningDraft(
+  apiBase: string,
+  token: string,
+  payload: { date?: string, version?: string } = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, '/weight-sets/daily-learning-draft'),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+/** POST /weight-sets/{id}/daily-learning-confirm — lock classification + apply general proposals. */
+export async function adminDailyLearningConfirm(
+  apiBase: string,
+  token: string,
+  weightSetId: string,
+  payload: {
+    accept_proposed?: boolean
+    accepted_general_proposal_ids?: string[]
+    confirmations?: Array<{
+      knowledge_id: string
+      classification: 'reusable' | 'personal_risk'
+      classification_confirmed: true
+    }>
+  }
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(
+        apiBase,
+        `/weight-sets/${encodeURIComponent(weightSetId)}/daily-learning-confirm`
+      ),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+/** POST /weight-sets/{id}/daily-learning-confirm-safety — one safety proposal; confirm_safety must be true. */
+export async function adminDailyLearningConfirmSafety(
+  apiBase: string,
+  token: string,
+  weightSetId: string,
+  proposalId: string
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(
+        apiBase,
+        `/weight-sets/${encodeURIComponent(weightSetId)}/daily-learning-confirm-safety`
+      ),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: {
+          proposal_id: proposalId,
+          confirm_safety: true
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+/** POST /weight-sets/{id}/dry-run */
+export async function adminWeightSetDryRun(
+  apiBase: string,
+  token: string,
+  weightSetId: string,
+  payload: { tag?: string | null } = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/weight-sets/${encodeURIComponent(weightSetId)}/dry-run`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+/** POST /weight-sets/{id}/publish */
+export async function adminWeightSetPublish(
+  apiBase: string,
+  token: string,
+  weightSetId: string,
+  payload: { override_reason?: string | null } = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/weight-sets/${encodeURIComponent(weightSetId)}/publish`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error

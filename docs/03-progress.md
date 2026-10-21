@@ -75,8 +75,9 @@
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/expert-tuning`、`/expert-tuning/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
+| 專家訓練／每日學習確認 | `/expert-tuning/daily-learning`（clone→confirm→confirm-safety→dry-run→publish；ADR 0028） | 可用 | 接線中（等 core #75 schema） | M4 |
 | 專家訓練／訓練批次 | `/expert-tuning/training`、`/expert-tuning/training/{id}` | 殼 | Mock | M4 |
-| Weight sets | —（權重分頁仍 mock；HTTP 見 core） | 殼 | Mock | M4 |
+| Weight sets | —（權重分頁仍 mock；每日學習 HTTP 已接畫面；見 core #75） | 殼／接線中 | Mock／接線中 | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
 | 設定頁 | `/settings` | 殼（外連改掛 AI 助理） | 殼 | 完成 |
@@ -181,7 +182,9 @@
 | 能力 | 端點 | 狀態 |
 |------|------|------|
 | 列表／建立／詳情／entries／dry-run／publish | `/admin/weight-sets/**` | Mock |
+| 每日學習草案／確認／安全確認 | `POST /admin/weight-sets/daily-learning-draft`、`…/daily-learning-confirm`、`…/daily-learning-confirm-safety`（ADR 0028／core #75） | 接線中（畫面已接；dev 待 #75 合併） |
 | 後台「專家訓練」權重分頁 | `/expert-tuning`（本地 mock，未呼叫 weight-set API） | Mock |
+| 後台「專家訓練」每日學習確認 | `/expert-tuning/daily-learning`（直連上列 API；欄位 schema 待 #75 補齊） | 接線中 |
 | 後台「專家訓練」訓練批次 | `/expert-tuning/training`（本地 mock；案例庫／模擬案例／review；無 HTTP） | Mock |
 
 ### 明確不做（示範頁可暫留）
@@ -206,6 +209,6 @@
 
 ---
 
-**最後更新**：2026-10-18（新增 spec/12 知識管理；功能表與 Knowledge 切片掛 KM1–KM3，接線皆 Mock）
+**最後更新**：2026-10-21（G-admin：每日學習確認畫面 `/expert-tuning/daily-learning`；拿掉 US-J7 手動標記；等 core #75 proposal schema）
 
 **KM 里程碑**：KM1 資料集＋片段審核；KM2 檢索預覽＋稽核；KM3 群組＋overview／config。細項見 [spec/12-knowledge-management.md](spec/12-knowledge-management.md)。

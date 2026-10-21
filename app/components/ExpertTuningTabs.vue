@@ -6,6 +6,7 @@ const route = useRoute()
 
 const tabs = [
   { key: 'weights', to: '/expert-tuning' },
+  { key: 'dailyLearning', to: '/expert-tuning/daily-learning' },
   { key: 'training', to: '/expert-tuning/training' }
 ] as const
 
@@ -13,6 +14,7 @@ function active(to: string) {
   const current = normalizeAdminPath(route.path)
   if (to === '/expert-tuning') {
     return current === '/expert-tuning'
+      || current.startsWith('/expert-tuning/weights/')
   }
   return current === to || current.startsWith(`${to}/`)
 }
