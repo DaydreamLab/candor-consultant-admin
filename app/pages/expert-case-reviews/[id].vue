@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   AdminApiError,
-  adminConfirmExpertCaseReviewKnowledge,
   adminExportExpertCaseReview,
   adminGetExpertCaseMemberData,
   adminGetExpertCaseReview,
@@ -578,36 +577,6 @@ async function submit() {
     detail.value = await adminSubmitExpertCaseReview(config.public.apiBase, token, caseId.value)
     feedback.notify({
       title: t('expertCaseReviews.submitOk'),
-      color: 'success'
-    })
-  } catch (error) {
-    feedback.notify({
-      title: error instanceof AdminApiError && error.message
-        ? error.message
-        : t('expertCaseReviews.failed'),
-      color: 'error'
-    })
-  } finally {
-    busy.value = false
-  }
-}
-
-async function confirmKnowledge(knowledgeId: string, classification: 'reusable' | 'personal_risk') {
-  const token = readOperatorToken()
-  if (!token) {
-    return
-  }
-  busy.value = true
-  try {
-    detail.value = await adminConfirmExpertCaseReviewKnowledge(
-      config.public.apiBase,
-      token,
-      caseId.value,
-      knowledgeId,
-      classification
-    )
-    feedback.notify({
-      title: t('expertCaseReviews.classifyOk'),
       color: 'success'
     })
   } catch (error) {
@@ -1580,28 +1549,12 @@ function isCustomerRole(value: unknown) {
               ? row.classification
               : $t('expertCaseReviews.pendingClassification') }}
           </p>
-          <div
+          <p
             v-if="!row.classification_confirmed"
-            class="mt-3 flex flex-wrap gap-2"
+            class="mt-2 text-xs text-muted"
           >
-            <UButton
-              size="xs"
-              variant="soft"
-              :disabled="busy"
-              @click="confirmKnowledge(String(row.id), 'reusable')"
-            >
-              {{ $t('expertCaseReviews.classifyReusable') }}
-            </UButton>
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="soft"
-              :disabled="busy"
-              @click="confirmKnowledge(String(row.id), 'personal_risk')"
-            >
-              {{ $t('expertCaseReviews.classifyPersonal') }}
-            </UButton>
-          </div>
+            {{ $t('expertCaseReviews.classificationViaDailyLearning') }}
+          </p>
         </div>
       </section>
     </template>
