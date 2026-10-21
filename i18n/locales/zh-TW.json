@@ -1203,7 +1203,7 @@
       "rejectConfirm": "確認退回",
       "chunkId": "片段 ID",
       "rejectReasonStored": "退回原因",
-      "reviewRoleOps": "OpenAPI：approve／reject 僅 expert 與 admin；ops 若操作可能收到 403。",
+      "reviewRoleDenied": "僅 ops 與 admin 可核可／退回片段。",
       "status": {
         "pending": "待審",
         "approved": "已核可",

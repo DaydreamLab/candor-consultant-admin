@@ -25,15 +25,15 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 ## 角色與權限
 
-**後台 UI（本 repo，目前不分角色）**：已登入 operator 可使用知識管理全部子頁；片段 approve／reject 按鈕對所有已登入角色顯示（API 403 時顯示錯誤）。
+**後台 UI（本 repo，Irice 10/21）**：知識管理（含片段審核）僅 **ops／admin**。側欄／選單隱藏 expert 入口；`/knowledge/**` 由 `knowledge.global` middleware 導回首頁。片段 approve／reject 按鈕僅 ops／admin。
 
-OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或 API，先改 core。
+與 candor-core 權限對齊（core 另 PR：知識管理 API、chunks 列表、approve／reject 皆限 admin／ops；expert → 403；審核權限由 expert＋admin 改為 ops＋admin）。**合併順序：先合 core 權限 PR，再合本後台 PR。**
 
 | 能力 | expert | ops | admin |
 |------|--------|-----|-------|
-| 讀取：overview、config、datasets、dataset-groups、chunks 列表、audit、retrieval-preview | ✓ | ✓ | ✓ |
-| 寫入：chunks approve／reject | ✓ | — | ✓ |
-| 寫入：datasets PATCH（code／name／授權／status） | ✓ | ✓ | ✓ |
+| 進入知識管理 UI／讀取子頁 | — | ✓ | ✓ |
+| 寫入：chunks approve／reject | — | ✓ | ✓ |
+| 寫入：datasets PATCH（code／name／授權／status） | — | ✓ | ✓ |
 | 寫入：dataset-groups POST | — | — | ✓ |
 
 未登入或 member JWT：401。角色不足：403。
@@ -73,7 +73,7 @@ OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或
   - `reason`：選填；**status 變更**時寫入 `knowledge_dataset.status_change` 稽核
 - `code` 衝突 → **409**。成功後以回應 `data` 刷新畫面。
 - **授權／出處**：表單區塊獨立於代碼／名稱；`source_url` 若 API 有回傳則唯讀連結展示（PATCH 未在 OpenAPI 列出則不可改）。
-- ops 與 expert 皆可 PATCH（OpenAPI）；若未來要限 admin 改 status，需 core 先改。
+- ops／admin 可 PATCH（與知識管理 UI 角色一致）；若未來要限 admin 改 status，需 core 先改。
 
 ### P1 — 片段審核
 
@@ -82,7 +82,7 @@ OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或
 - **頁面標題**：知識子頁以 `KnowledgeTabs` **路由**切換；頂欄與瀏覽器 title 由 `usePageCrumbs`／`knowledge-nav`（`nav.knowledge` + tab 標籤）與 `useAdminPageHead` 同步，勿依 `NAV_GROUPS` 的 `to: /knowledge/datasets` 單點比對。
 - UI 狀態篩選變更時重打 API（帶 `status`）；勿只對已載入的預設 50 筆做 client filter。
 - 列欄位（依 `data[]` 實際鍵）：片段 `id`、所屬資料集、`review_status`、文件標題、`text` 預覽、`source_url`、`license`、`attribution`；摘要片段標「摘要（衍生）」若 `chunk_kind`／類似欄位存在。
-- **approve**：`POST /knowledge/chunks/{id}/approve`（expert／admin）。**reject**：`POST /knowledge/chunks/{id}/reject`（摘要寫「原因必填」；OpenAPI 未宣告 body — **待確認** `reason` 欄位名與 422 規則，UI 仍應強制填原因再送出）。
+- **approve**：`POST /knowledge/chunks/{id}/approve`（ops／admin）。**reject**：`POST /knowledge/chunks/{id}/reject`（摘要寫「原因必填」；OpenAPI 未宣告 body — **待確認** `reason` 欄位名與 422 規則，UI 仍應強制填原因再送出）。
 - 409：狀態機衝突；404：片段不存在。成功後更新該列或重新載入。
 - 空狀態：一般「沒有符合的片段」；勿再顯示「與 beta 全數 approved 一致」類誤導說明。
 
@@ -132,20 +132,20 @@ OpenAPI `x-required-roles`（candor-core）仍如下；若產品要限縮 UI 或
 
 | 方法 | 路徑 | operationId | 角色 |
 |------|------|-------------|------|
-| GET | `/knowledge/chunks` | adminKnowledgeChunksList | expert, ops, admin |
-| POST | `/knowledge/chunks/{id}/approve` | adminKnowledgeChunksApprove | expert, admin |
-| POST | `/knowledge/chunks/{id}/reject` | adminKnowledgeChunksReject | expert, admin |
-| GET | `/knowledge/overview` | adminKnowledgeOverview | expert, ops, admin |
-| GET | `/knowledge/dataset-groups` | adminKnowledgeDatasetGroupsList | expert, ops, admin |
+| GET | `/knowledge/chunks` | adminKnowledgeChunksList | ops, admin |
+| POST | `/knowledge/chunks/{id}/approve` | adminKnowledgeChunksApprove | ops, admin |
+| POST | `/knowledge/chunks/{id}/reject` | adminKnowledgeChunksReject | ops, admin |
+| GET | `/knowledge/overview` | adminKnowledgeOverview | ops, admin |
+| GET | `/knowledge/dataset-groups` | adminKnowledgeDatasetGroupsList | ops, admin |
 | POST | `/knowledge/dataset-groups` | adminKnowledgeDatasetGroupsCreate | admin |
-| GET | `/knowledge/datasets` | adminKnowledgeDatasets | expert, ops, admin |
-| GET | `/knowledge/datasets/{id}` | adminKnowledgeDatasetDetail | expert, ops, admin |
-| PATCH | `/knowledge/datasets/{id}` | adminKnowledgeDatasetPatch | expert, ops, admin |
-| GET | `/knowledge/config` | adminKnowledgeConfig | expert, ops, admin |
-| POST | `/knowledge/retrieval-preview` | adminKnowledgeRetrievalPreview | expert, ops, admin |
-| GET | `/knowledge/audit` | adminKnowledgeAuditGlobal | expert, ops, admin |
-| GET | `/knowledge/audit/chunks/{id}` | adminKnowledgeAuditChunk | expert, ops, admin |
-| GET | `/knowledge/audit/datasets/{id}` | adminKnowledgeAuditDataset | expert, ops, admin |
+| GET | `/knowledge/datasets` | adminKnowledgeDatasets | ops, admin |
+| GET | `/knowledge/datasets/{id}` | adminKnowledgeDatasetDetail | ops, admin |
+| PATCH | `/knowledge/datasets/{id}` | adminKnowledgeDatasetPatch | ops, admin |
+| GET | `/knowledge/config` | adminKnowledgeConfig | ops, admin |
+| POST | `/knowledge/retrieval-preview` | adminKnowledgeRetrievalPreview | ops, admin |
+| GET | `/knowledge/audit` | adminKnowledgeAuditGlobal | ops, admin |
+| GET | `/knowledge/audit/chunks/{id}` | adminKnowledgeAuditChunk | ops, admin |
+| GET | `/knowledge/audit/datasets/{id}` | adminKnowledgeAuditDataset | ops, admin |
 
 ## 前端實作慣例
 

@@ -10,7 +10,7 @@ const session = useSessionStore()
 const open = ref(false)
 const developing = computed(() => isDevelopingPath(route.path))
 
-const groups = computed(() => visibleNavGroups(session.role))
+const groups = computed(() => visibleNavGroups(session.role, session.operator?.role ?? null))
 
 const menuGroups = computed(() =>
   groups.value.map(group => ({

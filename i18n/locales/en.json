@@ -1203,7 +1203,7 @@
       "rejectConfirm": "Confirm reject",
       "chunkId": "Chunk ID",
       "rejectReasonStored": "Reject reason",
-      "reviewRoleOps": "OpenAPI: approve/reject is expert and admin only; ops may get 403.",
+      "reviewRoleDenied": "Only ops and admin can approve or reject chunks.",
       "status": {
         "pending": "Pending",
         "approved": "Approved",

@@ -13,6 +13,7 @@ import {
   buildKnowledgeChunkListQuery,
   KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY
 } from '~/utils/knowledge-chunks-query'
+import { canReviewKnowledgeChunks } from '~/utils/knowledge-access'
 
 const config = useRuntimeConfig()
 const { t } = useI18n()
@@ -40,15 +41,14 @@ const statusOptions = computed(() => [
   { label: t('knowledge.chunks.status.retired'), value: 'retired' }
 ])
 
-/** UI 對已登入 operator 顯示；API 依 OpenAPI 僅 expert／admin 可 approve／reject。 */
-const canReview = computed(() => session.isLoggedIn)
+/** 核可／退回僅 ops／admin（與 candor-core 知識管理權限對齊）。 */
+const canReview = computed(() => canReviewKnowledgeChunks(session.operator?.role))
 
 const reviewRoleHint = computed(() => {
-  const role = session.operator?.role
-  if (role === 'ops') {
-    return t('knowledge.chunks.reviewRoleOps')
+  if (canReview.value) {
+    return ''
   }
-  return ''
+  return t('knowledge.chunks.reviewRoleDenied')
 })
 
 onMounted(() => {
