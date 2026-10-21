@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {
+  displayResultName,
   displayResultValue,
   formatResultRef,
+  hasResultInterpretation,
   resultGaugePct,
   resultStatusClass,
   type HealthReportResult,
@@ -88,8 +90,21 @@ function resultStatusLabel(cls: ResultStatusClass) {
                   :class="resultStatusClass(row)"
                 />{{ resultStatusLabel(resultStatusClass(row)) }}
               </td>
-              <td class="px-2.5 py-2.5 font-semibold text-highlighted">
-                {{ row.raw_name || row.biomarker_id || '—' }}
+              <td class="px-2.5 py-2.5 text-highlighted">
+                <p class="font-semibold">
+                  {{ displayResultName(row) }}
+                </p>
+                <div
+                  v-if="hasResultInterpretation(row)"
+                  class="mt-1.5 space-y-1 text-xs font-normal text-muted"
+                >
+                  <p v-if="row.description">
+                    <span class="font-medium text-highlighted">{{ $t('orders.reportReading.description') }}：</span>{{ row.description }}
+                  </p>
+                  <p v-if="row.possible_causes">
+                    <span class="font-medium text-highlighted">{{ $t('orders.reportReading.possibleCauses') }}：</span>{{ row.possible_causes }}
+                  </p>
+                </div>
               </td>
               <td
                 class="px-2.5 py-2.5 text-base font-bold"

@@ -11,8 +11,11 @@ import {
 import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
+  displayResultName,
   displayResultValue,
   formatResultRef,
+  hasResultInterpretation,
+  mapHealthReportResultRow,
   resultGaugePct,
   resultStatusClass,
   type HealthReportResult,
@@ -332,44 +335,12 @@ function isUsageRecord(value: unknown): value is Record<string, unknown> {
 function healthReportResultsOf(data: Record<string, unknown>): HealthReportResult[] {
   const out: HealthReportResult[] = []
   for (const row of recordsOf(data.results)) {
-    const id = scalarId(row.id)
-    if (!id) {
-      continue
+    const mapped = mapHealthReportResultRow(row)
+    if (mapped) {
+      out.push(mapped)
     }
-    out.push({
-      id,
-      biomarker_id: optionalString(row.biomarker_id),
-      raw_name: optionalString(row.raw_name),
-      raw_value: optionalString(row.raw_value),
-      raw_unit: optionalString(row.raw_unit),
-      value_numeric: optionalNumber(row.value_numeric),
-      unit: optionalString(row.unit),
-      ref_low: optionalNumber(row.ref_low),
-      ref_high: optionalNumber(row.ref_high),
-      borderline_low: optionalNumber(row.borderline_low),
-      borderline_high: optionalNumber(row.borderline_high),
-      critical_low: optionalNumber(row.critical_low),
-      critical_high: optionalNumber(row.critical_high),
-      confidence: optionalNumber(row.confidence),
-      needs_review: typeof row.needs_review === 'boolean' ? row.needs_review : undefined,
-      page: optionalNumber(row.page)
-    })
   }
   return out
-}
-
-function optionalString(value: unknown) {
-  return typeof value === 'string' ? value : null
-}
-
-function optionalNumber(value: unknown) {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
-    return Number(value)
-  }
-  return null
 }
 
 function resultStatusLabel(cls: ResultStatusClass) {
@@ -945,8 +916,21 @@ function messageTimeText(row: Record<string, unknown>) {
                           :class="resultStatusClass(row)"
                         />{{ resultStatusLabel(resultStatusClass(row)) }}
                       </td>
-                      <td class="px-2.5 py-2.5 font-semibold text-highlighted">
-                        {{ row.raw_name || row.biomarker_id || '—' }}
+                      <td class="px-2.5 py-2.5 text-highlighted">
+                        <p class="font-semibold">
+                          {{ displayResultName(row) }}
+                        </p>
+                        <div
+                          v-if="hasResultInterpretation(row)"
+                          class="mt-1.5 space-y-1 text-xs font-normal text-muted"
+                        >
+                          <p v-if="row.description">
+                            <span class="font-medium text-highlighted">{{ $t('orders.reportReading.description') }}：</span>{{ row.description }}
+                          </p>
+                          <p v-if="row.possible_causes">
+                            <span class="font-medium text-highlighted">{{ $t('orders.reportReading.possibleCauses') }}：</span>{{ row.possible_causes }}
+                          </p>
+                        </div>
                       </td>
                       <td
                         class="px-2.5 py-2.5 text-base font-bold"

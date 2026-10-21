@@ -36,7 +36,10 @@ import {
   type SellablePickRow
 } from '~/utils/expert-case-sellable'
 import { readOperatorToken } from '~/utils/operator-session'
-import type { HealthReportResult } from '~/utils/report-result-status'
+import {
+  mapHealthReportResultRow,
+  type HealthReportResult
+} from '~/utils/report-result-status'
 
 const CUSTOMER_ROLES = new Set(['user', 'customer', 'client', 'member'])
 
@@ -273,27 +276,13 @@ const healthReportResults = computed((): HealthReportResult[] => {
   }
   const out: HealthReportResult[] = []
   for (const row of report.results) {
-    if (!isRecord(row) || typeof row.id !== 'string') {
+    if (!isRecord(row)) {
       continue
     }
-    out.push({
-      id: row.id,
-      biomarker_id: typeof row.biomarker_id === 'string' ? row.biomarker_id : null,
-      raw_name: typeof row.raw_name === 'string' ? row.raw_name : null,
-      raw_value: typeof row.raw_value === 'string' ? row.raw_value : null,
-      raw_unit: typeof row.raw_unit === 'string' ? row.raw_unit : null,
-      value_numeric: typeof row.value_numeric === 'number' ? row.value_numeric : null,
-      unit: typeof row.unit === 'string' ? row.unit : null,
-      ref_low: typeof row.ref_low === 'number' ? row.ref_low : null,
-      ref_high: typeof row.ref_high === 'number' ? row.ref_high : null,
-      borderline_low: typeof row.borderline_low === 'number' ? row.borderline_low : null,
-      borderline_high: typeof row.borderline_high === 'number' ? row.borderline_high : null,
-      critical_low: typeof row.critical_low === 'number' ? row.critical_low : null,
-      critical_high: typeof row.critical_high === 'number' ? row.critical_high : null,
-      confidence: typeof row.confidence === 'number' ? row.confidence : null,
-      needs_review: row.needs_review === true,
-      page: typeof row.page === 'number' ? row.page : null
-    })
+    const mapped = mapHealthReportResultRow(row)
+    if (mapped) {
+      out.push(mapped)
+    }
   }
   return out
 })
