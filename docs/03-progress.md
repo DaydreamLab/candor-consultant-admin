@@ -182,9 +182,9 @@
 | 能力 | 端點 | 狀態 |
 |------|------|------|
 | 列表／建立／詳情／entries／dry-run／publish | `/admin/weight-sets/**` | Mock |
-| 每日學習草案／確認／安全確認 | `POST /admin/weight-sets/daily-learning-draft`、`…/daily-learning-confirm`、`…/daily-learning-confirm-safety`（ADR 0028／core #75 `681d6eb` 明確 schema） | 接線中（畫面已接；dev 待 #75 合併） |
+| 每日學習草案／確認／安全確認 | `POST /admin/weight-sets/daily-learning-draft`、`…/daily-learning-confirm`、`…/daily-learning-confirm-safety`（ADR 0028／core #75 `141c24b`：plain_language＋顯示名） | 接線中（畫面已接；dev 待 #75 合併） |
 | 後台「專家訓練」權重分頁 | `/expert-tuning`（本地 mock，未呼叫 weight-set API） | Mock |
-| 後台「專家訓練」每日學習確認 | `/expert-tuning/daily-learning`（直連上列 API；`DailyLearningRowProposal`／general／safety discriminated unions） | 接線中 |
+| 後台「專家訓練」每日學習確認 | `/expert-tuning/daily-learning`（直連上列 API；plain_language 主文、名稱標示、禁 UUID） | 接線中 |
 | 後台「專家訓練」訓練批次 | `/expert-tuning/training`（本地 mock；案例庫／模擬案例／review；無 HTTP） | Mock |
 
 ### 明確不做（示範頁可暫留）

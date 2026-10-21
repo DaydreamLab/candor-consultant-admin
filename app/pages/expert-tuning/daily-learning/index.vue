@@ -9,8 +9,8 @@ import {
 } from '~/utils/admin-api'
 import {
   buildDailyLearningConfirmBody,
+  displayNameOr,
   formatTechnicalJson,
-  generalDirection,
   generalTechnical,
   parseDailyLearningDraft,
   safetyTechnical
@@ -158,33 +158,51 @@ function canAcceptGeneral(proposal: DailyLearningGeneralProposal) {
   return classificationChoice.value[proposal.knowledge_id] === 'reusable'
 }
 
-/** Interim plain copy until #75 ships names／plain_language (no UUID on expert UI). */
-function generalPlain(proposal: DailyLearningGeneralProposal) {
-  const direction = generalDirection(proposal)
-  if (proposal.kind === 'base_weight') {
-    return t(`expertTuning.dailyLearning.generalPlain.base_weight.${direction}`)
-  }
-  if (proposal.kind === 'add_edge') {
-    return t('expertTuning.dailyLearning.generalPlain.add_edge')
-  }
-  return t(`expertTuning.dailyLearning.generalPlain.signal_domain_weight.${direction}`)
+function unnamedIngredient() {
+  return t('expertTuning.dailyLearning.unnamed.ingredient')
 }
 
-function safetyPlain(proposal: DailyLearningSafetyProposal) {
+function unnamedDomain() {
+  return t('expertTuning.dailyLearning.unnamed.domain')
+}
+
+function unnamedBiomarker() {
+  return t('expertTuning.dailyLearning.unnamed.biomarker')
+}
+
+function unnamedCondition() {
+  return t('expertTuning.dailyLearning.unnamed.condition')
+}
+
+/** Name chips for expert UI — never UUID. */
+function generalNameLine(proposal: DailyLearningGeneralProposal) {
+  if (proposal.kind === 'signal_domain_weight') {
+    return t('expertTuning.dailyLearning.nameLine.signal', {
+      biomarker: displayNameOr(proposal.biomarker_name, unnamedBiomarker()),
+      domain: displayNameOr(proposal.domain_name, unnamedDomain())
+    })
+  }
+  return t('expertTuning.dailyLearning.nameLine.ingredientDomain', {
+    ingredient: displayNameOr(proposal.ingredient_name, unnamedIngredient()),
+    domain: displayNameOr(proposal.domain_name, unnamedDomain())
+  })
+}
+
+function safetyNameLine(proposal: DailyLearningSafetyProposal) {
   if (proposal.kind === 'contraindication_exclude_to_warn') {
-    return t('expertTuning.dailyLearning.safetyPlain.contraindication_exclude_to_warn', {
-      condition: proposal.condition_code
+    return t('expertTuning.dailyLearning.nameLine.contra', {
+      ingredient: displayNameOr(proposal.ingredient_name, unnamedIngredient()),
+      condition: displayNameOr(proposal.condition_name, unnamedCondition())
     })
   }
   if (proposal.kind === 'interaction_exclude_to_penalize') {
-    return t('expertTuning.dailyLearning.safetyPlain.interaction_exclude_to_penalize', {
-      penalty: proposal.to.penalty
+    return t('expertTuning.dailyLearning.nameLine.interaction', {
+      a: displayNameOr(proposal.ingredient_a_name, unnamedIngredient()),
+      b: displayNameOr(proposal.ingredient_b_name, unnamedIngredient())
     })
   }
-  return t('expertTuning.dailyLearning.safetyPlain.ul_override', {
-    from: proposal.from ?? '—',
-    to: proposal.to,
-    dose: proposal.dose_used
+  return t('expertTuning.dailyLearning.nameLine.ul', {
+    ingredient: displayNameOr(proposal.ingredient_name, unnamedIngredient())
   })
 }
 
@@ -590,8 +608,17 @@ async function publishDraft() {
               class="rounded-lg border border-default/80 bg-default/30 p-3"
               :data-testid="`daily-learning-general-${proposal.id}`"
             >
-              <p class="text-sm text-highlighted">
-                {{ generalPlain(proposal) }}
+              <p class="text-xs text-muted">
+                {{ generalNameLine(proposal) }}
+              </p>
+              <p class="mt-1 text-sm text-highlighted">
+                {{ proposal.plain_language }}
+              </p>
+              <p
+                v-if="proposal.plain_language_source === 'template'"
+                class="mt-1 text-xs text-muted"
+              >
+                {{ $t('expertTuning.dailyLearning.plainSourceTemplate') }}
               </p>
               <div class="mt-2 flex flex-wrap items-center gap-3">
                 <UCheckbox
@@ -697,8 +724,17 @@ async function publishDraft() {
             class="mt-3 space-y-2"
             data-testid="daily-learning-safety-body"
           >
-            <p class="text-sm text-highlighted">
-              {{ safetyPlain(proposal) }}
+            <p class="text-xs text-muted">
+              {{ safetyNameLine(proposal) }}
+            </p>
+            <p class="mt-1 text-sm text-highlighted">
+              {{ proposal.plain_language }}
+            </p>
+            <p
+              v-if="proposal.plain_language_source === 'template'"
+              class="mt-1 text-xs text-muted"
+            >
+              {{ $t('expertTuning.dailyLearning.plainSourceTemplate') }}
             </p>
             <div>
               <button
@@ -790,7 +826,9 @@ async function publishDraft() {
       color="warning"
       :double="true"
       :title="$t('expertTuning.dailyLearning.safetyDialogTitle')"
-      :description="safetyConfirmTarget ? safetyPlain(safetyConfirmTarget) : ''"
+      :description="safetyConfirmTarget
+        ? `${safetyNameLine(safetyConfirmTarget)}\n${safetyConfirmTarget.plain_language}`
+        : ''"
       :confirm-label="$t('expertTuning.dailyLearning.safetyDialogConfirm')"
       @confirm="confirmSafetyOne"
     />

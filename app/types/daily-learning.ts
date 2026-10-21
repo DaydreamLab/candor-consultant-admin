@@ -1,6 +1,6 @@
 /**
- * Strict types for candor-core #75 (head 681d6eb) daily-learning schemas.
- * Discriminated unions by `kind`. Do not add fallback / alternate field keys here.
+ * Strict types for candor-core #75 (head 141c24b) daily-learning schemas.
+ * Discriminated unions by `kind`. Display names are required keys, nullable values.
  */
 
 export type DailyLearningAdjustmentType = 'swap' | 'add' | 'remove' | 'dose_change'
@@ -14,6 +14,11 @@ export type DailyLearningClassificationSource
   = 'llm'
     | 'fallback'
     | 'deterministic_gate'
+
+export type DailyLearningPlainLanguageSource = 'ai' | 'template'
+
+/** Required key; null when lookup misses (never show UUID). */
+export type DailyLearningDisplayName = string | null
 
 export type DailyLearningDecision = 'approve' | 'reject' | 'adjust'
 
@@ -29,6 +34,8 @@ export type DailyLearningGeneralProposalBaseWeight = {
   op: 'bump'
   domain_id: string
   ingredient_id: string
+  domain_name: DailyLearningDisplayName
+  ingredient_name: DailyLearningDisplayName
   from: number
   to: number
   from_base_weight: number
@@ -36,6 +43,8 @@ export type DailyLearningGeneralProposalBaseWeight = {
   knowledge_id: string
   adjustment_type: DailyLearningAdjustmentType
   default_agree: true
+  plain_language: string
+  plain_language_source: DailyLearningPlainLanguageSource
 }
 
 export type DailyLearningGeneralProposalAddEdge = {
@@ -44,6 +53,8 @@ export type DailyLearningGeneralProposalAddEdge = {
   op: 'add_edge'
   domain_id: string
   ingredient_id: string
+  domain_name: DailyLearningDisplayName
+  ingredient_name: DailyLearningDisplayName
   from: number | null
   to: number
   from_base_weight: number | null
@@ -53,6 +64,8 @@ export type DailyLearningGeneralProposalAddEdge = {
   knowledge_id: string
   adjustment_type: DailyLearningAdjustmentType
   default_agree: true
+  plain_language: string
+  plain_language_source: DailyLearningPlainLanguageSource
 }
 
 export type DailyLearningGeneralProposalSignalDomainWeight = {
@@ -61,11 +74,15 @@ export type DailyLearningGeneralProposalSignalDomainWeight = {
   op: 'bump_signal'
   biomarker_id: string
   domain_id: string
+  biomarker_name: DailyLearningDisplayName
+  domain_name: DailyLearningDisplayName
   from: number
   to: number
   knowledge_id: string
   adjustment_type: DailyLearningAdjustmentType
   default_agree: true
+  plain_language: string
+  plain_language_source: DailyLearningPlainLanguageSource
 }
 
 export type DailyLearningGeneralProposal
@@ -79,6 +96,8 @@ export type DailyLearningSafetyProposalContraindication = {
   contraindication_id: string
   ingredient_id: string
   condition_code: string
+  ingredient_name: DailyLearningDisplayName
+  condition_name: DailyLearningDisplayName
   from: 'exclude'
   to: 'warn'
   from_severity: 'exclude'
@@ -87,11 +106,8 @@ export type DailyLearningSafetyProposalContraindication = {
   adjustment_type: DailyLearningAdjustmentType
   default_agree: false
   high_risk: true
-}
-
-export type DailyLearningSafetyInteractionEndpoint = {
-  effect: 'exclude' | 'penalize'
-  penalty: number | null
+  plain_language: string
+  plain_language_source: DailyLearningPlainLanguageSource
 }
 
 export type DailyLearningSafetyProposalInteraction = {
@@ -100,18 +116,23 @@ export type DailyLearningSafetyProposalInteraction = {
   interaction_id: string
   ingredient_a_id: string
   ingredient_b_id: string
+  ingredient_a_name: DailyLearningDisplayName
+  ingredient_b_name: DailyLearningDisplayName
   from: { effect: 'exclude', penalty: number | null }
   to: { effect: 'penalize', penalty: number }
   knowledge_id: string
   adjustment_type: DailyLearningAdjustmentType
   default_agree: false
   high_risk: true
+  plain_language: string
+  plain_language_source: DailyLearningPlainLanguageSource
 }
 
 export type DailyLearningSafetyProposalUlOverride = {
   id: string
   kind: 'ul_override'
   ingredient_id: string
+  ingredient_name: DailyLearningDisplayName
   from: number | null
   to: number
   dose_used: number
@@ -119,6 +140,8 @@ export type DailyLearningSafetyProposalUlOverride = {
   adjustment_type: DailyLearningAdjustmentType
   default_agree: false
   high_risk: true
+  plain_language: string
+  plain_language_source: DailyLearningPlainLanguageSource
 }
 
 export type DailyLearningSafetyProposal

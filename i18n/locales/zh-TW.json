@@ -462,19 +462,20 @@
       "linkedGenerals": "對應一般提議",
       "acceptGeneral": "同意套用此一般提議",
       "generalOnlyReusable": "僅通則可套用一般提議",
-      "generalPlain": {
-        "base_weight": {
-          "up": "某個成分在對應領域相關情況下會更常被推薦。",
-          "down": "某個成分在對應領域相關情況下會更少被推薦。",
-          "new": "某個成分在對應領域將開始被納入推薦考量。"
-        },
-        "add_edge": "新增某個成分與領域的關聯，之後在相關情況下會開始被推薦。",
-        "signal_domain_weight": {
-          "up": "當某項訊號指向對應領域時，該領域相關成分會更常被推薦。",
-          "down": "當某項訊號指向對應領域時，該領域相關成分會更少被推薦。",
-          "new": "當某項訊號指向對應領域時，推薦傾向將調整。"
-        }
+      "unnamed": {
+        "ingredient": "未命名成分",
+        "domain": "未命名領域",
+        "biomarker": "未命名指標",
+        "condition": "未命名狀況"
       },
+      "nameLine": {
+        "ingredientDomain": "{ingredient} · {domain}",
+        "signal": "{biomarker} → {domain}",
+        "contra": "{ingredient} · {condition}",
+        "interaction": "{a} × {b}",
+        "ul": "{ingredient}"
+      },
+      "plainSourceTemplate": "說明來源：模板（AI 失敗時）",
       "decision": {
         "approve": "保留",
         "reject": "移除",
@@ -510,11 +511,6 @@
         "contraindication_exclude_to_warn": "禁忌排除→警示",
         "interaction_exclude_to_penalize": "交互作用排除→扣分",
         "ul_override": "UL 上限調整"
-      },
-      "safetyPlain": {
-        "contraindication_exclude_to_warn": "將某成分在狀況「{condition}」的禁忌由「排除」改為「警示」，高風險情境仍可能被推薦。",
-        "interaction_exclude_to_penalize": "將兩種成分的交互作用由「排除」改為「扣分」（penalty {penalty}），兩者可能同時出現在方案中。",
-        "ul_override": "放寬某成分在本權重集的有效 UL（{from} → {to}；本案劑量 {dose}），超過原上限的劑量可能被接受。"
       },
       "safetyStatusDefault": "預設：不同意",
       "safetyStatusApplied": "已確認套用",

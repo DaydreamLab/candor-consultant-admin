@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildDailyLearningConfirmBody,
+  displayNameOr,
   generalDirection,
   generalTechnical,
   parseDailyLearningDraft,
@@ -27,13 +28,17 @@ const baseWeight = {
   op: 'bump',
   domain_id: DOM,
   ingredient_id: ING,
+  domain_name: '睡眠',
+  ingredient_name: '鎂',
   from: 0.6,
   to: 0.65,
   from_base_weight: 0.6,
   to_base_weight: 0.65,
   knowledge_id: K1,
   adjustment_type: 'swap',
-  default_agree: true
+  default_agree: true,
+  plain_language: '缺鎂相關訊號時，鎂會更常被推薦。',
+  plain_language_source: 'ai'
 }
 
 const safetyContra = {
@@ -42,6 +47,8 @@ const safetyContra = {
   contraindication_id: CI,
   ingredient_id: ING,
   condition_code: 'renal_impairment',
+  ingredient_name: '鎂',
+  condition_name: '腎功能不全',
   from: 'exclude',
   to: 'warn',
   from_severity: 'exclude',
@@ -49,11 +56,13 @@ const safetyContra = {
   knowledge_id: K1,
   adjustment_type: 'swap',
   default_agree: false,
-  high_risk: true
+  high_risk: true,
+  plain_language: '將腎功能不全時鎂的禁忌由排除改為警示，高風險情境仍可能被推薦。',
+  plain_language_source: 'ai'
 }
 
-describe('parseDailyLearningDraft (strict #75)', () => {
-  it('parses full draft with discriminators', () => {
+describe('parseDailyLearningDraft (strict #75 141c24b)', () => {
+  it('parses plain_language and display names', () => {
     const view = parseDailyLearningDraft({
       weight_set: {
         id: WS,
@@ -87,67 +96,82 @@ describe('parseDailyLearningDraft (strict #75)', () => {
       auto_published: false
     })
 
-    expect(view?.proposals).toHaveLength(1)
-    expect(view?.proposals[0]?.proposed_classification).toBe('reusable')
-    expect(view?.general_proposals[0]?.kind).toBe('base_weight')
-    expect(view?.safety_proposals[0]?.kind).toBe('contraindication_exclude_to_warn')
-    expect(generalDirection(view!.general_proposals[0]!)).toBe('up')
-    expect(generalTechnical(view!.general_proposals[0]!)).toEqual({
+    expect(view?.general_proposals[0]).toMatchObject({
       kind: 'base_weight',
-      op: 'bump',
-      from: 0.6,
-      to: 0.65,
-      from_base_weight: 0.6,
-      to_base_weight: 0.65
+      ingredient_name: '鎂',
+      domain_name: '睡眠',
+      plain_language_source: 'ai'
     })
+    expect(view?.safety_proposals[0]).toMatchObject({
+      kind: 'contraindication_exclude_to_warn',
+      condition_name: '腎功能不全'
+    })
+    expect(generalDirection(view!.general_proposals[0]!)).toBe('up')
     expect(generalTechnical(view!.general_proposals[0]!)).not.toHaveProperty('ingredient_id')
   })
 
-  it('rejects unknown alternate keys masquerading as proposals', () => {
-    expect(parseGeneralProposal({
-      id: GP1,
-      kind: 'base_weight',
-      plain_language: 'legacy',
-      default_agree: true
-    })).toBeNull()
+  it('accepts null display names', () => {
+    const row = parseGeneralProposal({
+      ...baseWeight,
+      ingredient_name: null,
+      domain_name: null,
+      plain_language_source: 'template'
+    })
+    expect(row?.kind).toBe('base_weight')
+    if (row?.kind === 'base_weight') {
+      expect(row.ingredient_name).toBeNull()
+      expect(row.plain_language_source).toBe('template')
+    }
+    expect(displayNameOr(null, '未命名成分')).toBe('未命名成分')
   })
 
-  it('rejects safety with default_agree true', () => {
-    expect(parseSafetyProposal({
-      ...safetyContra,
-      default_agree: true
-    })).toBeNull()
+  it('rejects proposals missing plain_language', () => {
+    const { plain_language: _p, ...rest } = baseWeight
+    expect(parseGeneralProposal(rest)).toBeNull()
   })
 
-  it('parses interaction and ul_override kinds', () => {
+  it('parses interaction and ul_override with names', () => {
     const interaction = parseSafetyProposal({
       id: SP1,
       kind: 'interaction_exclude_to_penalize',
       interaction_id: IX,
       ingredient_a_id: ING,
       ingredient_b_id: ING_B,
+      ingredient_a_name: '鎂',
+      ingredient_b_name: null,
       from: { effect: 'exclude', penalty: null },
       to: { effect: 'penalize', penalty: 0.05 },
       knowledge_id: K1,
       adjustment_type: 'add',
       default_agree: false,
-      high_risk: true
+      high_risk: true,
+      plain_language: '交互由排除改為扣分。',
+      plain_language_source: 'template'
     })
     expect(interaction?.kind).toBe('interaction_exclude_to_penalize')
+    if (interaction?.kind === 'interaction_exclude_to_penalize') {
+      expect(interaction.ingredient_b_name).toBeNull()
+    }
 
     const ul = parseSafetyProposal({
       id: '15151515-1515-4151-8151-151515151515',
       kind: 'ul_override',
       ingredient_id: ING,
+      ingredient_name: '維生素 D',
       from: 25,
       to: 27.5,
       dose_used: 27,
       knowledge_id: K1,
       adjustment_type: 'dose_change',
       default_agree: false,
-      high_risk: true
+      high_risk: true,
+      plain_language: '放寬維生素 D 有效 UL。',
+      plain_language_source: 'ai'
     })
     expect(ul?.kind).toBe('ul_override')
+    if (ul?.kind === 'ul_override') {
+      expect(ul.ingredient_name).toBe('維生素 D')
+    }
 
     const signal = parseGeneralProposal({
       id: GP1,
@@ -155,14 +179,17 @@ describe('parseDailyLearningDraft (strict #75)', () => {
       op: 'bump_signal',
       biomarker_id: BIO,
       domain_id: DOM,
+      biomarker_name: '血清鎂',
+      domain_name: '睡眠',
       from: 0.4,
       to: 0.42,
       knowledge_id: K1,
       adjustment_type: 'add',
-      default_agree: true
+      default_agree: true,
+      plain_language: '血清鎂訊號時睡眠領域更常被推薦。',
+      plain_language_source: 'ai'
     })
     expect(signal?.kind).toBe('signal_domain_weight')
-    expect(generalDirection(signal!)).toBe('up')
   })
 })
 

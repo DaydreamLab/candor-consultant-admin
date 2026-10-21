@@ -7,11 +7,13 @@ import type {
   DailyLearningAdjustmentType,
   DailyLearningClassificationSource,
   DailyLearningDecision,
+  DailyLearningDisplayName,
   DailyLearningDraftResult,
   DailyLearningGeneralProposal,
   DailyLearningGeneralProposalAddEdge,
   DailyLearningGeneralProposalBaseWeight,
   DailyLearningGeneralProposalSignalDomainWeight,
+  DailyLearningPlainLanguageSource,
   DailyLearningProposedClassification,
   DailyLearningRowProposal,
   DailyLearningSafetyProposal,
@@ -46,12 +48,51 @@ const DECISIONS = new Set<DailyLearningDecision>([
   'adjust'
 ])
 
+const PLAIN_SOURCES = new Set<DailyLearningPlainLanguageSource>([
+  'ai',
+  'template'
+])
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function asString(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null
+}
+
+/** Required nullable display name: string or null; empty string → null. */
+function asDisplayName(value: unknown): DailyLearningDisplayName | undefined {
+  if (value === null) {
+    return null
+  }
+  if (typeof value !== 'string') {
+    return undefined
+  }
+  const trimmed = value.trim()
+  return trimmed || null
+}
+
+function asPlainLanguage(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function asPlainLanguageSource(value: unknown): DailyLearningPlainLanguageSource | null {
+  return typeof value === 'string'
+    && PLAIN_SOURCES.has(value as DailyLearningPlainLanguageSource)
+    ? (value as DailyLearningPlainLanguageSource)
+    : null
+}
+
+/** Expert-facing label; never UUID. */
+export function displayNameOr(
+  value: DailyLearningDisplayName,
+  fallback: string
+): string {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim()
+  }
+  return fallback
 }
 
 function asUuid(value: unknown): string | null {
@@ -110,7 +151,10 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
   const id = asUuid(value.id)
   const knowledge_id = asUuid(value.knowledge_id)
   const adjustment_type = asAdjustmentType(value.adjustment_type)
-  if (!id || !knowledge_id || !adjustment_type || value.default_agree !== true) {
+  const plain_language = asPlainLanguage(value.plain_language)
+  const plain_language_source = asPlainLanguageSource(value.plain_language_source)
+  if (!id || !knowledge_id || !adjustment_type || value.default_agree !== true
+    || plain_language === null || !plain_language_source) {
     return null
   }
 
@@ -120,11 +164,14 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
     }
     const domain_id = asUuid(value.domain_id)
     const ingredient_id = asUuid(value.ingredient_id)
+    const domain_name = asDisplayName(value.domain_name)
+    const ingredient_name = asDisplayName(value.ingredient_name)
     const from = asNumber(value.from)
     const to = asNumber(value.to)
     const from_base_weight = asNumber(value.from_base_weight)
     const to_base_weight = asNumber(value.to_base_weight)
-    if (!domain_id || !ingredient_id || from === null || to === null
+    if (!domain_id || !ingredient_id || domain_name === undefined || ingredient_name === undefined
+      || from === null || to === null
       || from_base_weight === null || to_base_weight === null) {
       return null
     }
@@ -134,13 +181,17 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
       op: 'bump',
       domain_id,
       ingredient_id,
+      domain_name,
+      ingredient_name,
       from,
       to,
       from_base_weight,
       to_base_weight,
       knowledge_id,
       adjustment_type,
-      default_agree: true
+      default_agree: true,
+      plain_language,
+      plain_language_source
     }
     return row
   }
@@ -151,11 +202,14 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
     }
     const domain_id = asUuid(value.domain_id)
     const ingredient_id = asUuid(value.ingredient_id)
+    const domain_name = asDisplayName(value.domain_name)
+    const ingredient_name = asDisplayName(value.ingredient_name)
     const from = asNumberOrNull(value.from)
     const to = asNumber(value.to)
     const from_base_weight = asNumberOrNull(value.from_base_weight)
     const to_base_weight = asNumber(value.to_base_weight)
-    if (!domain_id || !ingredient_id || from === undefined || to === null
+    if (!domain_id || !ingredient_id || domain_name === undefined || ingredient_name === undefined
+      || from === undefined || to === null
       || from_base_weight === undefined || to_base_weight === null) {
       return null
     }
@@ -165,6 +219,8 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
       op: 'add_edge',
       domain_id,
       ingredient_id,
+      domain_name,
+      ingredient_name,
       from,
       to,
       from_base_weight,
@@ -173,7 +229,9 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
       evidence_level: 'C',
       knowledge_id,
       adjustment_type,
-      default_agree: true
+      default_agree: true,
+      plain_language,
+      plain_language_source
     }
     return row
   }
@@ -184,9 +242,12 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
     }
     const biomarker_id = asUuid(value.biomarker_id)
     const domain_id = asUuid(value.domain_id)
+    const biomarker_name = asDisplayName(value.biomarker_name)
+    const domain_name = asDisplayName(value.domain_name)
     const from = asNumber(value.from)
     const to = asNumber(value.to)
-    if (!biomarker_id || !domain_id || from === null || to === null) {
+    if (!biomarker_id || !domain_id || biomarker_name === undefined || domain_name === undefined
+      || from === null || to === null) {
       return null
     }
     const row: DailyLearningGeneralProposalSignalDomainWeight = {
@@ -195,11 +256,15 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
       op: 'bump_signal',
       biomarker_id,
       domain_id,
+      biomarker_name,
+      domain_name,
       from,
       to,
       knowledge_id,
       adjustment_type,
-      default_agree: true
+      default_agree: true,
+      plain_language,
+      plain_language_source
     }
     return row
   }
@@ -214,8 +279,11 @@ export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal
   const id = asUuid(value.id)
   const knowledge_id = asUuid(value.knowledge_id)
   const adjustment_type = asAdjustmentType(value.adjustment_type)
+  const plain_language = asPlainLanguage(value.plain_language)
+  const plain_language_source = asPlainLanguageSource(value.plain_language_source)
   if (!id || !knowledge_id || !adjustment_type
-    || value.default_agree !== false || value.high_risk !== true) {
+    || value.default_agree !== false || value.high_risk !== true
+    || plain_language === null || !plain_language_source) {
     return null
   }
 
@@ -223,7 +291,10 @@ export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal
     const contraindication_id = asUuid(value.contraindication_id)
     const ingredient_id = asUuid(value.ingredient_id)
     const condition_code = asString(value.condition_code)
+    const ingredient_name = asDisplayName(value.ingredient_name)
+    const condition_name = asDisplayName(value.condition_name)
     if (!contraindication_id || !ingredient_id || !condition_code
+      || ingredient_name === undefined || condition_name === undefined
       || value.from !== 'exclude' || value.to !== 'warn'
       || value.from_severity !== 'exclude' || value.to_severity !== 'warn') {
       return null
@@ -234,6 +305,8 @@ export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal
       contraindication_id,
       ingredient_id,
       condition_code,
+      ingredient_name,
+      condition_name,
       from: 'exclude',
       to: 'warn',
       from_severity: 'exclude',
@@ -241,7 +314,9 @@ export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal
       knowledge_id,
       adjustment_type,
       default_agree: false,
-      high_risk: true
+      high_risk: true,
+      plain_language,
+      plain_language_source
     }
     return row
   }
@@ -250,7 +325,10 @@ export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal
     const interaction_id = asUuid(value.interaction_id)
     const ingredient_a_id = asUuid(value.ingredient_a_id)
     const ingredient_b_id = asUuid(value.ingredient_b_id)
+    const ingredient_a_name = asDisplayName(value.ingredient_a_name)
+    const ingredient_b_name = asDisplayName(value.ingredient_b_name)
     if (!interaction_id || !ingredient_a_id || !ingredient_b_id
+      || ingredient_a_name === undefined || ingredient_b_name === undefined
       || !isRecord(value.from) || !isRecord(value.to)
       || value.from.effect !== 'exclude'
       || value.to.effect !== 'penalize') {
@@ -276,35 +354,44 @@ export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal
       interaction_id,
       ingredient_a_id,
       ingredient_b_id,
+      ingredient_a_name,
+      ingredient_b_name,
       from: { effect: 'exclude', penalty: fromPenalty },
       to: { effect: 'penalize', penalty: toPenalty },
       knowledge_id,
       adjustment_type,
       default_agree: false,
-      high_risk: true
+      high_risk: true,
+      plain_language,
+      plain_language_source
     }
     return row
   }
 
   if (value.kind === 'ul_override') {
     const ingredient_id = asUuid(value.ingredient_id)
+    const ingredient_name = asDisplayName(value.ingredient_name)
     const from = asNumberOrNull(value.from)
     const to = asNumber(value.to)
     const dose_used = asNumber(value.dose_used)
-    if (!ingredient_id || from === undefined || to === null || dose_used === null) {
+    if (!ingredient_id || ingredient_name === undefined
+      || from === undefined || to === null || dose_used === null) {
       return null
     }
     const row: DailyLearningSafetyProposalUlOverride = {
       id,
       kind: 'ul_override',
       ingredient_id,
+      ingredient_name,
       from,
       to,
       dose_used,
       knowledge_id,
       adjustment_type,
       default_agree: false,
-      high_risk: true
+      high_risk: true,
+      plain_language,
+      plain_language_source
     }
     return row
   }
