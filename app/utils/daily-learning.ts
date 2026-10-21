@@ -13,6 +13,7 @@ import type {
   DailyLearningGeneralProposalAddEdge,
   DailyLearningGeneralProposalBaseWeight,
   DailyLearningGeneralProposalSignalDomainWeight,
+  DailyLearningPendingListItem,
   DailyLearningPlainLanguageSource,
   DailyLearningProposedClassification,
   DailyLearningRowProposal,
@@ -516,14 +517,14 @@ export function parseRowProposal(value: unknown): DailyLearningRowProposal | nul
   }
 }
 
-/** Parse draft API data; any invalid row／proposal fails the whole draft. */
-export function parseDailyLearningDraft(data: unknown): DailyLearningDraftResult | null {
-  if (!isRecord(data)) {
-    return null
-  }
-  const weight_set = parseWeightSetSummary(data.weight_set)
+function parseDailyLearningProposalLists(data: Record<string, unknown>): {
+  date: string
+  proposals: DailyLearningRowProposal[]
+  general_proposals: DailyLearningGeneralProposal[]
+  safety_proposals: DailyLearningSafetyProposal[]
+} | null {
   const date = asString(data.date)
-  if (!weight_set || !date || data.auto_published !== false
+  if (!date || data.auto_published !== false
     || !Array.isArray(data.proposals)
     || !Array.isArray(data.general_proposals)
     || !Array.isArray(data.safety_proposals)) {
@@ -558,11 +559,87 @@ export function parseDailyLearningDraft(data: unknown): DailyLearningDraftResult
   }
 
   return {
-    weight_set,
     date,
     proposals,
     general_proposals,
-    safety_proposals,
+    safety_proposals
+  }
+}
+
+/** Parse draft API data; any invalid row／proposal fails the whole draft. */
+export function parseDailyLearningDraft(data: unknown): DailyLearningDraftResult | null {
+  if (!isRecord(data)) {
+    return null
+  }
+  const weight_set = parseWeightSetSummary(data.weight_set)
+  if (!weight_set) {
+    return null
+  }
+  const lists = parseDailyLearningProposalLists(data)
+  if (!lists) {
+    return null
+  }
+  return {
+    weight_set,
+    ...lists,
+    auto_published: false
+  }
+}
+
+/**
+ * Provisional (H-core): draft weight set with `daily_learning_pending: true`.
+ * Also requires status === `draft`.
+ */
+export function parsePendingDailyLearningListItem(
+  value: unknown
+): DailyLearningPendingListItem | null {
+  const summary = parseWeightSetSummary(value)
+  if (!summary || summary.status !== 'draft' || !isRecord(value)) {
+    return null
+  }
+  if (value.daily_learning_pending !== true) {
+    return null
+  }
+  return {
+    ...summary,
+    daily_learning_pending: true
+  }
+}
+
+export function filterPendingDailyLearningDrafts(
+  items: unknown[]
+): DailyLearningPendingListItem[] {
+  const out: DailyLearningPendingListItem[] = []
+  for (const item of items) {
+    const parsed = parsePendingDailyLearningListItem(item)
+    if (parsed) {
+      out.push(parsed)
+    }
+  }
+  return out
+}
+
+/**
+ * Provisional (H-core): build draft view from GET /weight-sets/{id}
+ * using top-level weight-set fields + `daily_learning` embed.
+ */
+export function parseDailyLearningFromWeightSetDetail(
+  data: unknown
+): DailyLearningDraftResult | null {
+  if (!isRecord(data)) {
+    return null
+  }
+  const weight_set = parseWeightSetSummary(data)
+  if (!weight_set || !isRecord(data.daily_learning)) {
+    return null
+  }
+  const lists = parseDailyLearningProposalLists(data.daily_learning)
+  if (!lists) {
+    return null
+  }
+  return {
+    weight_set,
+    ...lists,
     auto_published: false
   }
 }

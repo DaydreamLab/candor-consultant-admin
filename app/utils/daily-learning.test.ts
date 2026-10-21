@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   buildDailyLearningConfirmBody,
   displayNameOr,
+  filterPendingDailyLearningDrafts,
   generalDirection,
   generalTechnical,
   parseDailyLearningDraft,
+  parseDailyLearningFromWeightSetDetail,
   parseGeneralProposal,
+  parsePendingDailyLearningListItem,
   parseSafetyProposal
 } from '~/utils/daily-learning'
 
@@ -205,5 +208,81 @@ describe('buildDailyLearningConfirmBody', () => {
     })
     expect(body.confirmations).toHaveLength(2)
     expect(body.accepted_general_proposal_ids).toEqual(['p1'])
+  })
+})
+
+describe('pending list + detail daily_learning (provisional H-core)', () => {
+  const pendingRow = {
+    id: WS,
+    version: 'learning-2026-10-21',
+    status: 'draft',
+    label: '每日學習',
+    last_dry_run_passed: null,
+    daily_learning_pending: true
+  }
+
+  it('filters only draft rows with daily_learning_pending', () => {
+    expect(parsePendingDailyLearningListItem(pendingRow)).toMatchObject({
+      id: WS,
+      daily_learning_pending: true
+    })
+    expect(parsePendingDailyLearningListItem({
+      ...pendingRow,
+      status: 'published'
+    })).toBeNull()
+    expect(parsePendingDailyLearningListItem({
+      ...pendingRow,
+      daily_learning_pending: false
+    })).toBeNull()
+    expect(filterPendingDailyLearningDrafts([
+      pendingRow,
+      { ...pendingRow, id: K1, daily_learning_pending: false },
+      { id: 'bad' }
+    ])).toHaveLength(1)
+  })
+
+  it('builds draft view from weight-set detail.daily_learning', () => {
+    const view = parseDailyLearningFromWeightSetDetail({
+      id: WS,
+      version: 'learning-2026-10-21',
+      status: 'draft',
+      label: '每日學習',
+      last_dry_run_passed: null,
+      daily_learning: {
+        date: '2026-10-21',
+        proposals: [
+          {
+            knowledge_id: K1,
+            expert_case_review_id: CASE,
+            decision: 'adjust',
+            adjustment_type: 'swap',
+            proposed_classification: 'reusable',
+            classification_rationale: '多案相同換品',
+            classification_source: 'llm',
+            needs_human: false,
+            context_hits: [],
+            general_proposals: [baseWeight],
+            safety_proposals: [safetyContra],
+            weight_changes: [baseWeight],
+            contraindication_changes: [safetyContra]
+          }
+        ],
+        general_proposals: [baseWeight],
+        safety_proposals: [safetyContra],
+        auto_published: false
+      }
+    })
+    expect(view?.weight_set.id).toBe(WS)
+    expect(view?.date).toBe('2026-10-21')
+    expect(view?.general_proposals[0]?.plain_language).toContain('鎂')
+    expect(view?.safety_proposals).toHaveLength(1)
+  })
+
+  it('rejects detail without daily_learning', () => {
+    expect(parseDailyLearningFromWeightSetDetail({
+      id: WS,
+      version: 'learning-2026-10-21',
+      status: 'draft'
+    })).toBeNull()
   })
 })

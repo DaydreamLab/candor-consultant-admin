@@ -175,8 +175,28 @@ export type DailyLearningWeightSetSummary = {
   last_dry_run_passed: boolean | null
 }
 
+/**
+ * Provisional list row (H-core schema pending).
+ * List marker: `daily_learning_pending: true` on draft weight sets that still need confirm.
+ */
+export type DailyLearningPendingListItem = DailyLearningWeightSetSummary & {
+  daily_learning_pending: true
+}
+
 export type DailyLearningDraftResult = {
   weight_set: DailyLearningWeightSetSummary
+  date: string
+  proposals: DailyLearningRowProposal[]
+  general_proposals: DailyLearningGeneralProposal[]
+  safety_proposals: DailyLearningSafetyProposal[]
+  auto_published: false
+}
+
+/**
+ * Provisional detail embed (H-core schema pending).
+ * `GET /weight-sets/{id}.daily_learning` — same proposal payload as draft, without weight_set.
+ */
+export type DailyLearningDetailPayload = {
   date: string
   proposals: DailyLearningRowProposal[]
   general_proposals: DailyLearningGeneralProposal[]

@@ -536,6 +536,49 @@ export async function adminExportExpertCaseReview(apiBase: string, token: string
   }
 }
 
+/** GET /weight-sets — list weight sets (read: expert｜ops｜admin). */
+export async function adminListWeightSets(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/weight-sets'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data) || !Array.isArray(body.data.items)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data.items
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+/** GET /weight-sets/{id} — detail (+ provisional `daily_learning` embed; H-core schema pending). */
+export async function adminGetWeightSet(apiBase: string, token: string, weightSetId: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/weight-sets/${encodeURIComponent(weightSetId)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 /** POST /weight-sets/daily-learning-draft — clone published + proposals (core #75; not auto-publish). */
 export async function adminDailyLearningDraft(
   apiBase: string,

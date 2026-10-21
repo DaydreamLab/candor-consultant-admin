@@ -4,20 +4,35 @@ import {
   adminDailyLearningConfirm,
   adminDailyLearningConfirmSafety,
   adminDailyLearningDraft,
+  adminGetWeightSet,
+  adminListWeightSets,
   adminWeightSetDryRun,
   adminWeightSetPublish
 } from '~/utils/admin-api'
 import {
+  canConfirmDailyLearning,
+  canDryRunWeightSet,
+  canGenerateDailyLearningDraft,
+  canPublishWeightSet,
+  canReadWeightSets,
+  DAILY_LEARNING_DRY_RUN_ROLES,
+  DAILY_LEARNING_GENERATE_ROLES,
+  DAILY_LEARNING_PUBLISH_ROLES
+} from '~/utils/daily-learning-access'
+import {
   buildDailyLearningConfirmBody,
   displayNameOr,
+  filterPendingDailyLearningDrafts,
   formatTechnicalJson,
   generalTechnical,
   parseDailyLearningDraft,
+  parseDailyLearningFromWeightSetDetail,
   safetyTechnical
 } from '~/utils/daily-learning'
 import type {
   DailyLearningDraftResult,
   DailyLearningGeneralProposal,
+  DailyLearningPendingListItem,
   DailyLearningProposedClassification,
   DailyLearningSafetyProposal,
   DailyLearningStep
@@ -27,12 +42,40 @@ import { readOperatorToken } from '~/utils/operator-session'
 const config = useRuntimeConfig()
 const { t } = useI18n()
 const feedback = useOpsFeedback()
+const session = useSessionStore()
+
+const operatorRole = computed(() => session.operator?.role ?? null)
+const canGenerate = computed(() => canGenerateDailyLearningDraft(operatorRole.value))
+const canDryRun = computed(() => canDryRunWeightSet(operatorRole.value))
+const canPublish = computed(() => canPublishWeightSet(operatorRole.value))
+const canConfirm = computed(() => canConfirmDailyLearning(operatorRole.value))
+const canLoadDrafts = computed(() => canReadWeightSets(operatorRole.value))
+
+function needRolesHint(roles: readonly string[]) {
+  const labels = roles.map(role => t(`roles.${role}`)).join('、')
+  return t('expertTuning.dailyLearning.needRoles', { roles: labels })
+}
+
+const generateNeedHint = computed(() => needRolesHint(DAILY_LEARNING_GENERATE_ROLES))
+const dryRunNeedHint = computed(() => needRolesHint(DAILY_LEARNING_DRY_RUN_ROLES))
+const publishNeedHint = computed(() => needRolesHint(DAILY_LEARNING_PUBLISH_ROLES))
 
 const busy = ref(false)
+const listBusy = ref(false)
 const errorMessage = ref('')
 const draftDate = ref('')
 const step = ref<DailyLearningStep>('idle')
 const draft = ref<DailyLearningDraftResult | null>(null)
+
+const pendingDrafts = ref<DailyLearningPendingListItem[]>([])
+const selectedPendingId = ref<string | undefined>(undefined)
+
+const pendingSelectItems = computed(() => pendingDrafts.value.map(row => ({
+  label: row.label
+    ? `${row.version} · ${row.label}`
+    : row.version,
+  value: row.id
+})))
 
 const classificationChoice = ref<Record<string, DailyLearningProposedClassification>>({})
 const generalAccepted = ref<Record<string, boolean>>({})
@@ -217,7 +260,73 @@ function apiErrorMessage(error: unknown) {
   return t('expertTuning.dailyLearning.failed')
 }
 
+async function refreshPendingDrafts() {
+  if (!canLoadDrafts.value) {
+    pendingDrafts.value = []
+    selectedPendingId.value = undefined
+    return
+  }
+  const token = readOperatorToken()
+  if (!token) {
+    errorMessage.value = t('expertTuning.dailyLearning.failed')
+    return
+  }
+  listBusy.value = true
+  try {
+    const items = await adminListWeightSets(config.public.apiBase, token)
+    const pending = filterPendingDailyLearningDrafts(items)
+    pendingDrafts.value = pending
+    if (selectedPendingId.value
+      && !pending.some(row => row.id === selectedPendingId.value)) {
+      selectedPendingId.value = undefined
+    }
+  } catch (error) {
+    errorMessage.value = apiErrorMessage(error)
+  } finally {
+    listBusy.value = false
+  }
+}
+
+async function loadSelectedDraft() {
+  if (!canLoadDrafts.value) {
+    return
+  }
+  const token = readOperatorToken()
+  const id = selectedPendingId.value
+  if (!token || !id) {
+    feedback.notify({
+      title: t('expertTuning.dailyLearning.loadNeedSelect'),
+      color: 'warning'
+    })
+    return
+  }
+  busy.value = true
+  errorMessage.value = ''
+  dryRunGatePassed.value = null
+  dryRunSummary.value = ''
+  try {
+    const data = await adminGetWeightSet(config.public.apiBase, token, id)
+    const view = parseDailyLearningFromWeightSetDetail(data)
+    if (!view) {
+      throw new AdminApiError(500, t('expertTuning.dailyLearning.parseFailed'))
+    }
+    draft.value = view
+    step.value = 'drafted'
+    feedback.notify({
+      title: t('expertTuning.dailyLearning.loadOk'),
+      color: 'success'
+    })
+  } catch (error) {
+    errorMessage.value = apiErrorMessage(error)
+  } finally {
+    busy.value = false
+  }
+}
+
 async function generateDraft() {
+  if (!canGenerate.value) {
+    return
+  }
   const token = readOperatorToken()
   if (!token) {
     errorMessage.value = t('expertTuning.dailyLearning.failed')
@@ -243,10 +352,12 @@ async function generateDraft() {
     }
     draft.value = view
     step.value = 'drafted'
+    selectedPendingId.value = view.weight_set.id
     feedback.notify({
       title: t('expertTuning.dailyLearning.draftOk'),
       color: 'success'
     })
+    void refreshPendingDrafts()
   } catch (error) {
     draft.value = null
     step.value = 'idle'
@@ -257,6 +368,9 @@ async function generateDraft() {
 }
 
 async function confirmGeneral() {
+  if (!canConfirm.value) {
+    return
+  }
   const token = readOperatorToken()
   const view = draft.value
   if (!token || !view) {
@@ -334,6 +448,9 @@ function openSafetyConfirm(proposal: DailyLearningSafetyProposal) {
 }
 
 async function confirmSafetyOne() {
+  if (!canConfirm.value) {
+    return
+  }
   const token = readOperatorToken()
   const view = draft.value
   const target = safetyConfirmTarget.value
@@ -372,6 +489,9 @@ async function confirmSafetyOne() {
 }
 
 async function runDryRun() {
+  if (!canDryRun.value) {
+    return
+  }
   const token = readOperatorToken()
   const view = draft.value
   if (!token || !view) {
@@ -414,6 +534,9 @@ async function runDryRun() {
 }
 
 async function publishDraft() {
+  if (!canPublish.value) {
+    return
+  }
   const token = readOperatorToken()
   const view = draft.value
   if (!token || !view) {
@@ -450,6 +573,12 @@ async function publishDraft() {
     busy.value = false
   }
 }
+
+onMounted(() => {
+  if (import.meta.client) {
+    void refreshPendingDrafts()
+  }
+})
 </script>
 
 <template>
@@ -481,6 +610,58 @@ async function publishDraft() {
       </li>
     </ol>
 
+    <section
+      class="mb-6 space-y-3 rounded-xl border border-default bg-elevated p-4"
+      data-testid="daily-learning-load"
+    >
+      <h2 class="text-base font-semibold text-highlighted">
+        {{ $t('expertTuning.dailyLearning.loadTitle') }}
+      </h2>
+      <p class="text-sm text-muted">
+        {{ $t('expertTuning.dailyLearning.loadHint') }}
+      </p>
+      <div class="flex flex-wrap items-end gap-3">
+        <UFormField
+          :label="$t('expertTuning.dailyLearning.loadSelectLabel')"
+          class="min-w-[16rem] flex-1"
+        >
+          <USelect
+            v-model="selectedPendingId"
+            :items="pendingSelectItems"
+            :placeholder="$t('expertTuning.dailyLearning.loadSelectPlaceholder')"
+            :disabled="!canLoadDrafts || listBusy || busy"
+            data-testid="daily-learning-load-select"
+          />
+        </UFormField>
+        <UButton
+          color="neutral"
+          variant="soft"
+          :loading="listBusy"
+          :disabled="!canLoadDrafts || busy"
+          data-testid="daily-learning-load-refresh"
+          @click="refreshPendingDrafts"
+        >
+          {{ $t('expertTuning.dailyLearning.loadRefresh') }}
+        </UButton>
+        <UButton
+          color="primary"
+          :loading="busy"
+          :disabled="!canLoadDrafts || !selectedPendingId || listBusy"
+          data-testid="daily-learning-load-submit"
+          @click="loadSelectedDraft"
+        >
+          {{ $t('expertTuning.dailyLearning.loadSubmit') }}
+        </UButton>
+      </div>
+      <p
+        v-if="canLoadDrafts && !listBusy && !pendingDrafts.length"
+        class="text-sm text-muted"
+        data-testid="daily-learning-load-empty"
+      >
+        {{ $t('expertTuning.dailyLearning.loadEmpty') }}
+      </p>
+    </section>
+
     <section class="mb-6 space-y-3 rounded-xl border border-default bg-elevated p-4">
       <h2 class="text-base font-semibold text-highlighted">
         {{ $t('expertTuning.dailyLearning.generateTitle') }}
@@ -496,17 +677,26 @@ async function publishDraft() {
           <UInput
             v-model="draftDate"
             type="date"
+            :disabled="!canGenerate || busy"
             data-testid="daily-learning-date"
           />
         </UFormField>
         <UButton
           color="primary"
           :loading="busy"
+          :disabled="!canGenerate"
           data-testid="daily-learning-generate"
           @click="generateDraft"
         >
           {{ $t('expertTuning.dailyLearning.generate') }}
         </UButton>
+        <p
+          v-if="!canGenerate"
+          class="text-xs text-muted"
+          data-testid="daily-learning-generate-need-role"
+        >
+          {{ generateNeedHint }}
+        </p>
       </div>
       <p
         v-if="draft"
@@ -660,7 +850,7 @@ async function publishDraft() {
         <UButton
           color="primary"
           :loading="busy"
-          :disabled="step !== 'drafted'"
+          :disabled="!canConfirm || step !== 'drafted'"
           data-testid="daily-learning-confirm-general"
           @click="confirmGeneral"
         >
@@ -756,6 +946,7 @@ async function publishDraft() {
               variant="soft"
               size="sm"
               :disabled="busy
+                || !canConfirm
                 || safetyApplied[proposal.id]
                 || step === 'idle'
                 || step === 'drafted'
@@ -779,26 +970,43 @@ async function publishDraft() {
         <p class="text-sm text-muted">
           {{ $t('expertTuning.dailyLearning.applyHint') }}
         </p>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <UButton
             color="neutral"
             variant="soft"
             :loading="busy"
-            :disabled="step === 'idle' || step === 'drafted' || step === 'published'"
+            :disabled="!canDryRun
+              || step === 'idle'
+              || step === 'drafted'
+              || step === 'published'"
             data-testid="daily-learning-dry-run"
             @click="runDryRun"
           >
             {{ $t('expertTuning.dailyLearning.dryRun') }}
           </UButton>
+          <p
+            v-if="!canDryRun"
+            class="text-xs text-muted"
+            data-testid="daily-learning-dry-run-need-role"
+          >
+            {{ dryRunNeedHint }}
+          </p>
           <UButton
             color="primary"
             :loading="busy"
-            :disabled="step !== 'dry_run_done'"
+            :disabled="!canPublish || step !== 'dry_run_done'"
             data-testid="daily-learning-publish"
             @click="publishDraft"
           >
             {{ $t('expertTuning.dailyLearning.publish') }}
           </UButton>
+          <p
+            v-if="!canPublish"
+            class="text-xs text-muted"
+            data-testid="daily-learning-publish-need-role"
+          >
+            {{ publishNeedHint }}
+          </p>
         </div>
         <p
           v-if="dryRunSummary"
