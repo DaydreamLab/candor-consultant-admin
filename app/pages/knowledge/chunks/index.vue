@@ -9,8 +9,10 @@ import type { KnowledgeChunk, KnowledgeReviewStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
 import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatasetGroupFilter'
 import { reviewStatusBadgeColor } from '~/utils/knowledge-labels'
-
-const FILTER_ANY = 'all'
+import {
+  buildKnowledgeChunkListQuery,
+  KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY
+} from '~/utils/knowledge-chunks-query'
 
 const config = useRuntimeConfig()
 const { t } = useI18n()
@@ -49,26 +51,11 @@ const reviewRoleHint = computed(() => {
   return ''
 })
 
-const displayRows = computed(() => {
-  let list = rows.value
-  if (filterStatus.value !== FILTER_ANY) {
-    list = list.filter(row => row.review_status === filterStatus.value)
-  }
-  return list
-})
-
-const pendingFilterNoMatches = computed(() => {
-  if (filterStatus.value !== 'pending' || pending.value || !rows.value.length) {
-    return false
-  }
-  return displayRows.value.length === 0
-})
-
-if (import.meta.client) {
-  watch([filterGroup], () => {
+onMounted(() => {
+  watch([filterGroup, filterStatus], () => {
     void load()
   }, { immediate: true })
-}
+})
 
 async function load() {
   const seq = ++loadSeq
@@ -82,7 +69,10 @@ async function load() {
   pending.value = true
   errorMessage.value = ''
   try {
-    const query = groupQueryValue.value ? { group: groupQueryValue.value } : {}
+    const query = buildKnowledgeChunkListQuery({
+      group: groupQueryValue.value,
+      filterStatus: filterStatus.value
+    })
     const list = await adminListKnowledgeChunks(config.public.apiBase, token, query)
     if (seq !== loadSeq) {
       return
@@ -232,16 +222,8 @@ async function confirmReject() {
     >
       {{ errorMessage }}
     </p>
-    <UAlert
-      v-else-if="pendingFilterNoMatches"
-      color="info"
-      variant="subtle"
-      class="mb-4"
-      :title="$t('knowledge.chunks.pendingFilterEmptyTitle')"
-      :description="$t('knowledge.chunks.pendingFilterEmpty', { count: rows.length })"
-    />
     <EmptyPanel
-      v-else-if="!displayRows.length"
+      v-else-if="!rows.length"
       :title="$t('knowledge.chunks.emptyTitle')"
       :description="$t('knowledge.chunks.empty')"
     />
@@ -250,7 +232,7 @@ async function confirmReject() {
       class="space-y-3"
     >
       <UCard
-        v-for="row in displayRows"
+        v-for="row in rows"
         :key="row.id"
         class="bg-elevated"
       >

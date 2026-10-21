@@ -1204,8 +1204,6 @@
       "chunkId": "Chunk ID",
       "rejectReasonStored": "Reject reason",
       "reviewRoleOps": "OpenAPI: approve/reject is expert and admin only; ops may get 403.",
-      "pendingFilterEmptyTitle": "No pending chunks",
-      "pendingFilterEmpty": "API returned {count} chunks with none in review_status=pending (expected when all are approved).",
       "status": {
         "pending": "Pending",
         "approved": "Approved",

@@ -1888,10 +1888,14 @@ function compactKnowledgeAuditQuery(query: KnowledgeAuditListQuery) {
   return params
 }
 
-function compactKnowledgeChunkQuery(query: KnowledgeChunkListQuery) {
+/** Exported for unit tests — keeps list query keys aligned with core admin chunks API. */
+export function compactKnowledgeChunkQuery(query: KnowledgeChunkListQuery) {
   const params: Record<string, string> = {}
   if (typeof query.group === 'string' && query.group.trim()) {
     params.group = query.group.trim()
+  }
+  if (typeof query.status === 'string' && query.status.trim()) {
+    params.status = query.status.trim()
   }
   return params
 }

@@ -3,8 +3,11 @@ import { AdminApiError, adminListKnowledgeChunks } from '~/utils/admin-api'
 import type { KnowledgeChunk, KnowledgeReviewStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
 import { reviewStatusBadgeColor } from '~/utils/knowledge-labels'
+import {
+  buildKnowledgeChunkListQuery,
+  KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY
+} from '~/utils/knowledge-chunks-query'
 
-const FILTER_ANY = 'all'
 const PAGE_SIZE = 10
 
 const props = defineProps<{
@@ -46,32 +49,22 @@ const scopedRows = computed(() => {
   })
 })
 
-const filteredRows = computed(() => {
-  if (filterStatus.value === FILTER_ANY) {
-    return scopedRows.value
-  }
-  return scopedRows.value.filter(row => row.review_status === filterStatus.value)
-})
-
-const { page, pageSize, rows: pagedRows, total, from, to } = usePager(filteredRows, PAGE_SIZE)
-
-watch(filterStatus, () => {
-  page.value = 1
-})
+const { page, pageSize, rows: pagedRows, total, from, to } = usePager(scopedRows, PAGE_SIZE)
 
 const showClientScopeHint = computed(() => {
   return Boolean(props.datasetId) && !props.groupKey?.trim()
 })
 
-if (import.meta.client) {
+onMounted(() => {
   watch(
-    () => [props.datasetId, props.groupKey] as const,
+    () => [props.datasetId, props.groupKey, filterStatus.value] as const,
     () => {
+      page.value = 1
       void load()
     },
     { immediate: true }
   )
-}
+})
 
 async function load() {
   const seq = ++loadSeq
@@ -84,8 +77,10 @@ async function load() {
   }
   pending.value = true
   errorMessage.value = ''
-  const group = props.groupKey?.trim()
-  const query = group ? { group } : {}
+  const query = buildKnowledgeChunkListQuery({
+    group: props.groupKey,
+    filterStatus: filterStatus.value
+  })
   try {
     const list = await adminListKnowledgeChunks(config.public.apiBase, token, query)
     if (seq !== loadSeq) {
@@ -164,7 +159,7 @@ function isSummary(row: KnowledgeChunk) {
       {{ errorMessage }}
     </p>
     <EmptyPanel
-      v-else-if="!filteredRows.length"
+      v-else-if="!scopedRows.length"
       :title="$t('knowledge.datasets.detail.chunksEmptyTitle')"
       :description="$t('knowledge.datasets.detail.chunksEmpty')"
     />
