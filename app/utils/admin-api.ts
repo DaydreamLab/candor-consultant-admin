@@ -393,6 +393,39 @@ export async function adminGetExpertCaseReview(apiBase: string, token: string, i
   }
 }
 
+export type AdminExpertCaseMemberDataQuery = {
+  limit?: number
+}
+
+/** GET /expert-case-review/{id}/member-data — case-bound conversation／goals／report／profile snapshot. */
+export async function adminGetExpertCaseMemberData(
+  apiBase: string,
+  token: string,
+  id: string,
+  query: AdminExpertCaseMemberDataQuery = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/member-data`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        query: compactQuery(query)
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminPatchExpertCaseReviewItem(
   apiBase: string,
   token: string,
@@ -1909,7 +1942,9 @@ function adminUrl(apiBase: string, path: string) {
   return `${base}/admin${path}`
 }
 
-function compactQuery(query: AdminOrderListQuery | AdminExpertCaseReviewListQuery) {
+function compactQuery(
+  query: AdminOrderListQuery | AdminExpertCaseReviewListQuery | AdminExpertCaseMemberDataQuery
+) {
   const params: Record<string, string | number> = {}
   for (const [key, value] of Object.entries(query)) {
     if (typeof value === 'number' && Number.isFinite(value)) {
