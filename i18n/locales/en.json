@@ -1311,18 +1311,12 @@
         "code": "Code",
         "name": "Name",
         "status": "Status",
-        "chunks": "Chunks",
-        "allowThirdParty": "Third party"
+        "chunks": "Chunks"
       },
       "status": {
         "pending_review": "Pending review",
         "active": "Active",
         "disabled": "Disabled"
-      },
-      "allowThirdParty": {
-        "yes": "Allowed",
-        "no": "Not allowed",
-        "undecided": "Undecided (treated as disallowed)"
       },
       "detail": {
         "stats": "Summary",
@@ -1330,7 +1324,6 @@
         "chunks": "Chunks",
         "sourceUrl": "Source URL",
         "reviewBreakdown": "Review status breakdown",
-        "allowThirdPartyHint": "API field allow_third_party; not in OpenAPI PATCH body yet — read-only here.",
         "chunksSectionTitle": "Chunks",
         "chunksLoadFailed": "Could not load chunks for this dataset.",
         "chunksEmptyTitle": "No matching chunks",
@@ -1601,10 +1594,6 @@
         "corpus": {
           "label": "Searchable corpus",
           "desc": "Allowed corpora for retrieval."
-        },
-        "allowThirdPartyDefault": {
-          "label": "Third-party default",
-          "desc": "System default for dataset allow_third_party when provided."
         },
         "unknown": {
           "label": "Other field",

@@ -6,7 +6,6 @@ import {
 } from '~/utils/admin-api'
 import type { KnowledgeDataset, KnowledgeDatasetPatch, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
-import { allowThirdPartyBadgeColor } from '~/utils/knowledge-labels'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -135,16 +134,6 @@ async function save() {
   }
 }
 
-function allowThirdPartyLabel(value: boolean | null | undefined) {
-  if (value === true) {
-    return t('knowledge.datasets.allowThirdParty.yes')
-  }
-  if (value === false) {
-    return t('knowledge.datasets.allowThirdParty.no')
-  }
-  return t('knowledge.datasets.allowThirdParty.undecided')
-}
-
 function reviewCount(key: string) {
   const map = dataset.value?.chunks_by_review_status
   if (!map || typeof map !== 'object') {
@@ -230,23 +219,6 @@ function reviewCount(key: string) {
               </dt>
               <dd>{{ dataset.chunk_count ?? '—' }}</dd>
             </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-muted">
-                {{ $t('knowledge.datasets.columns.allowThirdParty') }}
-              </dt>
-              <dd>
-                <UBadge
-                  size="sm"
-                  variant="subtle"
-                  :color="allowThirdPartyBadgeColor(dataset.allow_third_party)"
-                >
-                  {{ allowThirdPartyLabel(dataset.allow_third_party) }}
-                </UBadge>
-              </dd>
-            </div>
-            <p class="text-xs text-muted">
-              {{ $t('knowledge.datasets.detail.allowThirdPartyHint') }}
-            </p>
             <div
               v-if="dataset.source_url"
               class="flex flex-col gap-1"

@@ -22,13 +22,3 @@ export function reviewStatusBadgeColor(status: KnowledgeReviewStatus | ''): 'suc
   }
   return 'neutral'
 }
-
-export function allowThirdPartyBadgeColor(value: boolean | null | undefined): 'success' | 'neutral' | 'warning' {
-  if (value === true) {
-    return 'success'
-  }
-  if (value === false) {
-    return 'neutral'
-  }
-  return 'warning'
-}

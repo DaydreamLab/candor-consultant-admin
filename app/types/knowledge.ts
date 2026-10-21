@@ -15,7 +15,6 @@ export type KnowledgeDataset = {
   license?: string | null
   license_url?: string | null
   attribution?: string | null
-  allow_third_party?: boolean | null
   document_count?: number | null
   chunk_count?: number | null
   chunks_by_review_status?: KnowledgeChunksByReviewStatus | null
