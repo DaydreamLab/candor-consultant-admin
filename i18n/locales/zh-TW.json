@@ -130,7 +130,9 @@
       "value": "數值",
       "unit": "單位",
       "refRange": "參考區間",
-      "position": "位置"
+      "position": "位置",
+      "description": "這個指標是什麼",
+      "possibleCauses": "可能原因"
     },
     "columns": {
       "number": "訂單編號",

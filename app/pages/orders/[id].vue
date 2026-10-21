@@ -10,7 +10,10 @@ import {
 import { money } from '~/utils/format'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
-import type { HealthReportResult } from '~/utils/report-result-status'
+import {
+  mapHealthReportResultRow,
+  type HealthReportResult
+} from '~/utils/report-result-status'
 
 type FieldRow = { key: string, label: string, value: string, money?: boolean }
 
@@ -233,44 +236,12 @@ function isUsageRecord(value: unknown): value is Record<string, unknown> {
 function healthReportResultsOf(data: Record<string, unknown>): HealthReportResult[] {
   const out: HealthReportResult[] = []
   for (const row of recordsOf(data.results)) {
-    const id = scalarId(row.id)
-    if (!id) {
-      continue
+    const mapped = mapHealthReportResultRow(row)
+    if (mapped) {
+      out.push(mapped)
     }
-    out.push({
-      id,
-      biomarker_id: optionalString(row.biomarker_id),
-      raw_name: optionalString(row.raw_name),
-      raw_value: optionalString(row.raw_value),
-      raw_unit: optionalString(row.raw_unit),
-      value_numeric: optionalNumber(row.value_numeric),
-      unit: optionalString(row.unit),
-      ref_low: optionalNumber(row.ref_low),
-      ref_high: optionalNumber(row.ref_high),
-      borderline_low: optionalNumber(row.borderline_low),
-      borderline_high: optionalNumber(row.borderline_high),
-      critical_low: optionalNumber(row.critical_low),
-      critical_high: optionalNumber(row.critical_high),
-      confidence: optionalNumber(row.confidence),
-      needs_review: typeof row.needs_review === 'boolean' ? row.needs_review : undefined,
-      page: optionalNumber(row.page)
-    })
   }
   return out
-}
-
-function optionalString(value: unknown) {
-  return typeof value === 'string' ? value : null
-}
-
-function optionalNumber(value: unknown) {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
-    return Number(value)
-  }
-  return null
 }
 
 function summaryOf(data: Record<string, unknown> | null): FieldRow[] {

@@ -126,7 +126,9 @@
       "value": "Value",
       "unit": "Unit",
       "refRange": "Reference",
-      "position": "Position"
+      "position": "Position",
+      "description": "What this marker is",
+      "possibleCauses": "Possible causes"
     },
     "columns": {
       "number": "Order number",
