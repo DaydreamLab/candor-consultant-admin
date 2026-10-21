@@ -6,7 +6,7 @@ import {
 } from '~/utils/admin-api'
 import type { KnowledgeDataset, KnowledgeDatasetPatch, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
-import { allowThirdPartyBadgeColor } from '~/utils/knowledge-labels'
+import { allowThirdPartyBadgeColor, allowThirdPartyLabelKey } from '~/utils/knowledge-labels'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -136,13 +136,7 @@ async function save() {
 }
 
 function allowThirdPartyLabel(value: boolean | null | undefined) {
-  if (value === true) {
-    return t('knowledge.datasets.allowThirdParty.yes')
-  }
-  if (value === false) {
-    return t('knowledge.datasets.allowThirdParty.no')
-  }
-  return t('knowledge.datasets.allowThirdParty.undecided')
+  return t(`knowledge.datasets.allowThirdParty.${allowThirdPartyLabelKey(value)}`)
 }
 
 function reviewCount(key: string) {

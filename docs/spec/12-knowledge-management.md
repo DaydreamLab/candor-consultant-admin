@@ -58,14 +58,14 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 ### P1 — 資料集列表
 
 - 查詢參數（OpenAPI `adminKnowledgeDatasets`）：`group`、`status`（`pending_review`｜`active`｜`disabled`）、`corpus`、`code`（精確比對）。
-- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等；**`allow_third_party` 僅在詳情頁顯示**（`null` →「待決（視為不允許）」）。OpenAPI `PATCH` 目前未宣告 `allow_third_party`，詳情唯讀。
+- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等；**`allow_third_party` 僅在詳情頁顯示**（ADR 0027：`true` →「允許」、`false` →「禁止」、`null` →「未設定（允許）」——無不外送需求、視為允許）。OpenAPI `PATCH` 目前未宣告 `allow_third_party`，詳情唯讀。
 - 點列進詳情。空列表：`EmptyPanel` + 說明尚無資料集。
 - 錯誤：載入失敗顯示 `error_message` 或 i18n 預設；401 由 auth middleware 處理。
 
 ### P1 — 資料集詳情
 
 - 讀取：`GET /knowledge/datasets/{id}`（404 → 詳情錯誤、無表單）。
-- 可編輯（expert／ops／admin）：`PATCH` body（OpenAPI `adminKnowledgeDatasetPatch`）：
+- 可編輯（僅 **ops／admin**；**expert → 403**）：`PATCH` body（OpenAPI `adminKnowledgeDatasetPatch`）：
   - `code`：pattern `^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$`；大寫或非法字元 → **422**（不自動轉小寫）
   - `name`
   - `license`、`license_url`、`attribution`（可 `null` 清除）

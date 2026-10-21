@@ -1153,8 +1153,8 @@
       },
       "allowThirdParty": {
         "yes": "Allowed",
-        "no": "Not allowed",
-        "undecided": "Undecided (treated as disallowed)"
+        "no": "Forbidden",
+        "unset": "Unset (allowed)"
       },
       "detail": {
         "stats": "Summary",

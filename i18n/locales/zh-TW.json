@@ -1153,8 +1153,8 @@
       },
       "allowThirdParty": {
         "yes": "允許",
-        "no": "不允許",
-        "undecided": "待決（視為不允許）"
+        "no": "禁止",
+        "unset": "未設定（允許）"
       },
       "detail": {
         "stats": "摘要",
