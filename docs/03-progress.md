@@ -75,7 +75,7 @@
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/expert-tuning`、`/expert-tuning/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
-| 專家訓練／每日學習確認 | `/expert-tuning/daily-learning`（clone→confirm→confirm-safety→dry-run→publish；ADR 0028） | 可用 | 接線中（等 core #75 schema） | M4 |
+| 專家訓練／每日學習確認 | `/expert-tuning/daily-learning`（clone→confirm→confirm-safety→dry-run→publish；ADR 0028；對齊 #75 `141c24b` plain_language） | 可用 | 接線中（待 core #75 合併） | M4 |
 | 專家訓練／訓練批次 | `/expert-tuning/training`、`/expert-tuning/training/{id}` | 殼 | Mock | M4 |
 | Weight sets | —（權重分頁仍 mock；每日學習 HTTP 已接畫面；見 core #75） | 殼／接線中 | Mock／接線中 | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
@@ -209,6 +209,8 @@
 
 ---
 
-**最後更新**：2026-10-21（G-admin：每日學習確認畫面 `/expert-tuning/daily-learning`；拿掉 US-J7 手動標記；等 core #75 proposal schema）
+**最後更新**：2026-10-21（G-admin：對齊 core #75 `141c24b` plain_language／顯示名；draft PR #20；lint／typecheck／vitest／build 全過）
+
+- 2026-10-21：draft PR #20（base main）；head `c74cc18`；截圖 `pl_*`（mock 未 commit）
 
 **KM 里程碑**：KM1 資料集＋片段審核；KM2 檢索預覽＋稽核；KM3 群組＋overview／config。細項見 [spec/12-knowledge-management.md](spec/12-knowledge-management.md)。
