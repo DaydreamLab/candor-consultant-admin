@@ -1,11 +1,15 @@
 import type { Role } from '~/types/admin'
 import { isPlatformRole } from '~/types/admin'
+import type { OperatorRole } from '~/types/operator'
+import { canAccessKnowledge } from '~/utils/knowledge-access'
 
 export interface NavItem {
   key: string
   to: string
   icon: string
   platformOnly?: boolean
+  /** 僅 ops／admin 可見（知識管理）。 */
+  knowledgeOnly?: boolean
   /** false：側欄不加「開發中」。未設視為開發中。 */
   developing?: boolean
 }
@@ -56,7 +60,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'orgs', to: '/orgs', icon: 'i-lucide-building-2', platformOnly: true },
       { key: 'aiAssistant', to: '/ai-assistant', icon: 'i-lucide-bot', developing: false },
-      { key: 'knowledge', to: '/knowledge/datasets', icon: 'i-lucide-book-open', developing: false },
+      { key: 'knowledge', to: '/knowledge/datasets', icon: 'i-lucide-book-open', developing: false, knowledgeOnly: true },
       { key: 'expertTuning', to: '/expert-tuning', icon: 'i-lucide-sliders-horizontal' },
       { key: 'settings', to: '/settings', icon: 'i-lucide-settings' }
     ]
@@ -119,7 +123,10 @@ export function isDevelopingPath(path: string): boolean {
   return true
 }
 
-export function visibleNavGroups(role: Role | null): NavGroup[] {
+export function visibleNavGroups(
+  role: Role | null,
+  operatorRole: OperatorRole | null = null
+): NavGroup[] {
   if (!role) {
     return []
   }
@@ -127,7 +134,15 @@ export function visibleNavGroups(role: Role | null): NavGroup[] {
   return NAV_GROUPS
     .map(group => ({
       ...group,
-      items: group.items.filter(item => !item.platformOnly || isPlatformRole(role))
+      items: group.items.filter((item) => {
+        if (item.platformOnly && !isPlatformRole(role)) {
+          return false
+        }
+        if (item.knowledgeOnly && !canAccessKnowledge(operatorRole)) {
+          return false
+        }
+        return true
+      })
     }))
     .filter(group => group.items.length > 0)
 }
