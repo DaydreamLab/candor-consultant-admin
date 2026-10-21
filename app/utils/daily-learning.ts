@@ -757,6 +757,22 @@ export function filterPendingDailyLearningDrafts(
 }
 
 /**
+ * List refresh has its own error channel. Success → empty string so a later
+ * successful draft load is never stuck under a stale list failure banner.
+ */
+export function listRefreshErrorMessage(
+  failed: boolean,
+  apiMessage: string,
+  fallback: string
+): string {
+  if (!failed) {
+    return ''
+  }
+  const trimmed = apiMessage.trim()
+  return trimmed || fallback
+}
+
+/**
  * Build draft view from GET /weight-sets/{id}:
  * top-level `daily_learning` only (never config.daily_learning).
  */

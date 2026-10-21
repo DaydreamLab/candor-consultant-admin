@@ -209,9 +209,9 @@
 
 ---
 
-**最後更新**：2026-10-21（G-admin：對齊 core #76 `79ed13b`；合 #20 須等 core #76 合併部署）
+**最後更新**：2026-10-21（G-admin：列表錯誤與草案 banner 分離；重拍乾淨 ops 截圖）
 
-- 2026-10-21：draft PR #20（base main）；對齊 #76；ops 停用鈕＋載入草案；截圖見 artifacts
-- 2026-10-21：等 H-core schema（已對齊 #76）
+- 2026-10-21：draft PR #20；對齊 #76；合須等 core #76 部署
+- 2026-10-21：修 listError／applyLoadedDraft 清紅字；重拍 ops_*
 
 **KM 里程碑**：KM1 資料集＋片段審核；KM2 檢索預覽＋稽核；KM3 群組＋overview／config。細項見 [spec/12-knowledge-management.md](spec/12-knowledge-management.md)。

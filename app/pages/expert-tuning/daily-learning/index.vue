@@ -25,6 +25,7 @@ import {
   filterPendingDailyLearningDrafts,
   formatTechnicalJson,
   generalTechnical,
+  listRefreshErrorMessage,
   parseDailyLearningDraft,
   parseDailyLearningFromWeightSetDetail,
   safetyTechnical
@@ -63,6 +64,8 @@ const publishNeedHint = computed(() => needRolesHint(DAILY_LEARNING_PUBLISH_ROLE
 const busy = ref(false)
 const listBusy = ref(false)
 const errorMessage = ref('')
+/** List refresh failures stay here — do not reuse draft op banner (avoids stale red text after load). */
+const listError = ref('')
 const draftDate = ref('')
 const step = ref<DailyLearningStep>('idle')
 const draft = ref<DailyLearningDraftResult | null>(null)
@@ -264,11 +267,12 @@ async function refreshPendingDrafts() {
   if (!canLoadDrafts.value) {
     pendingDrafts.value = []
     selectedPendingId.value = undefined
+    listError.value = ''
     return
   }
   const token = readOperatorToken()
   if (!token) {
-    errorMessage.value = t('expertTuning.dailyLearning.failed')
+    listError.value = t('expertTuning.dailyLearning.listFailed')
     return
   }
   listBusy.value = true
@@ -280,14 +284,20 @@ async function refreshPendingDrafts() {
       && !pending.some(row => row.id === selectedPendingId.value)) {
       selectedPendingId.value = undefined
     }
+    listError.value = listRefreshErrorMessage(false, '', t('expertTuning.dailyLearning.listFailed'))
   } catch (error) {
-    errorMessage.value = apiErrorMessage(error)
+    listError.value = listRefreshErrorMessage(
+      true,
+      apiErrorMessage(error),
+      t('expertTuning.dailyLearning.listFailed')
+    )
   } finally {
     listBusy.value = false
   }
 }
 
 function applyLoadedDraft(view: DailyLearningDraftResult) {
+  errorMessage.value = ''
   draft.value = view
   dryRunGatePassed.value = null
   dryRunSummary.value = ''
@@ -688,7 +698,14 @@ onMounted(() => {
         </UButton>
       </div>
       <p
-        v-if="canLoadDrafts && !listBusy && !pendingDrafts.length"
+        v-if="listError"
+        class="text-sm text-error"
+        data-testid="daily-learning-list-error"
+      >
+        {{ listError }}
+      </p>
+      <p
+        v-else-if="canLoadDrafts && !listBusy && !pendingDrafts.length"
         class="text-sm text-muted"
         data-testid="daily-learning-load-empty"
       >

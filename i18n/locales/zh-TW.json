@@ -454,6 +454,7 @@
       "loadEmpty": "目前沒有待確認的每日學習草案。",
       "loadNeedSelect": "請先選擇一筆待確認草案。",
       "loadOk": "已載入學習草案",
+      "listFailed": "無法載入待確認草案列表，請稍後再試。",
       "needRoles": "需要 {roles} 權限",
       "generateTitle": "產生草案",
       "generateHint": "自現行 published clone 新 draft，並算出一般／安全提議（尚未寫入權重、不自動 publish）。",

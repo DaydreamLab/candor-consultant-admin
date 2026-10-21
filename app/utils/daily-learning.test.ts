@@ -5,6 +5,7 @@ import {
   filterPendingDailyLearningDrafts,
   generalDirection,
   generalTechnical,
+  listRefreshErrorMessage,
   parseDailyLearningDraft,
   parseDailyLearningFromWeightSetDetail,
   parseGeneralProposal,
@@ -298,5 +299,11 @@ describe('pending list + detail daily_learning (#76)', () => {
     expect(parseDailyLearningFromWeightSetDetail({
       ...weightSetSummary
     })).toBeNull()
+  })
+
+  it('keeps list refresh errors off the draft-op banner channel', () => {
+    expect(listRefreshErrorMessage(false, 'stale', 'fallback')).toBe('')
+    expect(listRefreshErrorMessage(true, '  network  ', 'fallback')).toBe('network')
+    expect(listRefreshErrorMessage(true, '', 'fallback')).toBe('fallback')
   })
 })

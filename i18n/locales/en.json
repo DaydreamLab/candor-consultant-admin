@@ -454,6 +454,7 @@
       "loadEmpty": "No pending daily-learning drafts right now.",
       "loadNeedSelect": "Select a pending draft first.",
       "loadOk": "Learning draft loaded",
+      "listFailed": "Could not load pending drafts. Please try again.",
       "needRoles": "Requires {roles} permission",
       "generateTitle": "Generate draft",
       "generateHint": "Clone the current published weight set and compute general／safety proposals (weights not applied; no auto-publish).",
