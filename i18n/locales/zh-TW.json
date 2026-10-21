@@ -462,32 +462,64 @@
       "linkedGenerals": "對應一般提議",
       "acceptGeneral": "同意套用此一般提議",
       "generalOnlyReusable": "僅通則可套用一般提議",
-      "generalFallbackPlain": "調整「{ingredient}」在「{domain}」相關情況下的推薦傾向（{kind}）",
+      "generalPlain": {
+        "base_weight": {
+          "up": "某個成分在對應領域相關情況下會更常被推薦。",
+          "down": "某個成分在對應領域相關情況下會更少被推薦。",
+          "new": "某個成分在對應領域將開始被納入推薦考量。"
+        },
+        "add_edge": "新增某個成分與領域的關聯，之後在相關情況下會開始被推薦。",
+        "signal_domain_weight": {
+          "up": "當某項訊號指向對應領域時，該領域相關成分會更常被推薦。",
+          "down": "當某項訊號指向對應領域時，該領域相關成分會更少被推薦。",
+          "new": "當某項訊號指向對應領域時，推薦傾向將調整。"
+        }
+      },
+      "decision": {
+        "approve": "保留",
+        "reject": "移除",
+        "adjust": "調整"
+      },
+      "adjustment": {
+        "swap": "換品",
+        "add": "新增品",
+        "remove": "移除",
+        "dose_change": "調劑量"
+      },
       "techDetails": "技術細節（權重數字）",
       "techDetailsHide": "收合技術細節",
       "confirmGeneral": "確認通則／個案並套用已同意的一般提議",
       "confirmOk": "已確認一般提議（尚未 publish）",
       "needClassification": "請先將每一列判定為通則或個案（不可留 pending）。",
+      "needsHuman": "需人工判定",
+      "source": {
+        "llm": "來源：AI",
+        "fallback": "來源：後備",
+        "deterministic_gate": "來源：確定性閘道"
+      },
       "classification": {
         "pending": "待判定",
         "reusable": "通則（可沿用）",
         "personal_risk": "個案（個人風險）"
       },
       "safetyTitle": "安全排除（高風險・預設不同意）",
-      "safetyHint": "禁忌 exclude→warn、UL 放寬、交互 exclude→penalize。不可批次同意；須先展開白話風險再逐條確認。",
+      "safetyHint": "禁忌排除→警示、交互作用排除→扣分、UL 上限調整。不可批次同意；須先展開白話風險再逐條確認。",
       "safetyRiskBadge": "高風險：預設不同意，確認後須重跑 dry-run",
       "safetyEmpty": "此日沒有安全排除提議。",
       "safetyKind": {
-        "contraindication": "禁忌",
-        "ul_override": "UL 放寬",
-        "interaction": "交互作用",
-        "unknown": "安全提議"
+        "contraindication_exclude_to_warn": "禁忌排除→警示",
+        "interaction_exclude_to_penalize": "交互作用排除→扣分",
+        "ul_override": "UL 上限調整"
+      },
+      "safetyPlain": {
+        "contraindication_exclude_to_warn": "將某成分在狀況「{condition}」的禁忌由「排除」改為「警示」，高風險情境仍可能被推薦。",
+        "interaction_exclude_to_penalize": "將兩種成分的交互作用由「排除」改為「扣分」（penalty {penalty}），兩者可能同時出現在方案中。",
+        "ul_override": "放寬某成分在本權重集的有效 UL（{from} → {to}；本案劑量 {dose}），超過原上限的劑量可能被接受。"
       },
       "safetyStatusDefault": "預設：不同意",
       "safetyStatusApplied": "已確認套用",
       "safetyExpand": "展開白話風險說明",
       "safetyCollapse": "收合風險說明",
-      "safetyNoRiskText": "（尚無白話風險說明）",
       "safetyConfirmOne": "確認此筆安全提議",
       "safetyExpandFirst": "請先展開並閱讀白話風險說明。",
       "safetyNeedGeneralFirst": "請先完成一般區確認，再確認安全提議。",

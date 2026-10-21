@@ -462,32 +462,64 @@
       "linkedGenerals": "Linked general proposals",
       "acceptGeneral": "Accept this general proposal",
       "generalOnlyReusable": "General proposals apply only when reusable",
-      "generalFallbackPlain": "Adjust how often “{ingredient}” is recommended under “{domain}” ({kind})",
+      "generalPlain": {
+        "base_weight": {
+          "up": "An ingredient will be recommended more often for the related domain.",
+          "down": "An ingredient will be recommended less often for the related domain.",
+          "new": "An ingredient will start being considered for the related domain."
+        },
+        "add_edge": "Add a link between an ingredient and a domain; it can start being recommended in related cases.",
+        "signal_domain_weight": {
+          "up": "When a signal points to the related domain, those ingredients will be recommended more often.",
+          "down": "When a signal points to the related domain, those ingredients will be recommended less often.",
+          "new": "When a signal points to the related domain, recommendation tendency will change."
+        }
+      },
+      "decision": {
+        "approve": "Keep",
+        "reject": "Remove",
+        "adjust": "Adjust"
+      },
+      "adjustment": {
+        "swap": "Swap",
+        "add": "Add",
+        "remove": "Remove",
+        "dose_change": "Dose change"
+      },
       "techDetails": "Technical details (weight numbers)",
       "techDetailsHide": "Hide technical details",
       "confirmGeneral": "Confirm classifications and apply accepted general proposals",
       "confirmOk": "General proposals confirmed (not published yet)",
       "needClassification": "Set every row to reusable or personal risk (pending is not allowed).",
+      "needsHuman": "Needs human judgement",
+      "source": {
+        "llm": "Source: AI",
+        "fallback": "Source: fallback",
+        "deterministic_gate": "Source: deterministic gate"
+      },
       "classification": {
         "pending": "Pending",
         "reusable": "Reusable (general)",
         "personal_risk": "Personal risk (case-specific)"
       },
       "safetyTitle": "Safety exclusions (high risk · default disagree)",
-      "safetyHint": "Contraindication exclude→warn, UL relax, interaction exclude→penalize. No batch accept; expand the plain-language risk, then confirm one by one.",
+      "safetyHint": "Contraindication exclude→warn, interaction exclude→penalize, UL override. No batch accept; expand the plain-language risk, then confirm one by one.",
       "safetyRiskBadge": "High risk: default disagree; re-run dry-run after confirming",
       "safetyEmpty": "No safety proposals for this day.",
       "safetyKind": {
-        "contraindication": "Contraindication",
-        "ul_override": "UL override",
-        "interaction": "Interaction",
-        "unknown": "Safety proposal"
+        "contraindication_exclude_to_warn": "Contraindication exclude→warn",
+        "interaction_exclude_to_penalize": "Interaction exclude→penalize",
+        "ul_override": "UL override"
+      },
+      "safetyPlain": {
+        "contraindication_exclude_to_warn": "Change a contraindication under “{condition}” from exclude to warn; high-risk contexts may still be recommended.",
+        "interaction_exclude_to_penalize": "Change an ingredient interaction from exclude to penalize (penalty {penalty}); both may appear in a plan.",
+        "ul_override": "Raise an ingredient’s effective UL on this weight set ({from} → {to}; case dose {dose}); doses above the prior UL may be accepted."
       },
       "safetyStatusDefault": "Default: disagree",
       "safetyStatusApplied": "Confirmed and applied",
       "safetyExpand": "Expand plain-language risk",
       "safetyCollapse": "Collapse risk details",
-      "safetyNoRiskText": "(No plain-language risk text yet)",
       "safetyConfirmOne": "Confirm this safety proposal",
       "safetyExpandFirst": "Expand and read the plain-language risk first.",
       "safetyNeedGeneralFirst": "Finish the general confirm step before safety confirms.",

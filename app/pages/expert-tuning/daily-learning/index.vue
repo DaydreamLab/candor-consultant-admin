@@ -10,16 +10,18 @@ import {
 import {
   buildDailyLearningConfirmBody,
   formatTechnicalJson,
-  generalProposalsForKnowledge,
-  orphanGeneralProposals,
+  generalDirection,
+  generalTechnical,
   parseDailyLearningDraft,
-  technicalHasWeightNumbers,
-  type DailyLearningClassification,
-  type DailyLearningDraftView,
-  type DailyLearningGeneralProposal,
-  type DailyLearningSafetyProposal,
-  type DailyLearningStep
+  safetyTechnical
 } from '~/utils/daily-learning'
+import type {
+  DailyLearningDraftResult,
+  DailyLearningGeneralProposal,
+  DailyLearningProposedClassification,
+  DailyLearningSafetyProposal,
+  DailyLearningStep
+} from '~/types/daily-learning'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
@@ -30,16 +32,14 @@ const busy = ref(false)
 const errorMessage = ref('')
 const draftDate = ref('')
 const step = ref<DailyLearningStep>('idle')
-const draft = ref<DailyLearningDraftView | null>(null)
+const draft = ref<DailyLearningDraftResult | null>(null)
 
-/** Human classification overrides keyed by knowledge_id. */
-const classificationChoice = ref<Record<string, DailyLearningClassification>>({})
-/** General proposal accept flags; default true only when linked knowledge is reusable. */
+const classificationChoice = ref<Record<string, DailyLearningProposedClassification>>({})
 const generalAccepted = ref<Record<string, boolean>>({})
-/** Safety: default disagree; only true after confirm-safety succeeds. */
 const safetyApplied = ref<Record<string, boolean>>({})
 const safetyExpanded = ref<Record<string, boolean>>({})
 const generalTechOpen = ref<Record<string, boolean>>({})
+const safetyTechOpen = ref<Record<string, boolean>>({})
 
 const dryRunGatePassed = ref<boolean | null>(null)
 const dryRunSummary = ref('')
@@ -47,32 +47,6 @@ const publishOverride = ref('')
 
 const safetyConfirmOpen = ref(false)
 const safetyConfirmTarget = ref<DailyLearningSafetyProposal | null>(null)
-
-const knowledgeIds = computed(() => {
-  const ids = new Set<string>()
-  for (const row of draft.value?.classifications ?? []) {
-    ids.add(row.knowledge_id)
-  }
-  return ids
-})
-
-const orphanGenerals = computed(() => {
-  if (!draft.value) {
-    return [] as DailyLearningGeneralProposal[]
-  }
-  return orphanGeneralProposals(draft.value.general_proposals, knowledgeIds.value)
-})
-
-const allClassificationsLocked = computed(() => {
-  const rows = draft.value?.classifications ?? []
-  if (!rows.length) {
-    return true
-  }
-  return rows.every((row) => {
-    const choice = classificationChoice.value[row.knowledge_id]
-    return choice === 'reusable' || choice === 'personal_risk'
-  })
-})
 
 const stepIndex = computed(() => {
   switch (step.value) {
@@ -91,6 +65,17 @@ const stepIndex = computed(() => {
   }
 })
 
+const allClassificationsLocked = computed(() => {
+  const rows = draft.value?.proposals ?? []
+  if (!rows.length) {
+    return true
+  }
+  return rows.every((row) => {
+    const choice = classificationChoice.value[row.knowledge_id]
+    return choice === 'reusable' || choice === 'personal_risk'
+  })
+})
+
 watch(
   () => draft.value,
   (view) => {
@@ -100,22 +85,19 @@ watch(
       safetyApplied.value = {}
       safetyExpanded.value = {}
       generalTechOpen.value = {}
+      safetyTechOpen.value = {}
       return
     }
-    const nextClass: Record<string, DailyLearningClassification> = {}
-    for (const row of view.classifications) {
-      nextClass[row.knowledge_id] = row.proposed_classification === 'pending'
-        ? 'pending'
-        : row.proposed_classification
+    const nextClass: Record<string, DailyLearningProposedClassification> = {}
+    for (const row of view.proposals) {
+      nextClass[row.knowledge_id] = row.proposed_classification
     }
     classificationChoice.value = nextClass
 
     const nextAccept: Record<string, boolean> = {}
     for (const proposal of view.general_proposals) {
-      const linked = proposal.knowledge_id
-        ? nextClass[proposal.knowledge_id]
-        : null
-      nextAccept[proposal.id] = linked === 'reusable'
+      const linked = classificationChoice.value[proposal.knowledge_id]
+      nextAccept[proposal.id] = proposal.default_agree && linked === 'reusable'
     }
     generalAccepted.value = nextAccept
 
@@ -128,6 +110,7 @@ watch(
     safetyApplied.value = nextSafety
     safetyExpanded.value = nextExpand
     generalTechOpen.value = {}
+    safetyTechOpen.value = {}
   },
   { immediate: true }
 )
@@ -140,11 +123,10 @@ watch(
     }
     const next = { ...generalAccepted.value }
     for (const proposal of draft.value.general_proposals) {
-      if (!proposal.knowledge_id) {
-        continue
-      }
       if (choices[proposal.knowledge_id] !== 'reusable') {
         next[proposal.id] = false
+      } else if (step.value === 'drafted') {
+        next[proposal.id] = proposal.default_agree
       }
     }
     generalAccepted.value = next
@@ -152,11 +134,8 @@ watch(
   { deep: true }
 )
 
-function classificationOptions(knowledgeId: string) {
-  const proposed = draft.value?.classifications
-    .find(row => row.knowledge_id === knowledgeId)
-    ?.proposed_classification
-  return [
+function classificationOptions(proposed: DailyLearningProposedClassification) {
+  const items = [
     {
       label: t('expertTuning.dailyLearning.classification.reusable'),
       value: 'reusable'
@@ -164,27 +143,53 @@ function classificationOptions(knowledgeId: string) {
     {
       label: t('expertTuning.dailyLearning.classification.personal_risk'),
       value: 'personal_risk'
-    },
-    ...(proposed === 'pending'
-      ? [{
-          label: t('expertTuning.dailyLearning.classification.pending'),
-          value: 'pending'
-        }]
-      : [])
+    }
   ]
-}
-
-function generalsFor(knowledgeId: string) {
-  return draft.value
-    ? generalProposalsForKnowledge(draft.value.general_proposals, knowledgeId)
-    : []
+  if (proposed === 'pending') {
+    items.push({
+      label: t('expertTuning.dailyLearning.classification.pending'),
+      value: 'pending'
+    })
+  }
+  return items
 }
 
 function canAcceptGeneral(proposal: DailyLearningGeneralProposal) {
-  if (!proposal.knowledge_id) {
-    return true
-  }
   return classificationChoice.value[proposal.knowledge_id] === 'reusable'
+}
+
+/** Interim plain copy until #75 ships names／plain_language (no UUID on expert UI). */
+function generalPlain(proposal: DailyLearningGeneralProposal) {
+  const direction = generalDirection(proposal)
+  if (proposal.kind === 'base_weight') {
+    return t(`expertTuning.dailyLearning.generalPlain.base_weight.${direction}`)
+  }
+  if (proposal.kind === 'add_edge') {
+    return t('expertTuning.dailyLearning.generalPlain.add_edge')
+  }
+  return t(`expertTuning.dailyLearning.generalPlain.signal_domain_weight.${direction}`)
+}
+
+function safetyPlain(proposal: DailyLearningSafetyProposal) {
+  if (proposal.kind === 'contraindication_exclude_to_warn') {
+    return t('expertTuning.dailyLearning.safetyPlain.contraindication_exclude_to_warn', {
+      condition: proposal.condition_code
+    })
+  }
+  if (proposal.kind === 'interaction_exclude_to_penalize') {
+    return t('expertTuning.dailyLearning.safetyPlain.interaction_exclude_to_penalize', {
+      penalty: proposal.to.penalty
+    })
+  }
+  return t('expertTuning.dailyLearning.safetyPlain.ul_override', {
+    from: proposal.from ?? '—',
+    to: proposal.to,
+    dose: proposal.dose_used
+  })
+}
+
+function safetyKindLabel(kind: DailyLearningSafetyProposal['kind']) {
+  return t(`expertTuning.dailyLearning.safetyKind.${kind}`)
 }
 
 function apiErrorMessage(error: unknown) {
@@ -248,23 +253,18 @@ async function confirmGeneral() {
   }
 
   const acceptedIds = view.general_proposals
-    .filter((row) => {
-      if (!generalAccepted.value[row.id]) {
-        return false
-      }
-      return canAcceptGeneral(row)
-    })
+    .filter(row => generalAccepted.value[row.id] && canAcceptGeneral(row))
     .map(row => row.id)
 
   const body = buildDailyLearningConfirmBody({
-    classifications: view.classifications.map(row => ({
+    classifications: view.proposals.map(row => ({
       knowledge_id: row.knowledge_id,
       classification: classificationChoice.value[row.knowledge_id] ?? 'pending'
     })),
     acceptedGeneralProposalIds: acceptedIds
   })
 
-  if (!body.confirmations.length && view.classifications.length) {
+  if (!body.confirmations.length && view.proposals.length) {
     feedback.notify({
       title: t('expertTuning.dailyLearning.needClassification'),
       color: 'warning'
@@ -337,7 +337,6 @@ async function confirmSafetyOne() {
     }
     safetyConfirmOpen.value = false
     safetyConfirmTarget.value = null
-    // Safety changes require a fresh dry-run before publish.
     if (step.value === 'dry_run_done' || step.value === 'published') {
       step.value = 'general_confirmed'
       dryRunGatePassed.value = null
@@ -402,7 +401,7 @@ async function publishDraft() {
   if (!token || !view) {
     return
   }
-  if (step.value !== 'dry_run_done' && step.value !== 'published') {
+  if (step.value !== 'dry_run_done') {
     feedback.notify({
       title: t('expertTuning.dailyLearning.publishNeedDryRun'),
       color: 'warning'
@@ -432,14 +431,6 @@ async function publishDraft() {
   } finally {
     busy.value = false
   }
-}
-
-function safetyKindLabel(kind: DailyLearningSafetyProposal['kind']) {
-  return t(`expertTuning.dailyLearning.safetyKind.${kind}`)
-}
-
-function shortId(id: string) {
-  return id.length > 10 ? `${id.slice(0, 8)}…` : id
 }
 </script>
 
@@ -521,7 +512,6 @@ function shortId(id: string) {
     </p>
 
     <template v-if="draft">
-      <!-- General zone -->
       <section
         class="mb-8 space-y-4"
         data-testid="daily-learning-general"
@@ -536,14 +526,14 @@ function shortId(id: string) {
         </div>
 
         <p
-          v-if="!draft.classifications.length && !draft.general_proposals.length"
+          v-if="!draft.proposals.length"
           class="rounded-lg border border-dashed border-default px-4 py-6 text-center text-sm text-muted"
         >
           {{ $t('expertTuning.dailyLearning.generalEmpty') }}
         </p>
 
         <article
-          v-for="row in draft.classifications"
+          v-for="row in draft.proposals"
           :key="row.knowledge_id"
           class="rounded-xl border border-default bg-elevated p-4"
           :data-testid="`daily-learning-class-${row.knowledge_id}`"
@@ -551,19 +541,26 @@ function shortId(id: string) {
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 flex-1 space-y-1">
               <p class="text-sm font-medium text-highlighted">
-                {{ row.package_plan_code || shortId(row.knowledge_id) }}
+                {{ $t(`expertTuning.dailyLearning.decision.${row.decision}`) }}
                 <span
-                  v-if="row.decision"
+                  v-if="row.adjustment_type"
                   class="ms-2 font-normal text-muted"
-                >· {{ row.decision }}</span>
+                >
+                  · {{ $t(`expertTuning.dailyLearning.adjustment.${row.adjustment_type}`) }}
+                </span>
               </p>
               <p class="text-sm text-muted">
-                {{ row.rationale || $t('expertTuning.dailyLearning.noRationale') }}
+                {{ row.classification_rationale || $t('expertTuning.dailyLearning.noRationale') }}
               </p>
               <p class="text-xs text-muted">
                 {{ $t('expertTuning.dailyLearning.aiSuggested', {
                   value: $t(`expertTuning.dailyLearning.classification.${row.proposed_classification}`)
                 }) }}
+                · {{ $t(`expertTuning.dailyLearning.source.${row.classification_source}`) }}
+                <span
+                  v-if="row.needs_human"
+                  class="ms-1 text-warning"
+                >· {{ $t('expertTuning.dailyLearning.needsHuman') }}</span>
               </p>
             </div>
             <UFormField
@@ -572,7 +569,7 @@ function shortId(id: string) {
             >
               <USelect
                 v-model="classificationChoice[row.knowledge_id]"
-                :items="classificationOptions(row.knowledge_id)"
+                :items="classificationOptions(row.proposed_classification)"
                 value-key="value"
                 :disabled="busy || step !== 'drafted'"
                 data-testid="daily-learning-class-select"
@@ -581,25 +578,20 @@ function shortId(id: string) {
           </div>
 
           <div
-            v-if="generalsFor(row.knowledge_id).length"
+            v-if="row.general_proposals.length"
             class="mt-4 space-y-3 border-t border-default pt-4"
           >
             <p class="text-xs font-semibold uppercase tracking-wide text-muted">
               {{ $t('expertTuning.dailyLearning.linkedGenerals') }}
             </p>
             <div
-              v-for="proposal in generalsFor(row.knowledge_id)"
+              v-for="proposal in row.general_proposals"
               :key="proposal.id"
               class="rounded-lg border border-default/80 bg-default/30 p-3"
               :data-testid="`daily-learning-general-${proposal.id}`"
             >
               <p class="text-sm text-highlighted">
-                {{ proposal.plain_language
-                  || $t('expertTuning.dailyLearning.generalFallbackPlain', {
-                    ingredient: proposal.ingredient_label || '—',
-                    domain: proposal.domain_label || '—',
-                    kind: proposal.kind || '—'
-                  }) }}
+                {{ generalPlain(proposal) }}
               </p>
               <div class="mt-2 flex flex-wrap items-center gap-3">
                 <UCheckbox
@@ -617,11 +609,7 @@ function shortId(id: string) {
                   {{ $t('expertTuning.dailyLearning.generalOnlyReusable') }}
                 </span>
               </div>
-              <div
-                v-if="technicalHasWeightNumbers(proposal.technical)
-                  || Object.keys(proposal.technical).length"
-                class="mt-2"
-              >
+              <div class="mt-2">
                 <button
                   type="button"
                   class="text-xs text-muted underline-offset-2 hover:underline"
@@ -636,50 +624,9 @@ function shortId(id: string) {
                   v-if="generalTechOpen[proposal.id]"
                   class="mt-2 overflow-x-auto rounded-md bg-muted/40 p-2 text-xs text-muted"
                   data-testid="daily-learning-tech-body"
-                >{{ formatTechnicalJson(proposal.technical) }}</pre>
+                >{{ formatTechnicalJson(generalTechnical(proposal)) }}</pre>
               </div>
             </div>
-          </div>
-        </article>
-
-        <article
-          v-for="proposal in orphanGenerals"
-          :key="`orphan-${proposal.id}`"
-          class="rounded-xl border border-default bg-elevated p-4"
-          :data-testid="`daily-learning-general-${proposal.id}`"
-        >
-          <p class="text-sm text-highlighted">
-            {{ proposal.plain_language
-              || $t('expertTuning.dailyLearning.generalFallbackPlain', {
-                ingredient: proposal.ingredient_label || '—',
-                domain: proposal.domain_label || '—',
-                kind: proposal.kind || '—'
-              }) }}
-          </p>
-          <div class="mt-2">
-            <UCheckbox
-              v-model="generalAccepted[proposal.id]"
-              :disabled="busy || step !== 'drafted'"
-              :label="$t('expertTuning.dailyLearning.acceptGeneral')"
-            />
-          </div>
-          <div
-            v-if="Object.keys(proposal.technical).length"
-            class="mt-2"
-          >
-            <button
-              type="button"
-              class="text-xs text-muted underline-offset-2 hover:underline"
-              @click="generalTechOpen[proposal.id] = !generalTechOpen[proposal.id]"
-            >
-              {{ generalTechOpen[proposal.id]
-                ? $t('expertTuning.dailyLearning.techDetailsHide')
-                : $t('expertTuning.dailyLearning.techDetails') }}
-            </button>
-            <pre
-              v-if="generalTechOpen[proposal.id]"
-              class="mt-2 overflow-x-auto rounded-md bg-muted/40 p-2 text-xs text-muted"
-            >{{ formatTechnicalJson(proposal.technical) }}</pre>
           </div>
         </article>
 
@@ -694,7 +641,6 @@ function shortId(id: string) {
         </UButton>
       </section>
 
-      <!-- Safety zone -->
       <section
         class="mb-8 space-y-4 rounded-xl border border-warning/50 bg-warning/5 p-4"
         data-testid="daily-learning-safety"
@@ -752,23 +698,23 @@ function shortId(id: string) {
             data-testid="daily-learning-safety-body"
           >
             <p class="text-sm text-highlighted">
-              {{ proposal.risk_text || $t('expertTuning.dailyLearning.safetyNoRiskText') }}
+              {{ safetyPlain(proposal) }}
             </p>
-            <p
-              v-if="proposal.from_label || proposal.to_label"
-              class="text-xs text-muted"
-            >
-              {{ proposal.from_label || '—' }} → {{ proposal.to_label || '—' }}
-            </p>
-            <details
-              v-if="Object.keys(proposal.technical).length"
-              class="text-xs"
-            >
-              <summary class="cursor-pointer text-muted">
-                {{ $t('expertTuning.dailyLearning.techDetails') }}
-              </summary>
-              <pre class="mt-2 overflow-x-auto rounded-md bg-muted/40 p-2 text-muted">{{ formatTechnicalJson(proposal.technical) }}</pre>
-            </details>
+            <div>
+              <button
+                type="button"
+                class="text-xs text-muted underline-offset-2 hover:underline"
+                @click="safetyTechOpen[proposal.id] = !safetyTechOpen[proposal.id]"
+              >
+                {{ safetyTechOpen[proposal.id]
+                  ? $t('expertTuning.dailyLearning.techDetailsHide')
+                  : $t('expertTuning.dailyLearning.techDetails') }}
+              </button>
+              <pre
+                v-if="safetyTechOpen[proposal.id]"
+                class="mt-2 overflow-x-auto rounded-md bg-muted/40 p-2 text-xs text-muted"
+              >{{ formatTechnicalJson(safetyTechnical(proposal)) }}</pre>
+            </div>
             <UButton
               color="warning"
               variant="soft"
@@ -787,7 +733,6 @@ function shortId(id: string) {
         </article>
       </section>
 
-      <!-- Dry-run / publish -->
       <section
         class="space-y-4 rounded-xl border border-default bg-elevated p-4"
         data-testid="daily-learning-apply"
@@ -845,10 +790,7 @@ function shortId(id: string) {
       color="warning"
       :double="true"
       :title="$t('expertTuning.dailyLearning.safetyDialogTitle')"
-      :description="safetyConfirmTarget
-        ? (safetyConfirmTarget.risk_text
-          || $t('expertTuning.dailyLearning.safetyNoRiskText'))
-        : ''"
+      :description="safetyConfirmTarget ? safetyPlain(safetyConfirmTarget) : ''"
       :confirm-label="$t('expertTuning.dailyLearning.safetyDialogConfirm')"
       @confirm="confirmSafetyOne"
     />

@@ -1,164 +1,94 @@
 /**
- * Daily learning confirm UI helpers (ADR 0028 / core #75).
- * Field-key fallbacks live in daily-learning-fields.ts — replace that file when #75 schema lands.
+ * Strict parsers + display helpers for daily-learning (#75 / 681d6eb).
+ * No alternate-key fallbacks — invalid payloads return null.
  */
 
-import {
-  CLASSIFICATION_RATIONALE_KEYS,
-  CLASSIFICATION_VALUE_KEYS,
-  DOMAIN_LABEL_KEYS,
-  FROM_LABEL_KEYS,
-  GENERAL_DISPLAY_KEYS,
-  GENERAL_KIND_KEYS,
-  GENERAL_PLAIN_LANGUAGE_KEYS,
-  INGREDIENT_LABEL_KEYS,
-  SAFETY_DISPLAY_KEYS,
-  SAFETY_KIND_KEYS,
-  SAFETY_RISK_TEXT_KEYS,
-  TO_LABEL_KEYS
-} from '~/utils/daily-learning-fields'
+import type {
+  DailyLearningAdjustmentType,
+  DailyLearningClassificationSource,
+  DailyLearningDecision,
+  DailyLearningDraftResult,
+  DailyLearningGeneralProposal,
+  DailyLearningGeneralProposalAddEdge,
+  DailyLearningGeneralProposalBaseWeight,
+  DailyLearningGeneralProposalSignalDomainWeight,
+  DailyLearningProposedClassification,
+  DailyLearningRowProposal,
+  DailyLearningSafetyProposal,
+  DailyLearningSafetyProposalContraindication,
+  DailyLearningSafetyProposalInteraction,
+  DailyLearningSafetyProposalUlOverride,
+  DailyLearningWeightSetSummary
+} from '~/types/daily-learning'
 
-export type DailyLearningClassification = 'pending' | 'reusable' | 'personal_risk'
+const ADJUSTMENT_TYPES = new Set<DailyLearningAdjustmentType>([
+  'swap',
+  'add',
+  'remove',
+  'dose_change'
+])
 
-export type DailyLearningStep
-  = 'idle'
-    | 'drafted'
-    | 'general_confirmed'
-    | 'dry_run_done'
-    | 'published'
-
-export type DailyLearningWeightSetSummary = {
-  id: string
-  version: string
-  status: string
-  label: string | null
-  last_dry_run_passed: boolean | null
-}
-
-export type DailyLearningClassificationRow = {
-  knowledge_id: string
-  proposed_classification: DailyLearningClassification
-  rationale: string
-  decision: string | null
-  package_plan_code: string | null
-  raw: Record<string, unknown>
-}
-
-export type DailyLearningGeneralProposal = {
-  id: string
-  knowledge_id: string | null
-  plain_language: string
-  kind: string | null
-  ingredient_label: string | null
-  domain_label: string | null
-  technical: Record<string, unknown>
-  raw: Record<string, unknown>
-}
-
-export type DailyLearningSafetyKind
-  = 'contraindication'
-    | 'ul_override'
-    | 'interaction'
-    | 'unknown'
-
-export type DailyLearningSafetyProposal = {
-  id: string
-  knowledge_id: string | null
-  kind: DailyLearningSafetyKind
-  risk_text: string
-  from_label: string | null
-  to_label: string | null
-  technical: Record<string, unknown>
-  raw: Record<string, unknown>
-}
-
-export type DailyLearningDraftView = {
-  weight_set: DailyLearningWeightSetSummary
-  date: string
-  classifications: DailyLearningClassificationRow[]
-  general_proposals: DailyLearningGeneralProposal[]
-  safety_proposals: DailyLearningSafetyProposal[]
-  auto_published: false
-  raw: Record<string, unknown>
-}
-
-const CLASSIFICATIONS = new Set<DailyLearningClassification>([
-  'pending',
+const CLASSIFICATIONS = new Set<DailyLearningProposedClassification>([
   'reusable',
-  'personal_risk'
+  'personal_risk',
+  'pending'
+])
+
+const SOURCES = new Set<DailyLearningClassificationSource>([
+  'llm',
+  'fallback',
+  'deterministic_gate'
+])
+
+const DECISIONS = new Set<DailyLearningDecision>([
+  'approve',
+  'reject',
+  'adjust'
 ])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
-function stringOf(value: unknown): string | null {
-  if (typeof value !== 'string') {
+function asString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null
+}
+
+function asUuid(value: unknown): string | null {
+  return asString(value)
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function asNumberOrNull(value: unknown): number | null | undefined {
+  if (value === null) {
     return null
   }
-  const trimmed = value.trim()
-  return trimmed || null
-}
-
-function uuidOf(value: unknown): string | null {
-  return stringOf(value)
-}
-
-function firstString(
-  row: Record<string, unknown>,
-  keys: readonly string[]
-): string | null {
-  for (const key of keys) {
-    const value = stringOf(row[key])
-    if (value) {
-      return value
-    }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
   }
-  return null
+  return undefined
 }
 
-function classificationOf(value: unknown): DailyLearningClassification | null {
-  if (typeof value !== 'string') {
-    return null
-  }
-  return CLASSIFICATIONS.has(value as DailyLearningClassification)
-    ? (value as DailyLearningClassification)
+function asBoolean(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null
+}
+
+function asAdjustmentType(value: unknown): DailyLearningAdjustmentType | null {
+  return typeof value === 'string' && ADJUSTMENT_TYPES.has(value as DailyLearningAdjustmentType)
+    ? (value as DailyLearningAdjustmentType)
     : null
-}
-
-function pickTechnical(
-  row: Record<string, unknown>,
-  exclude: readonly string[]
-): Record<string, unknown> {
-  const skip = new Set(exclude)
-  const out: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(row)) {
-    if (skip.has(key) || value === undefined) {
-      continue
-    }
-    out[key] = value
-  }
-  return out
-}
-
-/** True if technical payload may expose weight / numeric deltas. */
-export function technicalHasWeightNumbers(technical: Record<string, unknown>): boolean {
-  const keys = Object.keys(technical)
-  if (!keys.length) {
-    return false
-  }
-  const weightish = /weight|delta|ul|penalty|base_weight|signal_domain/i
-  return keys.some(key => weightish.test(key))
-    || Object.values(technical).some(value => typeof value === 'number')
 }
 
 export function parseWeightSetSummary(value: unknown): DailyLearningWeightSetSummary | null {
   if (!isRecord(value)) {
     return null
   }
-  const id = uuidOf(value.id)
-  const version = stringOf(value.version)
-  const status = stringOf(value.status)
+  const id = asUuid(value.id)
+  const version = asString(value.version)
+  const status = asString(value.status)
   if (!id || !version || !status) {
     return null
   }
@@ -166,36 +96,10 @@ export function parseWeightSetSummary(value: unknown): DailyLearningWeightSetSum
     id,
     version,
     status,
-    label: stringOf(value.label),
+    label: typeof value.label === 'string' ? value.label : null,
     last_dry_run_passed: typeof value.last_dry_run_passed === 'boolean'
       ? value.last_dry_run_passed
       : null
-  }
-}
-
-export function parseClassificationRow(value: unknown): DailyLearningClassificationRow | null {
-  if (!isRecord(value)) {
-    return null
-  }
-  const knowledge_id = uuidOf(value.knowledge_id) ?? uuidOf(value.id)
-  if (!knowledge_id) {
-    return null
-  }
-  let proposed: DailyLearningClassification = 'pending'
-  for (const key of CLASSIFICATION_VALUE_KEYS) {
-    const parsed = classificationOf(value[key])
-    if (parsed) {
-      proposed = parsed
-      break
-    }
-  }
-  return {
-    knowledge_id,
-    proposed_classification: proposed,
-    rationale: firstString(value, CLASSIFICATION_RATIONALE_KEYS) ?? '',
-    decision: firstString(value, ['decision']),
-    package_plan_code: firstString(value, ['package_plan_code']),
-    raw: value
   }
 }
 
@@ -203,159 +107,465 @@ export function parseGeneralProposal(value: unknown): DailyLearningGeneralPropos
   if (!isRecord(value)) {
     return null
   }
-  const id = uuidOf(value.id) ?? uuidOf(value.proposal_id)
-  if (!id) {
+  const id = asUuid(value.id)
+  const knowledge_id = asUuid(value.knowledge_id)
+  const adjustment_type = asAdjustmentType(value.adjustment_type)
+  if (!id || !knowledge_id || !adjustment_type || value.default_agree !== true) {
     return null
   }
-  return {
-    id,
-    knowledge_id: uuidOf(value.knowledge_id),
-    plain_language: firstString(value, GENERAL_PLAIN_LANGUAGE_KEYS) ?? '',
-    kind: firstString(value, GENERAL_KIND_KEYS),
-    ingredient_label: firstString(value, INGREDIENT_LABEL_KEYS),
-    domain_label: firstString(value, DOMAIN_LABEL_KEYS),
-    technical: pickTechnical(value, GENERAL_DISPLAY_KEYS),
-    raw: value
-  }
-}
 
-function safetyKindOf(value: unknown): DailyLearningSafetyKind {
-  const text = stringOf(value)?.toLowerCase() ?? ''
-  if (
-    text === 'contraindication'
-    || text.includes('contra')
-    || text.includes('禁忌')
-  ) {
-    return 'contraindication'
+  if (value.kind === 'base_weight') {
+    if (value.op !== 'bump') {
+      return null
+    }
+    const domain_id = asUuid(value.domain_id)
+    const ingredient_id = asUuid(value.ingredient_id)
+    const from = asNumber(value.from)
+    const to = asNumber(value.to)
+    const from_base_weight = asNumber(value.from_base_weight)
+    const to_base_weight = asNumber(value.to_base_weight)
+    if (!domain_id || !ingredient_id || from === null || to === null
+      || from_base_weight === null || to_base_weight === null) {
+      return null
+    }
+    const row: DailyLearningGeneralProposalBaseWeight = {
+      id,
+      kind: 'base_weight',
+      op: 'bump',
+      domain_id,
+      ingredient_id,
+      from,
+      to,
+      from_base_weight,
+      to_base_weight,
+      knowledge_id,
+      adjustment_type,
+      default_agree: true
+    }
+    return row
   }
-  if (text === 'ul_override' || text.includes('ul') || text.includes('上限')) {
-    return 'ul_override'
+
+  if (value.kind === 'add_edge') {
+    if (value.op !== 'add_edge' || value.direction !== 'deficit' || value.evidence_level !== 'C') {
+      return null
+    }
+    const domain_id = asUuid(value.domain_id)
+    const ingredient_id = asUuid(value.ingredient_id)
+    const from = asNumberOrNull(value.from)
+    const to = asNumber(value.to)
+    const from_base_weight = asNumberOrNull(value.from_base_weight)
+    const to_base_weight = asNumber(value.to_base_weight)
+    if (!domain_id || !ingredient_id || from === undefined || to === null
+      || from_base_weight === undefined || to_base_weight === null) {
+      return null
+    }
+    const row: DailyLearningGeneralProposalAddEdge = {
+      id,
+      kind: 'add_edge',
+      op: 'add_edge',
+      domain_id,
+      ingredient_id,
+      from,
+      to,
+      from_base_weight,
+      to_base_weight,
+      direction: 'deficit',
+      evidence_level: 'C',
+      knowledge_id,
+      adjustment_type,
+      default_agree: true
+    }
+    return row
   }
-  if (
-    text === 'interaction'
-    || text.includes('interact')
-    || text.includes('交互')
-  ) {
-    return 'interaction'
+
+  if (value.kind === 'signal_domain_weight') {
+    if (value.op !== 'bump_signal') {
+      return null
+    }
+    const biomarker_id = asUuid(value.biomarker_id)
+    const domain_id = asUuid(value.domain_id)
+    const from = asNumber(value.from)
+    const to = asNumber(value.to)
+    if (!biomarker_id || !domain_id || from === null || to === null) {
+      return null
+    }
+    const row: DailyLearningGeneralProposalSignalDomainWeight = {
+      id,
+      kind: 'signal_domain_weight',
+      op: 'bump_signal',
+      biomarker_id,
+      domain_id,
+      from,
+      to,
+      knowledge_id,
+      adjustment_type,
+      default_agree: true
+    }
+    return row
   }
-  return 'unknown'
+
+  return null
 }
 
 export function parseSafetyProposal(value: unknown): DailyLearningSafetyProposal | null {
   if (!isRecord(value)) {
     return null
   }
-  const id = uuidOf(value.id) ?? uuidOf(value.proposal_id)
-  if (!id) {
+  const id = asUuid(value.id)
+  const knowledge_id = asUuid(value.knowledge_id)
+  const adjustment_type = asAdjustmentType(value.adjustment_type)
+  if (!id || !knowledge_id || !adjustment_type
+    || value.default_agree !== false || value.high_risk !== true) {
     return null
   }
-  let kindRaw: unknown
-  for (const key of SAFETY_KIND_KEYS) {
-    if (value[key] !== undefined && value[key] !== null) {
-      kindRaw = value[key]
-      break
+
+  if (value.kind === 'contraindication_exclude_to_warn') {
+    const contraindication_id = asUuid(value.contraindication_id)
+    const ingredient_id = asUuid(value.ingredient_id)
+    const condition_code = asString(value.condition_code)
+    if (!contraindication_id || !ingredient_id || !condition_code
+      || value.from !== 'exclude' || value.to !== 'warn'
+      || value.from_severity !== 'exclude' || value.to_severity !== 'warn') {
+      return null
+    }
+    const row: DailyLearningSafetyProposalContraindication = {
+      id,
+      kind: 'contraindication_exclude_to_warn',
+      contraindication_id,
+      ingredient_id,
+      condition_code,
+      from: 'exclude',
+      to: 'warn',
+      from_severity: 'exclude',
+      to_severity: 'warn',
+      knowledge_id,
+      adjustment_type,
+      default_agree: false,
+      high_risk: true
+    }
+    return row
+  }
+
+  if (value.kind === 'interaction_exclude_to_penalize') {
+    const interaction_id = asUuid(value.interaction_id)
+    const ingredient_a_id = asUuid(value.ingredient_a_id)
+    const ingredient_b_id = asUuid(value.ingredient_b_id)
+    if (!interaction_id || !ingredient_a_id || !ingredient_b_id
+      || !isRecord(value.from) || !isRecord(value.to)
+      || value.from.effect !== 'exclude'
+      || value.to.effect !== 'penalize') {
+      return null
+    }
+    let fromPenalty: number | null
+    if (value.from.penalty === null) {
+      fromPenalty = null
+    } else {
+      const parsedPenalty = asNumber(value.from.penalty)
+      if (parsedPenalty === null) {
+        return null
+      }
+      fromPenalty = parsedPenalty
+    }
+    const toPenalty = asNumber(value.to.penalty)
+    if (toPenalty === null) {
+      return null
+    }
+    const row: DailyLearningSafetyProposalInteraction = {
+      id,
+      kind: 'interaction_exclude_to_penalize',
+      interaction_id,
+      ingredient_a_id,
+      ingredient_b_id,
+      from: { effect: 'exclude', penalty: fromPenalty },
+      to: { effect: 'penalize', penalty: toPenalty },
+      knowledge_id,
+      adjustment_type,
+      default_agree: false,
+      high_risk: true
+    }
+    return row
+  }
+
+  if (value.kind === 'ul_override') {
+    const ingredient_id = asUuid(value.ingredient_id)
+    const from = asNumberOrNull(value.from)
+    const to = asNumber(value.to)
+    const dose_used = asNumber(value.dose_used)
+    if (!ingredient_id || from === undefined || to === null || dose_used === null) {
+      return null
+    }
+    const row: DailyLearningSafetyProposalUlOverride = {
+      id,
+      kind: 'ul_override',
+      ingredient_id,
+      from,
+      to,
+      dose_used,
+      knowledge_id,
+      adjustment_type,
+      default_agree: false,
+      high_risk: true
+    }
+    return row
+  }
+
+  return null
+}
+
+function parseContextHit(value: unknown) {
+  if (!isRecord(value)) {
+    return null
+  }
+  const knowledge_id = asUuid(value.knowledge_id)
+  const reason = asString(value.reason)
+  const similarity = asNumber(value.similarity)
+  if (!knowledge_id || !reason || similarity === null) {
+    return null
+  }
+  return { knowledge_id, reason, similarity }
+}
+
+export function parseRowProposal(value: unknown): DailyLearningRowProposal | null {
+  if (!isRecord(value)) {
+    return null
+  }
+  const knowledge_id = asUuid(value.knowledge_id)
+  const expert_case_review_id = asUuid(value.expert_case_review_id)
+  const decision = typeof value.decision === 'string'
+    && DECISIONS.has(value.decision as DailyLearningDecision)
+    ? (value.decision as DailyLearningDecision)
+    : null
+  const proposed_classification = typeof value.proposed_classification === 'string'
+    && CLASSIFICATIONS.has(value.proposed_classification as DailyLearningProposedClassification)
+    ? (value.proposed_classification as DailyLearningProposedClassification)
+    : null
+  const classification_rationale = typeof value.classification_rationale === 'string'
+    ? value.classification_rationale
+    : null
+  const classification_source = typeof value.classification_source === 'string'
+    && SOURCES.has(value.classification_source as DailyLearningClassificationSource)
+    ? (value.classification_source as DailyLearningClassificationSource)
+    : null
+  const needs_human = asBoolean(value.needs_human)
+  if (!knowledge_id || !expert_case_review_id || !decision || !proposed_classification
+    || classification_rationale === null || !classification_source || needs_human === null
+    || !Array.isArray(value.context_hits)
+    || !Array.isArray(value.general_proposals)
+    || !Array.isArray(value.safety_proposals)
+    || !Array.isArray(value.weight_changes)
+    || !Array.isArray(value.contraindication_changes)) {
+    return null
+  }
+
+  let adjustment_type: DailyLearningAdjustmentType | null = null
+  if (value.adjustment_type !== null && value.adjustment_type !== undefined) {
+    adjustment_type = asAdjustmentType(value.adjustment_type)
+    if (!adjustment_type) {
+      return null
     }
   }
+
+  const context_hits = []
+  for (const hit of value.context_hits) {
+    const parsed = parseContextHit(hit)
+    if (!parsed) {
+      return null
+    }
+    context_hits.push(parsed)
+  }
+
+  const general_proposals: DailyLearningGeneralProposal[] = []
+  for (const item of value.general_proposals) {
+    const parsed = parseGeneralProposal(item)
+    if (!parsed) {
+      return null
+    }
+    general_proposals.push(parsed)
+  }
+
+  const safety_proposals: DailyLearningSafetyProposal[] = []
+  for (const item of value.safety_proposals) {
+    const parsed = parseSafetyProposal(item)
+    if (!parsed) {
+      return null
+    }
+    safety_proposals.push(parsed)
+  }
+
+  const weight_changes: Array<
+    DailyLearningGeneralProposalBaseWeight | DailyLearningGeneralProposalAddEdge
+  > = []
+  for (const item of value.weight_changes) {
+    const parsed = parseGeneralProposal(item)
+    if (!parsed || (parsed.kind !== 'base_weight' && parsed.kind !== 'add_edge')) {
+      return null
+    }
+    weight_changes.push(parsed)
+  }
+
+  const contraindication_changes: DailyLearningSafetyProposalContraindication[] = []
+  for (const item of value.contraindication_changes) {
+    const parsed = parseSafetyProposal(item)
+    if (!parsed || parsed.kind !== 'contraindication_exclude_to_warn') {
+      return null
+    }
+    contraindication_changes.push(parsed)
+  }
+
   return {
-    id,
-    knowledge_id: uuidOf(value.knowledge_id),
-    kind: safetyKindOf(kindRaw),
-    risk_text: firstString(value, SAFETY_RISK_TEXT_KEYS) ?? '',
-    from_label: firstString(value, FROM_LABEL_KEYS),
-    to_label: firstString(value, TO_LABEL_KEYS),
-    technical: pickTechnical(value, SAFETY_DISPLAY_KEYS),
-    raw: value
+    knowledge_id,
+    expert_case_review_id,
+    decision,
+    adjustment_type,
+    proposed_classification,
+    classification_rationale,
+    classification_source,
+    needs_human,
+    context_hits,
+    general_proposals,
+    safety_proposals,
+    weight_changes,
+    contraindication_changes
   }
 }
 
-/**
- * Map draft API payload into UI rows.
- * `proposals` → classification suggestions when present.
- */
-export function parseDailyLearningDraft(data: unknown): DailyLearningDraftView | null {
+/** Parse draft API data; any invalid row／proposal fails the whole draft. */
+export function parseDailyLearningDraft(data: unknown): DailyLearningDraftResult | null {
   if (!isRecord(data)) {
     return null
   }
   const weight_set = parseWeightSetSummary(data.weight_set)
-  const date = stringOf(data.date)
-  if (!weight_set || !date) {
+  const date = asString(data.date)
+  if (!weight_set || !date || data.auto_published !== false
+    || !Array.isArray(data.proposals)
+    || !Array.isArray(data.general_proposals)
+    || !Array.isArray(data.safety_proposals)) {
     return null
   }
 
-  const proposalList = Array.isArray(data.proposals) ? data.proposals : []
-  const generalList = Array.isArray(data.general_proposals) ? data.general_proposals : []
-  const safetyList = Array.isArray(data.safety_proposals) ? data.safety_proposals : []
-
-  const classifications = proposalList
-    .map(parseClassificationRow)
-    .filter((row): row is DailyLearningClassificationRow => Boolean(row))
-
-  const general_proposals = generalList
-    .map(parseGeneralProposal)
-    .filter((row): row is DailyLearningGeneralProposal => Boolean(row))
-
-  const safety_proposals = safetyList
-    .map(parseSafetyProposal)
-    .filter((row): row is DailyLearningSafetyProposal => Boolean(row))
-
-  if (!classifications.length && general_proposals.length) {
-    const seen = new Set<string>()
-    for (const proposal of general_proposals) {
-      if (!proposal.knowledge_id || seen.has(proposal.knowledge_id)) {
-        continue
-      }
-      seen.add(proposal.knowledge_id)
-      const raw = proposal.raw
-      let proposed: DailyLearningClassification = 'pending'
-      for (const key of CLASSIFICATION_VALUE_KEYS) {
-        const parsed = classificationOf(raw[key])
-        if (parsed) {
-          proposed = parsed
-          break
-        }
-      }
-      classifications.push({
-        knowledge_id: proposal.knowledge_id,
-        proposed_classification: proposed,
-        rationale: firstString(raw, [
-          'classification_rationale',
-          ...CLASSIFICATION_RATIONALE_KEYS
-        ]) ?? '',
-        decision: firstString(raw, ['decision']),
-        package_plan_code: firstString(raw, ['package_plan_code']),
-        raw
-      })
+  const proposals: DailyLearningRowProposal[] = []
+  for (const row of data.proposals) {
+    const parsed = parseRowProposal(row)
+    if (!parsed) {
+      return null
     }
+    proposals.push(parsed)
+  }
+
+  const general_proposals: DailyLearningGeneralProposal[] = []
+  for (const item of data.general_proposals) {
+    const parsed = parseGeneralProposal(item)
+    if (!parsed) {
+      return null
+    }
+    general_proposals.push(parsed)
+  }
+
+  const safety_proposals: DailyLearningSafetyProposal[] = []
+  for (const item of data.safety_proposals) {
+    const parsed = parseSafetyProposal(item)
+    if (!parsed) {
+      return null
+    }
+    safety_proposals.push(parsed)
   }
 
   return {
     weight_set,
     date,
-    classifications,
+    proposals,
     general_proposals,
     safety_proposals,
-    auto_published: false,
-    raw: data
+    auto_published: false
   }
 }
 
-export function generalProposalsForKnowledge(
-  proposals: DailyLearningGeneralProposal[],
-  knowledgeId: string
-): DailyLearningGeneralProposal[] {
-  return proposals.filter(row => row.knowledge_id === knowledgeId)
+export function shortId(id: string) {
+  return id.length > 10 ? `${id.slice(0, 8)}…` : id
 }
 
-export function orphanGeneralProposals(
-  proposals: DailyLearningGeneralProposal[],
-  knowledgeIds: Set<string>
-): DailyLearningGeneralProposal[] {
-  return proposals.filter(row => !row.knowledge_id || !knowledgeIds.has(row.knowledge_id))
+/** Direction for weight-like from→to (null from treated as increase／new). */
+export function generalDirection(
+  proposal: DailyLearningGeneralProposal
+): 'up' | 'down' | 'new' {
+  if (proposal.kind === 'add_edge') {
+    return 'new'
+  }
+  if (proposal.to > proposal.from) {
+    return 'up'
+  }
+  if (proposal.to < proposal.from) {
+    return 'down'
+  }
+  return 'up'
 }
 
-/** Build confirm body: lock classifications; accept general ids as provided. */
+/**
+ * Technical details for experts: weight／enum numbers only.
+ * Omit UUID fields until #75 ships display names (experts must not see UUIDs).
+ */
+export function generalTechnical(proposal: DailyLearningGeneralProposal): Record<string, unknown> {
+  switch (proposal.kind) {
+    case 'base_weight':
+      return {
+        kind: proposal.kind,
+        op: proposal.op,
+        from: proposal.from,
+        to: proposal.to,
+        from_base_weight: proposal.from_base_weight,
+        to_base_weight: proposal.to_base_weight
+      }
+    case 'add_edge':
+      return {
+        kind: proposal.kind,
+        op: proposal.op,
+        from: proposal.from,
+        to: proposal.to,
+        from_base_weight: proposal.from_base_weight,
+        to_base_weight: proposal.to_base_weight,
+        direction: proposal.direction,
+        evidence_level: proposal.evidence_level
+      }
+    case 'signal_domain_weight':
+      return {
+        kind: proposal.kind,
+        op: proposal.op,
+        from: proposal.from,
+        to: proposal.to
+      }
+  }
+}
+
+export function safetyTechnical(proposal: DailyLearningSafetyProposal): Record<string, unknown> {
+  switch (proposal.kind) {
+    case 'contraindication_exclude_to_warn':
+      return {
+        kind: proposal.kind,
+        condition_code: proposal.condition_code,
+        from: proposal.from,
+        to: proposal.to
+      }
+    case 'interaction_exclude_to_penalize':
+      return {
+        kind: proposal.kind,
+        from: proposal.from,
+        to: proposal.to
+      }
+    case 'ul_override':
+      return {
+        kind: proposal.kind,
+        from: proposal.from,
+        to: proposal.to,
+        dose_used: proposal.dose_used
+      }
+  }
+}
+
 export function buildDailyLearningConfirmBody(input: {
-  classifications: Array<{ knowledge_id: string, classification: DailyLearningClassification }>
+  classifications: Array<{
+    knowledge_id: string
+    classification: DailyLearningProposedClassification
+  }>
   acceptedGeneralProposalIds: string[]
 }): {
   confirmations: Array<{
