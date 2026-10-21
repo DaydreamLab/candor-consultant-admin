@@ -460,6 +460,8 @@
       "dateLabel": "UTC date (blank = today)",
       "generate": "Generate draft",
       "draftMeta": "Draft {version} · date {date} · status {status}",
+      "generalConfirmed": "Confirmed ({at})",
+      "safetyConfirmedBy": "Confirmed by {role} at {at}",
       "draftOk": "Learning draft created",
       "failed": "Daily learning action failed. Please try again.",
       "parseFailed": "Could not parse the learning draft response.",

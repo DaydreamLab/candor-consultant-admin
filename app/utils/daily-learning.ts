@@ -4,6 +4,7 @@
  */
 
 import type {
+  AdminWeightSetDailyLearning,
   DailyLearningAdjustmentType,
   DailyLearningClassificationSource,
   DailyLearningDecision,
@@ -13,10 +14,12 @@ import type {
   DailyLearningGeneralProposalAddEdge,
   DailyLearningGeneralProposalBaseWeight,
   DailyLearningGeneralProposalSignalDomainWeight,
+  DailyLearningOperatorRole,
   DailyLearningPendingListItem,
   DailyLearningPlainLanguageSource,
   DailyLearningProposedClassification,
   DailyLearningRowProposal,
+  DailyLearningSafetyConfirmedEntry,
   DailyLearningSafetyProposal,
   DailyLearningSafetyProposalContraindication,
   DailyLearningSafetyProposalInteraction,
@@ -52,6 +55,12 @@ const DECISIONS = new Set<DailyLearningDecision>([
 const PLAIN_SOURCES = new Set<DailyLearningPlainLanguageSource>([
   'ai',
   'template'
+])
+
+const OPERATOR_ROLES = new Set<DailyLearningOperatorRole>([
+  'expert',
+  'ops',
+  'admin'
 ])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -124,6 +133,16 @@ function asAdjustmentType(value: unknown): DailyLearningAdjustmentType | null {
     : null
 }
 
+function asNullableString(value: unknown): string | null | undefined {
+  if (value === null) {
+    return null
+  }
+  if (typeof value === 'string') {
+    return value
+  }
+  return undefined
+}
+
 export function parseWeightSetSummary(value: unknown): DailyLearningWeightSetSummary | null {
   if (!isRecord(value)) {
     return null
@@ -131,17 +150,26 @@ export function parseWeightSetSummary(value: unknown): DailyLearningWeightSetSum
   const id = asUuid(value.id)
   const version = asString(value.version)
   const status = asString(value.status)
-  if (!id || !version || !status) {
+  const is_daily_learning_draft = asBoolean(value.is_daily_learning_draft)
+  const daily_learning_pending = asBoolean(value.daily_learning_pending)
+  if (!id || !version || !status
+    || is_daily_learning_draft === null || daily_learning_pending === null) {
     return null
   }
+  const published_at = asNullableString(value.published_at)
+  const created_at = asNullableString(value.created_at)
   return {
     id,
     version,
     status,
     label: typeof value.label === 'string' ? value.label : null,
+    published_at: published_at === undefined ? null : published_at,
     last_dry_run_passed: typeof value.last_dry_run_passed === 'boolean'
       ? value.last_dry_run_passed
-      : null
+      : null,
+    created_at: created_at === undefined ? null : created_at,
+    is_daily_learning_draft,
+    daily_learning_pending
   }
 }
 
@@ -517,19 +545,103 @@ export function parseRowProposal(value: unknown): DailyLearningRowProposal | nul
   }
 }
 
-function parseDailyLearningProposalLists(data: Record<string, unknown>): {
-  date: string
-  proposals: DailyLearningRowProposal[]
-  general_proposals: DailyLearningGeneralProposal[]
-  safety_proposals: DailyLearningSafetyProposal[]
-} | null {
-  const date = asString(data.date)
-  if (!date || data.auto_published !== false
-    || !Array.isArray(data.proposals)
+function parseObjectRecordArray(value: unknown): Record<string, unknown>[] | null {
+  if (value === undefined) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    return null
+  }
+  const out: Record<string, unknown>[] = []
+  for (const item of value) {
+    if (!isRecord(item)) {
+      return null
+    }
+    out.push(item)
+  }
+  return out
+}
+
+export function parseSafetyConfirmedEntry(
+  value: unknown
+): DailyLearningSafetyConfirmedEntry | null {
+  if (!isRecord(value)) {
+    return null
+  }
+  const proposal_id = asUuid(value.proposal_id)
+  const confirmed_at = asString(value.confirmed_at)
+  const role = typeof value.role === 'string'
+    && OPERATOR_ROLES.has(value.role as DailyLearningOperatorRole)
+    ? (value.role as DailyLearningOperatorRole)
+    : null
+  if (!proposal_id || !confirmed_at || !role) {
+    return null
+  }
+  // confirmed_by is required uuid in schema but never shown — require presence only
+  if (asUuid(value.confirmed_by) === null) {
+    return null
+  }
+  return {
+    proposal_id,
+    role,
+    confirmed_at
+  }
+}
+
+function parseSafetyConfirmedList(value: unknown): DailyLearningSafetyConfirmedEntry[] | null {
+  if (value === undefined) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    return null
+  }
+  const out: DailyLearningSafetyConfirmedEntry[] = []
+  for (const item of value) {
+    const parsed = parseSafetyConfirmedEntry(item)
+    if (!parsed) {
+      return null
+    }
+    out.push(parsed)
+  }
+  return out
+}
+
+/** AdminWeightSetDailyLearning (#76) — top-level detail.daily_learning only. */
+export function parseAdminWeightSetDailyLearning(
+  data: unknown
+): AdminWeightSetDailyLearning | null {
+  if (!isRecord(data)) {
+    return null
+  }
+  if (!Array.isArray(data.proposals)
     || !Array.isArray(data.general_proposals)
     || !Array.isArray(data.safety_proposals)) {
     return null
   }
+
+  const dateRaw = asNullableString(data.date)
+  if (dateRaw === undefined && 'date' in data) {
+    return null
+  }
+  const sourceRaw = asNullableString(data.source_published_version)
+  if (sourceRaw === undefined && 'source_published_version' in data) {
+    return null
+  }
+  const confirmedAtRaw = asNullableString(data.confirmed_at)
+  if (confirmedAtRaw === undefined && 'confirmed_at' in data) {
+    return null
+  }
+  const confirmedByRaw = asNullableString(data.confirmed_by)
+  if (confirmedByRaw === undefined && 'confirmed_by' in data) {
+    return null
+  }
+  if (confirmedByRaw != null && asUuid(confirmedByRaw) === null) {
+    return null
+  }
+  const date = dateRaw === undefined ? null : dateRaw
+  const source_published_version = sourceRaw === undefined ? null : sourceRaw
+  const confirmed_at = confirmedAtRaw === undefined ? null : confirmedAtRaw
+  const confirmed_by = confirmedByRaw === undefined ? null : confirmedByRaw
 
   const proposals: DailyLearningRowProposal[] = []
   for (const row of data.proposals) {
@@ -558,15 +670,50 @@ function parseDailyLearningProposalLists(data: Record<string, unknown>): {
     safety_proposals.push(parsed)
   }
 
+  const confirmed = parseObjectRecordArray(data.confirmed)
+  const applied_general = parseObjectRecordArray(data.applied_general)
+  const safety_confirmed = parseSafetyConfirmedList(data.safety_confirmed)
+  if (!confirmed || !applied_general || !safety_confirmed) {
+    return null
+  }
+
   return {
     date,
+    source_published_version,
+    confirmed_at,
+    confirmed_by,
     proposals,
     general_proposals,
-    safety_proposals
+    safety_proposals,
+    confirmed,
+    applied_general,
+    safety_confirmed
   }
 }
 
-/** Parse draft API data; any invalid row／proposal fails the whole draft. */
+function toDraftResult(
+  weight_set: DailyLearningWeightSetSummary,
+  learning: AdminWeightSetDailyLearning
+): DailyLearningDraftResult {
+  return {
+    weight_set,
+    date: learning.date,
+    source_published_version: learning.source_published_version,
+    confirmed_at: learning.confirmed_at,
+    confirmed_by: learning.confirmed_by,
+    proposals: learning.proposals,
+    general_proposals: learning.general_proposals,
+    safety_proposals: learning.safety_proposals,
+    confirmed: learning.confirmed,
+    applied_general: learning.applied_general,
+    safety_confirmed: learning.safety_confirmed
+  }
+}
+
+/**
+ * Parse generate／confirm response data.
+ * `auto_published` may appear and is always false — ignored (not in page model).
+ */
 export function parseDailyLearningDraft(data: unknown): DailyLearningDraftResult | null {
   if (!isRecord(data)) {
     return null
@@ -575,29 +722,19 @@ export function parseDailyLearningDraft(data: unknown): DailyLearningDraftResult
   if (!weight_set) {
     return null
   }
-  const lists = parseDailyLearningProposalLists(data)
-  if (!lists) {
+  const learning = parseAdminWeightSetDailyLearning(data)
+  if (!learning) {
     return null
   }
-  return {
-    weight_set,
-    ...lists,
-    auto_published: false
-  }
+  return toDraftResult(weight_set, learning)
 }
 
-/**
- * Provisional (H-core): draft weight set with `daily_learning_pending: true`.
- * Also requires status === `draft`.
- */
+/** List row with `daily_learning_pending === true` (#76). */
 export function parsePendingDailyLearningListItem(
   value: unknown
 ): DailyLearningPendingListItem | null {
   const summary = parseWeightSetSummary(value)
-  if (!summary || summary.status !== 'draft' || !isRecord(value)) {
-    return null
-  }
-  if (value.daily_learning_pending !== true) {
+  if (!summary || !summary.daily_learning_pending) {
     return null
   }
   return {
@@ -620,8 +757,8 @@ export function filterPendingDailyLearningDrafts(
 }
 
 /**
- * Provisional (H-core): build draft view from GET /weight-sets/{id}
- * using top-level weight-set fields + `daily_learning` embed.
+ * Build draft view from GET /weight-sets/{id}:
+ * top-level `daily_learning` only (never config.daily_learning).
  */
 export function parseDailyLearningFromWeightSetDetail(
   data: unknown
@@ -630,18 +767,14 @@ export function parseDailyLearningFromWeightSetDetail(
     return null
   }
   const weight_set = parseWeightSetSummary(data)
-  if (!weight_set || !isRecord(data.daily_learning)) {
+  if (!weight_set || data.daily_learning == null) {
     return null
   }
-  const lists = parseDailyLearningProposalLists(data.daily_learning)
-  if (!lists) {
+  const learning = parseAdminWeightSetDailyLearning(data.daily_learning)
+  if (!learning) {
     return null
   }
-  return {
-    weight_set,
-    ...lists,
-    auto_published: false
-  }
+  return toDraftResult(weight_set, learning)
 }
 
 export function shortId(id: string) {

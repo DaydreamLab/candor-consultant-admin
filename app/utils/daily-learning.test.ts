@@ -24,6 +24,17 @@ const BIO = 'ffffffff-ffff-4fff-8fff-ffffffffffff'
 const CI = '12121212-1212-4121-8121-121212121212'
 const IX = '13131313-1313-4131-8131-131313131313'
 const ING_B = '14141414-1414-4141-8141-141414141414'
+const ACTOR = '16161616-1616-4161-8161-161616161616'
+
+const weightSetSummary = {
+  id: WS,
+  version: 'learning-2026-10-21',
+  status: 'draft',
+  label: '每日學習',
+  last_dry_run_passed: null,
+  is_daily_learning_draft: true,
+  daily_learning_pending: true
+}
 
 const baseWeight = {
   id: GP1,
@@ -67,13 +78,7 @@ const safetyContra = {
 describe('parseDailyLearningDraft (strict #75 141c24b)', () => {
   it('parses plain_language and display names', () => {
     const view = parseDailyLearningDraft({
-      weight_set: {
-        id: WS,
-        version: 'learning-2026-10-21',
-        status: 'draft',
-        label: '每日學習',
-        last_dry_run_passed: null
-      },
+      weight_set: weightSetSummary,
       date: '2026-10-21',
       proposals: [
         {
@@ -109,6 +114,8 @@ describe('parseDailyLearningDraft (strict #75 141c24b)', () => {
       kind: 'contraindication_exclude_to_warn',
       condition_name: '腎功能不全'
     })
+    expect(view).not.toHaveProperty('auto_published')
+    expect(view?.confirmed_at).toBeNull()
     expect(generalDirection(view!.general_proposals[0]!)).toBe('up')
     expect(generalTechnical(view!.general_proposals[0]!)).not.toHaveProperty('ingredient_id')
   })
@@ -211,25 +218,15 @@ describe('buildDailyLearningConfirmBody', () => {
   })
 })
 
-describe('pending list + detail daily_learning (provisional H-core)', () => {
-  const pendingRow = {
-    id: WS,
-    version: 'learning-2026-10-21',
-    status: 'draft',
-    label: '每日學習',
-    last_dry_run_passed: null,
-    daily_learning_pending: true
-  }
+describe('pending list + detail daily_learning (#76)', () => {
+  const pendingRow = { ...weightSetSummary }
 
-  it('filters only draft rows with daily_learning_pending', () => {
+  it('filters by daily_learning_pending only', () => {
     expect(parsePendingDailyLearningListItem(pendingRow)).toMatchObject({
       id: WS,
+      is_daily_learning_draft: true,
       daily_learning_pending: true
     })
-    expect(parsePendingDailyLearningListItem({
-      ...pendingRow,
-      status: 'published'
-    })).toBeNull()
     expect(parsePendingDailyLearningListItem({
       ...pendingRow,
       daily_learning_pending: false
@@ -241,15 +238,13 @@ describe('pending list + detail daily_learning (provisional H-core)', () => {
     ])).toHaveLength(1)
   })
 
-  it('builds draft view from weight-set detail.daily_learning', () => {
+  it('builds draft view from top-level detail.daily_learning (not config)', () => {
     const view = parseDailyLearningFromWeightSetDetail({
-      id: WS,
-      version: 'learning-2026-10-21',
-      status: 'draft',
-      label: '每日學習',
-      last_dry_run_passed: null,
+      ...weightSetSummary,
       daily_learning: {
         date: '2026-10-21',
+        confirmed_at: '2026-10-21T12:00:00Z',
+        confirmed_by: ACTOR,
         proposals: [
           {
             knowledge_id: K1,
@@ -269,20 +264,39 @@ describe('pending list + detail daily_learning (provisional H-core)', () => {
         ],
         general_proposals: [baseWeight],
         safety_proposals: [safetyContra],
-        auto_published: false
+        safety_confirmed: [
+          {
+            proposal_id: SP1,
+            confirmed_by: ACTOR,
+            role: 'ops',
+            confirmed_at: '2026-10-21T13:00:00Z'
+          }
+        ]
+      },
+      config: {
+        daily_learning: { date: 'should-ignore' }
       }
     })
     expect(view?.weight_set.id).toBe(WS)
     expect(view?.date).toBe('2026-10-21')
+    expect(view?.confirmed_at).toBe('2026-10-21T12:00:00Z')
+    expect(view?.safety_confirmed).toEqual([
+      {
+        proposal_id: SP1,
+        role: 'ops',
+        confirmed_at: '2026-10-21T13:00:00Z'
+      }
+    ])
     expect(view?.general_proposals[0]?.plain_language).toContain('鎂')
-    expect(view?.safety_proposals).toHaveLength(1)
   })
 
-  it('rejects detail without daily_learning', () => {
+  it('rejects detail without top-level daily_learning', () => {
     expect(parseDailyLearningFromWeightSetDetail({
-      id: WS,
-      version: 'learning-2026-10-21',
-      status: 'draft'
+      ...weightSetSummary,
+      daily_learning: null
+    })).toBeNull()
+    expect(parseDailyLearningFromWeightSetDetail({
+      ...weightSetSummary
     })).toBeNull()
   })
 })

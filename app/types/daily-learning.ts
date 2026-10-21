@@ -1,6 +1,6 @@
 /**
- * Strict types for candor-core #75 (head 141c24b) daily-learning schemas.
- * Discriminated unions by `kind`. Display names are required keys, nullable values.
+ * Strict types for candor-core #75 proposals + #76 weight-set daily_learning embed
+ * (head 79ed13b). Discriminated unions by `kind`. Display names required keys, nullable.
  */
 
 export type DailyLearningAdjustmentType = 'swap' | 'add' | 'remove' | 'dose_change'
@@ -21,6 +21,8 @@ export type DailyLearningPlainLanguageSource = 'ai' | 'template'
 export type DailyLearningDisplayName = string | null
 
 export type DailyLearningDecision = 'approve' | 'reject' | 'adjust'
+
+export type DailyLearningOperatorRole = 'expert' | 'ops' | 'admin'
 
 export type DailyLearningContextHit = {
   knowledge_id: string
@@ -167,41 +169,62 @@ export type DailyLearningRowProposal = {
   contraindication_changes: DailyLearningSafetyProposalContraindication[]
 }
 
+/** AdminWeightSetSummary / detail common fields (#76). */
 export type DailyLearningWeightSetSummary = {
   id: string
   version: string
   status: string
   label: string | null
+  published_at: string | null
   last_dry_run_passed: boolean | null
+  created_at: string | null
+  is_daily_learning_draft: boolean
+  daily_learning_pending: boolean
 }
 
-/**
- * Provisional list row (H-core schema pending).
- * List marker: `daily_learning_pending: true` on draft weight sets that still need confirm.
- */
+/** List candidates: `daily_learning_pending === true`. */
 export type DailyLearningPendingListItem = DailyLearningWeightSetSummary & {
   daily_learning_pending: true
 }
 
-export type DailyLearningDraftResult = {
-  weight_set: DailyLearningWeightSetSummary
-  date: string
-  proposals: DailyLearningRowProposal[]
-  general_proposals: DailyLearningGeneralProposal[]
-  safety_proposals: DailyLearningSafetyProposal[]
-  auto_published: false
+/** safety_confirmed[] item — never display confirmed_by UUID. */
+export type DailyLearningSafetyConfirmedEntry = {
+  proposal_id: string
+  role: DailyLearningOperatorRole
+  confirmed_at: string
 }
 
 /**
- * Provisional detail embed (H-core schema pending).
- * `GET /weight-sets/{id}.daily_learning` — same proposal payload as draft, without weight_set.
+ * AdminWeightSetDailyLearning (#76) — no auto_published.
+ * Embed on GET /weight-sets/{id} as top-level `daily_learning` (nullable).
  */
-export type DailyLearningDetailPayload = {
-  date: string
+export type AdminWeightSetDailyLearning = {
+  date: string | null
+  source_published_version: string | null
+  confirmed_at: string | null
+  /** UUID — do not show in UI. */
+  confirmed_by: string | null
   proposals: DailyLearningRowProposal[]
   general_proposals: DailyLearningGeneralProposal[]
   safety_proposals: DailyLearningSafetyProposal[]
-  auto_published: false
+  confirmed: Record<string, unknown>[]
+  applied_general: Record<string, unknown>[]
+  safety_confirmed: DailyLearningSafetyConfirmedEntry[]
+}
+
+/** Unified page model from generate response or detail.daily_learning. */
+export type DailyLearningDraftResult = {
+  weight_set: DailyLearningWeightSetSummary
+  date: string | null
+  source_published_version: string | null
+  confirmed_at: string | null
+  confirmed_by: string | null
+  proposals: DailyLearningRowProposal[]
+  general_proposals: DailyLearningGeneralProposal[]
+  safety_proposals: DailyLearningSafetyProposal[]
+  confirmed: Record<string, unknown>[]
+  applied_general: Record<string, unknown>[]
+  safety_confirmed: DailyLearningSafetyConfirmedEntry[]
 }
 
 export type DailyLearningStep

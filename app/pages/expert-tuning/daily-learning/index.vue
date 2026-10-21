@@ -287,6 +287,44 @@ async function refreshPendingDrafts() {
   }
 }
 
+function applyLoadedDraft(view: DailyLearningDraftResult) {
+  draft.value = view
+  dryRunGatePassed.value = null
+  dryRunSummary.value = ''
+  const nextSafety: Record<string, boolean> = {}
+  const nextExpand: Record<string, boolean> = {}
+  for (const proposal of view.safety_proposals) {
+    nextSafety[proposal.id] = false
+    nextExpand[proposal.id] = false
+  }
+  for (const entry of view.safety_confirmed) {
+    nextSafety[entry.proposal_id] = true
+    nextExpand[entry.proposal_id] = true
+  }
+  safetyApplied.value = nextSafety
+  safetyExpanded.value = nextExpand
+  step.value = view.confirmed_at ? 'general_confirmed' : 'drafted'
+}
+
+function safetyConfirmMeta(proposalId: string) {
+  return draft.value?.safety_confirmed.find(row => row.proposal_id === proposalId) ?? null
+}
+
+function formatConfirmAt(iso: string) {
+  const parsed = Date.parse(iso)
+  if (Number.isNaN(parsed)) {
+    return iso
+  }
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(parsed))
+  } catch {
+    return iso
+  }
+}
+
 async function loadSelectedDraft() {
   if (!canLoadDrafts.value) {
     return
@@ -302,16 +340,13 @@ async function loadSelectedDraft() {
   }
   busy.value = true
   errorMessage.value = ''
-  dryRunGatePassed.value = null
-  dryRunSummary.value = ''
   try {
     const data = await adminGetWeightSet(config.public.apiBase, token, id)
     const view = parseDailyLearningFromWeightSetDetail(data)
     if (!view) {
       throw new AdminApiError(500, t('expertTuning.dailyLearning.parseFailed'))
     }
-    draft.value = view
-    step.value = 'drafted'
+    applyLoadedDraft(view)
     feedback.notify({
       title: t('expertTuning.dailyLearning.loadOk'),
       color: 'success'
@@ -350,8 +385,7 @@ async function generateDraft() {
     if (!view) {
       throw new AdminApiError(500, t('expertTuning.dailyLearning.parseFailed'))
     }
-    draft.value = view
-    step.value = 'drafted'
+    applyLoadedDraft(view)
     selectedPendingId.value = view.weight_set.id
     feedback.notify({
       title: t('expertTuning.dailyLearning.draftOk'),
@@ -705,9 +739,18 @@ onMounted(() => {
       >
         {{ $t('expertTuning.dailyLearning.draftMeta', {
           version: draft.weight_set.version,
-          date: draft.date,
+          date: draft.date || '—',
           status: draft.weight_set.status
         }) }}
+        <span
+          v-if="draft.confirmed_at"
+          class="ms-2 text-success"
+          data-testid="daily-learning-general-confirmed"
+        >
+          · {{ $t('expertTuning.dailyLearning.generalConfirmed', {
+            at: formatConfirmAt(draft.confirmed_at)
+          }) }}
+        </span>
       </p>
     </section>
 
@@ -941,6 +984,16 @@ onMounted(() => {
                 class="mt-2 overflow-x-auto rounded-md bg-muted/40 p-2 text-xs text-muted"
               >{{ formatTechnicalJson(safetyTechnical(proposal)) }}</pre>
             </div>
+            <p
+              v-if="safetyConfirmMeta(proposal.id)"
+              class="text-xs text-success"
+              data-testid="daily-learning-safety-confirmed-meta"
+            >
+              {{ $t('expertTuning.dailyLearning.safetyConfirmedBy', {
+                role: $t(`roles.${safetyConfirmMeta(proposal.id)!.role}`),
+                at: formatConfirmAt(safetyConfirmMeta(proposal.id)!.confirmed_at)
+              }) }}
+            </p>
             <UButton
               color="warning"
               variant="soft"

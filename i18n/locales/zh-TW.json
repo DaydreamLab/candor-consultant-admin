@@ -460,6 +460,8 @@
       "dateLabel": "UTC 日期（可留空＝今天）",
       "generate": "產生草案",
       "draftMeta": "草案 {version} · 日期 {date} · 狀態 {status}",
+      "generalConfirmed": "已確認（{at}）",
+      "safetyConfirmedBy": "已由 {role} 於 {at} 確認",
       "draftOk": "已產生學習草案",
       "failed": "每日學習操作失敗，請稍後再試。",
       "parseFailed": "無法解析學習草案回應。",
