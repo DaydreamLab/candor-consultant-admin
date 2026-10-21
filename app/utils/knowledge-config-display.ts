@@ -97,12 +97,6 @@ export const KNOWLEDGE_CONFIG_FIELD_DEFS: KnowledgeConfigFieldDef[] = [
     section: 'corpus',
     labelKey: 'knowledge.config.fields.corpus.label',
     descKey: 'knowledge.config.fields.corpus.desc'
-  },
-  {
-    keys: ['allow_third_party_default', 'default_allow_third_party'],
-    section: 'service',
-    labelKey: 'knowledge.config.fields.allowThirdPartyDefault.label',
-    descKey: 'knowledge.config.fields.allowThirdPartyDefault.desc'
   }
 ]
 
