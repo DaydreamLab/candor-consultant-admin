@@ -383,6 +383,8 @@ function methodLabel(method: string) {
       </template>
     </section>
 
+    <PrivacyPolicySettings />
+
     <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
       <h2 class="text-base font-semibold text-highlighted">
         {{ $t('settings.biomarkerInterpretation.title') }}
