@@ -1097,6 +1097,19 @@
       "optionSandbox": "模擬發票 (sandbox)",
       "optionEzpay": "ezPay (ezpay)",
       "credentialsMissing": "伺服器尚未設定 ezPay 金鑰；選此項後開票會失敗，可於訂單詳情重試。"
+    },
+    "biomarkerInterpretation": {
+      "title": "報告判讀 LLM 上限",
+      "hint": "限制每次讀取會員報告判讀時，可觸發的 LLM 補齊次數。留空代表不限制（產品預設）。",
+      "loading": "讀取判讀設定…",
+      "loadFailed": "無法讀取報告判讀設定。",
+      "saveFailed": "無法儲存報告判讀設定。",
+      "fieldLabel": "每次讀取最多 LLM 次數",
+      "fieldHelp": "正整數會限制單次讀取內的 LLM backfill；清空即不限制。",
+      "unlimitedPlaceholder": "不限制",
+      "unlimitedNote": "預設為不限制。輸入 1 以上的整數可為每次讀取設定上限。",
+      "clearUnlimited": "改為不限制",
+      "invalid": "請輸入 1 以上的整數，或清空以表示不限制。"
     }
   },
   "actions": {

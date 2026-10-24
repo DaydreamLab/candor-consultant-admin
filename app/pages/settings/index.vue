@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import {
   AdminApiError,
+  adminGetBiomarkerInterpretationSettings,
   adminGetInvoiceSettings,
   adminGetPaymentSettings,
+  adminPatchBiomarkerInterpretationSettings,
   adminPatchInvoiceSettings,
   adminPatchPaymentSettings,
+  normalizeBiomarkerMaxLlmDraft,
+  type AdminBiomarkerInterpretationSettings,
   type AdminInvoiceSettings,
   type AdminPaymentSettings
 } from '~/utils/admin-api'
@@ -54,9 +58,39 @@ const showInvoiceCredentialsWarning = computed(
   () => invoiceDraft.value === 'ezpay' && invoice.value?.credentials_configured === false
 )
 
+const biomarkerInterpretation = ref<AdminBiomarkerInterpretationSettings | null>(null)
+const biomarkerMaxLlmDraft = ref('')
+const biomarkerPending = ref(true)
+const biomarkerSaving = ref(false)
+const biomarkerError = ref('')
+const biomarkerSaved = ref(false)
+const biomarkerValidationError = ref('')
+
+const biomarkerDraftNormalized = computed(() => normalizeBiomarkerMaxLlmDraft(biomarkerMaxLlmDraft.value))
+
+const biomarkerDirty = computed(() => {
+  if (biomarkerInterpretation.value === null) {
+    return false
+  }
+  const draft = biomarkerDraftNormalized.value
+  if (draft === 'invalid') {
+    return true
+  }
+  return draft !== biomarkerInterpretation.value.max_llm_calls_per_read
+})
+
+const biomarkerSaveDisabled = computed(
+  () =>
+    !canEditPayment.value
+    || biomarkerSaving.value
+    || !biomarkerDirty.value
+    || biomarkerDraftNormalized.value === 'invalid'
+)
+
 if (import.meta.client) {
   void loadPayment()
   void loadInvoice()
+  void loadBiomarkerInterpretation()
 }
 
 async function loadPayment() {
@@ -119,6 +153,66 @@ async function loadInvoice() {
   } finally {
     invoicePending.value = false
   }
+}
+
+async function loadBiomarkerInterpretation() {
+  const token = readOperatorToken()
+  if (!token) {
+    biomarkerError.value = t('settings.biomarkerInterpretation.loadFailed')
+    biomarkerPending.value = false
+    return
+  }
+  biomarkerPending.value = true
+  biomarkerError.value = ''
+  biomarkerSaved.value = false
+  biomarkerValidationError.value = ''
+  try {
+    biomarkerInterpretation.value = await adminGetBiomarkerInterpretationSettings(config.public.apiBase, token)
+    const max = biomarkerInterpretation.value.max_llm_calls_per_read
+    biomarkerMaxLlmDraft.value = max === null ? '' : String(max)
+  } catch (err) {
+    const message = err instanceof AdminApiError ? err.message.trim() : ''
+    biomarkerError.value = message || t('settings.biomarkerInterpretation.loadFailed')
+  } finally {
+    biomarkerPending.value = false
+  }
+}
+
+async function saveBiomarkerInterpretation() {
+  const token = readOperatorToken()
+  if (!token || biomarkerSaving.value || !canEditPayment.value || biomarkerSaveDisabled.value) {
+    return
+  }
+  const normalized = biomarkerDraftNormalized.value
+  if (normalized === 'invalid') {
+    biomarkerValidationError.value = t('settings.biomarkerInterpretation.invalid')
+    return
+  }
+  biomarkerSaving.value = true
+  biomarkerError.value = ''
+  biomarkerSaved.value = false
+  biomarkerValidationError.value = ''
+  try {
+    biomarkerInterpretation.value = await adminPatchBiomarkerInterpretationSettings(
+      config.public.apiBase,
+      token,
+      normalized
+    )
+    const max = biomarkerInterpretation.value.max_llm_calls_per_read
+    biomarkerMaxLlmDraft.value = max === null ? '' : String(max)
+    biomarkerSaved.value = true
+  } catch (err) {
+    const message = err instanceof AdminApiError ? err.message.trim() : ''
+    biomarkerError.value = message || t('settings.biomarkerInterpretation.saveFailed')
+  } finally {
+    biomarkerSaving.value = false
+  }
+}
+
+function clearBiomarkerMaxLlm() {
+  biomarkerMaxLlmDraft.value = ''
+  biomarkerValidationError.value = ''
+  biomarkerSaved.value = false
 }
 
 async function saveInvoice() {
@@ -281,6 +375,85 @@ function methodLabel(method: string) {
           </p>
           <p
             v-if="invoiceSaved"
+            class="text-sm text-success"
+          >
+            {{ $t('actions.saved') }}
+          </p>
+        </div>
+      </template>
+    </section>
+
+    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
+      <h2 class="text-base font-semibold text-highlighted">
+        {{ $t('settings.biomarkerInterpretation.title') }}
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        {{ $t('settings.biomarkerInterpretation.hint') }}
+      </p>
+      <p
+        v-if="biomarkerPending"
+        class="mt-4 text-sm text-muted"
+      >
+        {{ $t('settings.biomarkerInterpretation.loading') }}
+      </p>
+      <p
+        v-else-if="biomarkerError"
+        class="mt-4 text-sm text-error"
+      >
+        {{ biomarkerError }}
+      </p>
+      <template v-else-if="biomarkerInterpretation">
+        <UFormField
+          class="mt-4 max-w-xs"
+          :label="$t('settings.biomarkerInterpretation.fieldLabel')"
+          :help="$t('settings.biomarkerInterpretation.fieldHelp')"
+        >
+          <UInput
+            v-model="biomarkerMaxLlmDraft"
+            type="number"
+            min="1"
+            step="1"
+            :placeholder="$t('settings.biomarkerInterpretation.unlimitedPlaceholder')"
+            :disabled="!canEditPayment || biomarkerSaving"
+            @input="biomarkerValidationError = ''; biomarkerSaved = false"
+          />
+        </UFormField>
+        <p class="mt-2 text-sm text-muted">
+          {{ $t('settings.biomarkerInterpretation.unlimitedNote') }}
+        </p>
+        <p
+          v-if="biomarkerValidationError || biomarkerDraftNormalized === 'invalid'"
+          class="mt-2 text-sm text-error"
+        >
+          {{ biomarkerValidationError || $t('settings.biomarkerInterpretation.invalid') }}
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            :disabled="!canEditPayment || biomarkerSaving || !biomarkerMaxLlmDraft"
+            @click="clearBiomarkerMaxLlm"
+          >
+            {{ $t('settings.biomarkerInterpretation.clearUnlimited') }}
+          </UButton>
+          <UButton
+            color="primary"
+            size="sm"
+            :disabled="biomarkerSaveDisabled"
+            :loading="biomarkerSaving"
+            @click="saveBiomarkerInterpretation"
+          >
+            {{ $t('actions.save') }}
+          </UButton>
+          <p
+            v-if="!canEditPayment"
+            class="text-sm text-muted"
+          >
+            {{ $t('actions.readOnly') }}
+          </p>
+          <p
+            v-if="biomarkerSaved"
             class="text-sm text-success"
           >
             {{ $t('actions.saved') }}

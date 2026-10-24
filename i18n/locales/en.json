@@ -1097,6 +1097,19 @@
       "optionSandbox": "Sandbox invoice (sandbox)",
       "optionEzpay": "ezPay (ezpay)",
       "credentialsMissing": "ezPay credentials are not configured on the server. Issuing will fail; retry from the order detail."
+    },
+    "biomarkerInterpretation": {
+      "title": "Report interpretation LLM cap",
+      "hint": "Limits how many LLM backfill calls may run per admin read of a member health-report interpretation. Leave empty for unlimited (product default).",
+      "loading": "Loading interpretation settings…",
+      "loadFailed": "Could not load biomarker interpretation settings.",
+      "saveFailed": "Could not save biomarker interpretation settings.",
+      "fieldLabel": "Max LLM calls per read",
+      "fieldHelp": "A positive integer caps LLM backfill per read; clear the field for unlimited.",
+      "unlimitedPlaceholder": "Unlimited",
+      "unlimitedNote": "Unlimited is the default. Enter an integer ≥ 1 to cap each read.",
+      "clearUnlimited": "Set unlimited",
+      "invalid": "Enter an integer ≥ 1, or clear the field for unlimited."
     }
   },
   "actions": {
