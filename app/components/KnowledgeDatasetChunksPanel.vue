@@ -5,10 +5,10 @@ import { readOperatorToken } from '~/utils/operator-session'
 import { reviewStatusBadgeColor } from '~/utils/knowledge-labels'
 import {
   buildKnowledgeChunkListQuery,
-  KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY
+  KNOWLEDGE_CHUNK_DEFAULT_STATUS,
+  KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY,
+  KNOWLEDGE_CHUNK_PAGE_SIZE
 } from '~/utils/knowledge-chunks-query'
-
-const PAGE_SIZE = 10
 
 const props = defineProps<{
   datasetId: string
@@ -23,7 +23,9 @@ const localePath = useLocalePath()
 const rows = ref<KnowledgeChunk[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const filterStatus = ref<string>(FILTER_ANY)
+const filterStatus = ref<string>(KNOWLEDGE_CHUNK_DEFAULT_STATUS)
+const offset = ref(0)
+const hasMore = ref(false)
 let loadSeq = 0
 
 const statusOptions = computed(() => [
@@ -49,8 +51,6 @@ const scopedRows = computed(() => {
   })
 })
 
-const { page, pageSize, rows: pagedRows, total, from, to } = usePager(scopedRows, PAGE_SIZE)
-
 const showClientScopeHint = computed(() => {
   return Boolean(props.datasetId) && !props.groupKey?.trim()
 })
@@ -59,39 +59,51 @@ onMounted(() => {
   watch(
     () => [props.datasetId, props.groupKey, filterStatus.value] as const,
     () => {
-      page.value = 1
-      void load()
+      void load(true)
     },
     { immediate: true }
   )
 })
 
-async function load() {
+async function load(reset: boolean) {
   const seq = ++loadSeq
   const token = readOperatorToken()
   if (!token || !props.datasetId) {
     rows.value = []
+    hasMore.value = false
     errorMessage.value = props.datasetId ? t('knowledge.datasets.detail.chunksLoadFailed') : ''
     pending.value = false
     return
+  }
+  if (reset) {
+    offset.value = 0
+    rows.value = []
+    hasMore.value = false
   }
   pending.value = true
   errorMessage.value = ''
   const query = buildKnowledgeChunkListQuery({
     group: props.groupKey,
-    filterStatus: filterStatus.value
+    filterStatus: filterStatus.value,
+    limit: KNOWLEDGE_CHUNK_PAGE_SIZE,
+    offset: offset.value
   })
   try {
     const list = await adminListKnowledgeChunks(config.public.apiBase, token, query)
     if (seq !== loadSeq) {
       return
     }
-    rows.value = list
+    rows.value = reset ? list : [...rows.value, ...list]
+    hasMore.value = list.length >= KNOWLEDGE_CHUNK_PAGE_SIZE
+    offset.value += list.length
   } catch (error) {
     if (seq !== loadSeq) {
       return
     }
-    rows.value = []
+    if (reset) {
+      rows.value = []
+      hasMore.value = false
+    }
     errorMessage.value = error instanceof AdminApiError && error.message
       ? error.message
       : t('knowledge.datasets.detail.chunksLoadFailed')
@@ -100,6 +112,13 @@ async function load() {
       pending.value = false
     }
   }
+}
+
+function loadMore() {
+  if (pending.value || !hasMore.value) {
+    return
+  }
+  void load(false)
 }
 
 function statusLabel(status: KnowledgeReviewStatus | '') {
@@ -147,13 +166,13 @@ function isSummary(row: KnowledgeChunk) {
     />
 
     <p
-      v-if="pending"
+      v-if="pending && !rows.length"
       class="text-sm text-muted"
     >
       {{ $t('knowledge.chunks.loading') }}
     </p>
     <p
-      v-else-if="errorMessage"
+      v-else-if="errorMessage && !rows.length"
       class="text-sm text-error"
     >
       {{ errorMessage }}
@@ -165,11 +184,11 @@ function isSummary(row: KnowledgeChunk) {
     />
     <template v-else>
       <p class="mb-3 text-xs text-muted">
-        {{ $t('knowledge.datasets.detail.chunksShowing', { filtered: total, loaded: scopedRows.length }) }}
+        {{ $t('knowledge.datasets.detail.chunksShowing', { filtered: scopedRows.length, loaded: rows.length }) }}
       </p>
       <div class="space-y-3">
         <article
-          v-for="row in pagedRows"
+          v-for="row in scopedRows"
           :key="row.id"
           class="rounded-lg border border-default bg-elevated p-4"
         >
@@ -200,6 +219,28 @@ function isSummary(row: KnowledgeChunk) {
           <p class="mt-2 text-sm whitespace-pre-wrap text-default">
             {{ row.text_preview || '—' }}
           </p>
+          <p
+            v-if="row.source_url || row.license"
+            class="mt-2 text-xs"
+          >
+            <a
+              v-if="row.source_url"
+              :href="row.source_url"
+              class="text-primary underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >{{ $t('knowledge.chunks.sourceLink') }}</a>
+            <span
+              v-if="row.license"
+              class="text-muted"
+            >{{ row.source_url ? ' · ' : '' }}{{ row.license }}</span>
+          </p>
+          <p
+            v-if="row.attribution"
+            class="mt-1 text-xs text-muted"
+          >
+            {{ row.attribution }}
+          </p>
           <UButton
             :to="localePath(`/knowledge/audit/chunks/${row.id}`)"
             variant="link"
@@ -210,13 +251,19 @@ function isSummary(row: KnowledgeChunk) {
           </UButton>
         </article>
       </div>
-      <ListPager
-        v-model:page="page"
-        :page-size="pageSize"
-        :total="total"
-        :from="from"
-        :to="to"
-      />
+      <div
+        v-if="hasMore"
+        class="mt-4 flex justify-center"
+      >
+        <UButton
+          variant="outline"
+          size="sm"
+          :loading="pending"
+          @click="loadMore"
+        >
+          {{ $t('knowledge.chunks.loadMore') }}
+        </UButton>
+      </div>
     </template>
   </UCard>
 </template>

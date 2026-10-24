@@ -1411,6 +1411,7 @@
       "filterStatus": "Review status",
       "summaryDerived": "Summary (derived)",
       "sourceLink": "Source",
+      "loadMore": "Load more",
       "approve": "Approve",
       "reject": "Reject",
       "approveFailed": "Approve failed.",
