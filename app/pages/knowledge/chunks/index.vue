@@ -11,7 +11,9 @@ import { useKnowledgeDatasetGroupFilter } from '~/composables/useKnowledgeDatase
 import { reviewStatusBadgeColor } from '~/utils/knowledge-labels'
 import {
   buildKnowledgeChunkListQuery,
-  KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY
+  KNOWLEDGE_CHUNK_DEFAULT_STATUS,
+  KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY,
+  KNOWLEDGE_CHUNK_PAGE_SIZE
 } from '~/utils/knowledge-chunks-query'
 import { canReviewKnowledgeChunks } from '~/utils/knowledge-access'
 
@@ -24,12 +26,14 @@ const { filterGroup, groupSelectItems, groupQueryValue, groupsError } = useKnowl
 const rows = ref<KnowledgeChunk[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const filterStatus = ref<string>(FILTER_ANY)
+const filterStatus = ref<string>(KNOWLEDGE_CHUNK_DEFAULT_STATUS)
 const actionError = ref('')
 const actingId = ref<string | null>(null)
 const rejectOpen = ref(false)
 const rejectTarget = ref<KnowledgeChunk | null>(null)
 const rejectReason = ref('')
+const offset = ref(0)
+const hasMore = ref(false)
 let loadSeq = 0
 
 const statusOptions = computed(() => [
@@ -53,36 +57,49 @@ const reviewRoleHint = computed(() => {
 
 onMounted(() => {
   watch([filterGroup, filterStatus], () => {
-    void load()
+    void load(true)
   }, { immediate: true })
 })
 
-async function load() {
+async function load(reset: boolean) {
   const seq = ++loadSeq
   const token = readOperatorToken()
   if (!token) {
     rows.value = []
+    hasMore.value = false
     errorMessage.value = t('knowledge.chunks.failed')
     pending.value = false
     return
+  }
+  if (reset) {
+    offset.value = 0
+    rows.value = []
+    hasMore.value = false
   }
   pending.value = true
   errorMessage.value = ''
   try {
     const query = buildKnowledgeChunkListQuery({
       group: groupQueryValue.value,
-      filterStatus: filterStatus.value
+      filterStatus: filterStatus.value,
+      limit: KNOWLEDGE_CHUNK_PAGE_SIZE,
+      offset: offset.value
     })
     const list = await adminListKnowledgeChunks(config.public.apiBase, token, query)
     if (seq !== loadSeq) {
       return
     }
-    rows.value = list
+    rows.value = reset ? list : [...rows.value, ...list]
+    hasMore.value = list.length >= KNOWLEDGE_CHUNK_PAGE_SIZE
+    offset.value += list.length
   } catch (error) {
     if (seq !== loadSeq) {
       return
     }
-    rows.value = []
+    if (reset) {
+      rows.value = []
+      hasMore.value = false
+    }
     errorMessage.value = error instanceof AdminApiError && error.message
       ? error.message
       : t('knowledge.chunks.failed')
@@ -91,6 +108,13 @@ async function load() {
       pending.value = false
     }
   }
+}
+
+function loadMore() {
+  if (pending.value || !hasMore.value) {
+    return
+  }
+  void load(false)
 }
 
 function statusLabel(status: KnowledgeReviewStatus | '') {
@@ -211,13 +235,13 @@ async function confirmReject() {
     </p>
 
     <p
-      v-if="pending"
+      v-if="pending && !rows.length"
       class="text-sm text-muted"
     >
       {{ $t('knowledge.chunks.loading') }}
     </p>
     <p
-      v-else-if="errorMessage"
+      v-else-if="errorMessage && !rows.length"
       class="text-sm text-error"
     >
       {{ errorMessage }}
@@ -227,102 +251,114 @@ async function confirmReject() {
       :title="$t('knowledge.chunks.emptyTitle')"
       :description="$t('knowledge.chunks.empty')"
     />
-    <div
-      v-else
-      class="space-y-3"
-    >
-      <UCard
-        v-for="row in rows"
-        :key="row.id"
-        class="bg-elevated"
-      >
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="min-w-0 flex-1 space-y-2">
-            <p class="font-mono text-xs text-muted">
-              {{ $t('knowledge.chunks.chunkId') }}: {{ row.id }}
-            </p>
-            <div class="flex flex-wrap items-center gap-2">
-              <UBadge
-                size="sm"
-                variant="soft"
-                :color="reviewStatusBadgeColor(row.review_status)"
+    <template v-else>
+      <div class="space-y-3">
+        <UCard
+          v-for="row in rows"
+          :key="row.id"
+          class="bg-elevated"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 flex-1 space-y-2">
+              <p class="font-mono text-xs text-muted">
+                {{ $t('knowledge.chunks.chunkId') }}: {{ row.id }}
+              </p>
+              <div class="flex flex-wrap items-center gap-2">
+                <UBadge
+                  size="sm"
+                  variant="soft"
+                  :color="reviewStatusBadgeColor(row.review_status)"
+                >
+                  {{ statusLabel(row.review_status) }}
+                </UBadge>
+                <span
+                  v-if="isSummary(row)"
+                  class="text-xs text-muted"
+                >
+                  {{ $t('knowledge.chunks.summaryDerived') }}
+                </span>
+              </div>
+              <p
+                v-if="row.reject_reason"
+                class="text-xs text-warning"
               >
-                {{ statusLabel(row.review_status) }}
-              </UBadge>
-              <span
-                v-if="isSummary(row)"
+                {{ $t('knowledge.chunks.rejectReasonStored') }}: {{ row.reject_reason }}
+              </p>
+              <p class="text-sm font-medium">
+                {{ row.document_title || row.dataset_name || row.dataset_code || '—' }}
+              </p>
+              <p class="text-sm text-muted whitespace-pre-wrap">
+                {{ row.text_preview || '—' }}
+              </p>
+              <p
+                v-if="row.source_url || row.license"
+                class="text-xs"
+              >
+                <a
+                  v-if="row.source_url"
+                  :href="row.source_url"
+                  class="text-primary underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >{{ $t('knowledge.chunks.sourceLink') }}</a>
+                <span
+                  v-if="row.license"
+                  class="text-muted"
+                >{{ row.source_url ? ' · ' : '' }}{{ row.license }}</span>
+              </p>
+              <p
+                v-if="row.attribution"
                 class="text-xs text-muted"
               >
-                {{ $t('knowledge.chunks.summaryDerived') }}
-              </span>
+                {{ row.attribution }}
+              </p>
+              <UButton
+                :to="localePath(`/knowledge/audit/chunks/${row.id}`)"
+                variant="link"
+                size="xs"
+                class="px-0"
+              >
+                {{ $t('knowledge.audit.viewChunkAudit') }}
+              </UButton>
             </div>
-            <p
-              v-if="row.reject_reason"
-              class="text-xs text-warning"
+            <div
+              v-if="canReview && row.review_status === 'pending'"
+              class="flex shrink-0 flex-col items-end gap-2"
             >
-              {{ $t('knowledge.chunks.rejectReasonStored') }}: {{ row.reject_reason }}
-            </p>
-            <p class="text-sm font-medium">
-              {{ row.document_title || row.dataset_name || row.dataset_code || '—' }}
-            </p>
-            <p class="text-sm text-muted whitespace-pre-wrap">
-              {{ row.text_preview || '—' }}
-            </p>
-            <p
-              v-if="row.source_url"
-              class="text-xs"
-            >
-              <a
-                :href="row.source_url"
-                class="text-primary underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >{{ $t('knowledge.chunks.sourceLink') }}</a>
-              <span
-                v-if="row.license"
-                class="text-muted"
-              > · {{ row.license }}</span>
-            </p>
-            <p
-              v-if="row.attribution"
-              class="text-xs text-muted"
-            >
-              {{ row.attribution }}
-            </p>
-            <UButton
-              :to="localePath(`/knowledge/audit/chunks/${row.id}`)"
-              variant="link"
-              size="xs"
-              class="px-0"
-            >
-              {{ $t('knowledge.audit.viewChunkAudit') }}
-            </UButton>
+              <UButton
+                size="sm"
+                color="primary"
+                :loading="actingId === row.id"
+                @click="approve(row)"
+              >
+                {{ $t('knowledge.chunks.approve') }}
+              </UButton>
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="outline"
+                :disabled="actingId === row.id"
+                @click="openReject(row)"
+              >
+                {{ $t('knowledge.chunks.reject') }}
+              </UButton>
+            </div>
           </div>
-          <div
-            v-if="canReview && row.review_status === 'pending'"
-            class="flex shrink-0 flex-col items-end gap-2"
-          >
-            <UButton
-              size="sm"
-              color="primary"
-              :loading="actingId === row.id"
-              @click="approve(row)"
-            >
-              {{ $t('knowledge.chunks.approve') }}
-            </UButton>
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="outline"
-              :disabled="actingId === row.id"
-              @click="openReject(row)"
-            >
-              {{ $t('knowledge.chunks.reject') }}
-            </UButton>
-          </div>
-        </div>
-      </UCard>
-    </div>
+        </UCard>
+      </div>
+      <div
+        v-if="hasMore"
+        class="mt-4 flex justify-center"
+      >
+        <UButton
+          variant="outline"
+          :loading="pending"
+          @click="loadMore"
+        >
+          {{ $t('knowledge.chunks.loadMore') }}
+        </UButton>
+      </div>
+    </template>
 
     <UModal v-model:open="rejectOpen">
       <template #content>

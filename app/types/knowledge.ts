@@ -58,6 +58,13 @@ export type KnowledgeChunkListQuery = {
   group?: string
   /** Backend query `status` (review_status values). Invalid values → 422. */
   status?: KnowledgeReviewStatus
+  /** Page size; core default 50. Always send from UI (do not use a fake huge limit). */
+  limit?: number
+  /**
+   * Skip N rows. Core may ignore until offset lands — still send it;
+   * UI uses batch length vs limit for hasMore.
+   */
+  offset?: number
 }
 
 export type KnowledgeRetrievalMode = 'keyword' | 'vector' | 'hybrid'

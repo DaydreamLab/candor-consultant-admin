@@ -1,8 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, ref, toValue } from 'vue'
 import KnowledgeDatasetChunksPanel from './KnowledgeDatasetChunksPanel.vue'
 import type { KnowledgeChunk } from '~/types/knowledge'
+import { KNOWLEDGE_CHUNK_PAGE_SIZE } from '~/utils/knowledge-chunks-query'
 
 const listMock = vi.fn()
 
@@ -29,19 +29,6 @@ vi.stubGlobal('useRuntimeConfig', () => ({
   public: { apiBase: 'https://api.example' }
 }))
 vi.stubGlobal('useLocalePath', () => (path: string) => path)
-vi.stubGlobal('toValue', toValue)
-vi.stubGlobal('usePager', (source: unknown, pageSize = 10) => {
-  const page = ref(1)
-  const all = computed(() => toValue(source as never) as KnowledgeChunk[])
-  const total = computed(() => all.value.length)
-  const rows = computed(() => {
-    const start = (page.value - 1) * pageSize
-    return all.value.slice(start, start + pageSize)
-  })
-  const from = computed(() => (total.value ? (page.value - 1) * pageSize + 1 : 0))
-  const to = computed(() => Math.min(page.value * pageSize, total.value))
-  return { page, pageSize, rows, total, from, to }
-})
 
 const stub = { template: '<div><slot /><slot name="header" /></div>' }
 
@@ -50,7 +37,10 @@ const approvedChunk: KnowledgeChunk = {
   review_status: 'approved',
   dataset_id: 'ds-1',
   dataset_code: 'FDA',
-  text_preview: 'approved text'
+  text_preview: 'approved text',
+  source_url: 'https://example.com/approved',
+  license: 'ODL',
+  attribution: 'FDA'
 }
 
 const pendingChunks: KnowledgeChunk[] = [
@@ -59,7 +49,10 @@ const pendingChunks: KnowledgeChunk[] = [
     review_status: 'pending',
     dataset_id: 'ds-1',
     dataset_code: 'FDA',
-    text_preview: 'pending one'
+    text_preview: 'pending one',
+    source_url: 'https://example.com/p1',
+    license: 'CC-BY',
+    attribution: 'Source A'
   },
   {
     id: 'c-pending-2',
@@ -84,11 +77,14 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
       if (query.status === 'pending') {
         return pendingChunks
       }
-      return [approvedChunk]
+      if (!query.status) {
+        return [approvedChunk]
+      }
+      return []
     })
   })
 
-  it('reloads with status when the filter changes and shows API pending rows', async () => {
+  it('defaults to pending and requests limit + offset', async () => {
     const wrapper = mount(KnowledgeDatasetChunksPanel, {
       props: {
         datasetId: 'ds-1',
@@ -110,38 +106,119 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
           },
           UAlert: true,
           UBadge: true,
-          UButton: true,
+          UButton: {
+            props: ['loading'],
+            emits: ['click'],
+            template: '<button type="button" @click="$emit(\'click\')"><slot /></button>'
+          },
           EmptyPanel: {
             props: ['title', 'description'],
             template: '<div class="empty" :data-title="title" :data-description="description" />'
-          },
-          ListPager: true
+          }
         }
       }
     })
 
     await flushPromises()
     expect(listMock).toHaveBeenCalledTimes(1)
-    expect(listMock.mock.calls[0]?.[2]).toEqual({ group: 'fda' })
-    expect(wrapper.text()).toContain('approved text')
+    expect(listMock.mock.calls[0]?.[2]).toEqual({
+      group: 'fda',
+      status: 'pending',
+      limit: KNOWLEDGE_CHUNK_PAGE_SIZE,
+      offset: 0
+    })
+    expect(wrapper.text()).toContain('pending one')
+    expect(wrapper.text()).toContain('knowledge.chunks.sourceLink')
+    expect(wrapper.text()).toContain('CC-BY')
+    expect(wrapper.text()).toContain('Source A')
+    expect(wrapper.text()).not.toContain('approved text')
 
-    await wrapper.find('select').setValue('pending')
+    await wrapper.find('select').setValue('all')
     await flushPromises()
 
     expect(listMock).toHaveBeenCalledTimes(2)
-    expect(listMock.mock.calls[1]?.[2]).toEqual({ group: 'fda', status: 'pending' })
-    expect(wrapper.text()).toContain('pending one')
-    expect(wrapper.text()).toContain('pending three')
-    expect(wrapper.text()).not.toContain('approved text')
+    expect(listMock.mock.calls[1]?.[2]).toEqual({
+      group: 'fda',
+      limit: KNOWLEDGE_CHUNK_PAGE_SIZE,
+      offset: 0
+    })
+    expect(wrapper.text()).toContain('approved text')
+  })
+
+  it('loads more with the next API offset', async () => {
+    const firstPage = Array.from({ length: KNOWLEDGE_CHUNK_PAGE_SIZE }, (_, i) => ({
+      id: `c-pending-${i}`,
+      review_status: 'pending' as const,
+      dataset_id: 'ds-1',
+      dataset_code: 'FDA',
+      text_preview: `pending page1 ${i}`
+    }))
+    const secondPage: KnowledgeChunk[] = [
+      {
+        id: 'c-pending-next',
+        review_status: 'pending',
+        dataset_id: 'ds-1',
+        dataset_code: 'FDA',
+        text_preview: 'pending page2'
+      }
+    ]
+    listMock
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(secondPage)
+
+    const wrapper = mount(KnowledgeDatasetChunksPanel, {
+      props: {
+        datasetId: 'ds-1',
+        datasetCode: 'FDA',
+        groupKey: 'fda'
+      },
+      global: {
+        mocks: {
+          $t: (key: string) => key
+        },
+        stubs: {
+          UCard: stub,
+          UFormField: stub,
+          USelect: {
+            props: ['modelValue', 'items'],
+            emits: ['update:modelValue'],
+            template:
+              '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="item in items" :key="item.value" :value="item.value">{{ item.label }}</option></select>'
+          },
+          UAlert: true,
+          UBadge: true,
+          UButton: {
+            props: ['loading'],
+            emits: ['click'],
+            template: '<button type="button" @click="$emit(\'click\')"><slot /></button>'
+          },
+          EmptyPanel: true
+        }
+      }
+    })
+
+    await flushPromises()
+    expect(wrapper.text()).toContain('pending page1 0')
+    expect(wrapper.text()).toContain('knowledge.chunks.loadMore')
+
+    const buttons = wrapper.findAll('button')
+    const loadMore = buttons.find(btn => btn.text().includes('knowledge.chunks.loadMore'))
+    expect(loadMore).toBeTruthy()
+    await loadMore!.trigger('click')
+    await flushPromises()
+
+    expect(listMock).toHaveBeenCalledTimes(2)
+    expect(listMock.mock.calls[1]?.[2]).toEqual({
+      group: 'fda',
+      status: 'pending',
+      limit: KNOWLEDGE_CHUNK_PAGE_SIZE,
+      offset: KNOWLEDGE_CHUNK_PAGE_SIZE
+    })
+    expect(wrapper.text()).toContain('pending page2')
   })
 
   it('shows generic empty copy when status=pending returns no rows', async () => {
-    listMock.mockImplementation(async (_base: string, _token: string, query: { status?: string } = {}) => {
-      if (query.status === 'pending') {
-        return []
-      }
-      return [approvedChunk]
-    })
+    listMock.mockResolvedValue([])
 
     const wrapper = mount(KnowledgeDatasetChunksPanel, {
       props: {
@@ -168,14 +245,11 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
           EmptyPanel: {
             props: ['title', 'description'],
             template: '<div class="empty" :data-title="title" :data-description="description" />'
-          },
-          ListPager: true
+          }
         }
       }
     })
 
-    await flushPromises()
-    await wrapper.find('select').setValue('pending')
     await flushPromises()
 
     const empty = wrapper.find('.empty')

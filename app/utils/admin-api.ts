@@ -2181,12 +2181,18 @@ function compactKnowledgeAuditQuery(query: KnowledgeAuditListQuery) {
 
 /** Exported for unit tests — keeps list query keys aligned with core admin chunks API. */
 export function compactKnowledgeChunkQuery(query: KnowledgeChunkListQuery) {
-  const params: Record<string, string> = {}
+  const params: Record<string, string | number> = {}
   if (typeof query.group === 'string' && query.group.trim()) {
     params.group = query.group.trim()
   }
   if (typeof query.status === 'string' && query.status.trim()) {
     params.status = query.status.trim()
+  }
+  if (typeof query.limit === 'number' && Number.isFinite(query.limit) && query.limit > 0) {
+    params.limit = query.limit
+  }
+  if (typeof query.offset === 'number' && Number.isFinite(query.offset) && query.offset >= 0) {
+    params.offset = query.offset
   }
   return params
 }

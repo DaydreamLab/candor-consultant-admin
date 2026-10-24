@@ -1411,6 +1411,7 @@
       "filterStatus": "審核狀態",
       "summaryDerived": "摘要（衍生）",
       "sourceLink": "來源",
+      "loadMore": "載入更多",
       "approve": "核可",
       "reject": "退回",
       "approveFailed": "核可失敗。",
