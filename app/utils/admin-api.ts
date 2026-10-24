@@ -924,6 +924,93 @@ export async function adminPatchInvoiceSettings(
   }
 }
 
+export type AdminBiomarkerInterpretationSettings = {
+  max_llm_calls_per_read: number | null
+  updated_at: string | null
+}
+
+function parseMaxLlmCallsPerRead(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (value === '' || value === 0) {
+    return null
+  }
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 1) {
+    return value
+  }
+  return null
+}
+
+function parseBiomarkerInterpretationSettings(data: Record<string, unknown>): AdminBiomarkerInterpretationSettings {
+  return {
+    max_llm_calls_per_read: parseMaxLlmCallsPerRead(data.max_llm_calls_per_read),
+    updated_at: typeof data.updated_at === 'string' ? data.updated_at : null
+  }
+}
+
+export function normalizeBiomarkerMaxLlmDraft(draft: string): number | null | 'invalid' {
+  const trimmed = draft.trim()
+  if (!trimmed) {
+    return null
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return 'invalid'
+  }
+  const parsed = Number.parseInt(trimmed, 10)
+  if (parsed < 1) {
+    return null
+  }
+  return parsed
+}
+
+export async function adminGetBiomarkerInterpretationSettings(
+  apiBase: string,
+  token: string
+): Promise<AdminBiomarkerInterpretationSettings> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/biomarker-interpretation-settings'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseBiomarkerInterpretationSettings(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminPatchBiomarkerInterpretationSettings(
+  apiBase: string,
+  token: string,
+  maxLlmCallsPerRead: number | null
+): Promise<AdminBiomarkerInterpretationSettings> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/biomarker-interpretation-settings'), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: { max_llm_calls_per_read: maxLlmCallsPerRead }
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return parseBiomarkerInterpretationSettings(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminRefundOrder(apiBase: string, token: string, id: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/order/${encodeURIComponent(id)}/refund`), {
