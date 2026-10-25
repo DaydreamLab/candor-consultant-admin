@@ -42,10 +42,10 @@ function rowClass(kind: string) {
     </p>
     <div
       v-else
-      class="overflow-x-auto rounded-lg border border-default"
+      class="w-full min-w-0 overflow-x-auto rounded-lg border border-default"
       data-testid="privacy-policy-diff"
     >
-      <div class="grid min-w-[40rem] grid-cols-2 divide-x divide-default text-xs sm:text-sm">
+      <div class="grid w-full min-w-[40rem] grid-cols-2 divide-x divide-default text-xs sm:text-sm">
         <div class="sticky top-0 z-10 border-b border-default bg-elevated px-3 py-2 font-medium text-highlighted">
           {{ leftLabel }}
         </div>

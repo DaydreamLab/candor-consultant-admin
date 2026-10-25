@@ -249,11 +249,12 @@ async function save() {
       </p>
 
       <UFormField
-        class="mt-4"
+        class="mt-4 w-full"
         :label="$t('settings.privacy.fieldTitle')"
       >
         <UInput
           v-model="titleDraft"
+          class="w-full"
           :disabled="!canEdit || saving"
           data-testid="privacy-policy-title"
           @input="saved = false; forbiddenSave = false"
@@ -261,16 +262,17 @@ async function save() {
       </UFormField>
 
       <UFormField
-        class="mt-4"
+        class="mt-4 w-full"
         :label="$t('settings.privacy.fieldBody')"
         :help="$t('settings.privacy.fieldBodyHelp')"
       >
         <UTextarea
           v-model="bodyDraft"
-          :rows="14"
+          :rows="16"
           :disabled="!canEdit || saving"
           autoresize
-          class="font-mono text-sm"
+          class="w-full font-mono text-sm"
+          :ui="{ base: 'w-full' }"
           data-testid="privacy-policy-body"
           @input="saved = false; forbiddenSave = false"
         />
@@ -339,10 +341,14 @@ async function save() {
         {{ versionsError }}
       </p>
       <template v-else-if="versions.length">
-        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-          <UFormField :label="$t('settings.privacy.diffLeft')">
+        <div class="mt-4 grid w-full gap-3 sm:grid-cols-2">
+          <UFormField
+            class="w-full"
+            :label="$t('settings.privacy.diffLeft')"
+          >
             <USelect
               v-model="leftVersion"
+              class="w-full"
               :items="versionItems"
               value-key="value"
               label-key="label"
@@ -350,9 +356,13 @@ async function save() {
               @update:model-value="onVersionChange"
             />
           </UFormField>
-          <UFormField :label="$t('settings.privacy.diffRight')">
+          <UFormField
+            class="w-full"
+            :label="$t('settings.privacy.diffRight')"
+          >
             <USelect
               v-model="rightVersion"
+              class="w-full"
               :items="versionItems"
               value-key="value"
               label-key="label"
@@ -361,7 +371,7 @@ async function save() {
             />
           </UFormField>
         </div>
-        <div class="mt-4">
+        <div class="mt-4 w-full min-w-0">
           <PrivacyPolicyDiff
             :left-label="leftLabel"
             :right-label="rightLabel"
