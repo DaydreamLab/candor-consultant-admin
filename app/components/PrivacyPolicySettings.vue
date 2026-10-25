@@ -248,24 +248,23 @@ async function save() {
         }) }}
       </p>
 
-      <UFormField
-        class="mt-4 w-full"
-        :label="$t('settings.privacy.fieldTitle')"
-      >
-        <UInput
-          v-model="titleDraft"
-          class="w-full"
-          :disabled="!canEdit || saving"
-          data-testid="privacy-policy-title"
-          @input="saved = false; forbiddenSave = false"
-        />
-      </UFormField>
-
       <div
         class="mt-4 grid h-[min(36rem,70vh)] w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-default"
         data-testid="privacy-policy-editor-split"
       >
-        <div class="flex min-h-0 min-w-0 flex-col lg:pe-4">
+        <div class="flex min-h-0 min-w-0 flex-col gap-3 lg:pe-4">
+          <UFormField
+            class="w-full shrink-0"
+            :label="$t('settings.privacy.fieldTitle')"
+          >
+            <UInput
+              v-model="titleDraft"
+              class="w-full"
+              :disabled="!canEdit || saving"
+              data-testid="privacy-policy-title"
+              @input="saved = false; forbiddenSave = false"
+            />
+          </UFormField>
           <UFormField
             class="flex min-h-0 w-full flex-1 flex-col"
             :label="$t('settings.privacy.fieldBody')"
