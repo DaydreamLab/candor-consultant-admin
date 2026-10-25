@@ -261,22 +261,45 @@ async function save() {
         />
       </UFormField>
 
-      <UFormField
-        class="mt-4 w-full"
-        :label="$t('settings.privacy.fieldBody')"
-        :help="$t('settings.privacy.fieldBodyHelp')"
+      <div
+        class="mt-4 grid h-[min(36rem,70vh)] w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-default"
+        data-testid="privacy-policy-editor-split"
       >
-        <UTextarea
-          v-model="bodyDraft"
-          :rows="16"
-          :disabled="!canEdit || saving"
-          autoresize
-          class="w-full font-mono text-sm"
-          :ui="{ base: 'w-full' }"
-          data-testid="privacy-policy-body"
-          @input="saved = false; forbiddenSave = false"
-        />
-      </UFormField>
+        <div class="flex min-h-0 min-w-0 flex-col lg:pe-4">
+          <UFormField
+            class="flex min-h-0 w-full flex-1 flex-col"
+            :label="$t('settings.privacy.fieldBody')"
+            :help="$t('settings.privacy.fieldBodyHelp')"
+            :ui="{ container: 'flex-1 min-h-0 flex flex-col' }"
+          >
+            <textarea
+              v-model="bodyDraft"
+              rows="18"
+              class="min-h-0 w-full flex-1 resize-none overflow-y-auto rounded-md border border-default bg-default px-3 py-2 font-mono text-sm text-highlighted outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-75"
+              :disabled="!canEdit || saving"
+              data-testid="privacy-policy-body"
+              @input="saved = false; forbiddenSave = false"
+            />
+          </UFormField>
+        </div>
+        <div class="flex min-h-0 min-w-0 flex-col lg:ps-4">
+          <p class="mb-1.5 text-sm font-medium text-default">
+            {{ $t('settings.privacy.previewLabel') }}
+          </p>
+          <p class="mb-2 text-xs text-muted">
+            {{ $t('settings.privacy.previewHint') }}
+          </p>
+          <div
+            class="min-h-0 flex-1 overflow-y-auto rounded-lg border border-default bg-default p-4"
+            data-testid="privacy-policy-live-preview"
+          >
+            <MarkdownPreview
+              :title="titleDraft"
+              :source="bodyDraft"
+            />
+          </div>
+        </div>
+      </div>
 
       <div class="mt-4 flex flex-wrap items-center gap-3">
         <UButton

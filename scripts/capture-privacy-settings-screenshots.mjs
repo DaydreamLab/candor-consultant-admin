@@ -71,6 +71,8 @@ async function main() {
       diff.style.display = 'none'
     }
   })
+  await page.locator('[data-testid="privacy-policy-editor-split"]').waitFor({ state: 'visible', timeout: 15000 })
+  await page.locator('[data-testid="privacy-policy-live-preview"]').waitFor({ state: 'visible', timeout: 15000 })
   await page.locator('[data-testid="privacy-policy-save"]').waitFor({ state: 'visible', timeout: 15000 })
   await shotElement(page, '[data-testid="settings-privacy"]', editorPath)
   await page.evaluate(() => {
