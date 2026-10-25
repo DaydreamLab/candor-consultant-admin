@@ -48,7 +48,7 @@
 | orgs | `/orgs` | **不做** | 多租戶不建模 |
 | expertTuning | `/expert-tuning`、`/expert-tuning/weights/{id}`、`/expert-tuning/daily-learning`、`/expert-tuning/training`、`/expert-tuning/training/{id}` | **in-scope（語意）** | 側欄在「平台」。權重為列表點進詳情（本地 mock）。每日學習確認直連 `POST /admin/weight-sets/daily-learning-*`（ADR 0028／core #75；提案欄位 schema 待補）。訓練批次為本地 mock。不讀營運訂單／會員對話。不是 `/reviews` 簽核 |
 | knowledge | `/knowledge/datasets`、`/knowledge/datasets/{id}`、`/knowledge/chunks`、`/knowledge/retrieval-preview`、`/knowledge/audit`、`/knowledge/dataset-groups`、`/knowledge/overview`、`/knowledge/config` | **in-scope** | 公開參考知識庫；直連 `GET`／`POST`／`PATCH /admin/knowledge/**`（見 [12-knowledge-management.md](12-knowledge-management.md)）。路由與程式用 knowledge，不用 rag |
-| settings | `/settings` | 部分 | Operator 帳號可落此；勿做 org 設定 |
+| settings | `/settings` | 部分 | Operator 帳號可落此；勿做 org 設定。隱私權政策 CMS（`/admin/legal/privacy-policy**`，對齊 core #87）掛此；公開頁 `/privacy-policy` 免登入 |
 
 ### 側欄底部（不在 `NAV_GROUPS`）
 

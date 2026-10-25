@@ -69,6 +69,7 @@
 | 金流設定 | `/settings`（radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 電子發票設定 | `/settings`（radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 報告判讀 LLM 上限 | `/settings`（每次讀取最多 LLM 次數；留空＝不限制；按儲存） | 可用 | 接線中（待 [candor-core #81](https://github.com/DaydreamLab/candor-core/pull/81) 合併部署） | M4 |
+| 隱私權政策 CMS | `/settings`（Markdown 編輯／儲存；左右版本 diff）；公開頁 `/privacy-policy`；Cookie 同意依 version | 可用 | 接線中（待 [candor-core #87](https://github.com/DaydreamLab/candor-core/pull/87) 合併部署） | M2 Beta |
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
@@ -156,6 +157,7 @@
 | 金流設定 | `GET`／`PATCH /admin/payment-settings` | 已接（設定頁 radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存才寫入） |
 | 電子發票設定 | `GET`／`PATCH /admin/invoice-settings` | 已接（設定頁 radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存才寫入） |
 | 報告判讀 LLM 上限 | `GET`／`PATCH /admin/biomarker-interpretation-settings`（`max_llm_calls_per_read`；`null`／空／0＝不限制） | 接線中（待 core #81） |
+| 隱私權政策 | `GET /legal/privacy-policy`（公開）；`GET`／`PATCH /admin/legal/privacy-policy`；`GET …/versions`、`GET …/versions/{version}`（PATCH 僅 ops／admin；expert 403） | 接線中（待 core #87；設定頁左右並排 client-side diff；本機截圖可用 `NUXT_PUBLIC_PRIVACY_POLICY_MOCK=1`） |
 | 出貨建立／推進 | `POST`／`PATCH /admin/order/{id}/shipment` | Mock |
 
 ### Health reports（校正）
@@ -211,8 +213,9 @@
 
 ---
 
-**最後更新**：2026-10-21（G-admin：列表錯誤與草案 banner 分離；重拍乾淨 ops 截圖）
+**最後更新**：2026-10-24（隱私權政策 CMS＋Cookie 同意；對齊 core #87 draft）
 
+- 2026-10-24：設定頁隱私權政策編輯、左右版本 diff、公開 `/privacy-policy`、Cookie 同意鍵 `candor.privacy.consent.version`；接線待 core #87
 - 2026-10-21：draft PR #20；對齊 #76；合須等 core #76 部署
 - 2026-10-21：修 listError／applyLoadedDraft 清紅字；重拍 ops_*
 

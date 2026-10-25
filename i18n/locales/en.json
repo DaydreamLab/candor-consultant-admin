@@ -1110,8 +1110,48 @@
       "unlimitedNote": "Unlimited is the default. Enter an integer ≥ 1 to cap each read.",
       "clearUnlimited": "Set unlimited",
       "invalid": "Enter an integer ≥ 1, or clear the field for unlimited."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "hint": "Edit the public privacy policy in Markdown. Saving bumps the version and appends history; only ops/admin can save.",
+      "loading": "Loading privacy policy…",
+      "loadFailed": "Could not load the privacy policy.",
+      "saveFailed": "Could not save the privacy policy.",
+      "saveForbidden": "Your role cannot save the privacy policy (ops or admin required).",
+      "publicLink": "Open public page",
+      "meta": "Current version v{version} · Updated {at} · By {by}",
+      "fieldTitle": "Title",
+      "fieldBody": "Body (Markdown)",
+      "fieldBodyHelp": "Supports headings, lists, bold/italic, and links. Live preview is on the right.",
+      "previewLabel": "Live preview",
+      "previewHint": "Renders the current draft (no save required).",
+      "diffTitle": "Version comparison (side by side)",
+      "diffHint": "Left is older, right is newer (pair selectable). Core has no server-side diff; the client fetches both full bodies and diffs locally.",
+      "diffLeft": "Left (older)",
+      "diffRight": "Right (newer)",
+      "diffPaneLabel": "v{version} — {title}",
+      "diffLoading": "Loading comparison…",
+      "diffLoadFailed": "Could not load version bodies for comparison.",
+      "versionsLoading": "Loading version list…",
+      "versionsLoadFailed": "Could not load version list.",
+      "versionsEmpty": "No version history yet.",
+      "versionOption": "v{version} · {at}"
     }
   },
+  "privacyPolicy": {
+    "pageTitle": "Privacy policy",
+    "loading": "Loading privacy policy…",
+    "loadFailed": "Could not load the privacy policy.",
+    "versionLabel": "Version v{version}",
+    "updatedAt": "Updated {at}",
+    "backToLogin": "Back to login"
+  },
+  "cookieConsent": {
+    "message": "We use cookies and local storage for sign-in and essential settings. Continuing means you agree to our privacy policy. See the",
+    "privacyLink": "privacy policy",
+    "accept": "Got it"
+  },
+
   "actions": {
     "add": "Add",
     "edit": "Edit",

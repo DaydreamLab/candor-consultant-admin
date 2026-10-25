@@ -1110,8 +1110,48 @@
       "unlimitedNote": "預設為不限制。輸入 1 以上的整數可為每次讀取設定上限。",
       "clearUnlimited": "改為不限制",
       "invalid": "請輸入 1 以上的整數，或清空以表示不限制。"
+    },
+    "privacy": {
+      "title": "隱私權政策",
+      "hint": "以 Markdown 編輯公開隱私權政策。儲存後會提高版本號並寫入歷史；僅 ops／admin 可儲存。",
+      "loading": "讀取隱私權政策…",
+      "loadFailed": "無法讀取隱私權政策。",
+      "saveFailed": "無法儲存隱私權政策。",
+      "saveForbidden": "目前角色無法儲存隱私權政策（需 ops 或 admin）。",
+      "publicLink": "開啟公開頁",
+      "meta": "目前版本 v{version} · 更新於 {at} · 更新者 {by}",
+      "fieldTitle": "標題",
+      "fieldBody": "內文（Markdown）",
+      "fieldBodyHelp": "支援標題、清單、粗體／斜體與連結。右側為即時預覽。",
+      "previewLabel": "即時預覽",
+      "previewHint": "依目前草稿渲染（無需先儲存）。",
+      "diffTitle": "版本比對（左右並排）",
+      "diffHint": "左側為較舊版本、右側為較新版本（可自行選擇）。Core 無伺服器端 diff；前端分別拉取兩個版本全文後比對。",
+      "diffLeft": "左側（較舊）",
+      "diffRight": "右側（較新）",
+      "diffPaneLabel": "v{version} — {title}",
+      "diffLoading": "載入比對內容…",
+      "diffLoadFailed": "無法載入版本全文以比對。",
+      "versionsLoading": "讀取版本列表…",
+      "versionsLoadFailed": "無法讀取版本列表。",
+      "versionsEmpty": "尚無歷史版本。",
+      "versionOption": "v{version} · {at}"
     }
   },
+  "privacyPolicy": {
+    "pageTitle": "隱私權政策",
+    "loading": "讀取隱私權政策…",
+    "loadFailed": "無法讀取隱私權政策。",
+    "versionLabel": "版本 v{version}",
+    "updatedAt": "更新於 {at}",
+    "backToLogin": "返回登入"
+  },
+  "cookieConsent": {
+    "message": "我們使用 Cookie 與本機儲存以維持登入狀態與必要設定。繼續使用即表示您同意我們依隱私權政策處理相關資料。詳見",
+    "privacyLink": "隱私權政策",
+    "accept": "我知道了"
+  },
+
   "actions": {
     "add": "新增",
     "edit": "編輯",
