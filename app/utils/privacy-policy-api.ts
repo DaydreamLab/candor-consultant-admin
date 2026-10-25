@@ -1,5 +1,19 @@
 import type { AdminFailure, AdminSuccess } from '~/types/operator'
 import { AdminApiError } from '~/utils/admin-api'
+import {
+  PRIVACY_POLICY_FIXTURE_CURRENT,
+  PRIVACY_POLICY_FIXTURE_VERSIONS,
+  privacyPolicyFixtureVersion
+} from '~/utils/privacy-policy-fixtures'
+
+/** Screenshot／本機預覽用：`NUXT_PUBLIC_PRIVACY_POLICY_MOCK=1` */
+export function isPrivacyPolicyMockEnabled(): boolean {
+  try {
+    return Boolean(useRuntimeConfig().public.privacyPolicyMock)
+  } catch {
+    return process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1'
+  }
+}
 
 export type PrivacyPolicy = {
   title: string
@@ -106,6 +120,9 @@ function parseVersionDetail(data: Record<string, unknown>): PrivacyPolicyVersion
 
 /** GET /api/v1/legal/privacy-policy — public */
 export async function getPublicPrivacyPolicy(apiBase: string): Promise<PrivacyPolicy> {
+  if (isPrivacyPolicyMockEnabled()) {
+    return { ...PRIVACY_POLICY_FIXTURE_CURRENT }
+  }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(apiUrl(apiBase, '/legal/privacy-policy'))
     if (body?.status !== 'success' || !isRecord(body.data)) {
@@ -126,6 +143,11 @@ export async function getPublicPrivacyPolicy(apiBase: string): Promise<PrivacyPo
 
 /** GET /api/v1/admin/legal/privacy-policy — operator JWT */
 export async function adminGetPrivacyPolicy(apiBase: string, token: string): Promise<PrivacyPolicy> {
+  if (isPrivacyPolicyMockEnabled()) {
+    void apiBase
+    void token
+    return { ...PRIVACY_POLICY_FIXTURE_CURRENT }
+  }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(apiUrl(apiBase, '/admin/legal/privacy-policy'), {
       headers: {
@@ -154,6 +176,17 @@ export async function adminPatchPrivacyPolicy(
   token: string,
   payload: { title?: string, body?: string }
 ): Promise<PrivacyPolicy> {
+  if (isPrivacyPolicyMockEnabled()) {
+    void apiBase
+    void token
+    return {
+      ...PRIVACY_POLICY_FIXTURE_CURRENT,
+      title: payload.title ?? PRIVACY_POLICY_FIXTURE_CURRENT.title,
+      body: payload.body ?? PRIVACY_POLICY_FIXTURE_CURRENT.body,
+      version: PRIVACY_POLICY_FIXTURE_CURRENT.version + 1,
+      updated_at: new Date().toISOString()
+    }
+  }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(apiUrl(apiBase, '/admin/legal/privacy-policy'), {
       method: 'PATCH',
@@ -183,6 +216,11 @@ export async function adminListPrivacyPolicyVersions(
   apiBase: string,
   token: string
 ): Promise<PrivacyPolicyVersionSummary[]> {
+  if (isPrivacyPolicyMockEnabled()) {
+    void apiBase
+    void token
+    return PRIVACY_POLICY_FIXTURE_VERSIONS.map(row => ({ ...row }))
+  }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
       apiUrl(apiBase, '/admin/legal/privacy-policy/versions'),
@@ -213,6 +251,11 @@ export async function adminGetPrivacyPolicyVersion(
   token: string,
   version: number
 ): Promise<PrivacyPolicyVersionDetail> {
+  if (isPrivacyPolicyMockEnabled()) {
+    void apiBase
+    void token
+    return { ...privacyPolicyFixtureVersion(version) }
+  }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
       apiUrl(apiBase, `/admin/legal/privacy-policy/versions/${encodeURIComponent(String(version))}`),

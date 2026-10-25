@@ -204,7 +204,11 @@ async function save() {
 </script>
 
 <template>
-  <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
+  <section
+    id="settings-privacy"
+    class="mb-6 rounded-xl border border-default bg-elevated p-5"
+    data-testid="settings-privacy"
+  >
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h2 class="text-base font-semibold text-highlighted">
@@ -310,7 +314,11 @@ async function save() {
       </div>
     </template>
 
-    <div class="mt-8 border-t border-default pt-6">
+    <div
+      id="settings-privacy-diff"
+      class="mt-8 border-t border-default pt-6"
+      data-testid="settings-privacy-diff"
+    >
       <h3 class="text-sm font-semibold text-highlighted">
         {{ $t('settings.privacy.diffTitle') }}
       </h3>

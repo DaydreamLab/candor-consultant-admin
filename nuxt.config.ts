@@ -28,7 +28,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://candor-core.dev.daydream-lab.com/api/v1',
-      feSha: process.env.NUXT_PUBLIC_FE_SHA || ''
+      feSha: process.env.NUXT_PUBLIC_FE_SHA || '',
+      /** 本機截圖／預覽用；正式環境勿開 */
+      privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1'
     }
   },
 
