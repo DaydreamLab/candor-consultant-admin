@@ -40,7 +40,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 ## 頁面清單與優先順序
 
-側欄建議掛在 **Platform** 群組，主入口 `/knowledge`（子頁見下表）。子導覽模式可對齊 `AiAssistantTabs`（水平 Tab）。
+側欄掛在 **知識** 群組（組 key `learning`；與專家訓練同組），主入口 `/knowledge`（子頁見下表）。子導覽模式可對齊 `AiAssistantTabs`（水平 Tab）。
 
 | 優先 | 頁面 | 路由 | 主要 API | 里程碑 |
 |------|------|------|----------|--------|
@@ -154,7 +154,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 - API client：擴充 `app/utils/admin-api.ts`（`AdminApiError`、`adminUrl`、解析 `data`）。
 - 頁面：`app/pages/knowledge/**`；型別可放 `app/types/knowledge.ts`（接線 PR 引入）。
 - i18n：`knowledge.*`（zh-TW／en）。
-- `isDevelopingPath`／`nav.ts`：知識管理接線完成前標「開發中」；完成後對已完成子路由設 `developing: false`（對齊 orders／ai-assistant）。
+- `isDevelopingPath`／`nav.ts`：知識管理接線完成前標「即將上線」；完成後對已完成子路由設 `developing: false`（對齊 orders／ai-assistant）。
 - 錯誤：列表／詳情分離；可重試載入。403 顯示無權限，不清 session。
 
 ## 相關
