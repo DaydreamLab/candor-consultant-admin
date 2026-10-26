@@ -1395,13 +1395,18 @@
       "groupAll": "全部群組"
     },
     "tabs": {
+      "navLabel": "知識管理分頁",
       "datasets": "資料集",
       "chunks": "片段審核",
       "retrievalPreview": "檢索預覽",
       "audit": "稽核",
-      "datasetGroups": "資料集群組",
+      "datasetGroups": "群組",
       "overview": "總覽",
-      "config": "設定"
+      "config": "設定",
+      "more": "更多",
+      "moreWithPage": "更多 · {name}",
+      "current": "目前",
+      "advanced": "進階"
     },
     "datasets": {
       "title": "知識資料集",

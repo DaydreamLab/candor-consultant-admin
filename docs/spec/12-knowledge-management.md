@@ -40,7 +40,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 ## 頁面清單與優先順序
 
-側欄掛在 **知識** 群組（組 key `learning`；與專家訓練同組），主入口 `/knowledge`（子頁見下表）。子導覽模式可對齊 `AiAssistantTabs`（水平 Tab）。
+側欄掛在 **知識** 群組（組 key `learning`；與專家訓練同組），主入口 `/knowledge`（子頁見下表）。頁內次導為上方 tabs（**非**設定左側錨點）：日常 4 tab（資料集／片段審核／檢索預覽／稽核）＋「更多」dropdown 收納進階（群組／總覽／設定）；預設落地 `/knowledge/datasets`。
 
 | 優先 | 頁面 | 路由 | 主要 API | 里程碑 |
 |------|------|------|----------|--------|
