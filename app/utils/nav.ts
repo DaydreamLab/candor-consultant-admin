@@ -29,8 +29,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'reviews', to: '/expert-case-reviews', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
-      // shipping：物流進度（語意 in-scope；讀取接線中、寫入仍 mock）→ badge 即將上線
-      { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck' },
+      // shipping：物流進度（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
+      { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck', developing: false },
       { key: 'users', to: '/users', icon: 'i-lucide-users', developing: false }
     ]
   },
@@ -90,6 +90,9 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/orders' || current.startsWith('/orders/')) {
+    return false
+  }
+  if (current === '/shipping' || current.startsWith('/shipping/')) {
     return false
   }
   if (current === '/products' || current.startsWith('/products/')) {
