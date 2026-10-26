@@ -27,6 +27,25 @@ describe('sidebar IA (Irice 2026-10-26)', () => {
     expect(developing.items.map(i => i.key)).not.toContain('shipping')
   })
 
+  it('places labServices in catalog with coming-soon badge; labs stay in developing', () => {
+    const catalog = NAV_GROUPS.find(g => g.key === 'catalog')!
+    const developing = NAV_GROUPS.find(g => g.key === 'developing')!
+    expect(catalog.items.map(i => i.key)).toEqual(['packagePlans', 'products', 'labServices'])
+    expect(catalog.items.find(i => i.key === 'labServices')?.developing).not.toBe(false)
+    expect(developing.items.map(i => i.key)).toEqual([
+      'workbench',
+      'cases',
+      'labs',
+      'labAppointments',
+      'progress',
+      'selections',
+      'invoices',
+      'reports',
+      'orgs'
+    ])
+    expect(developing.items.map(i => i.key)).not.toContain('labServices')
+  })
+
   it('marks live official pages as not developing', () => {
     const live = ['reviews', 'orders', 'users', 'knowledge', 'expertTuning', 'packagePlans', 'products', 'settings', 'aiAssistant']
     for (const key of live) {
@@ -40,6 +59,7 @@ describe('sidebar IA (Irice 2026-10-26)', () => {
     expect(isDevelopingPath('/expert-tuning')).toBe(false)
     expect(isDevelopingPath('/expert-tuning/daily-learning')).toBe(false)
     expect(isDevelopingPath('/shipping')).toBe(true)
+    expect(isDevelopingPath('/lab-services')).toBe(true)
     expect(isDevelopingPath('/progress')).toBe(true)
   })
 })
