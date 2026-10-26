@@ -1533,7 +1533,7 @@
         "chunksEmpty": "Adjust the review filter, or this dataset has no chunks yet.",
         "chunksShowing": "Showing {filtered} (from {loaded} loaded on this page)",
         "chunksClientScopeTitle": "No server-side dataset filter yet",
-        "chunksClientScopeHint": "GET /knowledge/chunks only documents the group query param in OpenAPI. Without group_key we load all chunks and filter by dataset_id in the browser, which may be slow at scale. candor-core should add dataset_id, review_status, and limit/offset.",
+        "chunksClientScopeHint": "GET /knowledge/chunks already supports group/status/limit/offset. Without dataset_id we load by group then filter by dataset_id/dataset_code in the browser. candor-core should add dataset_id.",
         "editTitle": "Code, name, and licensing"
       },
       "form": {
@@ -1569,6 +1569,14 @@
       "chunkId": "Chunk ID",
       "rejectReasonStored": "Reject reason",
       "reviewRoleDenied": "Only ops and admin can approve or reject chunks.",
+      "columns": {
+        "status": "Status",
+        "document": "Document / dataset",
+        "preview": "Preview",
+        "sourceUrl": "Source URL",
+        "license": "License",
+        "attribution": "Attribution"
+      },
       "status": {
         "pending": "Pending",
         "approved": "Approved",

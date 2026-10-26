@@ -2104,6 +2104,9 @@ function knowledgeChunkListOf(data: unknown): unknown[] | null {
   if (Array.isArray(data.items)) {
     return data.items
   }
+  if (Array.isArray(data.data)) {
+    return data.data
+  }
   return null
 }
 
@@ -2121,7 +2124,8 @@ function parseKnowledgeChunk(row: Record<string, unknown>): KnowledgeChunk {
     source_url: optionalString(row.source_url),
     license: optionalString(row.license),
     attribution: optionalString(row.attribution),
-    chunk_kind: optionalString(row.chunk_kind),
+    // OpenAPI uses chunk_type; older samples used chunk_kind.
+    chunk_kind: optionalString(row.chunk_kind) ?? optionalString(row.chunk_type),
     group_key: optionalString(row.group_key) ?? optionalString(row.group),
     reject_reason: optionalString(row.reject_reason ?? row.rejection_reason ?? row.rejectReason)
   }
@@ -2195,6 +2199,9 @@ export function compactKnowledgeChunkQuery(query: KnowledgeChunkListQuery) {
   }
   if (typeof query.offset === 'number' && Number.isFinite(query.offset) && query.offset >= 0) {
     params.offset = query.offset
+  }
+  if (typeof query.cursor === 'string' && query.cursor.trim()) {
+    params.cursor = query.cursor.trim()
   }
   return params
 }

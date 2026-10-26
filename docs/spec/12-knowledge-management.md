@@ -79,11 +79,11 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 - 列表：`GET /knowledge/chunks`；查詢參數：**`group`**（`group_key` 須存在 registry）、**`status`**（`draft`｜`pending`｜`approved`｜`rejected`｜`retired`；非法 → **422**）、**`limit`**（預設 50；UI 固定送頁大小，**禁止**用極大 `limit` 假裝全量）、**`offset`**（跳過 N 筆；core 落地前可忽略，前端仍須帶上並以「本批筆數 ≥ limit」判斷是否還有下一頁）。**待 candor-core／契約**：`dataset_id`、OpenAPI 與實作對齊、`offset`／來源欄位正式入契約；回應是否保證完整 `text` 或僅 `text_preview` 亦待明確化。
 - **預設篩選**：`/knowledge/chunks` 與資料集詳情片段面板預設 **`status=pending`**（可改為全部或其他狀態後重打 API）。
-- **分頁**：以 API `limit`＋`offset`「載入更多」累加列；不得只對單次回傳做 client 假分頁當全庫翻頁。
+- **分頁**：以 API `limit`＋`offset`「載入更多」累加列；不得只對單次回傳做 client 假分頁當全庫翻頁。查詢 builder 可選帶 `cursor`（core 若並行落地 cursor 分頁時不需重寫 UI；目前 OpenAPI 為 offset）。
 - **資料集詳情**（`/knowledge/datasets/{id}`）：有 `group_key` 時以 `group`（＋選用 `status`、`limit`、`offset`）查詢後 **client** 依 `dataset_id`／`dataset_code` 篩選顯示；同一套 API offset 載入更多。
 - **頁面標題**：知識子頁以 `KnowledgeTabs` **路由**切換；頂欄與瀏覽器 title 由 `usePageCrumbs`／`knowledge-nav`（`nav.knowledge` + tab 標籤）與 `useAdminPageHead` 同步，勿依 `NAV_GROUPS` 的 `to: /knowledge/datasets` 單點比對。
 - UI 狀態篩選變更時重打 API（帶 `status`，`offset` 歸零）；勿只對已載入列做 client filter 冒充狀態篩選。
-- 列欄位（依 `data[]` 實際鍵）：片段 `id`、所屬資料集、`review_status`、文件標題、`text` 預覽；**`source_url`／`license`／`attribution` 有回傳才顯示**（core 尚未補齊前可為缺省／`null`，UI 須容忍）。摘要片段標「摘要（衍生）」若 `chunk_kind`／類似欄位存在。
+- 列欄位（依 `data[]` 實際鍵；列表用既有 `AdminTable`）：狀態、文件／資料集、內容預覽、**`source_url`／`license`／`attribution` 欄**（缺省／`null` → `—`；有 URL 則連結）。摘要片段標「摘要（衍生）」若 `chunk_kind`／OpenAPI `chunk_type` 存在。
 - **approve**：`POST /knowledge/chunks/{id}/approve`（ops／admin）。**reject**：`POST /knowledge/chunks/{id}/reject`（摘要寫「原因必填」；OpenAPI 未宣告 body — **待確認** `reason` 欄位名與 422 規則，UI 仍應強制填原因再送出）。
 - 409：狀態機衝突；404：片段不存在。成功後更新該列或重新載入。
 - 空狀態：一般「沒有符合的片段」；勿再顯示「與 beta 全數 approved 一致」類誤導說明。

@@ -66,10 +66,15 @@ export type KnowledgeChunkListQuery = {
   /** Page size; core default 50. Always send from UI (do not use a fake huge limit). */
   limit?: number
   /**
-   * Skip N rows. Core may ignore until offset lands — still send it;
-   * UI uses batch length vs limit for hasMore.
+   * Skip N rows (OpenAPI `offset`). Still send when paging;
+   * UI uses batch length vs limit for hasMore when response has no page meta.
    */
   offset?: number
+  /**
+   * Forward-compat if core adds cursor paging alongside／instead of offset.
+   * Omit when empty; do not invent cursor values client-side.
+   */
+  cursor?: string
 }
 
 export type KnowledgeRetrievalMode = 'keyword' | 'vector' | 'hybrid'

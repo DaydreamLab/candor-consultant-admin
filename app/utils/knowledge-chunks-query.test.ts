@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { adminListKnowledgeChunks, compactKnowledgeChunkQuery } from '~/utils/admin-api'
 import {
   buildKnowledgeChunkListQuery,
+  knowledgeChunkListHasMore,
   KNOWLEDGE_CHUNK_DEFAULT_STATUS,
   KNOWLEDGE_CHUNK_PAGE_SIZE
 } from '~/utils/knowledge-chunks-query'
@@ -32,6 +33,14 @@ describe('compactKnowledgeChunkQuery', () => {
       status: 'pending',
       limit: 50,
       offset: 100
+    })
+  })
+
+  it('passes cursor when set (forward-compat)', () => {
+    expect(compactKnowledgeChunkQuery({ status: 'pending', limit: 50, cursor: 'abc' })).toEqual({
+      status: 'pending',
+      limit: 50,
+      cursor: 'abc'
     })
   })
 
@@ -65,6 +74,38 @@ describe('buildKnowledgeChunkListQuery', () => {
       limit: 50,
       offset: 50
     })
+  })
+
+  it('includes cursor when provided without inventing one', () => {
+    expect(
+      buildKnowledgeChunkListQuery({
+        filterStatus: 'pending',
+        limit: 50,
+        cursor: ' next '
+      })
+    ).toEqual({
+      status: 'pending',
+      limit: 50,
+      cursor: 'next'
+    })
+    expect(
+      buildKnowledgeChunkListQuery({
+        filterStatus: 'pending',
+        limit: 50,
+        cursor: '   '
+      })
+    ).toEqual({
+      status: 'pending',
+      limit: 50
+    })
+  })
+})
+
+describe('knowledgeChunkListHasMore', () => {
+  it('treats a full page as hasMore and a short page as done', () => {
+    expect(knowledgeChunkListHasMore(KNOWLEDGE_CHUNK_PAGE_SIZE)).toBe(true)
+    expect(knowledgeChunkListHasMore(KNOWLEDGE_CHUNK_PAGE_SIZE - 1)).toBe(false)
+    expect(knowledgeChunkListHasMore(0)).toBe(false)
   })
 })
 
@@ -134,6 +175,30 @@ describe('adminListKnowledgeChunks query wiring', () => {
 
     vi.unstubAllGlobals()
   })
+
+  it('maps OpenAPI chunk_type onto chunk_kind for summary labels', async () => {
+    const fetchMock = vi.fn(async () => ({
+      status: 'success',
+      data: [
+        {
+          id: 'chunk-summary',
+          review_status: 'pending',
+          text_preview: 'summary body',
+          chunk_type: 'summary'
+        }
+      ]
+    }))
+    vi.stubGlobal('$fetch', fetchMock)
+
+    const rows = await adminListKnowledgeChunks('https://api.example', 'tok', {
+      status: 'pending',
+      limit: 50,
+      offset: 0
+    })
+
+    expect(rows[0]?.chunk_kind).toBe('summary')
+    vi.unstubAllGlobals()
+  })
 })
 
 describe('knowledge.chunks empty copy', () => {
@@ -149,6 +214,11 @@ describe('knowledge.chunks empty copy', () => {
             loadMore: string
             pendingFilterEmpty?: string
             pendingFilterEmptyTitle?: string
+            columns: {
+              sourceUrl: string
+              license: string
+              attribution: string
+            }
           }
         }
       }
@@ -157,6 +227,9 @@ describe('knowledge.chunks empty copy', () => {
       expect(chunks.pendingFilterEmptyTitle).toBeUndefined()
       expect(chunks.emptyTitle).toMatch(/沒有符合的片段|No matching chunks/)
       expect(chunks.loadMore).toMatch(/載入更多|Load more/)
+      expect(chunks.columns.sourceUrl).toMatch(/來源|Source/)
+      expect(chunks.columns.license).toMatch(/授權|License/)
+      expect(chunks.columns.attribution).toMatch(/出處|Attribution/)
       expect(JSON.stringify(chunks)).not.toMatch(/beta|全數 approved|expected when all are approved/i)
     }
   })
