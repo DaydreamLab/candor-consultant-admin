@@ -58,7 +58,7 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 ### P1 — 資料集列表
 
 - 查詢參數（OpenAPI `adminKnowledgeDatasets`）：`group`、`status`（`pending_review`｜`active`｜`disabled`）、`corpus`、`code`（精確比對）。
-- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count` 等。是否外送由環境的 embedding 設定決定，後台不設定（core 將移除資料集欄位 `allow_third_party`／`allow_in_account_managed`）。
+- 列表欄位（`data[]`）：`id`、`code`、`name`、`corpus`、`status`、`group_key`（若有）、`document_count`、`chunk_count`、`default_review_mode`（`manual`｜`auto_approve`；唯讀）、`attribution`（可 null）等。是否外送由環境的 embedding 設定決定，後台不設定（core 將移除資料集欄位 `allow_third_party`／`allow_in_account_managed`）。
 - 點列進詳情。空列表：`EmptyPanel` + 說明尚無資料集。
 - 錯誤：載入失敗顯示 `error_message` 或 i18n 預設；401 由 auth middleware 處理。
 
@@ -127,8 +127,11 @@ Session／錯誤 envelope：見 [11-operator-session.md](11-operator-session.md)
 
 ### P3 — 總覽與設定
 
-- **overview**：`GET /knowledge/overview` — 各資料集彙總、全庫片段／文件計數等（`data` 寬型別；KM3 依 live 回應排版）。
-- **config**：`GET /knowledge/config` — embedding 供應商、模型、維度、`active_space` 等；**不得**顯示 API key，僅「已設定／未設定」。`default_review_mode` 若嵌在 dataset 層則在資料集頁展示。是否外送由環境的 embedding adaptor 決定，後台不設定。
+- **overview**：`GET /knowledge/overview` — 全庫合計＋（預期）逐資料集列。`data` 寬型別；前端以多鍵名 fallback 解析。
+  - **合計（現況 live 已回）**：`chunks_total`／`documents_total`／`datasets_active`（或 `totals`／`summary`／`counts` 巢狀同等鍵）。
+  - **逐資料集列（預期；core 補齊前可缺）**：陣列鍵優先 `datasets`，亦接受 `items`／`rows`／`dataset_rows`／`dataset_summaries`／`dataset_overview`／`public_datasets`／`knowledge_datasets`／`by_dataset`，或嵌在 `summary`／`totals`／`counts`／`overview` 下。列欄位建議：`id`、`code`、`name`、`status`、`source_url`、`license`、`attribution`、`default_review_mode`、`document_count`、`chunk_count`、`chunks_by_review_status`（亦可 `{ dataset: {...}, counts: {...} }` 輕巢狀）。無列時總覽仍顯示合計卡＋明確空狀態，不呼叫 datasets list 冒充 overview。
+- **config**：`GET /knowledge/config` — embedding 供應商、模型、維度、`active_space` 等；**不得**顯示 API key，僅「已設定／未設定」。`default_review_mode` 在 **資料集** 層（`GET /knowledge/datasets`／詳情）展示與編輯表單旁唯讀；config 若仍帶全域同名鍵則一併顯示。是否外送由環境的 embedding adaptor 決定，後台不設定。
+- **資料集列表／詳情**：列表欄顯示 `default_review_mode`、`attribution`（缺省顯示 —）；詳情摘要卡唯讀顯示二者；`attribution` 仍可經既有 PATCH 表單編輯（與 license 同區塊）。
 
 ## API 一覽（`/api/v1/admin`）
 

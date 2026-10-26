@@ -7,6 +7,9 @@ import { buildKnowledgeConfigSections, flattenKnowledgeConfig } from '~/utils/kn
 import { resolveKnowledgeGroupKey } from '~/utils/knowledge-field-parse'
 import {
   extractKnowledgeOverviewTotals,
+  extractOverviewDatasetRows,
+  formatOverviewReviewCounts,
+  overviewHasVisibleContent,
   readConfigTopK
 } from '~/utils/knowledge-overview'
 import {
@@ -24,6 +27,7 @@ const fixtures = JSON.parse(
 ) as {
   datasetRow: Record<string, unknown>
   overview: Record<string, unknown>
+  overviewWithDatasets: Record<string, unknown>
   config: Record<string, unknown>
   retrievalGap: Record<string, unknown>
   retrievalHit: Record<string, unknown>
@@ -44,6 +48,41 @@ describe('extractKnowledgeOverviewTotals', () => {
       documents: 72,
       datasetsActive: 38
     })
+  })
+
+  it('treats live totals-only overview as visible content with empty dataset rows', () => {
+    expect(overviewHasVisibleContent(fixtures.overview)).toBe(true)
+    expect(extractOverviewDatasetRows(fixtures.overview)).toEqual([])
+  })
+})
+
+describe('extractOverviewDatasetRows', () => {
+  it('reads datasets[] and normalizes nested dataset/counts shape', () => {
+    const rows = extractOverviewDatasetRows(fixtures.overviewWithDatasets)
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({
+      code: 'fda-daily-value',
+      attribution: 'U.S. FDA',
+      default_review_mode: 'manual',
+      document_count: 1,
+      chunk_count: 3
+    })
+    expect(rows[1]).toMatchObject({
+      code: 'hpa-dri8-folate-zh',
+      name: 'HPA 葉酸 DRI8',
+      default_review_mode: 'auto_approve',
+      attribution: 'HPA',
+      document_count: 3,
+      chunk_count: 9
+    })
+    expect(formatOverviewReviewCounts(rows[1]?.chunks_by_review_status)).toContain('pending:1')
+  })
+
+  it('accepts dataset_summaries alias and empty arrays as no rows', () => {
+    expect(extractOverviewDatasetRows({
+      dataset_summaries: [{ code: 'x', name: 'X', status: 'active' }]
+    })).toHaveLength(1)
+    expect(extractOverviewDatasetRows({ datasets: [] })).toEqual([])
   })
 })
 
