@@ -5,6 +5,12 @@ import { shipmentSchema } from '~/utils/schemas'
 import type { ShipmentForm } from '~/utils/schemas'
 import type { ShipmentRow, ShipStatus } from '~/types/admin'
 import { SHIP_FLOW } from '~/utils/demo'
+import { readOperatorToken } from '~/utils/operator-session'
+import { loadAdminShippingRows } from '~/utils/shipment-api'
+import {
+  displayOrderNo,
+  shipmentSearchHaystack
+} from '~/utils/shipment-map'
 import {
   itemsSummary,
   orderNoFromCaseId,
@@ -13,6 +19,7 @@ import {
 
 const FILTER_ANY = 'all'
 
+const config = useRuntimeConfig()
 const { locale, t } = useI18n()
 const route = useRoute()
 const { moduleDesc } = usePageCopy()
@@ -31,9 +38,18 @@ const searchQ = ref('')
 const pending = ref(true)
 const errorMessage = ref('')
 const highlightId = ref<string | null>(null)
+const apiRows = ref<ShipmentRow[]>([])
+const usingApi = ref(false)
 let loadSeq = 0
 
-const allRows = computed(() => scoped(ops.shipments))
+const mockWritable = computed(() => writable.value && !usingApi.value)
+
+const allRows = computed(() => {
+  if (usingApi.value) {
+    return apiRows.value
+  }
+  return scoped(ops.shipments).map(row => ({ ...row, source: 'mock' as const }))
+})
 
 const statusFilterOptions = computed(() => [
   { label: t('shipping.filterAny'), value: FILTER_ANY },
@@ -49,15 +65,7 @@ const rows = computed(() => {
     if (!q) {
       return true
     }
-    const orderNo = orderNoFromCaseId(row.caseId).toLowerCase()
-    const haystack = [
-      row.customer,
-      row.caseId,
-      orderNo,
-      row.id,
-      row.tracking ?? ''
-    ].join(' ').toLowerCase()
-    return haystack.includes(q)
+    return shipmentSearchHaystack(row).includes(q)
   })
 })
 
@@ -134,7 +142,7 @@ function fillEdit(row: ShipmentRow) {
 }
 
 function openCreate() {
-  if (!writable.value) {
+  if (!mockWritable.value) {
     return
   }
   selectedId.value = null
@@ -173,6 +181,9 @@ function closeDetail() {
 }
 
 function onSubmit(event: FormSubmitEvent<ShipmentForm>) {
+  if (!mockWritable.value) {
+    return
+  }
   const data = event.data
   const saved = ops.saveShipment({
     id: selectedId.value ?? undefined,
@@ -190,7 +201,7 @@ function onSubmit(event: FormSubmitEvent<ShipmentForm>) {
 }
 
 function confirmDelete() {
-  if (!deleteId.value) {
+  if (!deleteId.value || !mockWritable.value) {
     return
   }
   ops.removeShipment(deleteId.value)
@@ -204,7 +215,7 @@ function confirmDelete() {
 
 function advance(row: ShipmentRow) {
   const next = nextStatus(row)
-  if (!next) {
+  if (!next || !mockWritable.value) {
     return
   }
   ops.saveShipment({
@@ -222,21 +233,50 @@ async function load() {
   pending.value = true
   errorMessage.value = ''
   try {
-    // Mock path: ops-store is sync; brief tick keeps skeleton / retry UI wired for API later.
-    await Promise.resolve()
+    const token = readOperatorToken()
+    if (token) {
+      try {
+        const loaded = await loadAdminShippingRows(config.public.apiBase, token)
+        if (seq !== loadSeq) {
+          return
+        }
+        if (loaded.rows.length) {
+          apiRows.value = loaded.rows
+          usingApi.value = true
+          return
+        }
+      } catch {
+        // API unavailable / empty → mock fallback below so Pages demo still works.
+      }
+    }
     if (seq !== loadSeq) {
       return
     }
+    apiRows.value = []
+    usingApi.value = false
   } catch {
     if (seq !== loadSeq) {
       return
     }
+    apiRows.value = []
+    usingApi.value = false
     errorMessage.value = t('shipping.failed')
   } finally {
     if (seq === loadSeq) {
       pending.value = false
     }
   }
+}
+
+function findRowByQuery(id: string) {
+  const needle = id.trim()
+  return allRows.value.find(item => item.id === needle)
+    ?? allRows.value.find(item => displayOrderNo(item) === needle)
+    ?? allRows.value.find(item => item.orderNo === needle)
+    ?? allRows.value.find(item => item.orderId === needle)
+    ?? allRows.value.find(item => orderNoFromCaseId(item.caseId) === needle)
+    ?? allRows.value.find(item => item.caseId === needle)
+    ?? allRows.value.find(item => item.tracking === needle)
 }
 
 function applyRouteQuery() {
@@ -248,11 +288,21 @@ function applyRouteQuery() {
   if (typeof shipment === 'string' && shipment.trim()) {
     const id = shipment.trim()
     highlightId.value = id
-    const row = allRows.value.find(item => item.id === id)
-      ?? allRows.value.find(item => orderNoFromCaseId(item.caseId) === id)
-      ?? allRows.value.find(item => item.caseId === id)
-      ?? allRows.value.find(item => item.tracking === id)
+    const row = findRowByQuery(id)
+      ?? (typeof q === 'string' && q.trim() ? findRowByQuery(q.trim()) : undefined)
     if (row) {
+      openIds.value = [row.id]
+      selectRow(row)
+      if (import.meta.client) {
+        nextTick(() => {
+          document.getElementById(`ship-row-${row.id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        })
+      }
+    }
+  } else if (typeof q === 'string' && q.trim()) {
+    const row = findRowByQuery(q.trim())
+    if (row) {
+      highlightId.value = row.id
       openIds.value = [row.id]
       selectRow(row)
       if (import.meta.client) {
@@ -300,7 +350,7 @@ onMounted(async () => {
     <template #actions>
       <UButton
         icon="i-lucide-plus"
-        :disabled="!writable"
+        :disabled="!mockWritable"
         data-testid="shipping-add"
         @click="openCreate"
       >
@@ -413,7 +463,7 @@ onMounted(async () => {
           data-testid="shipping-empty"
         >
           <UButton
-            v-if="writable"
+            v-if="mockWritable"
             icon="i-lucide-plus"
             @click="openCreate"
           >
@@ -468,10 +518,10 @@ onMounted(async () => {
                             {{ row.customer }}
                           </p>
                           <p class="mt-0.5 font-mono text-xs text-muted">
-                            {{ orderNoFromCaseId(row.caseId) }}
+                            {{ displayOrderNo(row) }}
                             <span class="text-dimmed"> · </span>
                             {{ row.id }}
-                            <template v-if="showOrg">
+                            <template v-if="showOrg && row.orgId">
                               <span class="text-dimmed"> · </span>
                               {{ orgLabel(row.orgId) }}
                             </template>
@@ -510,7 +560,7 @@ onMounted(async () => {
                           size="sm"
                           color="neutral"
                           variant="soft"
-                          :disabled="!writable || !nextStatus(row)"
+                          :disabled="!mockWritable || !nextStatus(row)"
                           @click="advance(row)"
                         >
                           {{ $t('shipping.advance') }}
@@ -541,13 +591,14 @@ onMounted(async () => {
                       </p>
                       <div class="mt-4 flex flex-wrap items-center gap-2">
                         <UButton
-                          v-if="nextStatus(row)"
-                          :disabled="!writable"
+                          v-if="nextStatus(row) && mockWritable"
+                          :disabled="!mockWritable"
                           @click="advance(row)"
                         >
                           {{ $t('shipping.advanceTo', { status: $t(`status.${nextStatus(row)}`) }) }}
                         </UButton>
                         <UButton
+                          v-if="mockWritable"
                           color="neutral"
                           variant="soft"
                           @click="selectRow(row)"
@@ -555,9 +606,10 @@ onMounted(async () => {
                           {{ $t('actions.edit') }}
                         </UButton>
                         <UButton
+                          v-if="mockWritable"
                           color="error"
                           variant="outline"
-                          :disabled="!writable"
+                          :disabled="!mockWritable"
                           @click="deleteId = row.id"
                         >
                           {{ $t('actions.delete') }}
@@ -578,13 +630,14 @@ onMounted(async () => {
       >
         <DetailPanel
           :open="detailOpen"
-          :title="creating ? $t('shipping.add') : $t('shipping.edit')"
-          :subtitle="selected ? `${orderNoFromCaseId(selected.caseId)} · ${selected.customer}` : $t('form.shipTitle')"
+          :title="creating ? $t('shipping.add') : (usingApi ? $t('shipping.open') : $t('shipping.edit'))"
+          :subtitle="selected ? `${displayOrderNo(selected)} · ${selected.customer}` : $t('form.shipTitle')"
           :empty="$t('form.emptyDetail')"
           icon="i-lucide-truck"
           @close="closeDetail"
         >
           <UForm
+            v-if="mockWritable"
             id="ship-form"
             :schema="shipmentSchema"
             :state="state"
@@ -628,6 +681,26 @@ onMounted(async () => {
               {{ $t('shipping.mockNote') }}
             </p>
           </UForm>
+          <div
+            v-else-if="selected"
+            class="space-y-3 text-sm"
+          >
+            <p>
+              <span class="text-muted">{{ $t('shipping.fieldOrder') }}：</span>
+              <span class="font-mono">{{ displayOrderNo(selected) }}</span>
+            </p>
+            <p>
+              <span class="text-muted">{{ $t('col.status') }}：</span>
+              {{ $t(`status.${selected.status}`) }}
+            </p>
+            <p>
+              <span class="text-muted">{{ $t('col.tracking') }}：</span>
+              <span class="font-mono">{{ selected.tracking ?? $t('status.na') }}</span>
+            </p>
+            <p class="text-xs text-muted">
+              {{ $t('shipping.apiReadOnlyNote') }}
+            </p>
+          </div>
           <template #footer>
             <UButton
               color="neutral"
@@ -637,9 +710,10 @@ onMounted(async () => {
               {{ $t('actions.cancel') }}
             </UButton>
             <UButton
+              v-if="mockWritable"
               type="submit"
               form="ship-form"
-              :disabled="!writable"
+              :disabled="!mockWritable"
             >
               {{ $t('actions.save') }}
             </UButton>

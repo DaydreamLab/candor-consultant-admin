@@ -1743,6 +1743,7 @@
     "fieldOrder": "訂單／案件",
     "trackingPlaceholder": "例如 SF123…",
     "mockNote": "Mock：儲存寫入 ops-store；接 API 前維持即將上線。",
+    "apiReadOnlyNote": "目前顯示 core 出貨資料（唯讀）。推進／新增／刪除仍為 mock，待 API 寫入就緒。",
     "emptyTitle": "目前沒有出貨單",
     "emptyBody": "已付款且需出貨的訂單出現後會列在這裡；也可手動新增出貨。",
     "loading": "載入中…",

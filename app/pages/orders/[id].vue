@@ -14,6 +14,7 @@ import {
   mapHealthReportResultRow,
   type HealthReportResult
 } from '~/utils/report-result-status'
+import { shippingProgressQuery } from '~/utils/shipping-link'
 
 type FieldRow = { key: string, label: string, value: string, money?: boolean }
 
@@ -102,6 +103,20 @@ const packageComponents = computed(() => packageInfo.value?.components ?? [])
 const labLines = computed(() => labLinesOf(order.value))
 const payments = computed(() => recordsOf(order.value?.payments))
 const shipment = computed(() => recordOf(order.value?.shipment))
+const shipmentId = computed(() => {
+  return scalarId(shipment.value?.id) || scalarId(order.value?.shipment_id)
+})
+const showShippingLink = computed(() => {
+  if (!order.value) {
+    return false
+  }
+  return Boolean(
+    shipment.value
+    || shipmentId.value
+    || (typeof order.value.order_no === 'string' && order.value.order_no.trim())
+    || orderId.value
+  )
+})
 const timelineSteps = computed(() => timelineOf(order.value, shipment.value))
 const daySupplies = computed(() => recordsOf(order.value?.day_supplies))
 const vouchers = computed(() => recordsOf(order.value?.vouchers))
@@ -495,22 +510,18 @@ function shipmentFields(row: Record<string, unknown>): FieldRow[] {
 }
 
 const shippingProgressTo = computed(() => {
-  const query: Record<string, string> = {}
   const ship = shipment.value
-  const shipId = scalarId(ship?.id)
   const tracking = typeof ship?.tracking_no === 'string' ? ship.tracking_no.trim() : ''
   const orderNo = typeof order.value?.order_no === 'string' ? order.value.order_no.trim() : ''
-  if (shipId) {
-    query.shipment = shipId
-  }
-  if (orderNo) {
-    query.q = orderNo
-  } else if (tracking) {
-    query.q = tracking
-  } else if (orderId.value) {
-    query.q = orderId.value
-  }
-  return localePath({ path: '/shipping', query })
+  return localePath({
+    path: '/shipping',
+    query: shippingProgressQuery({
+      shipmentId: shipmentId.value,
+      orderNo,
+      trackingNo: tracking,
+      orderId: orderId.value
+    })
+  })
 })
 
 function paymentKey(row: Record<string, unknown>, index: number) {
@@ -721,7 +732,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   >
     <div class="flex flex-col gap-6 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
       <div
-        v-if="canRefund || canRetryInvoice || actionError"
+        v-if="canRefund || canRetryInvoice || showShippingLink || actionError"
         class="flex shrink-0 flex-wrap items-center gap-2"
       >
         <UButton
@@ -743,6 +754,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
           @click="onRetryInvoice"
         >
           {{ $t('orders.invoiceRetry') }}
+        </UButton>
+        <UButton
+          v-if="showShippingLink"
+          size="sm"
+          variant="soft"
+          icon="i-lucide-truck"
+          :to="shippingProgressTo"
+          data-testid="order-view-in-shipping"
+        >
+          {{ $t('orders.viewInShipping') }}
         </UButton>
         <p
           v-if="actionError"
@@ -1146,7 +1167,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
             </details>
 
             <details
-              v-if="shipment"
+              v-if="shipment || shipmentId"
               open
               class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
             >
@@ -1157,7 +1178,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                   class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
                 />
               </summary>
-              <dl class="grid sm:grid-cols-2">
+              <dl
+                v-if="shipment"
+                class="grid sm:grid-cols-2"
+              >
                 <div
                   v-for="field in shipmentFields(shipment)"
                   :key="field.key"
@@ -1171,13 +1195,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                   </dd>
                 </div>
               </dl>
+              <div
+                v-else-if="shipmentId"
+                class="bg-elevated px-4 py-3.5 text-sm text-muted"
+              >
+                <span class="font-mono text-highlighted">{{ shipmentId }}</span>
+              </div>
               <div class="border-t border-default px-4 py-3">
                 <UButton
                   size="sm"
                   variant="soft"
                   icon="i-lucide-truck"
                   :to="shippingProgressTo"
-                  data-testid="order-view-in-shipping"
                 >
                   {{ $t('orders.viewInShipping') }}
                 </UButton>

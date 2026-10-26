@@ -134,6 +134,10 @@ export interface ShipmentEvent {
 export interface ShipmentRow {
   id: string
   caseId: string
+  /** core order id when row comes from admin API */
+  orderId?: string | null
+  /** core order_no — preferred list / deep-link search key */
+  orderNo?: string | null
   orgId: string
   customer: string
   status: ShipStatus
@@ -141,6 +145,8 @@ export interface ShipmentRow {
   shippedAt: string | null
   items: { sku: string, qty: number }[]
   events: ShipmentEvent[]
+  /** api = loaded from core; mock = ops-store demo */
+  source?: 'api' | 'mock'
 }
 
 export interface InvoiceRow {

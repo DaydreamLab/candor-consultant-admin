@@ -29,7 +29,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'reviews', to: '/expert-case-reviews', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
-      // shipping：物流進度（語意 in-scope、未接線）→ badge 即將上線
+      // shipping：物流進度（語意 in-scope；讀取接線中、寫入仍 mock）→ badge 即將上線
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck' },
       { key: 'users', to: '/users', icon: 'i-lucide-users', developing: false }
     ]

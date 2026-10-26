@@ -1743,6 +1743,7 @@
     "fieldOrder": "Order / case",
     "trackingPlaceholder": "e.g. SF123…",
     "mockNote": "Mock: saves to ops-store; keep Coming soon until the API is wired.",
+    "apiReadOnlyNote": "Showing core shipments (read-only). Advance / create / delete stay mock until write APIs are ready.",
     "emptyTitle": "No shipments yet",
     "emptyBody": "Paid orders that need shipping will appear here; you can also add a shipment manually.",
     "loading": "Loading…",
