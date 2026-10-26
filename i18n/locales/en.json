@@ -1395,13 +1395,18 @@
       "groupAll": "All groups"
     },
     "tabs": {
+      "navLabel": "Knowledge sections",
       "datasets": "Datasets",
       "chunks": "Chunk review",
       "retrievalPreview": "Retrieval preview",
       "audit": "Audit",
-      "datasetGroups": "Dataset groups",
+      "datasetGroups": "Groups",
       "overview": "Overview",
-      "config": "Config"
+      "config": "Config",
+      "more": "More",
+      "moreWithPage": "More · {name}",
+      "current": "Current",
+      "advanced": "Advanced"
     },
     "datasets": {
       "title": "Knowledge datasets",
