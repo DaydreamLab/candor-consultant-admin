@@ -27,7 +27,7 @@ const menuGroups = computed(() =>
       }
       if (item.developing !== false) {
         menuItem.badge = {
-          label: t('nav.developing'),
+          label: t('nav.comingSoon'),
           color: 'neutral',
           variant: 'subtle'
         }
@@ -285,7 +285,7 @@ onUnmounted(() => {
                       variant="subtle"
                       class="shrink-0 text-xs font-medium"
                     >
-                      {{ $t('nav.developing') }}
+                      {{ $t('nav.comingSoon') }}
                     </UBadge>
                   </span>
                 </template>
@@ -300,7 +300,7 @@ onUnmounted(() => {
                   variant="subtle"
                   class="shrink-0 text-xs font-medium"
                 >
-                  {{ $t('nav.developing') }}
+                  {{ $t('nav.comingSoon') }}
                 </UBadge>
               </template>
             </div>
