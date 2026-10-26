@@ -5,10 +5,18 @@ import { shipmentSchema } from '~/utils/schemas'
 import type { ShipmentForm } from '~/utils/schemas'
 import type { ShipmentRow, ShipStatus } from '~/types/admin'
 import { SHIP_FLOW } from '~/utils/demo'
+import {
+  itemsSummary,
+  orderNoFromCaseId,
+  shipmentUpdatedAt
+} from '~/utils/shipping-display'
+
+const FILTER_ANY = 'all'
 
 const { locale, t } = useI18n()
+const route = useRoute()
 const { moduleDesc } = usePageCopy()
-const { scoped, orgLabel, showOrg, writable } = useOrgScope()
+const { scoped, showOrg, orgLabel, writable } = useOrgScope()
 const ops = useOpsStore()
 const feedback = useOpsFeedback()
 const { shipStatusOptions } = useSelectOptions()
@@ -18,9 +26,42 @@ const creating = ref(false)
 const openIds = ref<string[]>([])
 const deleteId = ref<string | null>(null)
 const state = reactive<Partial<ShipmentForm>>({})
+const filterStatus = ref<string>(FILTER_ANY)
+const searchQ = ref('')
+const pending = ref(true)
+const errorMessage = ref('')
+const highlightId = ref<string | null>(null)
+let loadSeq = 0
 
-const rows = computed(() => scoped(ops.shipments))
-const selected = computed(() => rows.value.find(row => row.id === selectedId.value) ?? null)
+const allRows = computed(() => scoped(ops.shipments))
+
+const statusFilterOptions = computed(() => [
+  { label: t('shipping.filterAny'), value: FILTER_ANY },
+  ...shipStatusOptions.value
+])
+
+const rows = computed(() => {
+  const q = searchQ.value.trim().toLowerCase()
+  return allRows.value.filter((row) => {
+    if (filterStatus.value !== FILTER_ANY && row.status !== filterStatus.value) {
+      return false
+    }
+    if (!q) {
+      return true
+    }
+    const orderNo = orderNoFromCaseId(row.caseId).toLowerCase()
+    const haystack = [
+      row.customer,
+      row.caseId,
+      orderNo,
+      row.id,
+      row.tracking ?? ''
+    ].join(' ').toLowerCase()
+    return haystack.includes(q)
+  })
+})
+
+const selected = computed(() => allRows.value.find(row => row.id === selectedId.value) ?? null)
 const detailOpen = computed(() => creating.value || Boolean(selected.value))
 
 const caseOptions = computed(() => {
@@ -28,7 +69,7 @@ const caseOptions = computed(() => {
   return scoped(ops.cases)
     .filter(row => row.planId === 'premium' && (row.status === 'ship_due' || row.status === 'keyin_due' || shipped.has(row.id)))
     .map(row => ({
-      label: `${row.id} · ${locale.value === 'en' ? row.customerEn : row.customer}`,
+      label: `${orderNoFromCaseId(row.id)} · ${locale.value === 'en' ? row.customerEn : row.customer}`,
       value: row.id
     }))
 })
@@ -39,6 +80,24 @@ function itemLabel(sku: string) {
     return sku
   }
   return locale.value === 'en' ? item.aLabelEn : item.aLabel
+}
+
+function summaryOf(row: ShipmentRow) {
+  return itemsSummary(
+    row.items,
+    itemLabel,
+    n => t('shipping.itemsMore', { n })
+  )
+}
+
+function updatedOf(row: ShipmentRow) {
+  return shipmentUpdatedAt(row.events, row.shippedAt) || t('status.na')
+}
+
+function itemsLine(row: ShipmentRow) {
+  return row.items
+    .map(item => `${itemLabel(item.sku)} ×${item.qty}`)
+    .join(', ')
 }
 
 function timelineItems(row: ShipmentRow): TimelineItem[] {
@@ -53,8 +112,9 @@ function timelineItems(row: ShipmentRow): TimelineItem[] {
   }))
 }
 
-function timelineValue(row: ShipmentRow) {
-  return row.status
+function nextStatus(row: ShipmentRow): ShipStatus | null {
+  const index = SHIP_FLOW.indexOf(row.status)
+  return SHIP_FLOW[index + 1] ?? null
 }
 
 function fillCreate() {
@@ -100,6 +160,13 @@ function isOpen(id: string) {
   return openIds.value.includes(id)
 }
 
+function openRow(row: ShipmentRow) {
+  if (!isOpen(row.id)) {
+    toggle(row.id)
+  }
+  selectRow(row)
+}
+
 function closeDetail() {
   creating.value = false
   selectedId.value = null
@@ -131,12 +198,12 @@ function confirmDelete() {
   if (selectedId.value === deleteId.value) {
     closeDetail()
   }
+  openIds.value = openIds.value.filter(id => id !== deleteId.value)
   deleteId.value = null
 }
 
 function advance(row: ShipmentRow) {
-  const index = SHIP_FLOW.indexOf(row.status)
-  const next = SHIP_FLOW[index + 1] as ShipStatus | undefined
+  const next = nextStatus(row)
   if (!next) {
     return
   }
@@ -150,10 +217,78 @@ function advance(row: ShipmentRow) {
   feedback.saved(row.caseId)
 }
 
-watch(rows, (list) => {
+async function load() {
+  const seq = ++loadSeq
+  pending.value = true
+  errorMessage.value = ''
+  try {
+    // Mock path: ops-store is sync; brief tick keeps skeleton / retry UI wired for API later.
+    await Promise.resolve()
+    if (seq !== loadSeq) {
+      return
+    }
+  } catch {
+    if (seq !== loadSeq) {
+      return
+    }
+    errorMessage.value = t('shipping.failed')
+  } finally {
+    if (seq === loadSeq) {
+      pending.value = false
+    }
+  }
+}
+
+function applyRouteQuery() {
+  const q = route.query.q
+  if (typeof q === 'string' && q.trim()) {
+    searchQ.value = q.trim()
+  }
+  const shipment = route.query.shipment ?? route.query.id
+  if (typeof shipment === 'string' && shipment.trim()) {
+    const id = shipment.trim()
+    highlightId.value = id
+    const row = allRows.value.find(item => item.id === id)
+      ?? allRows.value.find(item => orderNoFromCaseId(item.caseId) === id)
+      ?? allRows.value.find(item => item.caseId === id)
+      ?? allRows.value.find(item => item.tracking === id)
+    if (row) {
+      openIds.value = [row.id]
+      selectRow(row)
+      if (import.meta.client) {
+        nextTick(() => {
+          document.getElementById(`ship-row-${row.id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        })
+      }
+    }
+  }
+}
+
+function clearHighlightSoon() {
+  if (!highlightId.value || !import.meta.client) {
+    return
+  }
+  window.setTimeout(() => {
+    highlightId.value = null
+  }, 2400)
+}
+
+watch(allRows, (list) => {
   if (selectedId.value && !list.some(row => row.id === selectedId.value)) {
     selectedId.value = null
   }
+})
+
+watch(() => route.fullPath, () => {
+  if (import.meta.client && !pending.value) {
+    applyRouteQuery()
+  }
+})
+
+onMounted(async () => {
+  await load()
+  applyRouteQuery()
+  clearHighlightSoon()
 })
 </script>
 
@@ -166,122 +301,285 @@ watch(rows, (list) => {
       <UButton
         icon="i-lucide-plus"
         :disabled="!writable"
+        data-testid="shipping-add"
         @click="openCreate"
       >
-        {{ $t('actions.add') }}
+        {{ $t('shipping.add') }}
       </UButton>
     </template>
 
-    <p class="mb-4 rounded-lg bg-muted px-4 py-3 text-base text-muted">
-      {{ $t('shipping.expandHint') }}
-    </p>
+    <div
+      v-if="errorMessage"
+      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
+      data-testid="shipping-error"
+    >
+      <div class="flex min-w-0 items-center gap-2">
+        <UIcon
+          name="i-lucide-triangle-alert"
+          class="size-4 shrink-0"
+        />
+        <span>{{ errorMessage }}</span>
+      </div>
+      <UButton
+        color="neutral"
+        variant="soft"
+        size="sm"
+        data-testid="shipping-retry"
+        @click="load"
+      >
+        {{ $t('shipping.retry') }}
+      </UButton>
+    </div>
 
-    <SplitDetail>
-      <div class="space-y-3">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <USelect
+        v-model="filterStatus"
+        :items="statusFilterOptions"
+        value-key="value"
+        label-key="label"
+        class="w-44"
+        data-testid="shipping-status-filter"
+      />
+      <UInput
+        v-model="searchQ"
+        icon="i-lucide-search"
+        :placeholder="$t('shipping.searchPlaceholder')"
+        class="min-w-64 flex-1"
+        data-testid="shipping-search"
+      />
+    </div>
+
+    <div
+      class="grid items-start gap-5"
+      :class="detailOpen ? 'lg:grid-cols-[minmax(28rem,1fr)_minmax(22rem,26rem)]' : ''"
+    >
+      <div class="min-w-0">
         <div
-          v-if="!rows.length"
-          class="rounded-xl border border-default bg-elevated p-8 text-center text-base text-muted"
+          v-if="pending"
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+          data-testid="shipping-loading"
         >
-          {{ $t('table.empty') }}
+          <table class="app-table w-full min-w-[52rem] text-left text-base">
+            <thead class="border-b border-default bg-muted/40 text-sm text-muted">
+              <tr>
+                <th>{{ $t('shipping.colOrderMember') }}</th>
+                <th>{{ $t('col.status') }}</th>
+                <th>{{ $t('col.tracking') }}</th>
+                <th>{{ $t('shipping.colUpdated') }}</th>
+                <th>{{ $t('shipping.colItemsSummary') }}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="n in 5"
+                :key="n"
+                class="border-b border-default last:border-0"
+              >
+                <td class="py-3">
+                  <USkeleton class="mb-2 h-4 w-28" />
+                  <USkeleton class="h-3 w-40" />
+                </td>
+                <td><USkeleton class="h-6 w-16 rounded-full" /></td>
+                <td><USkeleton class="h-4 w-28" /></td>
+                <td><USkeleton class="h-4 w-32" /></td>
+                <td><USkeleton class="h-4 w-36" /></td>
+                <td><USkeleton class="ml-auto h-8 w-24" /></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <section
-          v-for="row in rows"
-          :key="row.id"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
-          :class="row.id === selectedId ? 'ring-1 ring-primary/40' : ''"
+        <EmptyPanel
+          v-else-if="errorMessage"
+          dashed
+          :title="$t('shipping.errorTitle')"
+          :description="$t('shipping.errorBody')"
+          data-testid="shipping-error-empty"
         >
-          <button
-            type="button"
-            class="flex w-full flex-wrap items-center gap-4 px-4 py-4 text-left hover:bg-muted/30"
-            @click="toggle(row.id); selectRow(row)"
+          <UButton
+            icon="i-lucide-refresh-cw"
+            @click="load"
           >
-            <UIcon
-              :name="isOpen(row.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-              class="size-5 text-muted"
-            />
-            <div class="min-w-40 flex-1">
-              <p class="text-base font-semibold text-highlighted">
-                {{ row.caseId }} · {{ row.customer }}
-              </p>
-              <p class="mt-1 text-sm text-muted">
-                <span v-if="showOrg">{{ orgLabel(row.orgId) }} · </span>{{ row.id }}
-              </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <ProductThumb
-                v-for="item in row.items"
-                :key="`${row.id}-${item.sku}`"
-                :seed="item.sku"
-                :label="itemLabel(item.sku)"
-                :src="ops.productOf(item.sku)?.image"
-                size="sm"
-              />
-            </div>
-            <StatusBadge
-              :label="$t(`status.${row.status}`)"
-              :color="SHIP_STATUS_COLOR[row.status]"
-            />
-          </button>
+            {{ $t('shipping.refresh') }}
+          </UButton>
+        </EmptyPanel>
 
-          <div
-            v-if="isOpen(row.id)"
-            class="border-t border-default px-4 py-5"
+        <EmptyPanel
+          v-else-if="!rows.length"
+          dashed
+          :title="$t('shipping.emptyTitle')"
+          :description="$t('shipping.emptyBody')"
+          data-testid="shipping-empty"
+        >
+          <UButton
+            v-if="writable"
+            icon="i-lucide-plus"
+            @click="openCreate"
           >
-            <div class="mb-4 flex flex-wrap gap-2">
-              <span
-                v-for="item in row.items"
-                :key="`${row.id}-chip-${item.sku}`"
-                class="inline-flex items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 text-sm"
-              >
-                <ProductThumb
-                  :seed="item.sku"
-                  :label="itemLabel(item.sku)"
-                  :src="ops.productOf(item.sku)?.image"
-                  size="sm"
-                />
-                {{ itemLabel(item.sku) }} ×{{ item.qty }}
-              </span>
-            </div>
-            <div class="overflow-x-auto pb-2">
-              <UTimeline
-                :model-value="timelineValue(row)"
-                orientation="horizontal"
-                size="md"
-                :items="timelineItems(row)"
-                class="min-w-[40rem]"
-              />
-            </div>
-            <div class="mt-5 flex flex-wrap items-center gap-2">
-              <p class="mr-auto text-sm text-muted">
-                {{ row.tracking ?? $t('status.na') }}
-              </p>
-              <UButton
-                color="neutral"
-                variant="outline"
-                :disabled="!writable || row.status === 'delivered'"
-                @click="advance(row)"
-              >
-                {{ $t('col.next') }}
-              </UButton>
-              <UButton
-                color="error"
-                variant="ghost"
-                :disabled="!writable"
-                @click="deleteId = row.id"
-              >
-                {{ $t('actions.delete') }}
-              </UButton>
-            </div>
+            {{ $t('shipping.add') }}
+          </UButton>
+        </EmptyPanel>
+
+        <div
+          v-else
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+          data-testid="shipping-table"
+        >
+          <div class="overflow-x-auto">
+            <table class="app-table w-full min-w-[52rem] text-left text-base">
+              <thead class="border-b border-default bg-muted/40 text-sm text-muted">
+                <tr>
+                  <th class="w-[22%]">
+                    {{ $t('shipping.colOrderMember') }}
+                  </th>
+                  <th>{{ $t('col.status') }}</th>
+                  <th>{{ $t('col.tracking') }}</th>
+                  <th>{{ $t('shipping.colUpdated') }}</th>
+                  <th>{{ $t('shipping.colItemsSummary') }}</th>
+                  <th class="text-end">
+                    {{ $t('col.actions') }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template
+                  v-for="row in rows"
+                  :key="row.id"
+                >
+                  <tr
+                    :id="`ship-row-${row.id}`"
+                    class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+                    :class="[
+                      row.id === selectedId ? 'bg-primary/5' : '',
+                      highlightId === row.id ? 'ring-2 ring-inset ring-primary/50' : ''
+                    ]"
+                    :data-testid="`shipping-row-${row.id}`"
+                    @click="openRow(row)"
+                  >
+                    <td class="py-3">
+                      <div class="flex items-start gap-2">
+                        <UIcon
+                          :name="isOpen(row.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                          class="mt-1 size-4 shrink-0 text-muted"
+                        />
+                        <div class="min-w-0">
+                          <p class="font-semibold text-highlighted">
+                            {{ row.customer }}
+                          </p>
+                          <p class="mt-0.5 font-mono text-xs text-muted">
+                            {{ orderNoFromCaseId(row.caseId) }}
+                            <span class="text-dimmed"> · </span>
+                            {{ row.id }}
+                            <template v-if="showOrg">
+                              <span class="text-dimmed"> · </span>
+                              {{ orgLabel(row.orgId) }}
+                            </template>
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <StatusBadge
+                        :label="$t(`status.${row.status}`)"
+                        :color="SHIP_STATUS_COLOR[row.status]"
+                      />
+                    </td>
+                    <td class="font-mono text-sm">
+                      {{ row.tracking ?? $t('status.na') }}
+                    </td>
+                    <td class="whitespace-nowrap text-sm text-muted">
+                      {{ updatedOf(row) }}
+                    </td>
+                    <td class="max-w-52 truncate text-sm text-muted">
+                      {{ summaryOf(row) }}
+                    </td>
+                    <td
+                      class="text-end"
+                      @click.stop
+                    >
+                      <div class="flex flex-wrap items-center justify-end gap-2">
+                        <UButton
+                          size="sm"
+                          variant="soft"
+                          @click="openRow(row)"
+                        >
+                          {{ $t('shipping.open') }}
+                        </UButton>
+                        <UButton
+                          size="sm"
+                          color="neutral"
+                          variant="soft"
+                          :disabled="!writable || !nextStatus(row)"
+                          @click="advance(row)"
+                        >
+                          {{ $t('shipping.advance') }}
+                        </UButton>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr
+                    v-if="isOpen(row.id)"
+                    class="border-b border-default bg-muted/20"
+                  >
+                    <td
+                      colspan="6"
+                      class="px-4 py-5"
+                    >
+                      <div class="overflow-x-auto pb-2">
+                        <UTimeline
+                          :model-value="row.status"
+                          orientation="horizontal"
+                          size="md"
+                          :items="timelineItems(row)"
+                          class="min-w-[40rem]"
+                        />
+                      </div>
+                      <p class="mt-4 text-sm text-muted">
+                        <span class="font-medium text-default">{{ $t('col.items') }}：</span>
+                        {{ itemsLine(row) || $t('status.na') }}
+                      </p>
+                      <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <UButton
+                          v-if="nextStatus(row)"
+                          :disabled="!writable"
+                          @click="advance(row)"
+                        >
+                          {{ $t('shipping.advanceTo', { status: $t(`status.${nextStatus(row)}`) }) }}
+                        </UButton>
+                        <UButton
+                          color="neutral"
+                          variant="soft"
+                          @click="selectRow(row)"
+                        >
+                          {{ $t('actions.edit') }}
+                        </UButton>
+                        <UButton
+                          color="error"
+                          variant="outline"
+                          :disabled="!writable"
+                          @click="deleteId = row.id"
+                        >
+                          {{ $t('actions.delete') }}
+                        </UButton>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
           </div>
-        </section>
+        </div>
       </div>
 
-      <template #detail>
+      <aside
+        v-if="detailOpen"
+        class="min-w-0 overflow-hidden rounded-xl border border-default bg-elevated lg:sticky lg:top-4"
+      >
         <DetailPanel
           :open="detailOpen"
-          :title="creating ? $t('actions.add') : selected?.caseId"
-          :subtitle="selected?.customer ?? $t('form.shipTitle')"
+          :title="creating ? $t('shipping.add') : $t('shipping.edit')"
+          :subtitle="selected ? `${orderNoFromCaseId(selected.caseId)} · ${selected.customer}` : $t('form.shipTitle')"
           :empty="$t('form.emptyDetail')"
           icon="i-lucide-truck"
           @close="closeDetail"
@@ -295,7 +593,7 @@ watch(rows, (list) => {
           >
             <UFormField
               name="caseId"
-              :label="$t('col.case')"
+              :label="$t('shipping.fieldOrder')"
             >
               <USelect
                 v-model="state.caseId"
@@ -322,19 +620,21 @@ watch(rows, (list) => {
             >
               <UInput
                 v-model="state.tracking"
+                :placeholder="$t('shipping.trackingPlaceholder')"
                 class="w-full"
               />
             </UFormField>
+            <p class="text-xs text-muted">
+              {{ $t('shipping.mockNote') }}
+            </p>
           </UForm>
           <template #footer>
             <UButton
-              v-if="selected"
-              color="error"
+              color="neutral"
               variant="ghost"
-              :disabled="!writable"
-              @click="deleteId = selected.id"
+              @click="closeDetail"
             >
-              {{ $t('actions.delete') }}
+              {{ $t('actions.cancel') }}
             </UButton>
             <UButton
               type="submit"
@@ -345,8 +645,8 @@ watch(rows, (list) => {
             </UButton>
           </template>
         </DetailPanel>
-      </template>
-    </SplitDetail>
+      </aside>
+    </div>
 
     <ConfirmDelete
       :open="Boolean(deleteId)"

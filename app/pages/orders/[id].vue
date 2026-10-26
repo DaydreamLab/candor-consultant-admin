@@ -40,6 +40,7 @@ type TimelineStep = {
 
 const config = useRuntimeConfig()
 const route = useRoute()
+const localePath = useLocalePath()
 const { t, locale } = useI18n()
 const orderLabel = useState<string | null>('candor-order-detail-label', () => null)
 
@@ -492,6 +493,25 @@ function shipmentFields(row: Record<string, unknown>): FieldRow[] {
   pushText(rows, 'note', row.note)
   return rows
 }
+
+const shippingProgressTo = computed(() => {
+  const query: Record<string, string> = {}
+  const ship = shipment.value
+  const shipId = scalarId(ship?.id)
+  const tracking = typeof ship?.tracking_no === 'string' ? ship.tracking_no.trim() : ''
+  const orderNo = typeof order.value?.order_no === 'string' ? order.value.order_no.trim() : ''
+  if (shipId) {
+    query.shipment = shipId
+  }
+  if (orderNo) {
+    query.q = orderNo
+  } else if (tracking) {
+    query.q = tracking
+  } else if (orderId.value) {
+    query.q = orderId.value
+  }
+  return localePath({ path: '/shipping', query })
+})
 
 function paymentKey(row: Record<string, unknown>, index: number) {
   return scalarId(row.id) || `payment-${index}`
@@ -1151,6 +1171,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                   </dd>
                 </div>
               </dl>
+              <div class="border-t border-default px-4 py-3">
+                <UButton
+                  size="sm"
+                  variant="soft"
+                  icon="i-lucide-truck"
+                  :to="shippingProgressTo"
+                  data-testid="order-view-in-shipping"
+                >
+                  {{ $t('orders.viewInShipping') }}
+                </UButton>
+              </div>
             </details>
 
             <details
