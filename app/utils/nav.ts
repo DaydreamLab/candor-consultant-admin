@@ -45,7 +45,10 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'catalog',
     items: [
       { key: 'packagePlans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
-      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false }
+      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false },
+      // labServices：採檢服務主檔（語意 in-scope；local mock、未接 API）→ badge 即將上線
+      // 勿與開發中「採檢」/labs 或「預約記錄」/lab-appointments 混淆
+      { key: 'labServices', to: '/lab-services', icon: 'i-lucide-droplet' }
     ]
   },
   {
@@ -64,7 +67,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'labAppointments', to: '/lab-appointments', icon: 'i-lucide-calendar-clock' },
       // progress：履約進度範例頁（勿與案件組「物流進度」混淆）
       { key: 'progress', to: '/progress', icon: 'i-lucide-list-checks' },
-      { key: 'labServices', to: '/lab-services', icon: 'i-lucide-droplet' },
       { key: 'selections', to: '/selections', icon: 'i-lucide-clipboard-list' },
       { key: 'invoices', to: '/invoices', icon: 'i-lucide-receipt' },
       { key: 'reports', to: '/reports', icon: 'i-lucide-chart-column' },
