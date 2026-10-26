@@ -2,7 +2,7 @@
 
 對照現有側欄（`app/utils/nav.ts`）與 [candor-core spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)。訂單列表已接 `GET /admin/orders`；詳情、讀對話與報告判讀已接 `GET /admin/order/{id}`、`GET /admin/order/{id}/message`、`GET /admin/order/{id}/health-report`。會員列表／詳情已接 `GET /admin/users`、`GET /admin/users/{id}` 與子資源（訂單、對話、報告）。方案列表已接 `GET /admin/package-plans`（只顯示）。商品列表、單筆、建立、更新已接 sellable item；刪除按鈕呼叫的 `DELETE` core 未提供（停售走 `PATCH` `sale_status`）。出貨列表／詳情讀取接線中（core #88；空／不可用回落 mock）。庫存讀寫與 alerts、取消、出貨寫入與其餘空殼路由尚未接 API。
 
-未接／示範項：側欄選單文字右側、以及頂欄標題（或麵包屑最後一段）右側加「即將上線」badge（由 `layouts/default.vue` 統一處理，不在 `PageHeader` 內文）。側欄 section「開發中」組標籤仍用「開發中」。正式已上線頁不加 badge（含設定隱私 CMS、知識、專家訓練、AI 助理等）。正式組內未上線項目前僅物流進度（`shipping`）帶「即將上線」。
+未接／示範項：側欄選單文字右側、以及頂欄標題（或麵包屑最後一段）右側加「即將上線」badge（由 `layouts/default.vue` 統一處理，不在 `PageHeader` 內文）。側欄 section「開發中」組標籤仍用「開發中」。正式已上線頁不加 badge（含設定隱私 CMS、知識、專家訓練、AI 助理、物流進度等）。正式組內未上線項目前僅採檢服務（`labServices`）帶「即將上線」。
 
 側欄掃描順序（Irice 2026-10-26）：**案件 → 知識 → 商品 → 設定 → 開發中**（每項只出現一次）。
 
@@ -14,7 +14,7 @@
 |---------|------|------|----------|
 | reviews | `/expert-case-reviews`、`/expert-case-reviews/{id}` | **in-scope** | 專家檢視（真實案件主路徑）。不是 spec 不做的簽核 `reviews` |
 | orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`，報告判讀已接 `GET /admin/order/{id}/health-report`。「在物流進度查看」→ `/shipping?shipment=&q=`（對齊 `order_no`／`shipment_id`）。取消仍 Mock |
-| shipping | `/shipping` | **in-scope（語意）** | 側欄標籤「物流進度」；列表／詳情讀取接 core #88（空／不可用回落 mock）→ badge「即將上線」仍保留至寫入接線。→ 訂單 shipment；勿另立 selection 出貨 API。勿與開發中「履約進度」`progress` 混淆 |
+| shipping | `/shipping` | **in-scope（語意）** | 側欄標籤「物流進度」；列表／詳情讀取接 core #88（空／不可用回落 mock）；推進寫入仍 Mock。列表已接 → **無**「即將上線」badge。→ 訂單 shipment；勿另立 selection 出貨 API。勿與開發中「履約進度」`progress` 混淆 |
 | users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
 
 ### 知識（組 key: `learning`）

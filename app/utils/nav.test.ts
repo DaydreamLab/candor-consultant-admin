@@ -18,11 +18,11 @@ describe('sidebar IA (Irice 2026-10-26)', () => {
     expect(new Set(keys).size).toBe(20)
   })
 
-  it('places shipping in cases group with developing badge; progress in developing', () => {
+  it('places shipping in cases group without badge; progress in developing', () => {
     const ops = NAV_GROUPS.find(g => g.key === 'ops')!
     const developing = NAV_GROUPS.find(g => g.key === 'developing')!
     expect(ops.items.map(i => i.key)).toEqual(['reviews', 'orders', 'shipping', 'users'])
-    expect(ops.items.find(i => i.key === 'shipping')?.developing).not.toBe(false)
+    expect(ops.items.find(i => i.key === 'shipping')?.developing).toBe(false)
     expect(developing.items.map(i => i.key)).toContain('progress')
     expect(developing.items.map(i => i.key)).not.toContain('shipping')
   })
@@ -47,18 +47,18 @@ describe('sidebar IA (Irice 2026-10-26)', () => {
   })
 
   it('marks live official pages as not developing', () => {
-    const live = ['reviews', 'orders', 'users', 'knowledge', 'expertTuning', 'packagePlans', 'products', 'settings', 'aiAssistant']
+    const live = ['reviews', 'orders', 'shipping', 'users', 'knowledge', 'expertTuning', 'packagePlans', 'products', 'settings', 'aiAssistant']
     for (const key of live) {
       const item = NAV_GROUPS.flatMap(g => g.items).find(i => i.key === key)
       expect(item?.developing, key).toBe(false)
     }
   })
 
-  it('isDevelopingPath hides topbar badge on settings and expert-tuning', () => {
+  it('isDevelopingPath hides topbar badge on settings, expert-tuning, and shipping', () => {
     expect(isDevelopingPath('/settings')).toBe(false)
     expect(isDevelopingPath('/expert-tuning')).toBe(false)
     expect(isDevelopingPath('/expert-tuning/daily-learning')).toBe(false)
-    expect(isDevelopingPath('/shipping')).toBe(true)
+    expect(isDevelopingPath('/shipping')).toBe(false)
     expect(isDevelopingPath('/lab-services')).toBe(true)
     expect(isDevelopingPath('/progress')).toBe(true)
   })
