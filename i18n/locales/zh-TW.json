@@ -1533,7 +1533,7 @@
         "chunksEmpty": "調整審核狀態篩選，或此資料集尚無片段。",
         "chunksShowing": "顯示 {filtered} 筆（自本頁已載入的 {loaded} 筆中篩選）",
         "chunksClientScopeTitle": "後端尚未支援依資料集查詢",
-        "chunksClientScopeHint": "GET /knowledge/chunks 目前 OpenAPI 僅支援 group；無 group_key 時會載入全部片段並在前端依 dataset_id 篩選，大型知識庫可能較慢。待 candor-core 補 dataset_id、review_status、limit／offset。",
+        "chunksClientScopeHint": "GET /knowledge/chunks 已支援 group／status／limit／offset；尚無 dataset_id 時會依 group 載入後再於前端以 dataset_id／dataset_code 篩選。待 candor-core 補 dataset_id。",
         "editTitle": "代號、名稱與授權"
       },
       "form": {
@@ -1569,6 +1569,14 @@
       "chunkId": "片段 ID",
       "rejectReasonStored": "退回原因",
       "reviewRoleDenied": "僅 ops 與 admin 可核可／退回片段。",
+      "columns": {
+        "status": "狀態",
+        "document": "文件／資料集",
+        "preview": "內容預覽",
+        "sourceUrl": "來源連結",
+        "license": "授權",
+        "attribution": "出處／署名"
+      },
       "status": {
         "pending": "待審",
         "approved": "已核可",

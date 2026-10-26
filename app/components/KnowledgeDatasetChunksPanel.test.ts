@@ -111,6 +111,9 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
             emits: ['click'],
             template: '<button type="button" @click="$emit(\'click\')"><slot /></button>'
           },
+          AdminTable: {
+            template: '<table><thead><slot name="head" /></thead><tbody><slot /></tbody></table>'
+          },
           EmptyPanel: {
             props: ['title', 'description'],
             template: '<div class="empty" :data-title="title" :data-description="description" />'
@@ -131,6 +134,8 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
     expect(wrapper.text()).toContain('knowledge.chunks.sourceLink')
     expect(wrapper.text()).toContain('CC-BY')
     expect(wrapper.text()).toContain('Source A')
+    // Missing source fields render as em dash columns (pending-2/3).
+    expect(wrapper.text()).toMatch(/—/)
     expect(wrapper.text()).not.toContain('approved text')
 
     await wrapper.find('select').setValue('all')
@@ -192,6 +197,9 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
             emits: ['click'],
             template: '<button type="button" @click="$emit(\'click\')"><slot /></button>'
           },
+          AdminTable: {
+            template: '<table><thead><slot name="head" /></thead><tbody><slot /></tbody></table>'
+          },
           EmptyPanel: true
         }
       }
@@ -242,6 +250,9 @@ describe('KnowledgeDatasetChunksPanel status filter', () => {
           UAlert: true,
           UBadge: true,
           UButton: true,
+          AdminTable: {
+            template: '<table><thead><slot name="head" /></thead><tbody><slot /></tbody></table>'
+          },
           EmptyPanel: {
             props: ['title', 'description'],
             template: '<div class="empty" :data-title="title" :data-description="description" />'

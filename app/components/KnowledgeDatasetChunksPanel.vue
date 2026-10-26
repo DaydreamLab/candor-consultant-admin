@@ -5,6 +5,7 @@ import { readOperatorToken } from '~/utils/operator-session'
 import { reviewStatusBadgeColor } from '~/utils/knowledge-labels'
 import {
   buildKnowledgeChunkListQuery,
+  knowledgeChunkListHasMore,
   KNOWLEDGE_CHUNK_DEFAULT_STATUS,
   KNOWLEDGE_CHUNK_FILTER_ANY as FILTER_ANY,
   KNOWLEDGE_CHUNK_PAGE_SIZE
@@ -94,7 +95,7 @@ async function load(reset: boolean) {
       return
     }
     rows.value = reset ? list : [...rows.value, ...list]
-    hasMore.value = list.length >= KNOWLEDGE_CHUNK_PAGE_SIZE
+    hasMore.value = knowledgeChunkListHasMore(list.length, KNOWLEDGE_CHUNK_PAGE_SIZE)
     offset.value += list.length
   } catch (error) {
     if (seq !== loadSeq) {
@@ -131,6 +132,11 @@ function statusLabel(status: KnowledgeReviewStatus | '') {
 function isSummary(row: KnowledgeChunk) {
   const kind = row.chunk_kind?.toLowerCase() ?? ''
   return kind.includes('summary')
+}
+
+function cellText(value: string | null | undefined) {
+  const text = typeof value === 'string' ? value.trim() : ''
+  return text || '—'
 }
 </script>
 
@@ -186,71 +192,96 @@ function isSummary(row: KnowledgeChunk) {
       <p class="mb-3 text-xs text-muted">
         {{ $t('knowledge.datasets.detail.chunksShowing', { filtered: scopedRows.length, loaded: rows.length }) }}
       </p>
-      <div class="space-y-3">
-        <article
+      <AdminTable compact>
+        <template #head>
+          <tr>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.chunks.columns.status') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.chunks.columns.preview') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.chunks.columns.sourceUrl') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.chunks.columns.license') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.chunks.columns.attribution') }}
+            </th>
+            <th class="px-4 py-3 font-medium text-end">
+              {{ $t('col.actions') }}
+            </th>
+          </tr>
+        </template>
+        <tr
           v-for="row in scopedRows"
           :key="row.id"
-          class="rounded-lg border border-default bg-elevated p-4"
+          class="border-b border-default last:border-0 align-top"
         >
-          <div class="flex flex-wrap items-start justify-between gap-2">
-            <p class="font-mono text-xs text-muted break-all">
-              {{ row.id }}
-            </p>
-            <UBadge
-              size="sm"
-              variant="soft"
-              :color="reviewStatusBadgeColor(row.review_status)"
+          <td class="px-4 py-3">
+            <div class="flex flex-col gap-1">
+              <UBadge
+                size="sm"
+                variant="soft"
+                :color="reviewStatusBadgeColor(row.review_status)"
+              >
+                {{ statusLabel(row.review_status) }}
+              </UBadge>
+              <span
+                v-if="isSummary(row)"
+                class="text-xs text-muted"
+              >
+                {{ $t('knowledge.chunks.summaryDerived') }}
+              </span>
+              <p class="font-mono text-xs text-muted break-all">
+                {{ row.id || '—' }}
+              </p>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-sm">
+            <p
+              v-if="row.document_title"
+              class="mb-1 font-medium"
             >
-              {{ statusLabel(row.review_status) }}
-            </UBadge>
-          </div>
-          <p
-            v-if="row.document_title"
-            class="mt-2 text-sm font-medium"
-          >
-            {{ row.document_title }}
-          </p>
-          <p
-            v-if="isSummary(row)"
-            class="mt-1 text-xs text-muted"
-          >
-            {{ $t('knowledge.chunks.summaryDerived') }}
-          </p>
-          <p class="mt-2 text-sm whitespace-pre-wrap text-default">
-            {{ row.text_preview || '—' }}
-          </p>
-          <p
-            v-if="row.source_url || row.license"
-            class="mt-2 text-xs"
-          >
+              {{ row.document_title }}
+            </p>
+            <p class="whitespace-pre-wrap text-muted max-w-sm">
+              {{ cellText(row.text_preview) }}
+            </p>
+          </td>
+          <td class="px-4 py-3 text-sm">
             <a
               v-if="row.source_url"
               :href="row.source_url"
-              class="text-primary underline"
+              class="text-primary underline break-all"
               target="_blank"
               rel="noopener noreferrer"
             >{{ $t('knowledge.chunks.sourceLink') }}</a>
             <span
-              v-if="row.license"
+              v-else
               class="text-muted"
-            >{{ row.source_url ? ' · ' : '' }}{{ row.license }}</span>
-          </p>
-          <p
-            v-if="row.attribution"
-            class="mt-1 text-xs text-muted"
-          >
-            {{ row.attribution }}
-          </p>
-          <UButton
-            :to="localePath(`/knowledge/audit/chunks/${row.id}`)"
-            variant="link"
-            size="xs"
-            class="mt-2 px-0"
-          >
-            {{ $t('knowledge.audit.viewChunkAudit') }}
-          </UButton>
-        </article>
-      </div>
+            >—</span>
+          </td>
+          <td class="px-4 py-3 text-sm">
+            {{ cellText(row.license) }}
+          </td>
+          <td class="px-4 py-3 text-sm">
+            {{ cellText(row.attribution) }}
+          </td>
+          <td class="px-4 py-3 text-end">
+            <UButton
+              :to="localePath(`/knowledge/audit/chunks/${row.id}`)"
+              variant="link"
+              size="xs"
+              class="px-0"
+            >
+              {{ $t('knowledge.audit.viewChunkAudit') }}
+            </UButton>
+          </td>
+        </tr>
+      </AdminTable>
       <div
         v-if="hasMore"
         class="mt-4 flex justify-center"

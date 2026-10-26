@@ -14,6 +14,7 @@ export function buildKnowledgeChunkListQuery(options: {
   filterStatus: string
   limit?: number
   offset?: number
+  cursor?: string | null
 }): KnowledgeChunkListQuery {
   const query: KnowledgeChunkListQuery = {}
   const group = options.group?.trim()
@@ -29,5 +30,14 @@ export function buildKnowledgeChunkListQuery(options: {
   if (typeof options.offset === 'number' && Number.isFinite(options.offset) && options.offset >= 0) {
     query.offset = options.offset
   }
+  const cursor = options.cursor?.trim()
+  if (cursor) {
+    query.cursor = cursor
+  }
   return query
+}
+
+/** Infer whether another page exists when core returns a bare array (no page meta). */
+export function knowledgeChunkListHasMore(batchLength: number, limit: number = KNOWLEDGE_CHUNK_PAGE_SIZE) {
+  return batchLength >= limit
 }
