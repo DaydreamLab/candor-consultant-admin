@@ -18,6 +18,10 @@ export function useLabAppointmentCrumbLabel() {
   return useState<string | null>('candor-lab-appointment-label', () => null)
 }
 
+export function useExpertCaseCrumbLabel() {
+  return useState<string | null>('candor-expert-case-label', () => null)
+}
+
 export function usePageCrumbs() {
   const route = useRoute()
   const localePath = useLocalePath()
@@ -28,6 +32,7 @@ export function usePageCrumbs() {
   const packagePlanLabel = usePackagePlanCrumbLabel()
   const labServiceLabel = useLabServiceCrumbLabel()
   const labAppointmentLabel = useLabAppointmentCrumbLabel()
+  const expertCaseLabel = useExpertCaseCrumbLabel()
   const trainingBatchLabel = useState<string | null>('candor-training-batch-label', () => null)
   const weightSetLabel = useState<string | null>('candor-weight-set-label', () => null)
 
@@ -109,6 +114,14 @@ export function usePageCrumbs() {
       return [
         { label: t('nav.orders'), to: localePath('/orders') },
         { label: orderLabel.value || id }
+      ]
+    }
+
+    if (current.startsWith('/expert-case-reviews/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.reviews'), to: localePath('/expert-case-reviews') },
+        { label: expertCaseLabel.value || id }
       ]
     }
 
