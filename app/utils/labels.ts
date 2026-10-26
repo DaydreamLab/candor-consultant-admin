@@ -21,9 +21,9 @@ export const LAB_STATUS_COLOR = {
 } as const
 
 export const SHIP_STATUS_COLOR = {
-  picking: 'neutral',
+  picking: 'info',
   labeling: 'warning',
-  in_transit: 'info',
+  in_transit: 'primary',
   delivered: 'success'
 } as const
 
