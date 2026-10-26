@@ -16,7 +16,25 @@ describe('expert case display copy', () => {
     expect(zh.expertCaseReviews.excludedReason.contraindicationWithCondition).toContain('{condition}')
     expect(zh.expertCaseReviews.excludedReason.interaction_exclude).toContain('交互')
     expect(zh.expertCaseReviews.excludedReason.diet_incompatible).toContain('飲食')
-    expect(zh.expertCaseReviews.excludedReason.other).toContain('{code}')
+    expect(zh.expertCaseReviews.excludedReason.other).toBe('其他')
+  })
+
+  it('defines P0 enum label maps and unknown → 其他', () => {
+    expect(zh.expertCaseReviews.other).toBe('其他')
+    expect(zh.expertCaseReviews.decision.approve).toBe('保留')
+    expect(zh.expertCaseReviews.decision.reject).toBe('移除')
+    expect(zh.expertCaseReviews.decision.adjust).toBe('調劑量')
+    expect(zh.expertCaseReviews.reportResultStatus.completed).toBe('已完成')
+    expect(zh.expertCaseReviews.reportResultStatus.ready).toBe('已就緒')
+    expect(zh.expertCaseReviews.diet.vegan).toBe('純素')
+    expect(zh.expertCaseReviews.condition.pregnancy).toBe('懷孕')
+    expect(zh.expertCaseReviews.goal.sleep).toBe('睡眠')
+    expect(zh.expertCaseReviews.goalsSourceConversation).toBe('來源：對話（舊案）')
+    expect(zh.expertCaseReviews.goalsSourceConversation).not.toContain('fallback')
+    expect(zh.expertCaseReviews.profileField.unknown).toBe('其他')
+    expect(zh.expertCaseReviews.adjustmentType.unknown).toBe('其他')
+    expect(en.expertCaseReviews.decision.adjust.toLowerCase()).toContain('dose')
+    expect(en.expertCaseReviews.reportResultStatus.completed.toLowerCase()).toContain('completed')
   })
 
   it('marks adjustment reason visibility copy for member vs admin-only', () => {
