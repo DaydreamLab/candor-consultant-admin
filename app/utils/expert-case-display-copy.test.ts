@@ -33,4 +33,17 @@ describe('expert case display copy', () => {
     expect(zh.expertCaseReviews.weightTopDomainsSeverity).toContain('嚴重度')
     expect(en.expertCaseReviews.scoreTooltip.toLowerCase()).toContain('relative score')
   })
+
+  it('defines Wave-2 list filter chips and empty/error copy', () => {
+    expect(zh.expertCaseReviews.filterAll).toBe('全部')
+    expect(zh.expertCaseReviews.filterAwaiting).toBe('待檢視')
+    expect(zh.expertCaseReviews.filterReviewed).toBe('已定稿')
+    expect(zh.expertCaseReviews.statusAwaiting).toBe('待專家檢視')
+    expect(zh.expertCaseReviews.emptyTitle).toBe('目前沒有案件')
+    expect(zh.expertCaseReviews.emptyBody).toContain('引擎建議')
+    expect(zh.expertCaseReviews.retry).toBe('重試')
+    expect(zh.expertCaseReviews.refresh).toBe('重新整理')
+    expect(en.expertCaseReviews.filterAwaiting.toLowerCase()).toContain('pending')
+    expect(en.expertCaseReviews.statusAwaiting.toLowerCase()).toContain('expert')
+  })
 })

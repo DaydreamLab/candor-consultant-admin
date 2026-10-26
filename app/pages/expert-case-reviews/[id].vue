@@ -35,6 +35,8 @@ import {
   type ExpertCaseItemChangeMode,
   type SellablePickRow
 } from '~/utils/expert-case-sellable'
+import { expertCaseMemberName, shortExpertCaseId } from '~/utils/expert-case-list-display'
+import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
   mapHealthReportResultRow,
@@ -44,10 +46,10 @@ import {
 const CUSTOMER_ROLES = new Set(['user', 'customer', 'client', 'member'])
 
 const config = useRuntimeConfig()
-const localePath = useLocalePath()
 const route = useRoute()
 const { t } = useI18n()
 const feedback = useOpsFeedback()
+const crumbLabel = useExpertCaseCrumbLabel()
 
 const detail = ref<Record<string, unknown> | null>(null)
 const memberData = ref<Record<string, unknown> | null>(null)
@@ -79,6 +81,52 @@ const changeOriginalSellableId = ref<string | null>(null)
 const caseId = computed(() => String(route.params.id || ''))
 
 const awaiting = computed(() => detail.value?.status === 'awaiting_review')
+const reviewed = computed(() => detail.value?.status === 'reviewed')
+
+const memberLabel = computed(() => {
+  if (detail.value) {
+    const fromDetail = expertCaseMemberName(detail.value)
+    if (fromDetail && fromDetail !== '—') {
+      return fromDetail
+    }
+  }
+  const profile = memberData.value?.profile
+  if (isRecord(profile)) {
+    const fromProfile = expertCaseMemberName(profile)
+    if (fromProfile && fromProfile !== '—') {
+      return fromProfile
+    }
+    if (isRecord(profile.snapshot)) {
+      const fromSnap = expertCaseMemberName(profile.snapshot)
+      if (fromSnap && fromSnap !== '—') {
+        return fromSnap
+      }
+    }
+  }
+  const userId = typeof detail.value?.user_id === 'string' ? detail.value.user_id : ''
+  return userId ? shortExpertCaseId(userId) : caseId.value
+})
+
+const statusChipLabel = computed(() => {
+  if (awaiting.value) {
+    return t('expertCaseReviews.statusAwaiting')
+  }
+  if (reviewed.value) {
+    return t('expertCaseReviews.statusReviewed')
+  }
+  return typeof detail.value?.status === 'string' ? detail.value.status : ''
+})
+
+const statusChipColor = computed((): 'success' | 'warning' | 'neutral' => {
+  if (reviewed.value) {
+    return 'success'
+  }
+  if (awaiting.value) {
+    return 'warning'
+  }
+  return 'neutral'
+})
+
 const packages = computed(() => {
   const snap = detail.value?.original_snapshot
   if (!isRecord(snap) || !Array.isArray(snap.packages)) {
@@ -296,13 +344,26 @@ const userMessage = {
   variant: 'solid' as const
 }
 
+watch(memberLabel, (label) => {
+  if (label) {
+    crumbLabel.value = label
+  }
+}, { immediate: true })
+
 onMounted(() => {
   void load()
   void loadCatalog()
 })
 
+onUnmounted(() => {
+  if (!normalizeAdminPath(route.path).startsWith('/expert-case-reviews/')) {
+    crumbLabel.value = null
+  }
+})
+
 async function load() {
   const token = readOperatorToken()
+  crumbLabel.value = null
   if (!token || !caseId.value) {
     detail.value = null
     memberData.value = null
@@ -314,6 +375,7 @@ async function load() {
   errorMessage.value = ''
   try {
     detail.value = await adminGetExpertCaseReview(config.public.apiBase, token, caseId.value)
+    crumbLabel.value = memberLabel.value
     void loadMemberData(token)
   } catch (error) {
     detail.value = null
@@ -762,63 +824,79 @@ function isCustomerRole(value: unknown) {
 </script>
 
 <template>
-  <PageHeader
-    :title="$t('expertCaseReviews.detailTitle')"
-    :description="caseId"
-  >
-    <div class="mb-4 flex flex-wrap gap-2">
-      <UButton
-        variant="outline"
-        :to="localePath('/expert-case-reviews')"
-      >
-        {{ $t('expertCaseReviews.back') }}
-      </UButton>
-      <UButton
-        variant="soft"
-        :disabled="busy || pending"
-        data-testid="expert-case-export"
-        @click="exportExcel"
-      >
-        {{ $t('expertCaseReviews.export') }}
-      </UButton>
-      <UButton
-        v-if="awaiting"
-        variant="soft"
-        color="neutral"
-        :disabled="busy"
-        data-testid="expert-case-reset"
-        @click="resetAll"
-      >
-        {{ $t('expertCaseReviews.resetAll') }}
-      </UButton>
-      <UButton
-        v-if="awaiting"
-        color="primary"
-        :disabled="busy"
-        data-testid="expert-case-submit"
-        @click="submit"
-      >
-        {{ $t('expertCaseReviews.submit') }}
-      </UButton>
-    </div>
+  <PageHeader plain>
+    <template #actions>
+      <template v-if="detail && !pending">
+        <StatusBadge
+          v-if="statusChipLabel"
+          :label="statusChipLabel"
+          :color="statusChipColor"
+          data-testid="expert-case-status-chip"
+        />
+        <UButton
+          variant="soft"
+          :disabled="busy || pending"
+          data-testid="expert-case-export"
+          @click="exportExcel"
+        >
+          {{ $t('expertCaseReviews.export') }}
+        </UButton>
+        <UButton
+          v-if="awaiting"
+          variant="soft"
+          color="neutral"
+          :disabled="busy"
+          data-testid="expert-case-reset"
+          @click="resetAll"
+        >
+          {{ $t('expertCaseReviews.resetAll') }}
+        </UButton>
+        <UButton
+          v-if="awaiting"
+          color="primary"
+          :disabled="busy"
+          data-testid="expert-case-submit"
+          @click="submit"
+        >
+          {{ $t('expertCaseReviews.submit') }}
+        </UButton>
+      </template>
+    </template>
 
     <p
       v-if="pending"
       class="text-sm text-muted"
+      data-testid="expert-case-detail-loading"
     >
       {{ $t('expertCaseReviews.loading') }}
     </p>
-    <p
+    <div
       v-else-if="errorMessage"
-      class="text-sm text-error"
+      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
+      data-testid="expert-case-detail-error"
     >
-      {{ errorMessage }}
-    </p>
+      <div class="flex min-w-0 items-center gap-2">
+        <UIcon
+          name="i-lucide-triangle-alert"
+          class="size-4 shrink-0"
+        />
+        <span>{{ errorMessage }}</span>
+      </div>
+      <UButton
+        color="neutral"
+        variant="soft"
+        size="sm"
+        data-testid="expert-case-detail-retry"
+        @click="load"
+      >
+        {{ $t('expertCaseReviews.retry') }}
+      </UButton>
+    </div>
 
     <template v-else-if="detail">
       <div class="mb-4 flex flex-wrap gap-3 text-sm text-muted">
-        <span>{{ $t('expertCaseReviews.colStatus') }}：{{ detail.status }}</span>
-        <span>{{ $t('expertCaseReviews.colUser') }}：{{ detail.user_id }}</span>
+        <span>{{ $t('expertCaseReviews.colUser') }}：{{ memberLabel }}</span>
+        <span class="font-mono text-xs">{{ shortExpertCaseId(detail.user_id) }}</span>
         <span>{{ $t('expertCaseReviews.colConversation') }}：{{ detail.conversation_id }}</span>
       </div>
 
@@ -1160,6 +1238,9 @@ function isCustomerRole(value: unknown) {
           <p class="mt-1 text-xs text-muted">
             {{ $t('expertCaseReviews.originalHint') }}
           </p>
+          <p class="mt-1 text-xs text-muted">
+            {{ $t('expertCaseReviews.schemePlainHint') }}
+          </p>
           <div
             v-if="!packages.length"
             class="mt-4 text-sm text-muted"
@@ -1208,28 +1289,22 @@ function isCustomerRole(value: unknown) {
                     <p class="font-medium text-highlighted">
                       {{ item.name || item.code }}
                     </p>
-                    <p
-                      v-if="formatScoreNorm(item.score_norm) || item.tier"
-                      class="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted"
-                      data-testid="expert-case-item-score-line"
-                    >
-                      <span
-                        v-if="formatScoreNorm(item.score_norm)"
-                        class="cursor-help underline decoration-dotted underline-offset-2"
-                        :title="$t('expertCaseReviews.scoreTooltip')"
-                        data-testid="expert-case-item-score"
-                      >
-                        {{ formatScoreNorm(item.score_norm) }}
+                    <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                      <span>
+                        {{ $t('expertCaseReviews.dose') }}：{{ item.daily_dose }}
                       </span>
-                      <span
-                        v-if="formatScoreNorm(item.score_norm) && item.tier"
-                        aria-hidden="true"
-                      >｜</span>
-                      <span
+                      <UBadge
                         v-if="item.tier"
+                        :color="tierLabelKey(item.tier) === 'primary' ? 'primary' : 'info'"
+                        variant="subtle"
                         data-testid="expert-case-item-tier"
                       >
                         {{ tierText(item.tier) }}
+                      </UBadge>
+                      <span
+                        v-if="decisionLabel(lineKey(planCode(pkg), itemId(item)))"
+                      >
+                        · {{ decisionLabel(lineKey(planCode(pkg), itemId(item))) }}
                       </span>
                     </p>
                     <p
@@ -1239,62 +1314,66 @@ function isCustomerRole(value: unknown) {
                     >
                       {{ itemRationaleText(item.item_rationale) }}
                     </p>
-                    <p class="mt-1 text-xs text-muted">
-                      <span>
-                        {{ $t('expertCaseReviews.dose') }}：{{ item.daily_dose }}
-                      </span>
-                      <span
-                        v-if="decisionLabel(lineKey(planCode(pkg), itemId(item)))"
-                        class="ms-2"
-                      >
-                        · {{ decisionLabel(lineKey(planCode(pkg), itemId(item))) }}
-                      </span>
-                    </p>
                   </div>
                   <div
-                    v-if="awaiting"
-                    class="flex flex-wrap gap-2"
+                    v-if="formatScoreNorm(item.score_norm)"
+                    class="shrink-0 text-end"
+                    data-testid="expert-case-item-score-line"
                   >
-                    <UButton
-                      size="xs"
-                      variant="soft"
-                      :disabled="busy"
-                      data-testid="expert-case-approve"
-                      @click="decide(pkg, item, 'approve')"
+                    <p
+                      class="text-lg font-bold tabular-nums text-primary"
+                      data-testid="expert-case-item-score"
                     >
-                      {{ $t('expertCaseReviews.approve') }}
-                    </UButton>
-                    <UButton
-                      size="xs"
-                      color="error"
-                      variant="soft"
-                      :disabled="busy"
-                      data-testid="expert-case-reject"
-                      @click="decide(pkg, item, 'reject')"
-                    >
-                      {{ $t('expertCaseReviews.reject') }}
-                    </UButton>
-                    <UButton
-                      size="xs"
-                      color="warning"
-                      variant="soft"
-                      :disabled="busy"
-                      data-testid="expert-case-adjust-dose"
-                      @click="adjustDose(pkg, item)"
-                    >
-                      {{ $t('expertCaseReviews.adjust') }}
-                    </UButton>
-                    <UButton
-                      size="xs"
-                      color="primary"
-                      variant="soft"
-                      :disabled="busy"
-                      data-testid="expert-case-swap"
-                      @click="openSwap(pkg, item)"
-                    >
-                      {{ $t('expertCaseReviews.swapItem') }}
-                    </UButton>
+                      {{ formatScoreNorm(item.score_norm) }}
+                    </p>
+                    <p class="mt-0.5 max-w-[10rem] text-[11px] leading-snug text-muted">
+                      {{ $t('expertCaseReviews.scoreTooltip') }}
+                    </p>
                   </div>
+                </div>
+                <div
+                  v-if="awaiting"
+                  class="mt-3 flex flex-wrap gap-2"
+                >
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    :disabled="busy"
+                    data-testid="expert-case-approve"
+                    @click="decide(pkg, item, 'approve')"
+                  >
+                    {{ $t('expertCaseReviews.approve') }}
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="error"
+                    variant="soft"
+                    :disabled="busy"
+                    data-testid="expert-case-reject"
+                    @click="decide(pkg, item, 'reject')"
+                  >
+                    {{ $t('expertCaseReviews.reject') }}
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="warning"
+                    variant="soft"
+                    :disabled="busy"
+                    data-testid="expert-case-adjust-dose"
+                    @click="adjustDose(pkg, item)"
+                  >
+                    {{ $t('expertCaseReviews.adjust') }}
+                  </UButton>
+                  <UButton
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    :disabled="busy"
+                    data-testid="expert-case-swap"
+                    @click="openSwap(pkg, item)"
+                  >
+                    {{ $t('expertCaseReviews.swapItem') }}
+                  </UButton>
                 </div>
                 <div
                   v-if="awaiting"
