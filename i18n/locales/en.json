@@ -1507,6 +1507,8 @@
         "code": "Code",
         "name": "Name",
         "status": "Status",
+        "defaultReviewMode": "Default review mode",
+        "attribution": "Attribution",
         "chunks": "Chunks"
       },
       "status": {
@@ -1514,10 +1516,15 @@
         "active": "Active",
         "disabled": "Disabled"
       },
+      "reviewMode": {
+        "manual": "Manual review",
+        "auto_approve": "Auto-approve"
+      },
       "detail": {
         "stats": "Summary",
         "documents": "Documents",
         "chunks": "Chunks",
+        "defaultReviewMode": "Default review mode",
         "sourceUrl": "Source URL",
         "reviewBreakdown": "Review status breakdown",
         "chunksSectionTitle": "Chunks",
@@ -1707,10 +1714,16 @@
         "documents": "Total documents",
         "datasetsActive": "Active datasets"
       },
+      "datasetsTitle": "Per-dataset summary",
+      "datasetsEmptyTitle": "No per-dataset rows yet",
+      "datasetsEmpty": "Overview currently returns library totals only — no datasets[] (or equivalent) rows. Totals cards above still apply; the table fills in when candor-core ships per-dataset rows.",
+      "columns": {
+        "reviewCounts": "Review counts"
+      },
       "loading": "Loading…",
       "failed": "Could not load overview.",
       "emptyTitle": "No summary",
-      "empty": "Overview response has no dataset list to display."
+      "empty": "Overview response has no totals or dataset list to display."
     },
     "config": {
       "title": "Knowledge config",

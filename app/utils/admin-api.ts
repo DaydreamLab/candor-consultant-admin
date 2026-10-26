@@ -2072,6 +2072,8 @@ function parseKnowledgeDataset(row: Record<string, unknown>): KnowledgeDataset {
     license: optionalString(row.license),
     license_url: optionalString(row.license_url),
     attribution: optionalString(row.attribution),
+    default_review_mode: optionalString(row.default_review_mode)
+      ?? optionalString(row.review_mode),
     document_count: optionalNumber(row.document_count),
     chunk_count: optionalNumber(row.chunk_count),
     chunks_by_review_status: isRecord(row.chunks_by_review_status)

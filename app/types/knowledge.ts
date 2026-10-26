@@ -2,6 +2,9 @@ export type KnowledgeDatasetStatus = 'pending_review' | 'active' | 'disabled'
 
 export type KnowledgeReviewStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'retired'
 
+/** Dataset-level default for newly ingested chunks (core: `default_review_mode`). */
+export type KnowledgeDefaultReviewMode = 'manual' | 'auto_approve'
+
 export type KnowledgeChunksByReviewStatus = Partial<Record<KnowledgeReviewStatus, number>>
 
 export type KnowledgeDataset = {
@@ -15,6 +18,8 @@ export type KnowledgeDataset = {
   license?: string | null
   license_url?: string | null
   attribution?: string | null
+  /** Read-only from GET; not in adminKnowledgeDatasetPatch. */
+  default_review_mode?: KnowledgeDefaultReviewMode | string | null
   document_count?: number | null
   chunk_count?: number | null
   chunks_by_review_status?: KnowledgeChunksByReviewStatus | null

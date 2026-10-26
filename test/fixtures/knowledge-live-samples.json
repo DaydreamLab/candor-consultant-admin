@@ -6,6 +6,8 @@
     "name": "FDA Daily Value on the Nutrition and Supplement Facts Labels",
     "status": "active",
     "group": "fda",
+    "default_review_mode": "manual",
+    "attribution": null,
     "document_count": 1,
     "chunk_count": 3
   },
@@ -16,6 +18,39 @@
     "datasets_active": 38,
     "datasets_disabled": 0,
     "datasets_by_group": { "hpa": 18, "ods": 14, "fda": 1, "other": 1, "tfda": 5 }
+  },
+  "overviewWithDatasets": {
+    "documents_total": 4,
+    "chunks_total": 12,
+    "datasets_active": 1,
+    "datasets": [
+      {
+        "id": "a07d857d-79f8-4797-bb4c-660eca8ffc7c",
+        "code": "fda-daily-value",
+        "name": "FDA Daily Value",
+        "status": "active",
+        "default_review_mode": "manual",
+        "attribution": "U.S. FDA",
+        "document_count": 1,
+        "chunk_count": 3,
+        "chunks_by_review_status": { "approved": 3 }
+      },
+      {
+        "dataset": {
+          "id": "nested-1",
+          "code": "hpa-dri8-folate-zh",
+          "name": "HPA 葉酸 DRI8",
+          "status": "active",
+          "default_review_mode": "auto_approve"
+        },
+        "counts": {
+          "documents": 3,
+          "chunks": 9,
+          "chunks_by_review_status": { "approved": 8, "pending": 1 }
+        },
+        "attribution": "HPA"
+      }
+    ]
   },
   "config": {
     "embedding": {

@@ -5,6 +5,7 @@ import {
   adminPatchKnowledgeDataset
 } from '~/utils/admin-api'
 import type { KnowledgeDataset, KnowledgeDatasetPatch, KnowledgeDatasetStatus } from '~/types/knowledge'
+import { defaultReviewModeBadgeColor } from '~/utils/knowledge-labels'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const config = useRuntimeConfig()
@@ -142,6 +143,15 @@ function reviewCount(key: string) {
   const n = (map as Record<string, unknown>)[key]
   return typeof n === 'number' ? n : '—'
 }
+
+function reviewModeLabel(mode: string | null | undefined) {
+  if (!mode) {
+    return t('status.na')
+  }
+  const key = `knowledge.datasets.reviewMode.${mode}`
+  const label = t(key)
+  return label === key ? mode : label
+}
 </script>
 
 <template>
@@ -218,6 +228,33 @@ function reviewCount(key: string) {
                 {{ $t('knowledge.datasets.detail.chunks') }}
               </dt>
               <dd>{{ dataset.chunk_count ?? '—' }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">
+                {{ $t('knowledge.datasets.detail.defaultReviewMode') }}
+              </dt>
+              <dd>
+                <UBadge
+                  v-if="dataset.default_review_mode"
+                  size="sm"
+                  variant="soft"
+                  :color="defaultReviewModeBadgeColor(dataset.default_review_mode)"
+                >
+                  {{ reviewModeLabel(dataset.default_review_mode) }}
+                </UBadge>
+                <span
+                  v-else
+                  class="text-muted"
+                >{{ $t('status.na') }}</span>
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">
+                {{ $t('knowledge.datasets.form.attribution') }}
+              </dt>
+              <dd class="max-w-[60%] text-right text-sm">
+                {{ dataset.attribution || '—' }}
+              </dd>
             </div>
             <div
               v-if="dataset.source_url"

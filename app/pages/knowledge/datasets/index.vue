@@ -6,7 +6,7 @@ import {
 } from '~/utils/admin-api'
 import type { KnowledgeDataset, KnowledgeDatasetGroup, KnowledgeDatasetStatus } from '~/types/knowledge'
 import { readOperatorToken } from '~/utils/operator-session'
-import { datasetStatusBadgeColor } from '~/utils/knowledge-labels'
+import { datasetStatusBadgeColor, defaultReviewModeBadgeColor } from '~/utils/knowledge-labels'
 import { resolveKnowledgeGroupKey } from '~/utils/knowledge-field-parse'
 
 const FILTER_ANY = 'all'
@@ -126,6 +126,15 @@ function statusLabel(status: KnowledgeDatasetStatus | '') {
   return t(`knowledge.datasets.status.${status}`)
 }
 
+function reviewModeLabel(mode: string | null | undefined) {
+  if (!mode) {
+    return t('status.na')
+  }
+  const key = `knowledge.datasets.reviewMode.${mode}`
+  const label = t(key)
+  return label === key ? mode : label
+}
+
 function openRow(row: KnowledgeDataset) {
   if (!row.id) {
     return
@@ -235,6 +244,12 @@ function openRow(row: KnowledgeDataset) {
                   {{ $t('knowledge.datasets.columns.status') }}
                 </th>
                 <th class="px-4 py-3 font-medium">
+                  {{ $t('knowledge.datasets.columns.defaultReviewMode') }}
+                </th>
+                <th class="px-4 py-3 font-medium">
+                  {{ $t('knowledge.datasets.columns.attribution') }}
+                </th>
+                <th class="px-4 py-3 font-medium">
                   {{ $t('knowledge.datasets.columns.chunks') }}
                 </th>
               </tr>
@@ -260,6 +275,23 @@ function openRow(row: KnowledgeDataset) {
                 >
                   {{ statusLabel(row.status) }}
                 </UBadge>
+              </td>
+              <td class="px-4 py-3">
+                <UBadge
+                  v-if="row.default_review_mode"
+                  size="sm"
+                  variant="soft"
+                  :color="defaultReviewModeBadgeColor(row.default_review_mode)"
+                >
+                  {{ reviewModeLabel(row.default_review_mode) }}
+                </UBadge>
+                <span
+                  v-else
+                  class="text-muted"
+                >{{ $t('status.na') }}</span>
+              </td>
+              <td class="px-4 py-3 text-sm">
+                {{ row.attribution || '—' }}
               </td>
               <td class="px-4 py-3">
                 {{ row.chunk_count ?? '—' }}

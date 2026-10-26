@@ -4,9 +4,10 @@ import { readOperatorToken } from '~/utils/operator-session'
 import {
   extractKnowledgeOverviewTotals,
   extractOverviewDatasetRows,
+  formatOverviewReviewCounts,
   overviewHasVisibleContent
 } from '~/utils/knowledge-overview'
-import { datasetStatusBadgeColor } from '~/utils/knowledge-labels'
+import { datasetStatusBadgeColor, defaultReviewModeBadgeColor } from '~/utils/knowledge-labels'
 import type { KnowledgeDatasetStatus } from '~/types/knowledge'
 
 const config = useRuntimeConfig()
@@ -58,6 +59,22 @@ function statusLabel(status: unknown) {
   }
   const key = `knowledge.datasets.status.${status}`
   return t(key) === key ? status : t(key)
+}
+
+function reviewModeLabel(mode: unknown) {
+  if (typeof mode !== 'string' || !mode) {
+    return t('status.na')
+  }
+  const key = `knowledge.datasets.reviewMode.${mode}`
+  const label = t(key)
+  return label === key ? mode : label
+}
+
+function cellText(value: unknown) {
+  if (value == null || value === '') {
+    return '—'
+  }
+  return String(value)
 }
 </script>
 
@@ -114,8 +131,17 @@ function statusLabel(status: unknown) {
         </UCard>
       </div>
 
+      <h2 class="mb-3 text-sm font-semibold">
+        {{ $t('knowledge.overview.datasetsTitle') }}
+      </h2>
+
+      <EmptyPanel
+        v-if="!datasetRows.length"
+        :title="$t('knowledge.overview.datasetsEmptyTitle')"
+        :description="$t('knowledge.overview.datasetsEmpty')"
+      />
       <AdminTable
-        v-if="datasetRows.length"
+        v-else
         compact
       >
         <template #head>
@@ -130,10 +156,19 @@ function statusLabel(status: unknown) {
               {{ $t('knowledge.datasets.columns.status') }}
             </th>
             <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.datasets.columns.defaultReviewMode') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.datasets.columns.attribution') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
               {{ $t('knowledge.datasets.detail.documents') }}
             </th>
             <th class="px-4 py-3 font-medium">
               {{ $t('knowledge.datasets.detail.chunks') }}
+            </th>
+            <th class="px-4 py-3 font-medium">
+              {{ $t('knowledge.overview.columns.reviewCounts') }}
             </th>
           </tr>
         </template>
@@ -143,10 +178,10 @@ function statusLabel(status: unknown) {
           class="border-b border-default last:border-0"
         >
           <td class="px-4 py-3 font-mono text-xs">
-            {{ row.code ?? '—' }}
+            {{ cellText(row.code) }}
           </td>
           <td class="px-4 py-3">
-            {{ row.name ?? '—' }}
+            {{ cellText(row.name) }}
           </td>
           <td class="px-4 py-3">
             <UBadge
@@ -163,10 +198,30 @@ function statusLabel(status: unknown) {
             >{{ $t('status.na') }}</span>
           </td>
           <td class="px-4 py-3">
-            {{ row.document_count ?? '—' }}
+            <UBadge
+              v-if="typeof row.default_review_mode === 'string' && row.default_review_mode"
+              size="sm"
+              variant="soft"
+              :color="defaultReviewModeBadgeColor(row.default_review_mode)"
+            >
+              {{ reviewModeLabel(row.default_review_mode) }}
+            </UBadge>
+            <span
+              v-else
+              class="text-muted"
+            >{{ $t('status.na') }}</span>
+          </td>
+          <td class="px-4 py-3 text-sm">
+            {{ cellText(row.attribution) }}
           </td>
           <td class="px-4 py-3">
-            {{ row.chunk_count ?? '—' }}
+            {{ cellText(row.document_count) }}
+          </td>
+          <td class="px-4 py-3">
+            {{ cellText(row.chunk_count) }}
+          </td>
+          <td class="px-4 py-3 text-xs text-muted">
+            {{ formatOverviewReviewCounts(row.chunks_by_review_status) }}
           </td>
         </tr>
       </AdminTable>

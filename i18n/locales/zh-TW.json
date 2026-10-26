@@ -1507,6 +1507,8 @@
         "code": "代號",
         "name": "名稱",
         "status": "狀態",
+        "defaultReviewMode": "預設審核模式",
+        "attribution": "出處／署名",
         "chunks": "片段數"
       },
       "status": {
@@ -1514,10 +1516,15 @@
         "active": "使用中",
         "disabled": "已停用"
       },
+      "reviewMode": {
+        "manual": "手動審核",
+        "auto_approve": "自動核可"
+      },
       "detail": {
         "stats": "摘要",
         "documents": "文件數",
         "chunks": "片段數",
+        "defaultReviewMode": "預設審核模式",
         "sourceUrl": "來源連結",
         "reviewBreakdown": "審核狀態分布",
         "chunksSectionTitle": "片段列表",
@@ -1707,10 +1714,16 @@
         "documents": "全庫文件",
         "datasetsActive": "active 資料集"
       },
+      "datasetsTitle": "各資料集彙總",
+      "datasetsEmptyTitle": "尚無逐資料集列",
+      "datasetsEmpty": "overview 目前只有全庫合計，尚未回傳 datasets[]（或同等）逐列。合計仍可參考上方卡片；待 candor-core 補齊後會自動顯示表格。",
+      "columns": {
+        "reviewCounts": "審核狀態計數"
+      },
       "loading": "載入中…",
       "failed": "無法載入總覽。",
       "emptyTitle": "沒有彙總資料",
-      "empty": "overview 回應中沒有可顯示的資料集列表。"
+      "empty": "overview 回應中沒有可顯示的合計或資料集列表。"
     },
     "config": {
       "title": "知識設定",
