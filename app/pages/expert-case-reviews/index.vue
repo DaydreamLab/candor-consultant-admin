@@ -7,6 +7,7 @@ import {
   isExpertCaseDemoRow,
   shortExpertCaseId
 } from '~/utils/expert-case-list-display'
+import { caseStatusLabel } from '~/utils/expert-case-labels'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const FILTER_ANY = 'all'
@@ -71,14 +72,8 @@ async function load() {
   }
 }
 
-function statusLabel(status: unknown) {
-  if (status === 'awaiting_review') {
-    return t('expertCaseReviews.statusAwaiting')
-  }
-  if (status === 'reviewed') {
-    return t('expertCaseReviews.statusReviewed')
-  }
-  return String(status ?? '')
+function statusDisplay(status: unknown) {
+  return caseStatusLabel(status, t)
 }
 
 function statusColor(status: unknown): 'success' | 'warning' | 'neutral' {
@@ -260,10 +255,12 @@ function openRow(row: Record<string, unknown>) {
                 </p>
               </td>
               <td>
-                <StatusBadge
-                  :label="statusLabel(row.status)"
-                  :color="statusColor(row.status)"
-                />
+                <span :title="statusDisplay(row.status).title || undefined">
+                  <StatusBadge
+                    :label="statusDisplay(row.status).text"
+                    :color="statusColor(row.status)"
+                  />
+                </span>
               </td>
               <td class="whitespace-nowrap text-sm text-muted">
                 {{ formatExpertCaseListTime(row.created_at) }}

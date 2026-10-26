@@ -11,7 +11,6 @@ import {
 } from '~/utils/admin-api'
 import {
   adjustmentReasonIsMemberFacing,
-  adjustmentTypeKey,
   excludedReasonParts,
   formatScoreNorm,
   isRecord,
@@ -21,12 +20,33 @@ import {
   parseItemContributionBlocks,
   parsePackageRationales,
   parseTopDomains,
-  profileFieldLabelKey,
   sortItemsByScoreNorm,
   tierLabelKey,
   type ExpertCaseAdjustment,
   type ExpertCaseExcludedRow
 } from '~/utils/expert-case-display'
+import {
+  adjustmentTypeDisplayLabel,
+  caseStatusLabel,
+  classificationLabel,
+  conditionLabel,
+  decisionLabel as mapDecisionLabel,
+  dietLabel,
+  displayNameOrUntitled,
+  formatIntakeRows,
+  goalLabel,
+  itemDisplayName,
+  joinLabeledList,
+  operatorRoleLabel,
+  packagePlanCodeLabel,
+  profileFieldDisplayLabel,
+  reportResultStatusLabel,
+  sexLabel,
+  shortConversationId,
+  tierDisplayLabel,
+  type IntakeDisplayRow,
+  type LabeledText
+} from '~/utils/expert-case-labels'
 import {
   defaultDoseForItem,
   parseSellablePickRow,
@@ -107,15 +127,14 @@ const memberLabel = computed(() => {
   return userId ? shortExpertCaseId(userId) : caseId.value
 })
 
+const statusChip = computed(() => caseStatusLabel(detail.value?.status, t))
+
 const statusChipLabel = computed(() => {
-  if (awaiting.value) {
-    return t('expertCaseReviews.statusAwaiting')
-  }
-  if (reviewed.value) {
-    return t('expertCaseReviews.statusReviewed')
-  }
-  return typeof detail.value?.status === 'string' ? detail.value.status : ''
+  const chip = statusChip.value
+  return chip.text === '—' ? '' : chip.text
 })
+
+const statusChipTitle = computed(() => statusChip.value.title)
 
 const statusChipColor = computed((): 'success' | 'warning' | 'neutral' => {
   if (reviewed.value) {
@@ -126,6 +145,14 @@ const statusChipColor = computed((): 'success' | 'warning' | 'neutral' => {
   }
   return 'neutral'
 })
+
+const conversationIdFull = computed(() => {
+  return typeof detail.value?.conversation_id === 'string' ? detail.value.conversation_id : ''
+})
+
+const conversationIdShort = computed(() => shortConversationId(conversationIdFull.value))
+
+const copyConversationFeedback = ref('')
 
 const packages = computed(() => {
   const snap = detail.value?.original_snapshot
@@ -289,12 +316,14 @@ const changedFieldLabels = computed(() => {
     .map(field => profileFieldLabel(field))
 })
 
-const memberGoals = computed(() => {
+const memberGoals = computed((): LabeledText[] => {
   const goals = memberData.value?.goals
   if (!Array.isArray(goals)) {
-    return [] as string[]
+    return []
   }
-  return goals.filter((goal): goal is string => typeof goal === 'string')
+  return goals
+    .filter((goal): goal is string => typeof goal === 'string' && goal.trim().length > 0)
+    .map(goal => goalLabel(goal, t))
 })
 
 const memberMessages = computed(() => {
@@ -315,6 +344,10 @@ const chatMessages = computed(() => memberMessages.value.map(toChatMessage))
 const healthReport = computed(() => {
   const report = memberData.value?.health_report
   return isRecord(report) ? report : null
+})
+
+const healthReportStatus = computed(() => {
+  return reportResultStatusLabel(healthReport.value?.status, t)
 })
 
 const healthReportResults = computed((): HealthReportResult[] => {
@@ -672,9 +705,63 @@ async function exportExcel() {
   }
 }
 
-function decisionLabel(key: string) {
+function decisionDisplay(key: string): LabeledText | null {
   const row = workingByKey.value.get(key)
-  return typeof row?.decision === 'string' ? row.decision : ''
+  return mapDecisionLabel(row?.decision, t)
+}
+
+async function copyConversationId() {
+  const full = conversationIdFull.value
+  if (!full || !import.meta.client) {
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(full)
+    copyConversationFeedback.value = t('expertCaseReviews.copied')
+    window.setTimeout(() => {
+      copyConversationFeedback.value = ''
+    }, 1500)
+  } catch {
+    copyConversationFeedback.value = ''
+  }
+}
+
+function planDisplay(pkg: Record<string, unknown>): LabeledText {
+  return packagePlanCodeLabel(pkg.package_plan_code, pkg.package_plan_name, t)
+}
+
+function planCodeDisplay(code: string, name?: string | null): LabeledText {
+  return packagePlanCodeLabel(code, name ?? null, t)
+}
+
+function operatorDisplay(row: ExpertCaseAdjustment): { primary: string, role: LabeledText | null } {
+  const role = row.operator_role ? operatorRoleLabel(row.operator_role, t) : null
+  if (row.operator_display_name) {
+    return { primary: row.operator_display_name, role }
+  }
+  if (role) {
+    return { primary: role.text, role }
+  }
+  return { primary: t('expertCaseReviews.adjustmentNone'), role: null }
+}
+
+function knowledgeDecision(row: Record<string, unknown>): LabeledText | null {
+  return mapDecisionLabel(row.decision, t)
+}
+
+function knowledgeClassification(row: Record<string, unknown>): LabeledText {
+  if (row.classification_confirmed) {
+    return classificationLabel(row.classification, t)
+  }
+  return {
+    text: t('expertCaseReviews.pendingClassification'),
+    title: null,
+    known: true
+  }
+}
+
+function knowledgePlan(row: Record<string, unknown>): LabeledText {
+  return packagePlanCodeLabel(row.package_plan_code, row.package_plan_name, t)
 }
 
 function seedDoseIfEmpty(pkg: Record<string, unknown>, item: Record<string, unknown>) {
@@ -695,73 +782,122 @@ function adjustDose(pkg: Record<string, unknown>, item: Record<string, unknown>)
   void decide(pkg, item, 'adjust')
 }
 
-function tierText(tier: unknown) {
-  const key = tierLabelKey(tier)
-  if (key === 'primary') {
-    return t('expertCaseReviews.tierPrimary')
-  }
-  if (key === 'secondary') {
-    return t('expertCaseReviews.tierSecondary')
-  }
-  return typeof tier === 'string' && tier ? tier : '—'
+function tierText(tier: unknown): LabeledText {
+  return tierDisplayLabel(tier, t)
 }
 
-function excludedReasonText(reasonCode: string) {
+function excludedReasonDisplay(reasonCode: string): LabeledText {
   const parts = excludedReasonParts(reasonCode)
   if (parts.kind === 'dose_above_ul') {
-    return t('expertCaseReviews.excludedReason.dose_above_ul')
+    return {
+      text: t('expertCaseReviews.excludedReason.dose_above_ul'),
+      title: null,
+      known: true
+    }
   }
   if (parts.kind === 'interaction_exclude') {
-    return t('expertCaseReviews.excludedReason.interaction_exclude')
+    return {
+      text: t('expertCaseReviews.excludedReason.interaction_exclude'),
+      title: null,
+      known: true
+    }
   }
   if (parts.kind === 'diet_incompatible') {
-    return t('expertCaseReviews.excludedReason.diet_incompatible')
+    return {
+      text: t('expertCaseReviews.excludedReason.diet_incompatible'),
+      title: null,
+      known: true
+    }
   }
   if (parts.kind === 'contraindication') {
     if (parts.conditionCode) {
-      return t('expertCaseReviews.excludedReason.contraindicationWithCondition', {
-        condition: parts.conditionCode
-      })
+      const condition = conditionLabel(parts.conditionCode, t)
+      return {
+        text: t('expertCaseReviews.excludedReason.contraindicationWithCondition', {
+          condition: condition.text
+        }),
+        title: condition.known ? null : condition.title,
+        known: condition.known
+      }
     }
-    return t('expertCaseReviews.excludedReason.contraindication')
+    return {
+      text: t('expertCaseReviews.excludedReason.contraindication'),
+      title: null,
+      known: true
+    }
   }
-  return t('expertCaseReviews.excludedReason.other', { code: parts.raw })
+  return {
+    text: t('expertCaseReviews.excludedReason.other'),
+    title: parts.raw || null,
+    known: false
+  }
 }
 
 function profileFieldLabel(field: string) {
-  const key = profileFieldLabelKey(field)
-  if (key === 'unknown') {
-    return t('expertCaseReviews.profileField.unknown', { field })
-  }
-  return t(`expertCaseReviews.profileField.${key}`)
+  return profileFieldDisplayLabel(field, t).text
 }
 
-function profileValueText(key: string, value: unknown): string {
+type ProfileEntry = {
+  key: string
+  label: string
+  labelTitle: string | null
+  value: string | null
+  valueTitle: string | null
+  intakeRows: IntakeDisplayRow[] | null
+}
+
+function profileValueDisplay(key: string, value: unknown): {
+  value: string | null
+  valueTitle: string | null
+  intakeRows: IntakeDisplayRow[] | null
+} {
   if (value == null || value === '') {
-    return '—'
+    return { value: '—', valueTitle: null, intakeRows: null }
   }
   if (key === 'sex') {
-    if (value === 'M') {
-      return t('expertCaseReviews.sexMale')
-    }
-    if (value === 'F') {
-      return t('expertCaseReviews.sexFemale')
+    const labeled = sexLabel(value, t)
+    return { value: labeled.text, valueTitle: labeled.title, intakeRows: null }
+  }
+  if (key === 'diet') {
+    const labeled = dietLabel(value, t)
+    return { value: labeled.text, valueTitle: labeled.title, intakeRows: null }
+  }
+  if (key === 'goals' && Array.isArray(value)) {
+    const joined = joinLabeledList(value, item => goalLabel(item, t))
+    return { value: joined.text, valueTitle: joined.title, intakeRows: null }
+  }
+  if (key === 'conditions' && Array.isArray(value)) {
+    const joined = joinLabeledList(value, item => conditionLabel(item, t))
+    return { value: joined.text, valueTitle: joined.title, intakeRows: null }
+  }
+  if (key === 'intake') {
+    const rows = formatIntakeRows(value, t)
+    return {
+      value: rows.length ? null : '—',
+      valueTitle: null,
+      intakeRows: rows.length ? rows : null
     }
   }
   if (Array.isArray(value)) {
-    return value.map(item => String(item)).join('、') || '—'
-  }
-  if (isRecord(value)) {
-    try {
-      return JSON.stringify(value)
-    } catch {
-      return '—'
+    return {
+      value: value.map(item => String(item)).join('、') || '—',
+      valueTitle: null,
+      intakeRows: null
     }
   }
-  return String(value)
+  if (isRecord(value)) {
+    // Non-intake objects: structured rows via intake formatter (other keys → 其他)
+    const rows = formatIntakeRows(value, t)
+    return {
+      value: null,
+      valueTitle: null,
+      intakeRows: rows
+    }
+  }
+  return { value: String(value), valueTitle: null, intakeRows: null }
 }
 
-function profileEntries(snapshot: Record<string, unknown>) {
+function profileEntries(snapshot: Record<string, unknown>): ProfileEntry[] {
   const preferred = [
     'sex',
     'age_years',
@@ -772,28 +908,40 @@ function profileEntries(snapshot: Record<string, unknown>) {
     'conditions',
     'intake'
   ]
-  const entries: Array<{ key: string, label: string, value: string }> = []
+  const entries: ProfileEntry[] = []
   for (const key of preferred) {
     if (!(key in snapshot)) {
       continue
     }
+    const field = profileFieldDisplayLabel(key, t)
+    const display = profileValueDisplay(key, snapshot[key])
     entries.push({
       key,
-      label: profileFieldLabel(key),
-      value: profileValueText(key, snapshot[key])
+      label: field.text,
+      labelTitle: field.title,
+      value: display.value,
+      valueTitle: display.valueTitle,
+      intakeRows: display.intakeRows
     })
   }
   return entries
 }
 
-function adjustmentTypeText(type: unknown) {
-  const key = adjustmentTypeKey(type)
-  if (key === 'unknown') {
-    return t('expertCaseReviews.adjustmentType.unknown', {
-      type: typeof type === 'string' ? type : '—'
-    })
-  }
-  return t(`expertCaseReviews.adjustmentType.${key}`)
+function adjustmentTypeText(type: unknown): LabeledText {
+  return adjustmentTypeDisplayLabel(type, t)
+}
+
+function excludedItemName(row: ExpertCaseExcludedRow): LabeledText {
+  const catalogName = catalogById.value.get(row.sellable_item_id)?.name
+  return displayNameOrUntitled(row.name || catalogName, row.sellable_item_id, t)
+}
+
+function domainDisplay(row: { name: string | null, domain_id: string }): LabeledText {
+  return displayNameOrUntitled(row.name, row.domain_id, t)
+}
+
+function contributionBlockName(block: { name: string | null, sellable_item_id: string }): LabeledText {
+  return displayNameOrUntitled(block.name, block.sellable_item_id, t)
 }
 
 function formatDateTime(value: unknown) {
@@ -827,12 +975,16 @@ function isCustomerRole(value: unknown) {
   <PageHeader plain>
     <template #actions>
       <template v-if="detail && !pending">
-        <StatusBadge
+        <span
           v-if="statusChipLabel"
-          :label="statusChipLabel"
-          :color="statusChipColor"
-          data-testid="expert-case-status-chip"
-        />
+          :title="statusChipTitle || undefined"
+        >
+          <StatusBadge
+            :label="statusChipLabel"
+            :color="statusChipColor"
+            data-testid="expert-case-status-chip"
+          />
+        </span>
         <UButton
           variant="soft"
           :disabled="busy || pending"
@@ -894,10 +1046,29 @@ function isCustomerRole(value: unknown) {
     </div>
 
     <template v-else-if="detail">
-      <div class="mb-4 flex flex-wrap gap-3 text-sm text-muted">
+      <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-muted">
         <span>{{ $t('expertCaseReviews.colUser') }}：{{ memberLabel }}</span>
         <span class="font-mono text-xs">{{ shortExpertCaseId(detail.user_id) }}</span>
-        <span>{{ $t('expertCaseReviews.colConversation') }}：{{ detail.conversation_id }}</span>
+        <span
+          v-if="conversationIdFull"
+          class="inline-flex flex-wrap items-center gap-1"
+          data-testid="expert-case-conversation-id"
+        >
+          <span>{{ $t('expertCaseReviews.colConversation') }}：</span>
+          <span
+            class="font-mono text-xs"
+            :title="conversationIdFull"
+          >{{ conversationIdShort }}</span>
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            data-testid="expert-case-conversation-copy"
+            @click="copyConversationId"
+          >
+            {{ copyConversationFeedback || $t('expertCaseReviews.copyId') }}
+          </UButton>
+        </span>
       </div>
 
       <!-- Member data: conversation + profile + goal + report -->
@@ -970,10 +1141,34 @@ function isCustomerRole(value: unknown) {
                 :key="entry.key"
                 class="rounded-lg bg-default/40 px-3 py-2 text-sm"
               >
-                <dt class="text-xs text-muted">
+                <dt
+                  class="text-xs text-muted"
+                  :title="entry.labelTitle || undefined"
+                >
                   {{ entry.label }}
                 </dt>
-                <dd class="mt-0.5 whitespace-pre-wrap break-words text-highlighted">
+                <dd
+                  v-if="entry.intakeRows"
+                  class="mt-1 space-y-1 text-highlighted"
+                  data-testid="expert-case-intake-rows"
+                >
+                  <div
+                    v-for="row in entry.intakeRows"
+                    :key="row.key"
+                    class="flex flex-wrap gap-x-2 gap-y-0.5"
+                  >
+                    <span
+                      class="text-muted"
+                      :title="row.title || undefined"
+                    >{{ row.label }}：</span>
+                    <span class="whitespace-pre-wrap break-words">{{ row.value }}</span>
+                  </div>
+                </dd>
+                <dd
+                  v-else
+                  class="mt-0.5 whitespace-pre-wrap break-words text-highlighted"
+                  :title="entry.valueTitle || undefined"
+                >
                   {{ entry.value }}
                 </dd>
               </div>
@@ -1000,10 +1195,11 @@ function isCustomerRole(value: unknown) {
               class="mt-2 list-disc space-y-1 ps-5 text-sm"
             >
               <li
-                v-for="goal in memberGoals"
-                :key="goal"
+                v-for="(goal, goalIndex) in memberGoals"
+                :key="`${goal.text}-${goalIndex}`"
+                :title="goal.title || undefined"
               >
-                {{ goal }}
+                {{ goal.text }}
               </li>
             </ul>
           </div>
@@ -1050,8 +1246,12 @@ function isCustomerRole(value: unknown) {
               {{ $t('expertCaseReviews.reportEmpty') }}
             </p>
             <template v-else>
-              <p class="mt-1 text-xs text-muted">
-                {{ $t('expertCaseReviews.reportStatus', { status: healthReport.status }) }}
+              <p
+                class="mt-1 text-xs text-muted"
+                :title="healthReportStatus.title || undefined"
+                data-testid="expert-case-report-status"
+              >
+                {{ $t('expertCaseReviews.reportStatusLabel') }}：{{ healthReportStatus.text }}
               </p>
               <div
                 v-if="healthReportResults.length"
@@ -1101,8 +1301,11 @@ function isCustomerRole(value: unknown) {
               :key="block.package_plan_code"
               class="mt-3 rounded-lg border border-default p-3"
             >
-              <p class="font-medium text-highlighted">
-                {{ block.package_plan_name || block.package_plan_code }}
+              <p
+                class="font-medium text-highlighted"
+                :title="planCodeDisplay(block.package_plan_code, block.package_plan_name).title || undefined"
+              >
+                {{ planCodeDisplay(block.package_plan_code, block.package_plan_name).text }}
               </p>
               <p
                 v-if="block.headline"
@@ -1157,7 +1360,9 @@ function isCustomerRole(value: unknown) {
                 :key="row.domain_id"
                 class="flex flex-wrap items-baseline justify-between gap-2 px-3 py-2"
               >
-                <span>{{ row.name || row.domain_id }}</span>
+                <span :title="domainDisplay(row).title || undefined">
+                  {{ domainDisplay(row).text }}
+                </span>
                 <span
                   v-if="row.severity != null"
                   class="font-mono text-xs"
@@ -1185,8 +1390,11 @@ function isCustomerRole(value: unknown) {
               :key="block.sellable_item_id || block.name || 'item'"
               class="mt-3 rounded-lg border border-default p-3"
             >
-              <p class="font-medium text-highlighted">
-                {{ block.name || block.sellable_item_id }}
+              <p
+                class="font-medium text-highlighted"
+                :title="contributionBlockName(block).title || undefined"
+              >
+                {{ contributionBlockName(block).text }}
               </p>
               <div
                 v-for="(rows, contribIndex) in block.contributions"
@@ -1253,8 +1461,11 @@ function isCustomerRole(value: unknown) {
             class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-medium text-highlighted">
-                {{ pkg.package_plan_name || planCode(pkg) }}
+              <h3
+                class="font-medium text-highlighted"
+                :title="planDisplay(pkg).title || undefined"
+              >
+                {{ planDisplay(pkg).text }}
               </h3>
               <UButton
                 v-if="awaiting"
@@ -1286,8 +1497,11 @@ function isCustomerRole(value: unknown) {
               >
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div class="min-w-0 flex-1">
-                    <p class="font-medium text-highlighted">
-                      {{ item.name || item.code }}
+                    <p
+                      class="font-medium text-highlighted"
+                      :title="itemDisplayName(item, t).title || undefined"
+                    >
+                      {{ itemDisplayName(item, t).text }}
                     </p>
                     <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                       <span>
@@ -1295,16 +1509,21 @@ function isCustomerRole(value: unknown) {
                       </span>
                       <UBadge
                         v-if="item.tier"
-                        :color="tierLabelKey(item.tier) === 'primary' ? 'primary' : 'info'"
+                        :color="tierLabelKey(item.tier) === 'primary'
+                          ? 'primary'
+                          : tierLabelKey(item.tier) === 'secondary' ? 'info' : 'neutral'"
                         variant="subtle"
                         data-testid="expert-case-item-tier"
+                        :title="tierText(item.tier).title || undefined"
                       >
-                        {{ tierText(item.tier) }}
+                        {{ tierText(item.tier).text }}
                       </UBadge>
                       <span
-                        v-if="decisionLabel(lineKey(planCode(pkg), itemId(item)))"
+                        v-if="decisionDisplay(lineKey(planCode(pkg), itemId(item)))"
+                        :title="decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.title || undefined"
+                        data-testid="expert-case-item-decision"
                       >
-                        · {{ decisionLabel(lineKey(planCode(pkg), itemId(item))) }}
+                        · {{ decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.text }}
                       </span>
                     </p>
                     <p
@@ -1434,15 +1653,24 @@ function isCustomerRole(value: unknown) {
             :key="`cmp-${planCode(pkg)}`"
             class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
           >
-            <h3 class="font-medium text-highlighted">
-              {{ pkg.package_plan_name || planCode(pkg) }}
+            <h3
+              class="font-medium text-highlighted"
+              :title="planDisplay(pkg).title || undefined"
+            >
+              {{ planDisplay(pkg).text }}
             </h3>
-            <p
+            <details
               v-if="pkg.composition_hash"
               class="mt-1 text-xs text-muted"
+              data-testid="expert-case-composition-hash"
             >
-              hash：{{ pkg.composition_hash }}
-            </p>
+              <summary class="cursor-pointer">
+                {{ $t('expertCaseReviews.techDetails') }}
+              </summary>
+              <p class="mt-1 font-mono break-all">
+                composition_hash：{{ pkg.composition_hash }}
+              </p>
+            </details>
             <p
               v-if="!packageItems(pkg).length"
               class="mt-2 text-sm text-muted"
@@ -1457,8 +1685,11 @@ function isCustomerRole(value: unknown) {
                 v-for="item in packageItems(pkg)"
                 :key="`cmp-item-${itemId(item)}-${item.is_new ? 'new' : 'orig'}`"
               >
-                <span :class="{ 'line-through text-muted': item.removed === true }">
-                  {{ item.name || item.code }} · {{ item.daily_dose }}
+                <span
+                  :class="{ 'line-through text-muted': item.removed === true }"
+                  :title="itemDisplayName(item, t).title || undefined"
+                >
+                  {{ itemDisplayName(item, t).text }} · {{ item.daily_dose }}
                 </span>
                 <span
                   v-if="item.is_new"
@@ -1469,8 +1700,10 @@ function isCustomerRole(value: unknown) {
                 <span
                   v-if="item.decision && !revisedPackages.length"
                   class="ms-2 text-xs text-muted"
+                  :title="mapDecisionLabel(item.decision, t)?.title || undefined"
+                  data-testid="expert-case-cmp-decision"
                 >
-                  · {{ item.decision }}
+                  · {{ mapDecisionLabel(item.decision, t)?.text }}
                 </span>
                 <span
                   v-if="item.display_reason"
@@ -1507,14 +1740,18 @@ function isCustomerRole(value: unknown) {
             class="py-3 text-sm"
             :data-testid="`expert-case-excluded-${row.sellable_item_id}`"
           >
-            <p class="font-medium text-highlighted">
-              {{ row.name || catalogById.get(row.sellable_item_id)?.name || row.sellable_item_id }}
+            <p
+              class="font-medium text-highlighted"
+              :title="excludedItemName(row).title || undefined"
+            >
+              {{ excludedItemName(row).text }}
             </p>
             <p
               class="mt-1 text-muted"
               data-testid="expert-case-excluded-reason"
+              :title="excludedReasonDisplay(row.reason_code).title || undefined"
             >
-              {{ excludedReasonText(row.reason_code) }}
+              {{ excludedReasonDisplay(row.reason_code).text }}
             </p>
           </li>
         </ul>
@@ -1550,8 +1787,13 @@ function isCustomerRole(value: unknown) {
             :data-testid="`expert-case-adjustment-${row.type}-${index}`"
           >
             <p class="font-medium text-highlighted">
-              {{ adjustmentTypeText(row.type) }}
-              · {{ row.package_plan_code }}
+              <span :title="adjustmentTypeText(row.type).title || undefined">
+                {{ adjustmentTypeText(row.type).text }}
+              </span>
+              ·
+              <span :title="planCodeDisplay(row.package_plan_code).title || undefined">
+                {{ planCodeDisplay(row.package_plan_code).text }}
+              </span>
             </p>
             <p class="mt-1 text-muted">
               {{ $t('expertCaseReviews.adjustmentOriginal') }}：
@@ -1579,9 +1821,18 @@ function isCustomerRole(value: unknown) {
             </p>
             <p class="mt-2 text-xs text-muted">
               {{ $t('expertCaseReviews.adjustmentOperator') }}：
-              {{ row.operator_display_name || row.operator_role || $t('expertCaseReviews.adjustmentNone') }}
-              <span v-if="row.operator_role && row.operator_display_name">
-                （{{ row.operator_role }}）
+              <span
+                :title="!row.operator_display_name
+                  ? (operatorDisplay(row).role?.title || undefined)
+                  : undefined"
+              >
+                {{ operatorDisplay(row).primary }}
+              </span>
+              <span
+                v-if="row.operator_display_name && operatorDisplay(row).role"
+                :title="operatorDisplay(row).role?.title || undefined"
+              >
+                （{{ operatorDisplay(row).role?.text }}）
               </span>
               <span
                 v-if="formatDateTime(row.adjusted_at)"
@@ -1607,15 +1858,23 @@ function isCustomerRole(value: unknown) {
           class="rounded-xl border border-default p-4 text-sm"
         >
           <p class="font-medium">
-            {{ row.decision }} · {{ row.package_plan_code }}
+            <span :title="knowledgeDecision(row)?.title || undefined">
+              {{ knowledgeDecision(row)?.text || $t('expertCaseReviews.other') }}
+            </span>
+            ·
+            <span :title="knowledgePlan(row).title || undefined">
+              {{ knowledgePlan(row).text }}
+            </span>
           </p>
           <p class="mt-1 text-muted">
             {{ row.reason || '—' }}
           </p>
-          <p class="mt-1 text-xs text-muted">
-            {{ row.classification_confirmed
-              ? row.classification
-              : $t('expertCaseReviews.pendingClassification') }}
+          <p
+            class="mt-1 text-xs text-muted"
+            :title="knowledgeClassification(row).title || undefined"
+            data-testid="expert-case-knowledge-classification"
+          >
+            {{ knowledgeClassification(row).text }}
           </p>
           <p
             v-if="!row.classification_confirmed"
