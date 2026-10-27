@@ -1,6 +1,7 @@
 import type { Role } from '~/types/admin'
 import { isPlatformRole } from '~/types/admin'
 import type { OperatorRole } from '~/types/operator'
+import { canViewCtaCatalog } from '~/utils/cta-catalog-access'
 import { canAccessKnowledge } from '~/utils/knowledge-access'
 
 export interface NavItem {
@@ -10,6 +11,10 @@ export interface NavItem {
   platformOnly?: boolean
   /** 僅 ops／admin 可見（知識管理）。 */
   knowledgeOnly?: boolean
+  /** 僅 admin／ops 可見（CTA 目錄）；expert 隱藏整項。 */
+  ctaCatalogOnly?: boolean
+  /** RouterLink exact：設定總頁勿與 /settings/privacy 等子路徑同時亮起。 */
+  exact?: boolean
   /** false：側欄不加「即將上線」。未設視為開發中／未上線。 */
   developing?: boolean
 }
@@ -22,8 +27,9 @@ export interface NavGroup {
 }
 
 /**
- * 側欄 IA（Irice 2026-10-27）：總覽（最上、無組標）→ 案件 → 知識 → 商品 → 設定 → 開發中。
- * 每項只出現一次（20）。組 key 與 item key 共用 `nav.*`，故組名用 ops／learning／catalog／system／developing。
+ * 側欄 IA（Irice 2026-10-27／設定組拆頁 2026-10-28）：
+ * 總覽（最上、無組標）→ 案件 → 知識 → 商品 → 設定 → 開發中。
+ * 每項只出現一次（22；expert 看不到 CTA 則 21）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -63,7 +69,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'system',
     items: [
-      { key: 'settings', to: '/settings', icon: 'i-lucide-settings', developing: false },
+      // Prefer first visible anchor hash so sidebar entry never hits empty-hash normalize.
+      { key: 'settings', to: '/settings#payment', icon: 'i-lucide-settings', developing: false, exact: true },
+      { key: 'privacy', to: '/settings/privacy', icon: 'i-lucide-shield', developing: false },
+      { key: 'ctaCatalog', to: '/settings/cta-catalog', icon: 'i-lucide-mouse-pointer-click', developing: false, ctaCatalogOnly: true },
       { key: 'aiAssistant', to: '/ai-assistant', icon: 'i-lucide-bot', developing: false }
     ]
   },
@@ -167,6 +176,9 @@ export function visibleNavGroups(
           return false
         }
         if (item.knowledgeOnly && !canAccessKnowledge(operatorRole)) {
+          return false
+        }
+        if (item.ctaCatalogOnly && !canViewCtaCatalog(operatorRole)) {
           return false
         }
         return true

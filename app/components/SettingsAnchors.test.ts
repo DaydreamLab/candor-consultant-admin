@@ -8,8 +8,6 @@ const labels: Record<string, string> = {
   'settings.anchors.payment': '支付',
   'settings.anchors.invoice': '發票',
   'settings.anchors.biomarker': '報告判讀',
-  'settings.anchors.privacy': '隱私權政策',
-  'settings.anchors.ctaCatalog': 'CTA 目錄',
   'settings.anchors.other': '其他'
 }
 
@@ -18,19 +16,17 @@ function translate(key: string) {
 }
 
 describe('SettingsAnchors', () => {
-  it('renders CTA after privacy and emits selection', async () => {
+  it('renders hub anchors without privacy/CTA and emits selection', async () => {
     const items: SettingsAnchorId[] = [
       'payment',
       'invoice',
       'biomarker',
-      'privacy',
-      'cta-catalog',
       'other'
     ]
     const wrapper = mount(SettingsAnchors, {
       props: {
         items,
-        modelValue: 'privacy'
+        modelValue: 'payment'
       },
       global: {
         mocks: { $t: translate }
@@ -42,13 +38,12 @@ describe('SettingsAnchors', () => {
       '支付',
       '發票',
       '報告判讀',
-      '隱私權政策',
-      'CTA 目錄',
       '其他'
     ])
-    expect(wrapper.find('[data-testid="settings-anchor-cta-catalog"]').attributes('aria-current')).toBeUndefined()
+    expect(wrapper.find('[data-testid="settings-anchor-privacy"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="settings-anchor-cta-catalog"]').exists()).toBe(false)
 
-    await wrapper.find('[data-testid="settings-anchor-cta-catalog"]').trigger('click')
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['cta-catalog'])
+    await wrapper.find('[data-testid="settings-anchor-invoice"]').trigger('click')
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['invoice'])
   })
 })

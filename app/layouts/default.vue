@@ -18,10 +18,16 @@ const menuGroups = computed(() =>
     label: t(`nav.${group.key}`),
     hideLabel: Boolean(group.hideLabel),
     items: group.items.map((item) => {
+      const hashIndex = item.to.indexOf('#')
+      const pathOnly = hashIndex === -1 ? item.to : item.to.slice(0, hashIndex)
+      const hash = hashIndex === -1 ? '' : item.to.slice(hashIndex)
       const menuItem: NavigationMenuItem = {
         label: t(`nav.${item.key}`),
         icon: item.icon,
-        to: localePath(item.to),
+        // localePath 只吃 path；側欄若帶 #anchor 須自行接回，避免變回空 hash。
+        to: `${localePath(pathOnly)}${hash}`,
+        // 設定總頁 exact，避免 /settings/privacy 等子路徑同時亮「設定」。
+        exact: item.exact === true,
         onSelect: () => {
           open.value = false
         }

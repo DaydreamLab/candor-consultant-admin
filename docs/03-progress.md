@@ -69,8 +69,8 @@
 | 金流設定 | `/settings`（radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 電子發票設定 | `/settings`（radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 報告判讀 LLM 上限 | `/settings`（每次讀取最多 LLM 次數；留空＝不限制；按儲存） | 可用 | 接線中（待 [candor-core #81](https://github.com/DaydreamLab/candor-core/pull/81) 合併部署） | M4 |
-| 隱私權政策 CMS | `/settings`（Markdown 編輯／儲存；左右版本 diff）；公開頁 `/privacy-policy`；Cookie 同意依 version | 可用 | 接線中（待 [candor-core #87](https://github.com/DaydreamLab/candor-core/pull/87) 合併部署） | M2 Beta |
-| CTA 目錄 | `/settings#cta-catalog`（列表／編輯／情境矩陣；無新增／刪除；admin 可編、ops 只讀、expert 隱藏錨點） | 可用 | Mock（client 已備；待 candor-core CTA catalog Admin API；預設 `NUXT_PUBLIC_CTA_CATALOG_MOCK` 開） | M3 |
+| 隱私權政策 CMS | `/settings/privacy`（Markdown 編輯／儲存；左右版本 diff；自設定總頁錨點拆出）；公開頁 `/privacy-policy`；Cookie 同意依 version | 可用 | 接線中（待 [candor-core #87](https://github.com/DaydreamLab/candor-core/pull/87) 合併部署） | M2 Beta |
+| CTA 目錄 | `/settings/cta-catalog`（列表／編輯／情境矩陣；自設定總頁錨點拆出；無新增／刪除；admin 可編、ops 只讀、expert 隱藏側欄項） | 可用 | Mock（client 已備；待 candor-core CTA catalog Admin API；預設 `NUXT_PUBLIC_CTA_CATALOG_MOCK` 開） | M3 |
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
@@ -83,7 +83,7 @@
 | Weight sets | —（權重分頁仍 mock；每日學習 HTTP 已接畫面；見 core #75） | 殼／接線中 | Mock／接線中 | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
-| 設定頁 | `/settings` | 殼（外連改掛 AI 助理） | 殼 | 完成 |
+| 設定頁 | `/settings`（錨點：支付｜發票｜報告判讀｜其他；隱私／CTA 已拆獨立頁） | 殼 | 殼 | 完成 |
 | AI 助理／對話文案 | `/ai-assistant` | 可用 | 已接（conversation-copies） | 完成 |
 | AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
 | AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
@@ -216,8 +216,9 @@
 
 ---
 
-**最後更新**：2026-10-27（設定 CTA 目錄；left anchors）
+**最後更新**：2026-10-28（設定組拆頁：隱私／CTA 獨立路由；總頁空 hash 卡死修復）
 
+- 2026-10-28：設定組側欄＝設定｜隱私權｜CTA 目錄｜AI 助理；路由 `/settings`｜`/settings/privacy`｜`/settings/cta-catalog`；總頁錨點僅支付｜發票｜報告判讀｜其他；空 hash 不強制 replace；expert 隱藏 CTA 側欄項。core `docs/04` 路徑敘述請雙寫
 - 2026-10-27：CTA client 路徑對齊 core #98（`situation-matrix`）；設定 left anchors＋列表／編輯／矩陣 UI；仍 Mock 至 core 部署；`docs/04` 待雙寫
 - 2026-10-27：設定頁 left anchors（支付｜發票｜報告判讀｜隱私｜**CTA 目錄**｜其他）；CTA 列表／編輯／情境矩陣 UI；mock client；core Admin API 與 `docs/04` 待雙寫
 - 2026-10-27：總覽移出開發中→側欄最上（無 badge）；`/` Wave-1 接專家檢視／訂單／會員／知識片段 list count；舊履約示範收合；勿新 overview API。core `docs/04` 對應「總覽」列請同步為已接（沿用既有 list 端點）

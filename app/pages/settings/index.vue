@@ -15,7 +15,10 @@ import {
 import { DEMO_LABELS } from '~/utils/demo'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
+  parseSettingsSplitHash,
   resolveSettingsAnchor,
+  SETTINGS_SPLIT_HASH_REDIRECTS,
+  settingsHashReplaceTarget,
   visibleSettingsAnchors,
   type SettingsAnchorId
 } from '~/utils/settings-anchors'
@@ -27,6 +30,7 @@ const config = useRuntimeConfig()
 const session = useSessionStore()
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 
 const org = computed(() => currentOrg())
 const canEditPayment = computed(() => {
@@ -45,11 +49,16 @@ const activeAnchor = computed<SettingsAnchorId>({
 })
 
 watch(
-  () => [route.hash, session.operator?.role, anchorItems.value] as const,
+  () => [route.hash, session.operator?.role] as const,
   () => {
-    const resolved = resolveSettingsAnchor(route.hash, session.operator?.role)
-    if (route.hash.replace(/^#/, '') !== resolved) {
-      void router.replace({ hash: `#${resolved}` })
+    const split = parseSettingsSplitHash(route.hash)
+    if (split) {
+      void navigateTo(localePath(SETTINGS_SPLIT_HASH_REDIRECTS[split]))
+      return
+    }
+    const target = settingsHashReplaceTarget(route.hash, session.operator?.role)
+    if (target) {
+      void router.replace({ hash: `#${target}` })
     }
   },
   { immediate: true }
@@ -497,22 +506,6 @@ function methodLabel(method: string) {
               </p>
             </div>
           </template>
-        </section>
-
-        <!-- privacy -->
-        <section
-          v-else-if="activeAnchor === 'privacy'"
-          data-testid="settings-panel-privacy"
-        >
-          <PrivacyPolicySettings />
-        </section>
-
-        <!-- CTA catalog -->
-        <section
-          v-else-if="activeAnchor === 'cta-catalog'"
-          data-testid="settings-panel-cta-catalog"
-        >
-          <CtaCatalogSettings />
         </section>
 
         <!-- other -->
