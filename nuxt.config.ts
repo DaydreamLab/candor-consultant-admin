@@ -30,7 +30,12 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://candor-core.dev.daydream-lab.com/api/v1',
       feSha: process.env.NUXT_PUBLIC_FE_SHA || '',
       /** 本機截圖／預覽用；正式環境勿開 */
-      privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1'
+      privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1',
+      /**
+       * CTA 目錄 mock：預設開啟（core Admin API 尚未定案）。
+       * core 就緒後設 `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` 改打真實 HTTP。
+       */
+      ctaCatalogMock: process.env.NUXT_PUBLIC_CTA_CATALOG_MOCK !== '0'
     }
   },
 
