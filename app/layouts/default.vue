@@ -26,6 +26,8 @@ const menuGroups = computed(() =>
         icon: item.icon,
         // localePath 只吃 path；側欄若帶 #anchor 須自行接回，避免變回空 hash。
         to: `${localePath(pathOnly)}${hash}`,
+        // 設定總頁 exact，避免 /settings/privacy 等子路徑同時亮「設定」。
+        exact: item.exact === true,
         onSelect: () => {
           open.value = false
         }

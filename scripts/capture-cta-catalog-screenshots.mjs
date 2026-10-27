@@ -38,7 +38,7 @@ await page.addInitScript((payload) => {
   localStorage.setItem('candor.privacy.consent.version', '1')
 }, session)
 
-await page.goto(`${base}/settings#cta-catalog`, { waitUntil: 'networkidle' })
+await page.goto(`${base}/settings/cta-catalog`, { waitUntil: 'networkidle' })
 await page.waitForSelector('[data-testid="cta-catalog-settings"]', { timeout: 30_000 })
 await page.waitForSelector('[data-testid="cta-row-ask_report"]', { timeout: 30_000 })
 await page.screenshot({ path: join(outDir, 'cta-catalog-list.png'), fullPage: true })

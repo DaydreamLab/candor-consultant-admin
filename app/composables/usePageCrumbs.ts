@@ -187,7 +187,8 @@ export function usePageCrumbs() {
     }
     for (const group of NAV_GROUPS) {
       for (const item of group.items) {
-        if (item.to === current) {
+        const itemPath = item.to.split('#')[0] || item.to
+        if (itemPath === current) {
           return t(`nav.${item.key}`)
         }
       }

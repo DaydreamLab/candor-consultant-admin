@@ -40,9 +40,13 @@
 
 ### 設定（組 key: `system`）
 
+組序：**設定 · 隱私權 · CTA 目錄 · AI 助理**（Irice 2026-10-28 拆頁）。
+
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| settings | `/settings` | 部分 | Operator 帳號可落此；勿做 org 設定。隱私權政策 CMS（`/admin/legal/privacy-policy**`，對齊 core #87）掛此；公開頁 `/privacy-policy` 免登入。頁內 left anchors：支付｜發票｜報告判讀｜隱私權政策｜**CTA 目錄**｜其他（CTA：admin 可編、ops 只讀、expert 隱藏；無 create／delete；Mock 至 core CTA catalog API）。**無**「即將上線」badge |
+| settings | `/settings` | 部分 | 總頁；left anchors：**支付｜發票｜報告判讀｜其他**（**無**隱私／CTA 錨）。Operator 帳號可落此；勿做 org 設定。側欄直連 `/settings#payment` 避開空 hash 卡死。**無** badge |
+| privacy | `/settings/privacy` | **in-scope** | 自總頁錨點拆出；沿用隱私權政策 CMS（`/admin/legal/privacy-policy**`，對齊 core #87）；公開頁 `/privacy-policy` 免登入。權限沿用 ops／admin 可儲存。**無** badge |
+| ctaCatalog | `/settings/cta-catalog` | **in-scope（語意）** | 自總頁錨點拆出；列表／編輯／情境矩陣；無 create／delete；admin 可編、ops 只讀、expert **隱藏整項**；Mock 至 core CTA catalog API。**無** badge |
 | aiAssistant | `/ai-assistant` | **in-scope** | 站台／client config 等；**無** badge |
 
 ### 開發中（組 key: `developing`）

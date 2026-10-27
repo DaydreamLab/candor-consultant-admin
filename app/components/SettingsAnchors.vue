@@ -11,7 +11,7 @@ const emit = defineEmits<{
 }>()
 
 function labelKey(id: SettingsAnchorId) {
-  return `settings.anchors.${id === 'cta-catalog' ? 'ctaCatalog' : id}`
+  return `settings.anchors.${id}`
 }
 </script>
 
