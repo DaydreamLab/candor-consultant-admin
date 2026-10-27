@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   adjustmentReasonIsMemberFacing,
   adjustmentTypeKey,
+  displayProfileFromMemberProfile,
   excludedReasonParts,
   formatScoreNorm,
   itemRationaleText,
   parseAdjustments,
+  parseDisplayProfile,
   parseExcludedRows,
   parseItemRationale,
   profileFieldLabelKey,
@@ -46,6 +48,34 @@ describe('expert-case-display', () => {
     expect(tierLabelKey('primary')).toBe('primary')
     expect(tierLabelKey('secondary')).toBe('secondary')
     expect(tierLabelKey('other')).toBe('unknown')
+  })
+
+  it('parses profile.display_profile sections with zh rows', () => {
+    const parsed = parseDisplayProfile({
+      sections: [
+        {
+          id: 'conditions',
+          title_zh: '健康狀況',
+          rows: [{ label_zh: '健康狀況', value_zh: '疾病：偏頭痛' }]
+        },
+        { id: 'bad', title_zh: '', rows: [] }
+      ]
+    })
+    expect(parsed).toEqual({
+      sections: [
+        {
+          id: 'conditions',
+          title_zh: '健康狀況',
+          rows: [{ label_zh: '健康狀況', value_zh: '疾病：偏頭痛' }]
+        }
+      ]
+    })
+    expect(parseDisplayProfile(null)).toBeNull()
+    expect(displayProfileFromMemberProfile({
+      display_profile: {
+        sections: [{ id: 'intake', title_zh: '攝取', rows: [] }]
+      }
+    })?.sections[0]?.id).toBe('intake')
   })
 
   it('maps excluded reason_code kinds including contraindication_ prefix', () => {

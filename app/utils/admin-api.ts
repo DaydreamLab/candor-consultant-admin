@@ -396,13 +396,39 @@ export type AdminExpertCaseMemberDataQuery = {
   limit?: number
 }
 
+/**
+ * GET /expert-case-review/{id}/member-data payload (OpenAPI / spec 32).
+ * Prefer `profile.display_profile` for expert UI when present.
+ */
+export type AdminExpertCaseMemberData = {
+  goals?: unknown
+  goals_source?: unknown
+  messages?: unknown
+  health_report?: unknown
+  profile?: {
+    snapshot?: Record<string, unknown> | null
+    /** Core draft: zh sections／rows for expert review UI. */
+    display_profile?: {
+      sections: Array<{
+        id: string
+        title_zh: string
+        rows: Array<{ label_zh: string, value_zh: string }>
+      }>
+    } | null
+    missing_reason?: string | null
+    update?: Record<string, unknown> | null
+    [key: string]: unknown
+  } | null
+  [key: string]: unknown
+}
+
 /** GET /expert-case-review/{id}/member-data — case-bound conversation／goals／report／profile snapshot. */
 export async function adminGetExpertCaseMemberData(
   apiBase: string,
   token: string,
   id: string,
   query: AdminExpertCaseMemberDataQuery = {}
-) {
+): Promise<AdminExpertCaseMemberData> {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
       adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/member-data`),
@@ -416,7 +442,7 @@ export async function adminGetExpertCaseMemberData(
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
     }
-    return body.data
+    return body.data as AdminExpertCaseMemberData
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error
