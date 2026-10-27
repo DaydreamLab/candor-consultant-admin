@@ -1,12 +1,13 @@
 /** CTA catalog types — aligned with systemone／reply_actions seed set (no inventing new types). */
 
+/** Column／list order aligned with design matrix (CTA-CATALOG-DESIGN §7). */
 export const CTA_CATALOG_TYPES = [
   'ask_report',
   'offer_checkup',
-  'ask_vitals',
   'ask_goal',
-  'choose_option',
   'offer_recommend',
+  'ask_vitals',
+  'choose_option',
   'none'
 ] as const
 
