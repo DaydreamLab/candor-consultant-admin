@@ -63,7 +63,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'system',
     items: [
-      { key: 'settings', to: '/settings', icon: 'i-lucide-settings', developing: false },
+      // Prefer first visible anchor hash so sidebar entry never hits empty-hash normalize.
+      { key: 'settings', to: '/settings#payment', icon: 'i-lucide-settings', developing: false },
       { key: 'aiAssistant', to: '/ai-assistant', icon: 'i-lucide-bot', developing: false }
     ]
   },

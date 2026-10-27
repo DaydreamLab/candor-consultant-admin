@@ -84,4 +84,9 @@ describe('sidebar IA (Irice 2026-10-27 workbench top)', () => {
     expect(isDevelopingPath('/lab-services')).toBe(true)
     expect(isDevelopingPath('/progress')).toBe(true)
   })
+
+  it('settings nav targets first payment hash to avoid empty-hash entry', () => {
+    const settings = NAV_GROUPS.flatMap(g => g.items).find(i => i.key === 'settings')
+    expect(settings?.to).toBe('/settings#payment')
+  })
 })

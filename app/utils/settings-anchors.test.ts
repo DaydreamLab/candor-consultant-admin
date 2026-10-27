@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   parseSettingsAnchorHash,
   resolveSettingsAnchor,
+  settingsHashReplaceTarget,
   visibleSettingsAnchors
 } from './settings-anchors'
 
@@ -27,5 +28,14 @@ describe('settings-anchors', () => {
     expect(resolveSettingsAnchor('#cta-catalog', 'admin')).toBe('cta-catalog')
     expect(resolveSettingsAnchor('#cta-catalog', 'expert')).toBe('payment')
     expect(resolveSettingsAnchor('', 'ops')).toBe('payment')
+  })
+
+  it('does not force replace on empty hash; only normalizes invalid non-empty hashes', () => {
+    expect(settingsHashReplaceTarget('', 'admin')).toBeNull()
+    expect(settingsHashReplaceTarget('#', 'admin')).toBeNull()
+    expect(settingsHashReplaceTarget('#payment', 'admin')).toBeNull()
+    expect(settingsHashReplaceTarget('#cta-catalog', 'admin')).toBeNull()
+    expect(settingsHashReplaceTarget('#cta-catalog', 'expert')).toBe('payment')
+    expect(settingsHashReplaceTarget('#not-a-real-anchor', 'ops')).toBe('payment')
   })
 })

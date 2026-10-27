@@ -43,3 +43,21 @@ export function resolveSettingsAnchor(
   }
   return visible[0] ?? 'payment'
 }
+
+/**
+ * Hash that should be written via router.replace, or null to leave the URL alone.
+ * Empty hash must NOT replace — with SPA / GH Pages trailing-slash, immediate
+ * `#payment` replace from `/settings` can re-enter and freeze the main thread.
+ * UI still falls back via resolveSettingsAnchor; only normalize non-empty invalid hashes.
+ */
+export function settingsHashReplaceTarget(
+  hash: string | null | undefined,
+  role: OperatorRole | null | undefined
+): SettingsAnchorId | null {
+  const raw = (hash || '').replace(/^#/, '').trim()
+  if (!raw) {
+    return null
+  }
+  const resolved = resolveSettingsAnchor(hash, role)
+  return raw === resolved ? null : resolved
+}

@@ -16,6 +16,7 @@ import { DEMO_LABELS } from '~/utils/demo'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
   resolveSettingsAnchor,
+  settingsHashReplaceTarget,
   visibleSettingsAnchors,
   type SettingsAnchorId
 } from '~/utils/settings-anchors'
@@ -45,11 +46,11 @@ const activeAnchor = computed<SettingsAnchorId>({
 })
 
 watch(
-  () => [route.hash, session.operator?.role, anchorItems.value] as const,
+  () => [route.hash, session.operator?.role] as const,
   () => {
-    const resolved = resolveSettingsAnchor(route.hash, session.operator?.role)
-    if (route.hash.replace(/^#/, '') !== resolved) {
-      void router.replace({ hash: `#${resolved}` })
+    const target = settingsHashReplaceTarget(route.hash, session.operator?.role)
+    if (target) {
+      void router.replace({ hash: `#${target}` })
     }
   },
   { immediate: true }
