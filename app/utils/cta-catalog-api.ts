@@ -36,7 +36,7 @@ import {
  * Paths aligned with candor-core #98. No create／delete endpoints (product rule).
  */
 
-/** Default ON until core API is live; set `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` to hit real HTTP. */
+/** Default ON locally; GitHub Pages sets `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` for live candor-core Admin API. */
 export function isCtaCatalogMockEnabled(): boolean {
   try {
     return Boolean(useRuntimeConfig().public.ctaCatalogMock)
