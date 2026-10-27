@@ -14,18 +14,46 @@ import {
 } from '~/utils/admin-api'
 import { DEMO_LABELS } from '~/utils/demo'
 import { readOperatorToken } from '~/utils/operator-session'
+import {
+  resolveSettingsAnchor,
+  visibleSettingsAnchors,
+  type SettingsAnchorId
+} from '~/utils/settings-anchors'
 
 const { locale, t } = useI18n()
 const { moduleDesc } = usePageCopy()
 const { platform, currentOrg } = useOrgScope()
 const config = useRuntimeConfig()
 const session = useSessionStore()
+const route = useRoute()
+const router = useRouter()
 
 const org = computed(() => currentOrg())
 const canEditPayment = computed(() => {
   const role = session.operator?.role
   return role === 'ops' || role === 'admin'
 })
+
+const anchorItems = computed(() => visibleSettingsAnchors(session.operator?.role))
+const activeAnchor = computed<SettingsAnchorId>({
+  get() {
+    return resolveSettingsAnchor(route.hash, session.operator?.role)
+  },
+  set(id) {
+    void router.replace({ hash: `#${id}` })
+  }
+})
+
+watch(
+  () => [route.hash, session.operator?.role, anchorItems.value] as const,
+  () => {
+    const resolved = resolveSettingsAnchor(route.hash, session.operator?.role)
+    if (route.hash.replace(/^#/, '') !== resolved) {
+      void router.replace({ hash: `#${resolved}` })
+    }
+  },
+  { immediate: true }
+)
 
 const payment = ref<AdminPaymentSettings | null>(null)
 const paymentDraft = ref<'sandbox' | 'newebpay'>('sandbox')
@@ -255,281 +283,320 @@ function methodLabel(method: string) {
   <PageHeader
     :title="$t('nav.settings')"
     :description="moduleDesc('settings')"
+    plain
   >
-    <p class="mb-6 max-w-3xl text-base text-muted">
-      {{ $t('settings.intro') }}
-    </p>
+    <div class="overflow-hidden rounded-xl border border-default bg-elevated md:flex">
+      <SettingsAnchors
+        v-model="activeAnchor"
+        :items="anchorItems"
+      />
 
-    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
-      <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.version.title') }}
-      </h2>
-      <BuildVersion class="mt-4" />
-    </section>
-
-    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
-      <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.payment.title') }}
-      </h2>
-      <p class="mt-2 text-sm text-muted">
-        {{ $t('settings.payment.hint') }}
-      </p>
-      <p
-        v-if="paymentPending"
-        class="mt-4 text-sm text-muted"
-      >
-        {{ $t('settings.payment.loading') }}
-      </p>
-      <p
-        v-else-if="paymentError"
-        class="mt-4 text-sm text-error"
-      >
-        {{ paymentError }}
-      </p>
-      <template v-else-if="payment">
-        <p class="mt-4 text-sm text-muted">
-          {{ $t('settings.payment.methods') }}:
-          {{ payment.payment_methods.map(methodLabel).join('、') }}
-        </p>
-        <URadioGroup
-          v-model="paymentDraft"
-          class="mt-4"
-          :items="paymentItems"
-          :disabled="!canEditPayment || paymentSaving"
-          orientation="vertical"
-        />
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <UButton
-            color="primary"
-            size="sm"
-            :disabled="!canEditPayment || paymentSaving || !paymentDirty"
-            :loading="paymentSaving"
-            @click="savePayment"
-          >
-            {{ $t('actions.save') }}
-          </UButton>
-          <p
-            v-if="!canEditPayment"
-            class="text-sm text-muted"
-          >
-            {{ $t('actions.readOnly') }}
-          </p>
-          <p
-            v-if="paymentSaved"
-            class="text-sm text-success"
-          >
-            {{ $t('actions.saved') }}
-          </p>
-        </div>
-      </template>
-    </section>
-
-    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
-      <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.invoice.title') }}
-      </h2>
-      <p class="mt-2 text-sm text-muted">
-        {{ $t('settings.invoice.hint') }}
-      </p>
-      <p
-        v-if="invoicePending"
-        class="mt-4 text-sm text-muted"
-      >
-        {{ $t('settings.invoice.loading') }}
-      </p>
-      <p
-        v-else-if="invoiceError"
-        class="mt-4 text-sm text-error"
-      >
-        {{ invoiceError }}
-      </p>
-      <template v-else-if="invoice">
-        <URadioGroup
-          v-model="invoiceDraft"
-          class="mt-4"
-          :items="invoiceItems"
-          :disabled="!canEditPayment || invoiceSaving"
-          orientation="vertical"
-        />
-        <p
-          v-if="showInvoiceCredentialsWarning"
-          class="mt-3 text-sm text-warning"
+      <div class="min-w-0 flex-1 p-5">
+        <!-- payment -->
+        <section
+          v-if="activeAnchor === 'payment'"
+          data-testid="settings-panel-payment"
         >
-          {{ $t('settings.invoice.credentialsMissing') }}
-        </p>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <UButton
-            color="primary"
-            size="sm"
-            :disabled="!canEditPayment || invoiceSaving || !invoiceDirty"
-            :loading="invoiceSaving"
-            @click="saveInvoice"
-          >
-            {{ $t('actions.save') }}
-          </UButton>
-          <p
-            v-if="!canEditPayment"
-            class="text-sm text-muted"
-          >
-            {{ $t('actions.readOnly') }}
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ $t('settings.payment.title') }}
+          </h2>
+          <p class="mt-2 text-sm text-muted">
+            {{ $t('settings.payment.hint') }}
           </p>
           <p
-            v-if="invoiceSaved"
-            class="text-sm text-success"
+            v-if="paymentPending"
+            class="mt-4 text-sm text-muted"
           >
-            {{ $t('actions.saved') }}
-          </p>
-        </div>
-      </template>
-    </section>
-
-    <PrivacyPolicySettings />
-
-    <section class="mb-6 rounded-xl border border-default bg-elevated p-5">
-      <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.biomarkerInterpretation.title') }}
-      </h2>
-      <p class="mt-2 text-sm text-muted">
-        {{ $t('settings.biomarkerInterpretation.hint') }}
-      </p>
-      <p
-        v-if="biomarkerPending"
-        class="mt-4 text-sm text-muted"
-      >
-        {{ $t('settings.biomarkerInterpretation.loading') }}
-      </p>
-      <p
-        v-else-if="biomarkerError"
-        class="mt-4 text-sm text-error"
-      >
-        {{ biomarkerError }}
-      </p>
-      <template v-else-if="biomarkerInterpretation">
-        <UFormField
-          class="mt-4 max-w-xs"
-          :label="$t('settings.biomarkerInterpretation.fieldLabel')"
-          :help="$t('settings.biomarkerInterpretation.fieldHelp')"
-        >
-          <UInput
-            v-model="biomarkerMaxLlmDraft"
-            type="number"
-            min="1"
-            step="1"
-            :placeholder="$t('settings.biomarkerInterpretation.unlimitedPlaceholder')"
-            :disabled="!canEditPayment || biomarkerSaving"
-            @input="biomarkerValidationError = ''; biomarkerSaved = false"
-          />
-        </UFormField>
-        <p class="mt-2 text-sm text-muted">
-          {{ $t('settings.biomarkerInterpretation.unlimitedNote') }}
-        </p>
-        <p
-          v-if="biomarkerValidationError || biomarkerDraftNormalized === 'invalid'"
-          class="mt-2 text-sm text-error"
-        >
-          {{ biomarkerValidationError || $t('settings.biomarkerInterpretation.invalid') }}
-        </p>
-        <div class="mt-4 flex flex-wrap items-center gap-3">
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="sm"
-            :disabled="!canEditPayment || biomarkerSaving || !biomarkerMaxLlmDraft"
-            @click="clearBiomarkerMaxLlm"
-          >
-            {{ $t('settings.biomarkerInterpretation.clearUnlimited') }}
-          </UButton>
-          <UButton
-            color="primary"
-            size="sm"
-            :disabled="biomarkerSaveDisabled"
-            :loading="biomarkerSaving"
-            @click="saveBiomarkerInterpretation"
-          >
-            {{ $t('actions.save') }}
-          </UButton>
-          <p
-            v-if="!canEditPayment"
-            class="text-sm text-muted"
-          >
-            {{ $t('actions.readOnly') }}
+            {{ $t('settings.payment.loading') }}
           </p>
           <p
-            v-if="biomarkerSaved"
-            class="text-sm text-success"
+            v-else-if="paymentError"
+            class="mt-4 text-sm text-error"
           >
-            {{ $t('actions.saved') }}
+            {{ paymentError }}
           </p>
-        </div>
-      </template>
-    </section>
-
-    <div class="mb-6 grid gap-4 md:grid-cols-2">
-      <section class="rounded-xl border border-default bg-elevated p-5">
-        <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('settings.notice') }}
-        </h2>
-        <p class="mt-2 text-sm text-muted">
-          {{ $t('settings.noticeHint') }}
-        </p>
-        <p class="mt-4 text-sm text-dimmed">
-          {{ $t('settings.noticeEmail') }}
-        </p>
-        <p class="mt-1 text-base font-medium text-highlighted">
-          {{ platform ? 'owner@candor.local' : (org?.contact ?? '—') }}
-        </p>
-      </section>
-      <section class="rounded-xl border border-default bg-elevated p-5">
-        <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('settings.warehouse') }}
-        </h2>
-        <p class="mt-2 text-sm text-muted">
-          {{ $t('settings.warehouseHint') }}
-        </p>
-        <p class="mt-4 text-base font-medium text-highlighted">
-          {{ warehouseName() }}
-        </p>
-      </section>
-    </div>
-
-    <section class="rounded-xl border border-default bg-elevated p-5">
-      <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.labels') }}
-      </h2>
-      <p class="mt-2 mb-4 text-sm text-muted">
-        {{ platform ? $t('settings.labelsHintPlatform') : $t('settings.labelsHintFirm') }}
-      </p>
-      <AdminTable :empty="!DEMO_LABELS.length">
-        <template #head>
-          <tr>
-            <th>ID</th>
-            <th>{{ $t('col.name') }}</th>
-            <th>{{ $t('col.effective') }}</th>
-            <th>{{ $t('col.current') }}</th>
-          </tr>
-        </template>
-        <tr
-          v-for="row in DEMO_LABELS"
-          :key="row.id"
-          class="border-b border-default last:border-0"
-        >
-          <td class="font-medium text-highlighted">
-            {{ row.id }}
-          </td>
-          <td>
-            {{ labelName(row) }}
-          </td>
-          <td class="text-muted">
-            {{ row.effective }}
-          </td>
-          <td>
-            <StatusBadge
-              :label="row.current ? $t('status.yes') : $t('status.no')"
-              :color="row.current ? 'success' : 'neutral'"
+          <template v-else-if="payment">
+            <p class="mt-4 text-sm text-muted">
+              {{ $t('settings.payment.methods') }}:
+              {{ payment.payment_methods.map(methodLabel).join('、') }}
+            </p>
+            <URadioGroup
+              v-model="paymentDraft"
+              class="mt-4"
+              :items="paymentItems"
+              :disabled="!canEditPayment || paymentSaving"
+              orientation="vertical"
             />
-          </td>
-        </tr>
-      </AdminTable>
-    </section>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <UButton
+                color="primary"
+                size="sm"
+                :disabled="!canEditPayment || paymentSaving || !paymentDirty"
+                :loading="paymentSaving"
+                @click="savePayment"
+              >
+                {{ $t('actions.save') }}
+              </UButton>
+              <p
+                v-if="!canEditPayment"
+                class="text-sm text-muted"
+              >
+                {{ $t('actions.readOnly') }}
+              </p>
+              <p
+                v-if="paymentSaved"
+                class="text-sm text-success"
+              >
+                {{ $t('actions.saved') }}
+              </p>
+            </div>
+          </template>
+        </section>
+
+        <!-- invoice -->
+        <section
+          v-else-if="activeAnchor === 'invoice'"
+          data-testid="settings-panel-invoice"
+        >
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ $t('settings.invoice.title') }}
+          </h2>
+          <p class="mt-2 text-sm text-muted">
+            {{ $t('settings.invoice.hint') }}
+          </p>
+          <p
+            v-if="invoicePending"
+            class="mt-4 text-sm text-muted"
+          >
+            {{ $t('settings.invoice.loading') }}
+          </p>
+          <p
+            v-else-if="invoiceError"
+            class="mt-4 text-sm text-error"
+          >
+            {{ invoiceError }}
+          </p>
+          <template v-else-if="invoice">
+            <URadioGroup
+              v-model="invoiceDraft"
+              class="mt-4"
+              :items="invoiceItems"
+              :disabled="!canEditPayment || invoiceSaving"
+              orientation="vertical"
+            />
+            <p
+              v-if="showInvoiceCredentialsWarning"
+              class="mt-3 text-sm text-warning"
+            >
+              {{ $t('settings.invoice.credentialsMissing') }}
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <UButton
+                color="primary"
+                size="sm"
+                :disabled="!canEditPayment || invoiceSaving || !invoiceDirty"
+                :loading="invoiceSaving"
+                @click="saveInvoice"
+              >
+                {{ $t('actions.save') }}
+              </UButton>
+              <p
+                v-if="!canEditPayment"
+                class="text-sm text-muted"
+              >
+                {{ $t('actions.readOnly') }}
+              </p>
+              <p
+                v-if="invoiceSaved"
+                class="text-sm text-success"
+              >
+                {{ $t('actions.saved') }}
+              </p>
+            </div>
+          </template>
+        </section>
+
+        <!-- biomarker -->
+        <section
+          v-else-if="activeAnchor === 'biomarker'"
+          data-testid="settings-panel-biomarker"
+        >
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ $t('settings.biomarkerInterpretation.title') }}
+          </h2>
+          <p class="mt-2 text-sm text-muted">
+            {{ $t('settings.biomarkerInterpretation.hint') }}
+          </p>
+          <p
+            v-if="biomarkerPending"
+            class="mt-4 text-sm text-muted"
+          >
+            {{ $t('settings.biomarkerInterpretation.loading') }}
+          </p>
+          <p
+            v-else-if="biomarkerError"
+            class="mt-4 text-sm text-error"
+          >
+            {{ biomarkerError }}
+          </p>
+          <template v-else-if="biomarkerInterpretation">
+            <UFormField
+              class="mt-4 max-w-xs"
+              :label="$t('settings.biomarkerInterpretation.fieldLabel')"
+              :help="$t('settings.biomarkerInterpretation.fieldHelp')"
+            >
+              <UInput
+                v-model="biomarkerMaxLlmDraft"
+                type="number"
+                min="1"
+                step="1"
+                :placeholder="$t('settings.biomarkerInterpretation.unlimitedPlaceholder')"
+                :disabled="!canEditPayment || biomarkerSaving"
+                @input="biomarkerValidationError = ''; biomarkerSaved = false"
+              />
+            </UFormField>
+            <p class="mt-2 text-sm text-muted">
+              {{ $t('settings.biomarkerInterpretation.unlimitedNote') }}
+            </p>
+            <p
+              v-if="biomarkerValidationError || biomarkerDraftNormalized === 'invalid'"
+              class="mt-2 text-sm text-error"
+            >
+              {{ biomarkerValidationError || $t('settings.biomarkerInterpretation.invalid') }}
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                :disabled="!canEditPayment || biomarkerSaving || !biomarkerMaxLlmDraft"
+                @click="clearBiomarkerMaxLlm"
+              >
+                {{ $t('settings.biomarkerInterpretation.clearUnlimited') }}
+              </UButton>
+              <UButton
+                color="primary"
+                size="sm"
+                :disabled="biomarkerSaveDisabled"
+                :loading="biomarkerSaving"
+                @click="saveBiomarkerInterpretation"
+              >
+                {{ $t('actions.save') }}
+              </UButton>
+              <p
+                v-if="!canEditPayment"
+                class="text-sm text-muted"
+              >
+                {{ $t('actions.readOnly') }}
+              </p>
+              <p
+                v-if="biomarkerSaved"
+                class="text-sm text-success"
+              >
+                {{ $t('actions.saved') }}
+              </p>
+            </div>
+          </template>
+        </section>
+
+        <!-- privacy -->
+        <section
+          v-else-if="activeAnchor === 'privacy'"
+          data-testid="settings-panel-privacy"
+        >
+          <PrivacyPolicySettings />
+        </section>
+
+        <!-- CTA catalog -->
+        <section
+          v-else-if="activeAnchor === 'cta-catalog'"
+          data-testid="settings-panel-cta-catalog"
+        >
+          <CtaCatalogSettings />
+        </section>
+
+        <!-- other -->
+        <section
+          v-else
+          data-testid="settings-panel-other"
+          class="space-y-6"
+        >
+          <div>
+            <h2 class="text-base font-semibold text-highlighted">
+              {{ $t('settings.version.title') }}
+            </h2>
+            <BuildVersion class="mt-4" />
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-xl border border-default bg-default/40 p-5">
+              <h2 class="text-base font-semibold text-highlighted">
+                {{ $t('settings.notice') }}
+              </h2>
+              <p class="mt-2 text-sm text-muted">
+                {{ $t('settings.noticeHint') }}
+              </p>
+              <p class="mt-4 text-sm text-dimmed">
+                {{ $t('settings.noticeEmail') }}
+              </p>
+              <p class="mt-1 text-base font-medium text-highlighted">
+                {{ platform ? 'owner@candor.local' : (org?.contact ?? '—') }}
+              </p>
+            </div>
+            <div class="rounded-xl border border-default bg-default/40 p-5">
+              <h2 class="text-base font-semibold text-highlighted">
+                {{ $t('settings.warehouse') }}
+              </h2>
+              <p class="mt-2 text-sm text-muted">
+                {{ $t('settings.warehouseHint') }}
+              </p>
+              <p class="mt-4 text-base font-medium text-highlighted">
+                {{ warehouseName() }}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-base font-semibold text-highlighted">
+              {{ $t('settings.labels') }}
+            </h2>
+            <p class="mt-2 mb-4 text-sm text-muted">
+              {{ platform ? $t('settings.labelsHintPlatform') : $t('settings.labelsHintFirm') }}
+            </p>
+            <AdminTable :empty="!DEMO_LABELS.length">
+              <template #head>
+                <tr>
+                  <th>ID</th>
+                  <th>{{ $t('col.name') }}</th>
+                  <th>{{ $t('col.effective') }}</th>
+                  <th>{{ $t('col.current') }}</th>
+                </tr>
+              </template>
+              <tr
+                v-for="row in DEMO_LABELS"
+                :key="row.id"
+                class="border-b border-default last:border-0"
+              >
+                <td class="font-medium text-highlighted">
+                  {{ row.id }}
+                </td>
+                <td>
+                  {{ labelName(row) }}
+                </td>
+                <td class="text-muted">
+                  {{ row.effective }}
+                </td>
+                <td>
+                  <StatusBadge
+                    :label="row.current ? $t('status.yes') : $t('status.no')"
+                    :color="row.current ? 'success' : 'neutral'"
+                  />
+                </td>
+              </tr>
+            </AdminTable>
+          </div>
+        </section>
+      </div>
+    </div>
   </PageHeader>
 </template>
