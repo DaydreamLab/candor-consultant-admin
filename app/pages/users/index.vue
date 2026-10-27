@@ -10,6 +10,7 @@ const FILTER_ANY = 'all'
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
+const route = useRoute()
 const { t } = useI18n()
 
 const users = ref<Record<string, unknown>[]>([])
@@ -18,8 +19,17 @@ const errorMessage = ref('')
 const page = ref(1)
 let loadSeq = 0
 
+function hasOrdersFromQuery() {
+  const raw = route.query.has_orders
+  const value = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  if (value === 'true' || value === 'false') {
+    return value
+  }
+  return FILTER_ANY
+}
+
 const filterQ = ref('')
-const filterHasOrders = ref(FILTER_ANY)
+const filterHasOrders = ref(hasOrdersFromQuery())
 const debouncedQ = ref('')
 
 let qTimer: ReturnType<typeof setTimeout> | null = null

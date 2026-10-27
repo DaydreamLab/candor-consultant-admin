@@ -16,14 +16,23 @@ export interface NavItem {
 
 export interface NavGroup {
   key: string
+  /** true：側欄不顯示組標（總覽頂層獨立項）。 */
+  hideLabel?: boolean
   items: NavItem[]
 }
 
 /**
- * 側欄 IA（Irice 2026-10-26）：案件 → 知識 → 商品 → 設定 → 開發中。
+ * 側欄 IA（Irice 2026-10-27）：總覽（最上、無組標）→ 案件 → 知識 → 商品 → 設定 → 開發中。
  * 每項只出現一次（20）。組 key 與 item key 共用 `nav.*`，故組名用 ops／learning／catalog／system／developing。
  */
 export const NAV_GROUPS: NavGroup[] = [
+  {
+    key: 'workbench',
+    hideLabel: true,
+    items: [
+      { key: 'workbench', to: '/', icon: 'i-lucide-layout-dashboard', developing: false }
+    ]
+  },
   {
     key: 'ops',
     items: [
@@ -61,7 +70,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'developing',
     items: [
-      { key: 'workbench', to: '/', icon: 'i-lucide-layout-dashboard' },
       { key: 'cases', to: '/cases', icon: 'i-lucide-folder-kanban' },
       { key: 'labs', to: '/labs', icon: 'i-lucide-flask-conical' },
       { key: 'labAppointments', to: '/lab-appointments', icon: 'i-lucide-calendar-clock' },
@@ -86,6 +94,9 @@ export function normalizeAdminPath(path: string): string {
 /** 頁面標題不加「即將上線」：正式已上線頁（含子路徑）與目前帳號。 */
 export function isDevelopingPath(path: string): boolean {
   const current = normalizeAdminPath(path)
+  if (current === '/') {
+    return false
+  }
   if (current === '/account' || current === '/package-plans') {
     return false
   }
