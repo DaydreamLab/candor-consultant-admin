@@ -30,10 +30,10 @@ import {
  * - GET    /api/v1/admin/cta-catalog
  * - GET    /api/v1/admin/cta-catalog/{type}
  * - PATCH  /api/v1/admin/cta-catalog/{type}
- * - GET    /api/v1/admin/cta-catalog/scenario-matrix
- * - PATCH  /api/v1/admin/cta-catalog/scenario-matrix
+ * - GET    /api/v1/admin/cta-catalog/situation-matrix
+ * - PATCH  /api/v1/admin/cta-catalog/situation-matrix
  *
- * No create／delete endpoints (product rule).
+ * Paths aligned with candor-core #98. No create／delete endpoints (product rule).
  */
 
 /** Default ON until core API is live; set `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` to hit real HTTP. */
@@ -239,7 +239,7 @@ export async function adminPatchCtaCatalogItem(
   }
 }
 
-/** GET /admin/cta-catalog/scenario-matrix */
+/** GET /admin/cta-catalog/situation-matrix */
 export async function adminGetCtaScenarioMatrix(
   apiBase: string,
   token: string
@@ -251,7 +251,7 @@ export async function adminGetCtaScenarioMatrix(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, '/cta-catalog/scenario-matrix'),
+      adminUrl(apiBase, '/cta-catalog/situation-matrix'),
       { headers: { Authorization: `Bearer ${token}` } }
     )
     if (body?.status !== 'success' || !isRecord(body.data)) {
@@ -270,7 +270,7 @@ export async function adminGetCtaScenarioMatrix(
   }
 }
 
-/** PATCH /admin/cta-catalog/scenario-matrix — admin write; hard gates enforced client-side too */
+/** PATCH /admin/cta-catalog/situation-matrix — admin write; hard gates enforced client-side too */
 export async function adminPatchCtaScenarioMatrix(
   apiBase: string,
   token: string,
@@ -290,7 +290,7 @@ export async function adminPatchCtaScenarioMatrix(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, '/cta-catalog/scenario-matrix'),
+      adminUrl(apiBase, '/cta-catalog/situation-matrix'),
       {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },

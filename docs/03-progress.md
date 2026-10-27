@@ -159,7 +159,7 @@
 | 電子發票設定 | `GET`／`PATCH /admin/invoice-settings` | 已接（設定頁 radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存才寫入） |
 | 報告判讀 LLM 上限 | `GET`／`PATCH /admin/biomarker-interpretation-settings`（`max_llm_calls_per_read`；`null`／空／0＝不限制） | 接線中（待 core #81） |
 | 隱私權政策 | `GET /legal/privacy-policy`（公開）；`GET`／`PATCH /admin/legal/privacy-policy`；`GET …/versions`、`GET …/versions/{version}`（PATCH 僅 ops／admin；expert 403） | 接線中（待 core #87；設定頁左右並排 client-side diff；本機截圖可用 `NUXT_PUBLIC_PRIVACY_POLICY_MOCK=1`） |
-| CTA 目錄 | 假設：`GET`／`PATCH /admin/cta-catalog`、`GET`／`PATCH /admin/cta-catalog/{type}`、`GET`／`PATCH /admin/cta-catalog/scenario-matrix`（無 create／delete；寫入僅 admin） | Mock（路徑集中於 `cta-catalog-api.ts`；core 定案後只改 client） |
+| CTA 目錄 | `GET`／`PATCH /admin/cta-catalog`、`GET`／`PATCH /admin/cta-catalog/{type}`、`GET`／`PATCH /admin/cta-catalog/situation-matrix`（對齊 [candor-core #98](https://github.com/DaydreamLab/candor-core/pull/98)；無 create／delete；寫入僅 admin） | Mock（client 路徑已對齊；待 core 合併部署後關 mock） |
 | 出貨列表／詳情 | `GET /admin/shipments`、`GET /admin/shipment/{id}`（core #88；不可用時由訂單 `shipment_id`／巢狀 `shipment` 回落；再空則 mock） | 接線中 |
 | 出貨建立／推進 | `POST`／`PATCH /admin/order/{id}/shipment` | Mock |
 
@@ -218,6 +218,7 @@
 
 **最後更新**：2026-10-27（設定 CTA 目錄；left anchors）
 
+- 2026-10-27：CTA client 路徑對齊 core #98（`situation-matrix`）；設定 left anchors＋列表／編輯／矩陣 UI；仍 Mock 至 core 部署；`docs/04` 待雙寫
 - 2026-10-27：設定頁 left anchors（支付｜發票｜報告判讀｜隱私｜**CTA 目錄**｜其他）；CTA 列表／編輯／情境矩陣 UI；mock client；core Admin API 與 `docs/04` 待雙寫
 - 2026-10-27：總覽移出開發中→側欄最上（無 badge）；`/` Wave-1 接專家檢視／訂單／會員／知識片段 list count；舊履約示範收合；勿新 overview API。core `docs/04` 對應「總覽」列請同步為已接（沿用既有 list 端點）
 - 2026-10-24：設定頁隱私權政策編輯、左右版本 diff、公開 `/privacy-policy`、Cookie 同意鍵 `candor.privacy.consent.version`；接線待 core #87
