@@ -60,7 +60,7 @@
 | 功能 | 路由／入口 | 畫面 | 接線 | 里程碑 |
 |------|------------|------|------|--------|
 | Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 已接 | M2 |
-| 總覽 | `/` | 殼 | 不需 | 完成（殼；勿依賴 case 聚合） |
+| 總覽 | `/`（側欄最上；stats-first 待辦／狀態；舊履約 `<details>` 收合） | 可用 | 已接（Wave-1：既有 list 長度累加；無新 overview／count API） | M3 |
 | 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`（語意 → shipment；列表／詳情讀取接 core #88 `shipments`／訂單 `shipment_id`，空／不可用回落 mock；推進／新增／刪除仍 Mock） | 可用 | 接線中 | M3 |
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
@@ -214,8 +214,9 @@
 
 ---
 
-**最後更新**：2026-10-24（隱私權政策 CMS＋Cookie 同意；對齊 core #87 draft）
+**最後更新**：2026-10-27（總覽 workbench v2 stats-first；側欄置頂）
 
+- 2026-10-27：總覽移出開發中→側欄最上（無 badge）；`/` Wave-1 接專家檢視／訂單／會員／知識片段 list count；舊履約示範收合；勿新 overview API。core `docs/04` 對應「總覽」列請同步為已接（沿用既有 list 端點）
 - 2026-10-24：設定頁隱私權政策編輯、左右版本 diff、公開 `/privacy-policy`、Cookie 同意鍵 `candor.privacy.consent.version`；接線待 core #87
 - 2026-10-21：draft PR #20；對齊 #76；合須等 core #76 部署
 - 2026-10-21：修 listError／applyLoadedDraft 清紅字；重拍 ops_*

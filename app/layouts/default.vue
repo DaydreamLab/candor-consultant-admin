@@ -16,6 +16,7 @@ const menuGroups = computed(() =>
   groups.value.map(group => ({
     key: group.key,
     label: t(`nav.${group.key}`),
+    hideLabel: Boolean(group.hideLabel),
     items: group.items.map((item) => {
       const menuItem: NavigationMenuItem = {
         label: t(`nav.${item.key}`),
@@ -192,7 +193,7 @@ onUnmounted(() => {
           class="flex flex-col"
         >
           <p
-            v-if="!collapsed"
+            v-if="!collapsed && !group.hideLabel"
             class="px-2 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-dimmed"
           >
             {{ group.label }}

@@ -12,16 +12,28 @@ import { readOperatorToken } from '~/utils/operator-session'
 
 const FILTER_ANY = 'all'
 const PAGE_SIZE = 20
+const STATUS_FILTERS = new Set(['awaiting_review', 'reviewed'])
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 
 const rows = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const filterStatus = ref(FILTER_ANY)
+
+function statusFromQuery() {
+  const raw = route.query.status
+  const value = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  if (typeof value === 'string' && STATUS_FILTERS.has(value)) {
+    return value
+  }
+  return FILTER_ANY
+}
+
+const filterStatus = ref(statusFromQuery())
 let loadSeq = 0
 
 const filterChips = computed(() => [

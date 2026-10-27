@@ -18,16 +18,36 @@ import {
 } from '~/utils/knowledge-chunks-query'
 import { canReviewKnowledgeChunks } from '~/utils/knowledge-access'
 
+const STATUS_FILTERS = new Set([
+  'pending',
+  'approved',
+  'rejected',
+  'draft',
+  'retired',
+  FILTER_ANY
+])
+
 const config = useRuntimeConfig()
 const { t } = useI18n()
 const session = useSessionStore()
 const localePath = useLocalePath()
+const route = useRoute()
 const { filterGroup, groupSelectItems, groupQueryValue, groupsError } = useKnowledgeDatasetGroupFilter()
 
 const rows = ref<KnowledgeChunk[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const filterStatus = ref<string>(KNOWLEDGE_CHUNK_DEFAULT_STATUS)
+
+function statusFromQuery() {
+  const raw = route.query.status
+  const value = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  if (typeof value === 'string' && STATUS_FILTERS.has(value)) {
+    return value
+  }
+  return KNOWLEDGE_CHUNK_DEFAULT_STATUS
+}
+
+const filterStatus = ref<string>(statusFromQuery())
 const actionError = ref('')
 const actingId = ref<string | null>(null)
 const rejectOpen = ref(false)

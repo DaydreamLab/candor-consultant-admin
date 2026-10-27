@@ -30,6 +30,7 @@ const PAYMENT_STATUSES = ['unpaid', 'pending', 'paid', 'failed', 'expired'] as c
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
+const route = useRoute()
 const { t } = useI18n()
 
 const orders = ref<Record<string, unknown>[]>([])
@@ -41,9 +42,21 @@ let loadSeq = 0
 let nextOffset = 0
 
 const FILTER_ANY = 'all'
+const ORDER_STATUS_SET = new Set<string>(ORDER_STATUSES)
+const PAYMENT_STATUS_SET = new Set<string>(PAYMENT_STATUSES)
 
-const filterStatus = ref(FILTER_ANY)
-const filterPayment = ref(FILTER_ANY)
+function queryString(name: string) {
+  const raw = route.query[name]
+  const value = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  return typeof value === 'string' ? value : ''
+}
+
+const filterStatus = ref(
+  ORDER_STATUS_SET.has(queryString('status')) ? queryString('status') : FILTER_ANY
+)
+const filterPayment = ref(
+  PAYMENT_STATUS_SET.has(queryString('payment_status')) ? queryString('payment_status') : FILTER_ANY
+)
 const filterQ = ref('')
 const filterFrom = ref('')
 const filterTo = ref('')

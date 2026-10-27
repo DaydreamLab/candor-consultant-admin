@@ -4,9 +4,15 @@
 
 未接／示範項：側欄選單文字右側、以及頂欄標題（或麵包屑最後一段）右側加「即將上線」badge（由 `layouts/default.vue` 統一處理，不在 `PageHeader` 內文）。側欄 section「開發中」組標籤仍用「開發中」。正式已上線頁不加 badge（含設定隱私 CMS、知識、專家訓練、AI 助理、物流進度等）。正式組內未上線項目前僅採檢服務（`labServices`）帶「即將上線」。
 
-側欄掃描順序（Irice 2026-10-26）：**案件 → 知識 → 商品 → 設定 → 開發中**（每項只出現一次）。
+側欄掃描順序（Irice 2026-10-27）：**總覽（最上、無組標、無即將上線）→ 案件 → 知識 → 商品 → 設定 → 開發中**（每項只出現一次）。
 
 ## 側欄分組
+
+### 總覽（頂層獨立項 · key: `workbench`）
+
+| Nav key | 路徑 | 範圍 | 接線說明 |
+|---------|------|------|----------|
+| workbench | `/` | **in-scope** | stats-first 待辦／狀態摘要。Wave-1 用既有 list 陣列長度累加（專家檢視／訂單／會員／知識片段）；**不**發明 overview／count endpoint。舊履約示範收在頁底 `<details>`。登入預設仍 `/`；**無**「即將上線」badge |
 
 ### 案件（組 key: `ops`）
 
@@ -30,6 +36,7 @@
 |---------|------|------|----------|
 | packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
 | products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
+| labServices | `/lab-services`、`/lab-services/new`、`/lab-services/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/lab-services`；正式組內 **即將上線** badge。勿與開發中「採檢」`/labs` 混淆 |
 
 ### 設定（組 key: `system`）
 
@@ -40,16 +47,14 @@
 
 ### 開發中（組 key: `developing`）
 
-組標籤「開發中」；組內每項 badge「即將上線」。
+組標籤「開發中」；組內每項 badge「即將上線」。總覽已移出至側欄最上。
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| workbench | `/` | 示範殼 | 可改為訂單／庫存摘要；勿依賴 case 聚合 API |
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`）。勿與側欄組名「案件」或「專家檢視」混淆 |
 | labs | `/labs` | **不做** | 案件式檢驗排程不採用（與下方 `labAppointments` 不同） |
 | labAppointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消；列表含 7 天行事曆 modal）；無 HTTP。不是不做的 `labs` |
 | progress | `/progress` | **不做**（範例頁） | 示範履約階段看板；產品保留討論用殼。勿改名為「物流進度」（正式物流見案件組 `shipping`） |
-| labServices | `/lab-services`、`/lab-services/new`、`/lab-services/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/lab-services`。獨立選單，不從保健品新增進入；與不做的案件「採檢」`/labs` 不同 |
 | selections | `/selections` | **不做** | keyin／手改組成不採用 |
 | invoices | `/invoices` | **不做** | 顧問請款單不採用 |
 | reports | `/reports` | 示範殼 | 非 core 報表 API；可留空或日後另開 ADR |
