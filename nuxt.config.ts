@@ -32,8 +32,7 @@ export default defineNuxtConfig({
       /** 本機截圖／預覽用；正式環境勿開 */
       privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1',
       /**
-       * CTA 目錄 mock：預設開啟（core Admin API 尚未定案）。
-       * core 就緒後設 `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` 改打真實 HTTP。
+       * CTA 目錄 mock：本機預設開啟；GitHub Pages deploy workflow 設 `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` 打 candor-core Admin API。
        */
       ctaCatalogMock: process.env.NUXT_PUBLIC_CTA_CATALOG_MOCK !== '0'
     }

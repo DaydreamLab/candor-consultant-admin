@@ -31,6 +31,7 @@ jobs:
         env:
           NUXT_APP_BASE_URL: /candor-consultant-admin/
           NUXT_PUBLIC_FE_SHA: ${{ github.sha }}
+          NUXT_PUBLIC_CTA_CATALOG_MOCK: '0'
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./.output/public
