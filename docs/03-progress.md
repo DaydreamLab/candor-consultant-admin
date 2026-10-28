@@ -87,6 +87,7 @@
 | AI 助理／對話文案 | `/ai-assistant` | 可用 | 已接（conversation-copies） | 完成 |
 | AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
 | AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
+| 專家檢視／定稿對話文案 | `/expert-case-reviews/{id}` 方案／權重下方獨立卡（產生兩段 MD、左右並排編輯、cache soft chip、dirty 覆蓋確認、定稿鎖定） | 可用 | 接線中（待 [candor-core #103](https://github.com/DaydreamLab/candor-core/pull/103)；本機可 `NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK=1`） | M3 |
 | 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 可用 | 接線中 | KM1 |
 | 知識管理／片段審核 | `/knowledge/chunks` | 可用 | 接線中 | KM1 |
 | 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 可用 | 接線中 | KM2 |
@@ -143,6 +144,14 @@
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/ai-assistant/site`；設定頁不再編） |
 | Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/ai-assistant`） |
 | Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/ai-assistant/claim-terms`） |
+
+### Expert case reviews
+
+| 能力 | 端點 | 狀態 |
+|------|------|------|
+| 列表／詳情／品項決定／送出／匯出 | `GET /expert-case-reviews`、`GET`／`PATCH`／`POST …/expert-case-review/{id}/**` | 已接 |
+| 定稿對話文案產生 | `POST /expert-case-review/{id}/finalize-copy/generate`（`force`；回 `report_highlights`／`expert_opinion`／`content_hash`／`cache_hit`） | 接線中（待 core #103；本機 mock 旗標可開） |
+| 送出定稿帶兩段文案 | `POST …/submit` 可選 `report_highlights`／`expert_opinion` | 接線中（待 core #103） |
 
 ### Orders／shipments
 
@@ -216,8 +225,9 @@
 
 ---
 
-**最後更新**：2026-10-28（設定組拆頁：隱私／CTA 獨立路由；總頁空 hash 卡死修復）
+**最後更新**：2026-10-28（專家檢視定稿對話文案獨立卡；消費 core #103 finalize-copy）
 
+- 2026-10-28：專家案件詳情「定稿對話文案」獨立卡（四態；generate／submit 帶兩段 MD；cache_hit soft chip；dirty 覆蓋確認）。接線待 core #103；`docs/04` 請雙寫
 - 2026-10-28：設定組側欄＝設定｜隱私權｜CTA 目錄｜AI 助理；路由 `/settings`｜`/settings/privacy`｜`/settings/cta-catalog`；總頁錨點僅支付｜發票｜報告判讀｜其他；空 hash 不強制 replace；expert 隱藏 CTA 側欄項。core `docs/04` 路徑敘述請雙寫
 - 2026-10-27：CTA client 路徑對齊 core #98（`situation-matrix`）；設定 left anchors＋列表／編輯／矩陣 UI；仍 Mock 至 core 部署；`docs/04` 待雙寫
 - 2026-10-27：設定頁 left anchors（支付｜發票｜報告判讀｜隱私｜**CTA 目錄**｜其他）；CTA 列表／編輯／情境矩陣 UI；mock client；core Admin API 與 `docs/04` 待雙寫

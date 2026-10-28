@@ -509,12 +509,97 @@ export async function adminResetExpertCaseReviewItems(
   }
 }
 
+export type AdminExpertCaseFinalizeCopyGenerateBody = {
+  /** When true, bypass content-hash cache (optional; default false). */
+  force?: boolean
+}
+
+export type AdminExpertCaseFinalizeCopyData = {
+  /** Markdown body without a leading `##` section title. */
+  report_highlights: string
+  /** Markdown body without a leading `##` section title. */
+  expert_opinion: string
+  content_hash: string
+  cache_hit: boolean
+}
+
+export type AdminExpertCaseReviewSubmitBody = {
+  decisions?: AdminExpertCaseReviewDecisionBody[]
+  /** Expert-edited report highlights MD (optional; backend may generate if omitted). */
+  report_highlights?: string
+  /** Expert-edited expert opinion MD (optional; backend may generate if omitted). */
+  expert_opinion?: string
+}
+
+/**
+ * POST /expert-case-review/{id}/finalize-copy/generate
+ * Only `awaiting_review`; already reviewed → 409.
+ * `cache_hit=true` → UI soft chip only (no toast).
+ */
+export async function adminGenerateExpertCaseFinalizeCopy(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: AdminExpertCaseFinalizeCopyGenerateBody = {}
+): Promise<AdminExpertCaseFinalizeCopyData> {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/finalize-copy/generate`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload.force ? { force: true } : { force: false }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    const reportHighlights = body.data.report_highlights
+    const expertOpinion = body.data.expert_opinion
+    const contentHash = body.data.content_hash
+    if (
+      typeof reportHighlights !== 'string'
+      || typeof expertOpinion !== 'string'
+      || typeof contentHash !== 'string'
+      || typeof body.data.cache_hit !== 'boolean'
+    ) {
+      throw new AdminApiError(500, '')
+    }
+    return {
+      report_highlights: reportHighlights,
+      expert_opinion: expertOpinion,
+      content_hash: contentHash,
+      cache_hit: body.data.cache_hit
+    }
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminSubmitExpertCaseReview(
   apiBase: string,
   token: string,
   id: string,
-  decisions?: AdminExpertCaseReviewDecisionBody[]
+  payload: AdminExpertCaseReviewSubmitBody | AdminExpertCaseReviewDecisionBody[] = {}
 ) {
+  const submitBody: AdminExpertCaseReviewSubmitBody = Array.isArray(payload)
+    ? { decisions: payload }
+    : payload
+  const bodyPayload: Record<string, unknown> = {}
+  if (submitBody.decisions?.length) {
+    bodyPayload.decisions = submitBody.decisions
+  }
+  if (typeof submitBody.report_highlights === 'string') {
+    bodyPayload.report_highlights = submitBody.report_highlights
+  }
+  if (typeof submitBody.expert_opinion === 'string') {
+    bodyPayload.expert_opinion = submitBody.expert_opinion
+  }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
       adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/submit`),
@@ -523,7 +608,7 @@ export async function adminSubmitExpertCaseReview(
         headers: {
           Authorization: `Bearer ${token}`
         },
-        body: decisions ? { decisions } : {}
+        body: bodyPayload
       }
     )
     if (body?.status !== 'success' || !isRecord(body.data)) {
