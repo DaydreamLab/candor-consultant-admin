@@ -708,7 +708,9 @@
     "cost": "Est. cost",
     "tokens": "{n} tokens",
     "ntd": "NT${amount}",
-    "usd": "${amount}"
+    "usd": "${amount}",
+    "total": "Total",
+    "unknownModel": "(unspecified model)"
   },
   "roles": {
     "platform_viewer": "Candor owner (read-only)",

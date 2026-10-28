@@ -1746,6 +1746,89 @@ function sellableItemListOf(data: unknown): unknown[] | null {
   return null
 }
 
+/** Admin `llm_usage` per-model row（core 擴充 by_model；缺欄時讀取端降級為 0／空字串）。 */
+export type LlmUsageByModel = {
+  model: string
+  input_tokens: number
+  output_tokens: number
+  estimated_cost_ntd: string
+  estimated_cost_usd: string
+}
+
+/** Admin `llm_usage` 加總＋可選 by_model[]（向後相容：無 by_model 時陣列為 []）。 */
+export type LlmUsageSummaryPayload = {
+  input_tokens: number
+  output_tokens: number
+  estimated_cost_ntd: string
+  estimated_cost_usd: string
+  by_model: LlmUsageByModel[]
+}
+
+function llmUsageAsInt(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.trunc(value))
+  }
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
+    return Math.max(0, Math.trunc(Number(value)))
+  }
+  return 0
+}
+
+function llmUsageCostText(value: unknown, digits: number): string {
+  const fallback = (0).toFixed(digits)
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toFixed(digits)
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value)
+    if (Number.isFinite(n)) {
+      return n.toFixed(digits)
+    }
+    return value.trim()
+  }
+  return fallback
+}
+
+function readLlmUsageByModelRow(value: unknown): LlmUsageByModel | null {
+  if (!isRecord(value)) {
+    return null
+  }
+  const model = typeof value.model === 'string' ? value.model.trim() : ''
+  return {
+    model,
+    input_tokens: llmUsageAsInt(value.input_tokens),
+    output_tokens: llmUsageAsInt(value.output_tokens),
+    estimated_cost_ntd: llmUsageCostText(value.estimated_cost_ntd, 2),
+    estimated_cost_usd: llmUsageCostText(value.estimated_cost_usd, 4)
+  }
+}
+
+/**
+ * 正規化 admin `llm_usage`。非物件／null → null；缺 `by_model` 或非陣列 → `by_model: []`（只顯示總計）。
+ */
+export function readLlmUsage(value: unknown): LlmUsageSummaryPayload | null {
+  if (!isRecord(value)) {
+    return null
+  }
+  const byModelRaw = value.by_model
+  const by_model: LlmUsageByModel[] = []
+  if (Array.isArray(byModelRaw)) {
+    for (const row of byModelRaw) {
+      const parsed = readLlmUsageByModelRow(row)
+      if (parsed) {
+        by_model.push(parsed)
+      }
+    }
+  }
+  return {
+    input_tokens: llmUsageAsInt(value.input_tokens),
+    output_tokens: llmUsageAsInt(value.output_tokens),
+    estimated_cost_ntd: llmUsageCostText(value.estimated_cost_ntd, 2),
+    estimated_cost_usd: llmUsageCostText(value.estimated_cost_usd, 4),
+    by_model
+  }
+}
+
 function readOrderMessagesPayload(data: unknown): {
   messages: Record<string, unknown>[]
   llm_usage: Record<string, unknown> | null
@@ -1757,6 +1840,7 @@ function readOrderMessagesPayload(data: unknown): {
     }
   }
   if (isRecord(data) && Array.isArray(data.messages)) {
+    // 透傳整包 llm_usage（含可選 by_model[]）；元件端 readLlmUsage 再正規化
     return {
       messages: data.messages.filter(isRecord),
       llm_usage: isRecord(data.llm_usage) ? data.llm_usage : null

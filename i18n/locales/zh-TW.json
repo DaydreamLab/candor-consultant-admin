@@ -708,7 +708,9 @@
     "cost": "預估成本",
     "tokens": "{n} tokens",
     "ntd": "NT${amount}",
-    "usd": "${amount}"
+    "usd": "${amount}",
+    "total": "總計",
+    "unknownModel": "（未標示 model）"
   },
   "roles": {
     "platform_viewer": "坦見業主（唯讀）",
