@@ -10,13 +10,20 @@ import {
 } from '~/utils/expert-finalize-copy'
 import { readOperatorToken } from '~/utils/operator-session'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   caseId: string
   /** When true, card is read-only locked (reviewed). */
   locked: boolean
   reportHighlights: string
   expertOpinion: string
-}>()
+  /** Soft chip only — does not disable generate / edit. */
+  missingGoals?: boolean
+  /** Soft chip only — does not disable generate / edit. */
+  missingReport?: boolean
+}>(), {
+  missingGoals: false,
+  missingReport: false
+})
 
 const emit = defineEmits<{
   'update:reportHighlights': [value: string]
@@ -183,6 +190,22 @@ watch(
           >
             {{ $t('expertCaseReviews.finalizeCopyCacheChip') }}
           </UBadge>
+          <UBadge
+            v-if="missingGoals"
+            color="warning"
+            variant="subtle"
+            data-testid="expert-case-finalize-copy-missing-goals-chip"
+          >
+            {{ $t('expertCaseReviews.missingGoalsChip') }}
+          </UBadge>
+          <UBadge
+            v-if="missingReport"
+            color="warning"
+            variant="subtle"
+            data-testid="expert-case-finalize-copy-missing-report-chip"
+          >
+            {{ $t('expertCaseReviews.missingReportChip') }}
+          </UBadge>
           <UIcon
             v-if="locked"
             name="i-lucide-lock"
@@ -192,6 +215,13 @@ watch(
         </h2>
         <p class="mt-1 max-w-3xl text-xs text-muted">
           {{ $t(ledeKey) }}
+        </p>
+        <p
+          v-if="missingGoals || missingReport"
+          class="mt-1 max-w-3xl text-xs text-muted"
+          data-testid="expert-case-finalize-copy-missing-hint"
+        >
+          {{ $t('expertCaseReviews.missingSignalsHint') }}
         </p>
       </div>
       <div

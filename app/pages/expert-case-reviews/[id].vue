@@ -54,6 +54,7 @@ import {
   type SellablePickRow
 } from '~/utils/expert-case-sellable'
 import { expertCaseMemberName, shortExpertCaseId } from '~/utils/expert-case-list-display'
+import { expertCaseMissingSignals } from '~/utils/expert-case-missing-signals'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
@@ -373,6 +374,17 @@ const healthReport = computed(() => {
   const report = memberData.value?.health_report
   return isRecord(report) ? report : null
 })
+
+/** Soft chips only — never gate generate / submit. */
+const missingSignals = computed(() => {
+  if (memberPending.value || memberError.value) {
+    return null
+  }
+  return expertCaseMissingSignals(memberData.value)
+})
+
+const missingGoals = computed(() => missingSignals.value?.missingGoals === true)
+const missingReport = computed(() => missingSignals.value?.missingReport === true)
 
 const healthReportStatus = computed(() => {
   return reportResultStatusLabel(healthReport.value?.status, t)
@@ -950,6 +962,24 @@ function isCustomerRole(value: unknown) {
             data-testid="expert-case-status-chip"
           />
         </span>
+        <UBadge
+          v-if="missingGoals"
+          color="warning"
+          variant="subtle"
+          :title="$t('expertCaseReviews.missingSignalsHint')"
+          data-testid="expert-case-missing-goals-chip"
+        >
+          {{ $t('expertCaseReviews.missingGoalsChip') }}
+        </UBadge>
+        <UBadge
+          v-if="missingReport"
+          color="warning"
+          variant="subtle"
+          :title="$t('expertCaseReviews.missingSignalsHint')"
+          data-testid="expert-case-missing-report-chip"
+        >
+          {{ $t('expertCaseReviews.missingReportChip') }}
+        </UBadge>
         <UButton
           variant="soft"
           :disabled="busy || pending"
@@ -1149,8 +1179,16 @@ function isCustomerRole(value: unknown) {
           </div>
 
           <div data-testid="expert-case-goals">
-            <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.goalsTitle') }}
+            <h3 class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
+              <span>{{ $t('expertCaseReviews.goalsTitle') }}</span>
+              <UBadge
+                v-if="missingGoals"
+                color="warning"
+                variant="subtle"
+                data-testid="expert-case-goals-missing-chip"
+              >
+                {{ $t('expertCaseReviews.missingGoalsChip') }}
+              </UBadge>
             </h3>
             <p class="mt-1 text-xs text-muted">
               {{ memberData.goals_source === 'conversation_fallback'
@@ -1209,8 +1247,16 @@ function isCustomerRole(value: unknown) {
           </div>
 
           <div data-testid="expert-case-report">
-            <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.reportTitle') }}
+            <h3 class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
+              <span>{{ $t('expertCaseReviews.reportTitle') }}</span>
+              <UBadge
+                v-if="missingReport"
+                color="warning"
+                variant="subtle"
+                data-testid="expert-case-report-missing-chip"
+              >
+                {{ $t('expertCaseReviews.missingReportChip') }}
+              </UBadge>
             </h3>
             <p
               v-if="!healthReport"
@@ -1696,6 +1742,8 @@ function isCustomerRole(value: unknown) {
         v-model:expert-opinion="finalizeExpertOpinion"
         :case-id="caseId"
         :locked="reviewed"
+        :missing-goals="missingGoals"
+        :missing-report="missingReport"
         @generating-change="finalizeGenerating = $event"
       />
 
