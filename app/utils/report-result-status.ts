@@ -20,6 +20,7 @@ export type HealthReportResult = {
   range_status?: 'low' | 'high' | 'normal' | 'unknown' | null
   description?: string | null
   possible_causes?: string | null
+  possible_risks?: string | null
 }
 
 export type ResultStatusClass = 'ok' | 'warn' | 'alert' | 'unknown'
@@ -34,6 +35,7 @@ export function resultNumeric(r: HealthReportResult): number | null {
   return null
 }
 
+/** Align with core SignalEvaluator: status vs ref_*; borderline_* only refine outside ref. */
 export function resultStatusClass(r: HealthReportResult): ResultStatusClass {
   const v = resultNumeric(r)
   if (v == null) {
@@ -44,12 +46,6 @@ export function resultStatusClass(r: HealthReportResult): ResultStatusClass {
   }
   if (r.critical_high != null && v > Number(r.critical_high)) {
     return 'alert'
-  }
-  if (r.borderline_low != null && v < Number(r.borderline_low)) {
-    return 'warn'
-  }
-  if (r.borderline_high != null && v > Number(r.borderline_high)) {
-    return 'warn'
   }
   if (r.ref_low != null && v < Number(r.ref_low)) {
     return 'warn'
@@ -78,6 +74,9 @@ export function formatResultRef(r: HealthReportResult) {
   return `≤ ${high}`
 }
 
+/** Same as younger: pad beyond ref as multiple of span (green ≈ 37.5%–62.5%). */
+export const GAUGE_PAD_RATIO = 1.5
+
 export function resultGaugePct(r: HealthReportResult): number | null {
   const v = resultNumeric(r)
   const low = r.ref_low != null ? Number(r.ref_low) : null
@@ -85,7 +84,7 @@ export function resultGaugePct(r: HealthReportResult): number | null {
   if (v == null || low == null || high == null || high <= low) {
     return null
   }
-  const pad = (high - low) * 0.5
+  const pad = (high - low) * GAUGE_PAD_RATIO
   const min = low - pad
   const max = high + pad
   return Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100))
@@ -112,10 +111,25 @@ export function displayResultName(r: HealthReportResult) {
   return id !== '' ? id : '—'
 }
 
+/** Report raw_name when it differs from the displayed Chinese/preferred name. */
+export function displayResultOriginalName(r: HealthReportResult): string | null {
+  const raw = r.raw_name != null ? String(r.raw_name).trim() : ''
+  if (raw === '') {
+    return null
+  }
+  const display = displayResultName(r)
+  if (raw === display) {
+    return null
+  }
+  return raw
+}
+
+
 export function hasResultInterpretation(r: HealthReportResult) {
   const description = r.description != null ? String(r.description).trim() : ''
   const causes = r.possible_causes != null ? String(r.possible_causes).trim() : ''
-  return description !== '' || causes !== ''
+  const risks = r.possible_risks != null ? String(r.possible_risks).trim() : ''
+  return description !== '' || causes !== '' || risks !== ''
 }
 
 /** Map one core health-report result row into the shared UI shape. */
@@ -163,6 +177,7 @@ export function mapHealthReportResultRow(row: Record<string, unknown>): HealthRe
       ? rangeStatus
       : null,
     description: optionalString(row.description),
-    possible_causes: optionalString(row.possible_causes)
+    possible_causes: optionalString(row.possible_causes),
+    possible_risks: optionalString(row.possible_risks)
   }
 }

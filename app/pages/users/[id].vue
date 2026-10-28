@@ -12,6 +12,7 @@ import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
   displayResultName,
+  displayResultOriginalName,
   displayResultValue,
   formatResultRef,
   hasResultInterpretation,
@@ -920,6 +921,12 @@ function messageTimeText(row: Record<string, unknown>) {
                         <p class="font-semibold">
                           {{ displayResultName(row) }}
                         </p>
+                          <p
+                            v-if="displayResultOriginalName(row)"
+                            class="mt-0.5 text-xs font-normal text-muted"
+                          >
+                            {{ displayResultOriginalName(row) }}
+                          </p>
                         <div
                           v-if="hasResultInterpretation(row)"
                           class="mt-1.5 space-y-1 text-xs font-normal text-muted"
@@ -929,6 +936,9 @@ function messageTimeText(row: Record<string, unknown>) {
                           </p>
                           <p v-if="row.possible_causes">
                             <span class="font-medium text-highlighted">{{ $t('orders.reportReading.possibleCauses') }}：</span>{{ row.possible_causes }}
+                          </p>
+                          <p v-if="row.possible_risks">
+                            <span class="font-medium text-highlighted">{{ $t('orders.reportReading.possibleRisks') }}：</span>{{ row.possible_risks }}
                           </p>
                         </div>
                       </td>
@@ -1006,7 +1016,15 @@ function messageTimeText(row: Record<string, unknown>) {
 }
 
 .yr-gauge {
-  background: linear-gradient(90deg, var(--ui-error), var(--ui-warning), var(--ui-success), var(--ui-warning), var(--ui-error));
+  background: linear-gradient(
+    90deg,
+    var(--ui-error) 0%,
+    var(--ui-warning) 28%,
+    var(--ui-success) 37.5%,
+    var(--ui-success) 62.5%,
+    var(--ui-warning) 72%,
+    var(--ui-error) 100%
+  );
 }
 
 .yr-gauge-marker {

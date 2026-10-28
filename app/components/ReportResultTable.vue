@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   displayResultName,
+  displayResultOriginalName,
   displayResultValue,
   formatResultRef,
   hasResultInterpretation,
@@ -94,6 +95,12 @@ function resultStatusLabel(cls: ResultStatusClass) {
                 <p class="font-semibold">
                   {{ displayResultName(row) }}
                 </p>
+                <p
+                  v-if="displayResultOriginalName(row)"
+                  class="mt-0.5 text-xs font-normal text-muted"
+                >
+                  {{ displayResultOriginalName(row) }}
+                </p>
                 <div
                   v-if="hasResultInterpretation(row)"
                   class="mt-1.5 space-y-1 text-xs font-normal text-muted"
@@ -103,6 +110,9 @@ function resultStatusLabel(cls: ResultStatusClass) {
                   </p>
                   <p v-if="row.possible_causes">
                     <span class="font-medium text-highlighted">{{ $t('orders.reportReading.possibleCauses') }}：</span>{{ row.possible_causes }}
+                  </p>
+                  <p v-if="row.possible_risks">
+                    <span class="font-medium text-highlighted">{{ $t('orders.reportReading.possibleRisks') }}：</span>{{ row.possible_risks }}
                   </p>
                 </div>
               </td>
@@ -191,12 +201,14 @@ function resultStatusLabel(cls: ResultStatusClass) {
   color: var(--ui-text-muted);
 }
 
+/* GAUGE_PAD_RATIO=1.5 → ref (green) 37.5%–62.5%. */
 .yr-gauge {
   background: linear-gradient(
     90deg,
     color-mix(in oklab, var(--ui-error) 85%, var(--ui-bg-elevated)) 0%,
     color-mix(in oklab, var(--ui-warning) 85%, var(--ui-bg-elevated)) 28%,
-    color-mix(in oklab, var(--ui-success) 85%, var(--ui-bg-elevated)) 50%,
+    color-mix(in oklab, var(--ui-success) 85%, var(--ui-bg-elevated)) 37.5%,
+    color-mix(in oklab, var(--ui-success) 85%, var(--ui-bg-elevated)) 62.5%,
     color-mix(in oklab, var(--ui-warning) 85%, var(--ui-bg-elevated)) 72%,
     color-mix(in oklab, var(--ui-error) 85%, var(--ui-bg-elevated)) 100%
   );
