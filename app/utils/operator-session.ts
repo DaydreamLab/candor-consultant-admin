@@ -11,6 +11,7 @@ export type OperatorTokenStore = 'local' | 'session'
 export interface StoredOperator {
   operator: Operator
   expiresAt: number
+  issuedAt: number | null
 }
 
 function browserStore(kind: OperatorTokenStore): Storage | null {
@@ -70,7 +71,11 @@ export function writeOperatorSession(
   if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
     throw new Error('operator session expiry is invalid')
   }
-  const profile: StoredOperator = { operator, expiresAt }
+  const profile: StoredOperator = {
+    operator,
+    expiresAt,
+    issuedAt: Date.now()
+  }
   store.setItem(OPERATOR_TOKEN_KEY, data.token)
   store.setItem(PROFILE_KEY, JSON.stringify(profile))
 }
@@ -96,7 +101,8 @@ function parseProfile(raw: string | null): StoredOperator | null {
     }
     return {
       operator: normalizeOperator(value.operator),
-      expiresAt: value.expiresAt
+      expiresAt: value.expiresAt,
+      issuedAt: typeof value.issuedAt === 'number' ? value.issuedAt : null
     }
   } catch {
     return null

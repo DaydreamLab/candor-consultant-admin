@@ -1,11 +1,14 @@
 import type { Role, SessionUser } from '~/types/admin'
 import type { Operator, OperatorRole } from '~/types/operator'
-import { adminLogin } from '~/utils/admin-api'
+import { AdminApiError, adminLogin, adminRefresh } from '~/utils/admin-api'
 import {
+  OPERATOR_TOKEN_KEY,
   clearOperatorSession,
+  readOperatorToken,
   readStoredOperator,
   writeOperatorSession
 } from '~/utils/operator-session'
+import { shouldSlideSession } from '~/utils/session-slide'
 
 export const useSessionStore = defineStore('session', () => {
   const config = useRuntimeConfig()
@@ -36,6 +39,47 @@ export const useSessionStore = defineStore('session', () => {
     session.value = null
   }
 
+  let slideInFlight: Promise<void> | null = null
+
+  async function slideIfActive() {
+    if (slideInFlight) {
+      await slideInFlight
+      return
+    }
+    const stored = readStoredOperator()
+    const token = readOperatorToken()
+    if (!stored || !token) {
+      return
+    }
+    if (!shouldSlideSession({
+      now: Date.now(),
+      issuedAt: stored.issuedAt,
+      expiresAt: stored.expiresAt
+    })) {
+      return
+    }
+    const remember = import.meta.client && window.localStorage.getItem(OPERATOR_TOKEN_KEY) != null
+    slideInFlight = (async () => {
+      try {
+        const data = await adminRefresh(config.public.apiBase, token)
+        if (readOperatorToken() !== token) {
+          return
+        }
+        writeOperatorSession(data, remember)
+        sync()
+      } catch (error) {
+        if (error instanceof AdminApiError && error.statusCode === 401) {
+          if (readOperatorToken() === token) {
+            logout()
+          }
+        }
+      } finally {
+        slideInFlight = null
+      }
+    })()
+    await slideInFlight
+  }
+
   sync()
 
   return {
@@ -45,7 +89,8 @@ export const useSessionStore = defineStore('session', () => {
     role,
     sync,
     login,
-    logout
+    logout,
+    slideIfActive
   }
 })
 

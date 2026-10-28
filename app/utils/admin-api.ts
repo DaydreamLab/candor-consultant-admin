@@ -1561,6 +1561,26 @@ export async function adminDeleteSellableItem(apiBase: string, token: string, id
   }
 }
 
+export async function adminRefresh(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<OperatorLoginData>>(adminUrl(apiBase, '/auth/refresh'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success' || !body.data?.token || !body.data.operator) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
 export async function adminLogin(
   apiBase: string,
   email: string,
