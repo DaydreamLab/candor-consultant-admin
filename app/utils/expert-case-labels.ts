@@ -81,6 +81,7 @@ const OPERATOR_ROLE_KEYS = new Set([
   'platform_viewer'
 ])
 
+/** Known intake / gap field keys with i18n under expertCaseReviews.intake.* */
 const INTAKE_FIELD_KEYS = new Set([
   'meals_per_day',
   'water_liters',
@@ -95,8 +96,42 @@ const INTAKE_FIELD_KEYS = new Set([
   'notes',
   'frequency',
   'portion',
-  'preference'
+  'preference',
+  // Candor user_profiles.intake gap keys (core snapshot bag)
+  'diseases',
+  'symptoms',
+  'other_status',
+  'incidents',
+  'lab_report',
+  'checkup',
+  'blood_test',
+  'exercise_habit',
+  'exercise_detail',
+  'supplement_habit',
+  'supplement_detail',
+  'has',
+  'detail',
+  'items',
+  'list',
+  'text',
+  'value',
+  'status',
+  'type',
+  'note'
 ])
+
+/**
+ * Engine meta / answer-wall keys — never show as expert-facing rows.
+ * `answered` is a bool map of which gaps were filled, not member content.
+ */
+const INTAKE_META_KEYS = new Set([
+  'answered',
+  'checkup_suggested',
+  'external'
+])
+
+/** Health-status keys folded into profile `conditions` when flattening raw intake. */
+const INTAKE_HEALTH_KEYS = new Set(['diseases', 'symptoms'])
 
 /** True when value looks like localized free text (not a snake_case code). */
 export function looksLikeLocalizedText(value: string): boolean {
@@ -336,31 +371,166 @@ export function itemDisplayName(item: {
   return displayNameOrUntitled(null, item.sellable_item_id, t)
 }
 
-function formatScalar(value: unknown): string {
+function intakeFieldLabel(key: string, t: Translate): { label: string, title: string | null } {
+  if (INTAKE_FIELD_KEYS.has(key)) {
+    return { label: t(`expertCaseReviews.intake.${key}`), title: null }
+  }
+  if (looksLikeLocalizedText(key)) {
+    return { label: key, title: null }
+  }
+  // Prefer a single generic 「內容」over flooding the UI with 「其他」
+  return {
+    label: t('expertCaseReviews.intake.detail'),
+    title: key
+  }
+}
+
+function formatEmpty(t: Translate): string {
+  return t('expertCaseReviews.intakeEmpty')
+}
+
+function formatNone(t: Translate): string {
+  return t('expertCaseReviews.intakeNone')
+}
+
+function formatYesNo(value: boolean, t: Translate): string {
+  return value ? t('expertCaseReviews.yes') : t('expertCaseReviews.no')
+}
+
+/** Human-readable scalar / nested intake values (no raw true/false / English walls). */
+export function formatIntakeValue(value: unknown, t: Translate): string {
   if (value == null || value === '') {
-    return '—'
+    return formatEmpty(t)
   }
   if (typeof value === 'boolean') {
-    return value ? 'true' : 'false'
+    return formatYesNo(value, t)
   }
-  if (typeof value === 'number' || typeof value === 'string') {
+  if (typeof value === 'number') {
     return String(value)
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed || trimmed === 'none' || trimmed === 'null' || trimmed === 'undefined') {
+      return formatNone(t)
+    }
+    if (trimmed === 'true' || trimmed === 'false') {
+      return formatYesNo(trimmed === 'true', t)
+    }
+    if (looksLikeLocalizedText(trimmed) || !/^[a-z][a-z0-9_]{0,64}$/i.test(trimmed)) {
+      return trimmed
+    }
+    // Known enum-ish codes: try condition / goal / diet / intake labels
+    if (CONDITION_KEYS.has(trimmed)) {
+      return conditionLabel(trimmed, t).text
+    }
+    if (GOAL_KEYS.has(trimmed)) {
+      return goalLabel(trimmed, t).text
+    }
+    if (DIET_KEYS.has(trimmed)) {
+      return dietLabel(trimmed, t).text
+    }
+    if (INTAKE_FIELD_KEYS.has(trimmed)) {
+      return t(`expertCaseReviews.intake.${trimmed}`)
+    }
+    // Value codes without a map: keep readable text (not true/false / key walls)
+    return trimmed
   }
   if (Array.isArray(value)) {
-    return value.map(item => formatScalar(item)).filter(Boolean).join('、') || '—'
+    const parts = value
+      .map(item => formatIntakeValue(item, t))
+      .filter(part => part && part !== formatEmpty(t))
+    return parts.length ? parts.join('、') : formatEmpty(t)
+  }
+  if (isRecord(value)) {
+    // `{ has: false }` / empty gap → 無
+    if (Object.prototype.hasOwnProperty.call(value, 'has') && value.has === false) {
+      return formatNone(t)
+    }
+    if (Object.prototype.hasOwnProperty.call(value, 'has') && value.has === true) {
+      const rest = { ...value }
+      delete rest.has
+      if (!Object.keys(rest).length) {
+        return formatYesNo(true, t)
+      }
+      return formatIntakeValue(rest, t)
+    }
+    const parts = Object.keys(value)
+      .sort()
+      .filter(key => !INTAKE_META_KEYS.has(key))
+      .map((nestedKey) => {
+        const nestedLabel = intakeFieldLabel(nestedKey, t).label
+        return `${nestedLabel}：${formatIntakeValue(value[nestedKey], t)}`
+      })
+    return parts.length ? parts.join('；') : formatEmpty(t)
   }
   try {
-    return JSON.stringify(value)
-  } catch {
     return String(value)
+  } catch {
+    return formatEmpty(t)
+  }
+}
+
+/**
+ * Collect diseases / symptoms (and related free text) for the「健康狀況」row.
+ * Prefer localized free text; skip empty / none / {has:false}.
+ */
+export function formatHealthStatusFromIntake(intake: unknown, t: Translate): string | null {
+  if (!isRecord(intake)) {
+    return null
+  }
+  const parts: string[] = []
+  for (const key of ['diseases', 'symptoms', 'other_status', 'incidents'] as const) {
+    if (!(key in intake)) {
+      continue
+    }
+    const raw = intake[key]
+    const text = formatIntakeValue(raw, t)
+    if (!text || text === formatEmpty(t) || text === formatNone(t)) {
+      continue
+    }
+    const label = intakeFieldLabel(key, t).label
+    parts.push(`${label}：${text}`)
+  }
+  return parts.length ? parts.join('；') : null
+}
+
+/**
+ * Merge top-level `conditions` codes with intake diseases／symptoms for display.
+ */
+export function formatConditionsDisplay(
+  conditions: unknown,
+  intake: unknown,
+  t: Translate
+): { text: string, title: string | null } {
+  const fromCodes = Array.isArray(conditions)
+    ? joinLabeledList(conditions, item => conditionLabel(item, t))
+    : { text: '—', title: null as string | null }
+  const fromIntake = formatHealthStatusFromIntake(intake, t)
+  if (fromCodes.text === '—' && !fromIntake) {
+    return { text: '—', title: null }
+  }
+  if (fromCodes.text === '—') {
+    return { text: fromIntake!, title: null }
+  }
+  if (!fromIntake) {
+    return fromCodes
+  }
+  return {
+    text: `${fromCodes.text}；${fromIntake}`,
+    title: fromCodes.title
   }
 }
 
 /**
  * Flatten intake object into readable labeled rows.
  * Never dump JSON.stringify of the whole bag into the main UI.
+ * Skips meta keys and health keys already folded into「健康狀況」when `omitHealthKeys`.
  */
-export function formatIntakeRows(intake: unknown, t: Translate): IntakeDisplayRow[] {
+export function formatIntakeRows(
+  intake: unknown,
+  t: Translate,
+  options: { omitHealthKeys?: boolean } = {}
+): IntakeDisplayRow[] {
   if (intake == null || intake === '') {
     return []
   }
@@ -368,44 +538,161 @@ export function formatIntakeRows(intake: unknown, t: Translate): IntakeDisplayRo
     return [{
       key: 'value',
       label: t('expertCaseReviews.intake.value'),
-      value: formatScalar(intake),
+      value: formatIntakeValue(intake, t),
       title: null
     }]
   }
+  const omitHealth = options.omitHealthKeys !== false
   const keys = Object.keys(intake).sort()
   const rows: IntakeDisplayRow[] = []
   for (const key of keys) {
+    if (INTAKE_META_KEYS.has(key)) {
+      continue
+    }
+    if (omitHealth && INTAKE_HEALTH_KEYS.has(key)) {
+      continue
+    }
     const rawValue = intake[key]
-    let label: string
-    let title: string | null = null
-    if (INTAKE_FIELD_KEYS.has(key)) {
-      label = t(`expertCaseReviews.intake.${key}`)
-    } else if (looksLikeLocalizedText(key)) {
-      label = key
-    } else {
-      label = t('expertCaseReviews.other')
-      title = key
+    // Skip empty / none-only rows to reduce 「其他：—」noise
+    const valueText = formatIntakeValue(rawValue, t)
+    if (valueText === formatEmpty(t)) {
+      continue
     }
-    let valueText: string
-    if (isRecord(rawValue)) {
-      // Nested object: readable key=value pairs, not a JSON wall
-      valueText = Object.keys(rawValue)
-        .sort()
-        .map((nestedKey) => {
-          const nestedLabel = INTAKE_FIELD_KEYS.has(nestedKey)
-            ? t(`expertCaseReviews.intake.${nestedKey}`)
-            : looksLikeLocalizedText(nestedKey)
-              ? nestedKey
-              : nestedKey
-          return `${nestedLabel}：${formatScalar(rawValue[nestedKey])}`
-        })
-        .join('；') || '—'
-    } else {
-      valueText = formatScalar(rawValue)
-    }
+    const { label, title } = intakeFieldLabel(key, t)
     rows.push({ key, label, value: valueText, title })
   }
   return rows
+}
+
+export type ExpertProfileSectionView = {
+  id: string
+  title: string
+  rows: Array<{ key: string, label: string, value: string, title: string | null }>
+}
+
+/**
+ * Prefer core `display_profile` sections; else build zh rows from snapshot
+ * (conditions ← diseases／symptoms; intake without meta／health keys).
+ */
+export function resolveExpertProfileSections(
+  profile: unknown,
+  t: Translate
+): ExpertProfileSectionView[] {
+  if (isRecord(profile)) {
+    const display = profile.display_profile
+    if (isRecord(display) && Array.isArray(display.sections) && display.sections.length) {
+      const sections: ExpertProfileSectionView[] = []
+      for (const raw of display.sections) {
+        if (!isRecord(raw) || typeof raw.id !== 'string' || typeof raw.title_zh !== 'string') {
+          continue
+        }
+        const rows: ExpertProfileSectionView['rows'] = []
+        if (Array.isArray(raw.rows)) {
+          for (let i = 0; i < raw.rows.length; i += 1) {
+            const row = raw.rows[i]
+            if (!isRecord(row) || typeof row.label_zh !== 'string' || typeof row.value_zh !== 'string') {
+              continue
+            }
+            rows.push({
+              key: `${raw.id}-${i}`,
+              label: row.label_zh,
+              value: row.value_zh.trim() ? row.value_zh : '—',
+              title: null
+            })
+          }
+        }
+        sections.push({
+          id: raw.id,
+          title: raw.title_zh,
+          rows: rows.length
+            ? rows
+            : [{ key: `${raw.id}-empty`, label: raw.title_zh, value: '—', title: null }]
+        })
+      }
+      if (sections.length) {
+        return sections
+      }
+    }
+  }
+
+  const snapshot = isRecord(profile) && isRecord(profile.snapshot)
+    ? profile.snapshot
+    : isRecord(profile)
+      ? profile
+      : null
+  if (!snapshot) {
+    return []
+  }
+
+  const preferred = [
+    'sex',
+    'age_years',
+    'height_cm',
+    'weight_kg',
+    'diet',
+    'goals',
+    'conditions',
+    'intake'
+  ] as const
+
+  const sections: ExpertProfileSectionView[] = []
+  for (const key of preferred) {
+    if (!(key in snapshot)) {
+      continue
+    }
+    const field = profileFieldDisplayLabel(key, t)
+    const value = snapshot[key]
+
+    if (key === 'intake') {
+      const intakeRows = formatIntakeRows(value, t, { omitHealthKeys: true })
+      sections.push({
+        id: key,
+        title: field.text,
+        rows: intakeRows.length
+          ? intakeRows.map(row => ({
+              key: row.key,
+              label: row.label,
+              value: row.value,
+              title: row.title
+            }))
+          : [{ key: 'empty', label: field.text, value: '—', title: null }]
+      })
+      continue
+    }
+
+    let text: string
+    let title: string | null = null
+    if (key === 'sex') {
+      const labeled = sexLabel(value, t)
+      text = labeled.text
+      title = labeled.title
+    } else if (key === 'diet') {
+      const labeled = dietLabel(value, t)
+      text = labeled.text
+      title = labeled.title
+    } else if (key === 'goals' && Array.isArray(value)) {
+      const joined = joinLabeledList(value, item => goalLabel(item, t))
+      text = joined.text
+      title = joined.title
+    } else if (key === 'conditions') {
+      const joined = formatConditionsDisplay(value, snapshot.intake, t)
+      text = joined.text
+      title = joined.title
+    } else if (value == null || value === '') {
+      text = '—'
+    } else if (Array.isArray(value)) {
+      text = value.map(item => String(item)).join('、') || '—'
+    } else {
+      text = String(value)
+    }
+
+    sections.push({
+      id: key,
+      title: field.text,
+      rows: [{ key, label: field.text, value: text, title }]
+    })
+  }
+  return sections
 }
 
 /** Abbreviate conversation / UUID for header (first 8 chars). */

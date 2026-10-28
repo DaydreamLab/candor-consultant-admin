@@ -1,0 +1,103 @@
+{
+  "goals": ["sleep", "energy"],
+  "goals_source": "profile_snapshot",
+  "messages": {
+    "messages": [],
+    "has_more": false
+  },
+  "health_report": null,
+  "profile": {
+    "missing_reason": null,
+    "update": {
+      "has_updates": false,
+      "updated_at": null,
+      "changed_fields": []
+    },
+    "snapshot": {
+      "sex": "F",
+      "age_years": 34,
+      "height_cm": 162,
+      "weight_kg": 54,
+      "diet": "omnivore",
+      "goals": ["sleep", "energy"],
+      "conditions": [],
+      "intake": {
+        "answered": {
+          "過敏": true,
+          "blood_test": true,
+          "checkup": true,
+          "diseases": true,
+          "exercise_detail": true,
+          "exercise_habit": true,
+          "incidents": true,
+          "lab_report": true,
+          "用藥": true,
+          "other_status": true,
+          "supplement_detail": true,
+          "supplement_habit": true,
+          "symptoms": true
+        },
+        "allergies": { "has": false },
+        "medications": { "has": false },
+        "diseases": ["偏頭痛"],
+        "symptoms": ["容易疲勞", "入睡困難"],
+        "other_status": "none",
+        "incidents": { "has": false },
+        "lab_report": { "has": false },
+        "checkup": { "has": false },
+        "blood_test": { "has": false },
+        "exercise_habit": true,
+        "exercise_detail": "每週快走三次",
+        "supplement_habit": false,
+        "supplement_detail": { "has": false }
+      }
+    },
+    "display_profile": {
+      "sections": [
+        {
+          "id": "basics",
+          "title_zh": "基本資料",
+          "rows": [
+            { "label_zh": "生理性別", "value_zh": "女" },
+            { "label_zh": "年齡（歲）", "value_zh": "34" },
+            { "label_zh": "身高（公分）", "value_zh": "162" },
+            { "label_zh": "體重（公斤）", "value_zh": "54" },
+            { "label_zh": "飲食型態", "value_zh": "雜食" }
+          ]
+        },
+        {
+          "id": "goals",
+          "title_zh": "目標",
+          "rows": [
+            { "label_zh": "目標", "value_zh": "睡眠、能量" }
+          ]
+        },
+        {
+          "id": "conditions",
+          "title_zh": "健康狀況",
+          "rows": [
+            {
+              "label_zh": "健康狀況",
+              "value_zh": "疾病：偏頭痛；症狀：容易疲勞、入睡困難"
+            }
+          ]
+        },
+        {
+          "id": "intake",
+          "title_zh": "攝取與問卷細節",
+          "rows": [
+            { "label_zh": "過敏", "value_zh": "無" },
+            { "label_zh": "用藥", "value_zh": "無" },
+            { "label_zh": "檢驗報告", "value_zh": "無" },
+            { "label_zh": "健檢", "value_zh": "無" },
+            { "label_zh": "抽血檢驗", "value_zh": "無" },
+            { "label_zh": "運動習慣", "value_zh": "是" },
+            { "label_zh": "運動細節", "value_zh": "每週快走三次" },
+            { "label_zh": "保健品習慣", "value_zh": "否" },
+            { "label_zh": "保健品細節", "value_zh": "無" }
+          ]
+        }
+      ]
+    }
+  }
+}

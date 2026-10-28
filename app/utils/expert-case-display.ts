@@ -48,6 +48,30 @@ export type ExpertCaseProfileSnapshot = {
   [key: string]: unknown
 }
 
+/** Core draft contract: expert-facing zh labels (spec 32 / member-data profile.display_profile). */
+export type ExpertCaseDisplayProfileRow = {
+  label_zh: string
+  value_zh: string
+}
+
+export type ExpertCaseDisplayProfileSection = {
+  id: string
+  title_zh: string
+  rows: ExpertCaseDisplayProfileRow[]
+}
+
+export type ExpertCaseDisplayProfile = {
+  sections: ExpertCaseDisplayProfileSection[]
+}
+
+export type ExpertCaseMemberProfile = {
+  snapshot?: ExpertCaseProfileSnapshot | null
+  display_profile?: ExpertCaseDisplayProfile | null
+  missing_reason?: string | null
+  update?: Record<string, unknown> | null
+  [key: string]: unknown
+}
+
 export const PROFILE_FIELD_KEYS = [
   'sex',
   'age_years',
@@ -60,6 +84,56 @@ export const PROFILE_FIELD_KEYS = [
 ] as const
 
 export type ProfileFieldKey = (typeof PROFILE_FIELD_KEYS)[number]
+
+/**
+ * Parse core `profile.display_profile` (sections with zh labels).
+ * Invalid / empty → null so callers can fall back to snapshot flatten.
+ */
+export function parseDisplayProfile(value: unknown): ExpertCaseDisplayProfile | null {
+  if (!isRecord(value) || !Array.isArray(value.sections)) {
+    return null
+  }
+  const sections: ExpertCaseDisplayProfileSection[] = []
+  for (const raw of value.sections) {
+    if (!isRecord(raw) || typeof raw.id !== 'string' || !raw.id.trim()) {
+      continue
+    }
+    if (typeof raw.title_zh !== 'string' || !raw.title_zh.trim()) {
+      continue
+    }
+    const rows: ExpertCaseDisplayProfileRow[] = []
+    if (Array.isArray(raw.rows)) {
+      for (const row of raw.rows) {
+        if (!isRecord(row)) {
+          continue
+        }
+        if (typeof row.label_zh !== 'string' || typeof row.value_zh !== 'string') {
+          continue
+        }
+        rows.push({
+          label_zh: row.label_zh,
+          value_zh: row.value_zh
+        })
+      }
+    }
+    sections.push({
+      id: raw.id.trim(),
+      title_zh: raw.title_zh.trim(),
+      rows
+    })
+  }
+  return sections.length ? { sections } : null
+}
+
+/** Prefer `profile.display_profile`; otherwise null (caller builds snapshot fallback). */
+export function displayProfileFromMemberProfile(
+  profile: unknown
+): ExpertCaseDisplayProfile | null {
+  if (!isRecord(profile)) {
+    return null
+  }
+  return parseDisplayProfile(profile.display_profile)
+}
 
 /** Format score_norm for display (number only; plain-language slot is filled separately). */
 export function formatScoreNorm(score: unknown): string | null {

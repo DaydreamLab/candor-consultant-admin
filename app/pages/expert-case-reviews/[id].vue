@@ -31,20 +31,17 @@ import {
   classificationLabel,
   conditionLabel,
   decisionLabel as mapDecisionLabel,
-  dietLabel,
   displayNameOrUntitled,
-  formatIntakeRows,
   goalLabel,
   itemDisplayName,
-  joinLabeledList,
   operatorRoleLabel,
   packagePlanCodeLabel,
   profileFieldDisplayLabel,
   reportResultStatusLabel,
-  sexLabel,
+  resolveExpertProfileSections,
   shortConversationId,
   tierDisplayLabel,
-  type IntakeDisplayRow,
+  type ExpertProfileSectionView,
   type LabeledText
 } from '~/utils/expert-case-labels'
 import {
@@ -280,17 +277,30 @@ const comparisonTitle = computed(() => {
   return t('expertCaseReviews.workingPreview')
 })
 
-const profileSnapshot = computed(() => {
+const memberProfile = computed(() => {
   const profile = memberData.value?.profile
-  if (!isRecord(profile)) {
+  return isRecord(profile) ? profile : null
+})
+
+const profileSnapshot = computed(() => {
+  const profile = memberProfile.value
+  if (!profile) {
     return null
   }
   return isRecord(profile.snapshot) ? profile.snapshot : null
 })
 
+const profileSections = computed((): ExpertProfileSectionView[] => {
+  const profile = memberProfile.value
+  if (!profile) {
+    return []
+  }
+  return resolveExpertProfileSections(profile, t)
+})
+
 const profileMissingReason = computed(() => {
-  const profile = memberData.value?.profile
-  if (!isRecord(profile)) {
+  const profile = memberProfile.value
+  if (!profile) {
     return null
   }
   return typeof profile.missing_reason === 'string' ? profile.missing_reason : null
@@ -837,94 +847,14 @@ function profileFieldLabel(field: string) {
   return profileFieldDisplayLabel(field, t).text
 }
 
-type ProfileEntry = {
-  key: string
-  label: string
-  labelTitle: string | null
-  value: string | null
-  valueTitle: string | null
-  intakeRows: IntakeDisplayRow[] | null
-}
-
-function profileValueDisplay(key: string, value: unknown): {
-  value: string | null
-  valueTitle: string | null
-  intakeRows: IntakeDisplayRow[] | null
-} {
-  if (value == null || value === '') {
-    return { value: '—', valueTitle: null, intakeRows: null }
+function profileSectionShowsLabeledRows(section: ExpertProfileSectionView): boolean {
+  if (section.rows.length === 0) {
+    return false
   }
-  if (key === 'sex') {
-    const labeled = sexLabel(value, t)
-    return { value: labeled.text, valueTitle: labeled.title, intakeRows: null }
+  if (section.rows.length === 1 && section.rows[0]!.label === section.title) {
+    return false
   }
-  if (key === 'diet') {
-    const labeled = dietLabel(value, t)
-    return { value: labeled.text, valueTitle: labeled.title, intakeRows: null }
-  }
-  if (key === 'goals' && Array.isArray(value)) {
-    const joined = joinLabeledList(value, item => goalLabel(item, t))
-    return { value: joined.text, valueTitle: joined.title, intakeRows: null }
-  }
-  if (key === 'conditions' && Array.isArray(value)) {
-    const joined = joinLabeledList(value, item => conditionLabel(item, t))
-    return { value: joined.text, valueTitle: joined.title, intakeRows: null }
-  }
-  if (key === 'intake') {
-    const rows = formatIntakeRows(value, t)
-    return {
-      value: rows.length ? null : '—',
-      valueTitle: null,
-      intakeRows: rows.length ? rows : null
-    }
-  }
-  if (Array.isArray(value)) {
-    return {
-      value: value.map(item => String(item)).join('、') || '—',
-      valueTitle: null,
-      intakeRows: null
-    }
-  }
-  if (isRecord(value)) {
-    // Non-intake objects: structured rows via intake formatter (other keys → 其他)
-    const rows = formatIntakeRows(value, t)
-    return {
-      value: null,
-      valueTitle: null,
-      intakeRows: rows
-    }
-  }
-  return { value: String(value), valueTitle: null, intakeRows: null }
-}
-
-function profileEntries(snapshot: Record<string, unknown>): ProfileEntry[] {
-  const preferred = [
-    'sex',
-    'age_years',
-    'height_cm',
-    'weight_kg',
-    'diet',
-    'goals',
-    'conditions',
-    'intake'
-  ]
-  const entries: ProfileEntry[] = []
-  for (const key of preferred) {
-    if (!(key in snapshot)) {
-      continue
-    }
-    const field = profileFieldDisplayLabel(key, t)
-    const display = profileValueDisplay(key, snapshot[key])
-    entries.push({
-      key,
-      label: field.text,
-      labelTitle: field.title,
-      value: display.value,
-      valueTitle: display.valueTitle,
-      intakeRows: display.intakeRows
-    })
-  }
-  return entries
+  return true
 }
 
 function adjustmentTypeText(type: unknown): LabeledText {
@@ -1133,27 +1063,26 @@ function isCustomerRole(value: unknown) {
               {{ $t('expertCaseReviews.memberDataLegacySnapshot') }}
             </p>
             <dl
-              v-else-if="profileSnapshot"
+              v-else-if="profileSections.length"
               class="mt-2 grid gap-2 sm:grid-cols-2"
+              data-testid="expert-case-profile-sections"
             >
               <div
-                v-for="entry in profileEntries(profileSnapshot)"
-                :key="entry.key"
+                v-for="section in profileSections"
+                :key="section.id"
                 class="rounded-lg bg-default/40 px-3 py-2 text-sm"
+                :data-testid="`expert-case-profile-section-${section.id}`"
               >
-                <dt
-                  class="text-xs text-muted"
-                  :title="entry.labelTitle || undefined"
-                >
-                  {{ entry.label }}
+                <dt class="text-xs text-muted">
+                  {{ section.title }}
                 </dt>
                 <dd
-                  v-if="entry.intakeRows"
+                  v-if="profileSectionShowsLabeledRows(section)"
                   class="mt-1 space-y-1 text-highlighted"
-                  data-testid="expert-case-intake-rows"
+                  :data-testid="section.id === 'intake' ? 'expert-case-intake-rows' : undefined"
                 >
                   <div
-                    v-for="row in entry.intakeRows"
+                    v-for="row in section.rows"
                     :key="row.key"
                     class="flex flex-wrap gap-x-2 gap-y-0.5"
                   >
@@ -1167,12 +1096,19 @@ function isCustomerRole(value: unknown) {
                 <dd
                   v-else
                   class="mt-0.5 whitespace-pre-wrap break-words text-highlighted"
-                  :title="entry.valueTitle || undefined"
+                  :title="section.rows[0]?.title || undefined"
+                  :data-testid="section.id === 'conditions' ? 'expert-case-conditions' : undefined"
                 >
-                  {{ entry.value }}
+                  {{ section.rows[0]?.value || '—' }}
                 </dd>
               </div>
             </dl>
+            <p
+              v-else-if="profileSnapshot"
+              class="mt-2 text-sm text-muted"
+            >
+              —
+            </p>
           </div>
 
           <div data-testid="expert-case-goals">
