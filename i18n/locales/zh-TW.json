@@ -1016,7 +1016,7 @@
     "reportTitle": "報告判讀",
     "reportEmpty": "此案件沒有綁定報告。",
     "missingReportChip": "缺報告",
-    "missingSignalsHint": "缺報告／缺目標只影響權重選品；仍可產生定稿文案與送出定案。",
+    "missingSignalsHint": "缺報告／缺目標只影響權重選品；不挡產生定稿文案與送出定案。",
     "reportStatus": "狀態：{status}",
     "reportStatusLabel": "狀態",
     "recommendedTitle": "推薦品項",
