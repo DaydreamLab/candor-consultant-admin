@@ -131,12 +131,75 @@ export function canDecrementCapsuleDose(raw: string | number | null | undefined)
 
 /** Keep／未決＝唯讀；僅「調劑量」可編 stepper。 */
 export function isCapsuleDoseEditable(decision: string | null | undefined): boolean {
-  return decision === 'adjust'
+  return normalizeExpertLineDecision(decision) === 'adjust'
 }
 
 /** 「移除」隱藏劑量列。 */
 export function isCapsuleDoseHidden(decision: string | null | undefined): boolean {
-  return decision === 'reject'
+  return normalizeExpertLineDecision(decision) === 'reject'
+}
+
+export type ExpertLineDecision = 'approve' | 'reject' | 'adjust'
+
+export type DosePanelMode = 'hidden' | 'editable' | 'readonly'
+
+/**
+ * Normalize API／local decision tokens to the three UI enums.
+ * Accepts a few legacy／label aliases so v-if never misses「調劑量」.
+ */
+export function normalizeExpertLineDecision(
+  decision: string | null | undefined
+): ExpertLineDecision | '' {
+  if (decision == null) {
+    return ''
+  }
+  const raw = String(decision).trim()
+  if (!raw) {
+    return ''
+  }
+  const key = raw.toLowerCase().replace(/[\s-]+/g, '_')
+  if (
+    key === 'adjust'
+    || key === 'adjust_dose'
+    || key === 'dose'
+    || raw === '調劑量'
+  ) {
+    return 'adjust'
+  }
+  if (key === 'approve' || key === 'keep' || raw === '保留') {
+    return 'approve'
+  }
+  if (key === 'reject' || key === 'remove' || raw === '移除') {
+    return 'reject'
+  }
+  return ''
+}
+
+/**
+ * Prefer optimistic local decision (set on click) over server working_decisions.
+ * Clicking「調劑量」must expand the stepper before PATCH／reason gates finish.
+ */
+export function resolveLineDecision(
+  local: string | null | undefined,
+  server: string | null | undefined
+): ExpertLineDecision | '' {
+  const fromLocal = normalizeExpertLineDecision(local)
+  if (fromLocal) {
+    return fromLocal
+  }
+  return normalizeExpertLineDecision(server)
+}
+
+/** Which dose row to render for a line decision. */
+export function dosePanelMode(decision: string | null | undefined): DosePanelMode {
+  const normalized = normalizeExpertLineDecision(decision)
+  if (normalized === 'reject') {
+    return 'hidden'
+  }
+  if (normalized === 'adjust') {
+    return 'editable'
+  }
+  return 'readonly'
 }
 
 /** 已定稿詳情隱藏「送出定稿」。 */

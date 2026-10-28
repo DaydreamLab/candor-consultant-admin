@@ -4,12 +4,15 @@ import {
   canDecrementCapsuleDose,
   ceilCapsuleDose,
   defaultCapsuleDoseForItem,
+  dosePanelMode,
   formatCapsuleDoseDisplay,
   hasFinalizeCopyContent,
   isCapsuleDoseEditable,
   isCapsuleDoseHidden,
   itemSpecText,
+  normalizeExpertLineDecision,
   productNameWithoutGluedDose,
+  resolveLineDecision,
   shouldShowSubmitFinalize,
   validateCapsuleDose
 } from './expert-case-dose'
@@ -81,5 +84,24 @@ describe('expert-case-dose', () => {
     expect(isCapsuleDoseHidden('adjust')).toBe(false)
     expect(shouldShowSubmitFinalize('awaiting_review')).toBe(true)
     expect(shouldShowSubmitFinalize('reviewed')).toBe(false)
+  })
+
+  it('normalizes decision aliases and prefers local optimistic decision', () => {
+    expect(normalizeExpertLineDecision('adjust')).toBe('adjust')
+    expect(normalizeExpertLineDecision('adjust_dose')).toBe('adjust')
+    expect(normalizeExpertLineDecision('調劑量')).toBe('adjust')
+    expect(normalizeExpertLineDecision('保留')).toBe('approve')
+    expect(normalizeExpertLineDecision('移除')).toBe('reject')
+    expect(normalizeExpertLineDecision('mystery')).toBe('')
+
+    expect(resolveLineDecision('adjust', 'approve')).toBe('adjust')
+    expect(resolveLineDecision('', 'reject')).toBe('reject')
+    expect(resolveLineDecision(undefined, 'adjust_dose')).toBe('adjust')
+    expect(resolveLineDecision(undefined, undefined)).toBe('')
+
+    expect(dosePanelMode('adjust')).toBe('editable')
+    expect(dosePanelMode('approve')).toBe('readonly')
+    expect(dosePanelMode('reject')).toBe('hidden')
+    expect(dosePanelMode('')).toBe('readonly')
   })
 })
