@@ -34,7 +34,9 @@ export default defineNuxtConfig({
       /**
        * CTA 目錄 mock：本機預設開啟；GitHub Pages deploy workflow 設 `NUXT_PUBLIC_CTA_CATALOG_MOCK=0` 打 candor-core Admin API。
        */
-      ctaCatalogMock: process.env.NUXT_PUBLIC_CTA_CATALOG_MOCK !== '0'
+      ctaCatalogMock: process.env.NUXT_PUBLIC_CTA_CATALOG_MOCK !== '0',
+      /** 定稿對話文案本機 mock；正式／Pages 勿開。預設打 core finalize-copy/generate。 */
+      expertFinalizeCopyMock: process.env.NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK === '1'
     }
   },
 

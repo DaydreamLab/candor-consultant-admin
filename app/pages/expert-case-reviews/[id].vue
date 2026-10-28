@@ -9,6 +9,7 @@ import {
   adminResetExpertCaseReviewItems,
   adminSubmitExpertCaseReview
 } from '~/utils/admin-api'
+import { readFinalizeCopyFromDetail } from '~/utils/expert-finalize-copy'
 import {
   adjustmentReasonIsMemberFacing,
   excludedReasonParts,
@@ -95,10 +96,27 @@ const changeMode = ref<ExpertCaseItemChangeMode>('swap')
 const changePlanCode = ref('')
 const changeOriginalSellableId = ref<string | null>(null)
 
+const finalizeReportHighlights = ref('')
+const finalizeExpertOpinion = ref('')
+const finalizeGenerating = ref(false)
+
 const caseId = computed(() => String(route.params.id || ''))
 
 const awaiting = computed(() => detail.value?.status === 'awaiting_review')
 const reviewed = computed(() => detail.value?.status === 'reviewed')
+
+function syncFinalizeCopyFromDetail(row: Record<string, unknown> | null) {
+  const copy = readFinalizeCopyFromDetail(row)
+  if (!copy) {
+    if (row?.status === 'awaiting_review') {
+      finalizeReportHighlights.value = ''
+      finalizeExpertOpinion.value = ''
+    }
+    return
+  }
+  finalizeReportHighlights.value = copy.report_highlights
+  finalizeExpertOpinion.value = copy.expert_opinion
+}
 
 const memberLabel = computed(() => {
   if (detail.value) {
@@ -418,11 +436,14 @@ async function load() {
   errorMessage.value = ''
   try {
     detail.value = await adminGetExpertCaseReview(config.public.apiBase, token, caseId.value)
+    syncFinalizeCopyFromDetail(detail.value)
     crumbLabel.value = memberLabel.value
     void loadMemberData(token)
   } catch (error) {
     detail.value = null
     memberData.value = null
+    finalizeReportHighlights.value = ''
+    finalizeExpertOpinion.value = ''
     errorMessage.value = error instanceof AdminApiError && error.message
       ? error.message
       : t('expertCaseReviews.failed')
@@ -663,12 +684,26 @@ async function resetAll() {
 
 async function submit() {
   const token = readOperatorToken()
-  if (!token || !awaiting.value) {
+  if (!token || !awaiting.value || finalizeGenerating.value) {
     return
   }
   busy.value = true
   try {
-    detail.value = await adminSubmitExpertCaseReview(config.public.apiBase, token, caseId.value)
+    const submitPayload: {
+      report_highlights?: string
+      expert_opinion?: string
+    } = {}
+    if (finalizeReportHighlights.value.trim() || finalizeExpertOpinion.value.trim()) {
+      submitPayload.report_highlights = finalizeReportHighlights.value
+      submitPayload.expert_opinion = finalizeExpertOpinion.value
+    }
+    detail.value = await adminSubmitExpertCaseReview(
+      config.public.apiBase,
+      token,
+      caseId.value,
+      submitPayload
+    )
+    syncFinalizeCopyFromDetail(detail.value)
     feedback.notify({
       title: t('expertCaseReviews.submitOk'),
       color: 'success'
@@ -936,11 +971,13 @@ function isCustomerRole(value: unknown) {
         <UButton
           v-if="awaiting"
           color="primary"
-          :disabled="busy"
+          :disabled="busy || finalizeGenerating"
           data-testid="expert-case-submit"
           @click="submit"
         >
-          {{ $t('expertCaseReviews.submit') }}
+          {{ finalizeGenerating
+            ? $t('expertCaseReviews.finalizeCopyGenerating')
+            : $t('expertCaseReviews.submit') }}
         </UButton>
       </template>
     </template>
@@ -1652,6 +1689,15 @@ function isCustomerRole(value: unknown) {
           </div>
         </div>
       </section>
+
+      <!-- 定稿對話文案：方案／權重下方獨立卡 -->
+      <ExpertCaseFinalizeCopyCard
+        v-model:report-highlights="finalizeReportHighlights"
+        v-model:expert-opinion="finalizeExpertOpinion"
+        :case-id="caseId"
+        :locked="reviewed"
+        @generating-change="finalizeGenerating = $event"
+      />
 
       <section
         class="mb-8 rounded-xl border border-default bg-elevated p-4"
