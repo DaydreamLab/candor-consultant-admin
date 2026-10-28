@@ -124,7 +124,6 @@ export function displayResultOriginalName(r: HealthReportResult): string | null 
   return raw
 }
 
-
 export function hasResultInterpretation(r: HealthReportResult) {
   const description = r.description != null ? String(r.description).trim() : ''
   const causes = r.possible_causes != null ? String(r.possible_causes).trim() : ''

@@ -425,7 +425,7 @@ function amountOf(value: unknown) {
                 v-for="column in columns"
                 :key="column.key"
                 :class="column.width"
-              />
+              >
             </colgroup>
           </template>
           <template #head>

@@ -921,12 +921,12 @@ function messageTimeText(row: Record<string, unknown>) {
                         <p class="font-semibold">
                           {{ displayResultName(row) }}
                         </p>
-                          <p
-                            v-if="displayResultOriginalName(row)"
-                            class="mt-0.5 text-xs font-normal text-muted"
-                          >
-                            {{ displayResultOriginalName(row) }}
-                          </p>
+                        <p
+                          v-if="displayResultOriginalName(row)"
+                          class="mt-0.5 text-xs font-normal text-muted"
+                        >
+                          {{ displayResultOriginalName(row) }}
+                        </p>
                         <div
                           v-if="hasResultInterpretation(row)"
                           class="mt-1.5 space-y-1 text-xs font-normal text-muted"
