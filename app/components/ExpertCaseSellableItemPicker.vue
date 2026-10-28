@@ -41,11 +41,8 @@ function optionMeta(row: SellablePickRow) {
   if (idPart) {
     parts.push(idPart)
   }
-  if (row.daily_servings_min !== null && row.daily_servings_max !== null) {
-    parts.push(
-      // i18n key resolved in template via $t would need composition; keep plain range here
-      `${row.daily_servings_min}–${row.daily_servings_max}`
-    )
+  if (row.spec_text) {
+    parts.push(row.spec_text)
   }
   return parts.join(' · ')
 }

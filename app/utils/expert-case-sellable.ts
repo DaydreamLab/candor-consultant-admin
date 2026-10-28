@@ -11,6 +11,8 @@ export type SellablePickRow = {
   daily_dose: number | null
   daily_servings_min: number | null
   daily_servings_max: number | null
+  /** SKU strength text (mg／IU…); muted suggestion only — not stepper unit. */
+  spec_text: string | null
 }
 
 export function isOnSaleStatus(status: unknown): boolean {
@@ -25,6 +27,7 @@ export function parseSellablePickRow(row: Record<string, unknown>): SellablePick
   const nameZh = scalarText(row.name_zh).trim()
   const nameEn = scalarText(row.name_en).trim()
   const nameFallback = scalarText(row.name).trim()
+  const specText = scalarText(row.spec_text).trim() || scalarText(row.spec).trim()
   return {
     id,
     name: nameZh || nameEn || nameFallback || id,
@@ -33,7 +36,8 @@ export function parseSellablePickRow(row: Record<string, unknown>): SellablePick
     sale_status: scalarText(row.sale_status).trim().toLowerCase(),
     daily_dose: finiteNumber(row.daily_dose),
     daily_servings_min: finiteNumber(row.daily_servings_min),
-    daily_servings_max: finiteNumber(row.daily_servings_max)
+    daily_servings_max: finiteNumber(row.daily_servings_max),
+    spec_text: specText || null
   }
 }
 

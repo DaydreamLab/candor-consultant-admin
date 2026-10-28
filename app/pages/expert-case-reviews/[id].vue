@@ -46,10 +46,19 @@ import {
   type LabeledText
 } from '~/utils/expert-case-labels'
 import {
-  defaultDoseForItem,
+  ceilCapsuleDose,
+  defaultCapsuleDoseForItem,
+  formatCapsuleDoseDisplay,
+  hasFinalizeCopyContent,
+  isCapsuleDoseEditable,
+  isCapsuleDoseHidden,
+  itemSpecText,
+  productNameWithoutGluedDose,
+  validateCapsuleDose
+} from '~/utils/expert-case-dose'
+import {
   parseSellablePickRow,
   reasonIsFilled,
-  validateDailyDose,
   type ExpertCaseItemChangeMode,
   type SellablePickRow
 } from '~/utils/expert-case-sellable'
@@ -231,6 +240,73 @@ const workingByKey = computed(() => {
     }
   }
   return map
+})
+
+watch(workingByKey, (map) => {
+  for (const [key, row] of map) {
+    if (row.decision !== 'adjust') {
+      continue
+    }
+    if (doseByLine.value[key] !== undefined && doseByLine.value[key] !== '') {
+      continue
+    }
+    if (typeof row.dose_after === 'number') {
+      doseByLine.value[key] = String(ceilCapsuleDose(row.dose_after) ?? 1)
+    }
+  }
+}, { immediate: true })
+
+const hasFinalizeCopy = computed(() => {
+  return hasFinalizeCopyContent(
+    finalizeReportHighlights.value,
+    finalizeExpertOpinion.value
+  )
+})
+
+/** Any「調劑量」列的顆數未通過整數驗證 → 擋送出（無 top banner）。 */
+const doseBlocksSubmit = computed(() => {
+  if (!awaiting.value) {
+    return false
+  }
+  for (const [key, row] of workingByKey.value) {
+    if (row.decision !== 'adjust') {
+      continue
+    }
+    const raw = doseByLine.value[key]
+    const fallback
+      = raw !== undefined && raw !== ''
+        ? raw
+        : (typeof row.dose_after === 'number'
+            ? String(ceilCapsuleDose(row.dose_after) ?? '')
+            : '')
+    if (!validateCapsuleDose(fallback).ok) {
+      return true
+    }
+  }
+  return Object.values(inlineErrorByLine.value).some((msg) => {
+    return Boolean(msg) && msg === t('expertCaseReviews.doseInvalid')
+  })
+})
+
+const canSubmitFinalize = computed(() => {
+  return awaiting.value
+    && !busy.value
+    && !finalizeGenerating.value
+    && hasFinalizeCopy.value
+    && !doseBlocksSubmit.value
+})
+
+const submitBlockHint = computed(() => {
+  if (!awaiting.value) {
+    return ''
+  }
+  if (doseBlocksSubmit.value) {
+    return t('expertCaseReviews.submitDoseBlocked')
+  }
+  if (!hasFinalizeCopy.value) {
+    return t('expertCaseReviews.submitNeedsCopy')
+  }
+  return ''
 })
 
 /** Right-hand scheme: immutable revised when reviewed; else original + working_decisions preview. */
@@ -559,29 +635,29 @@ async function decide(
   let dose: number | null = null
   if (decision === 'adjust') {
     const catalogItem = catalogById.value.get(sellableId)
-      ?? parseSellablePickRow({
-        id: sellableId,
-        sale_status: 'on_sale',
-        daily_servings_min: null,
-        daily_servings_max: null,
-        daily_dose: item.daily_dose
-      })
     const doseRaw = doseByLine.value[key]
     const fallback = doseRaw !== undefined && doseRaw !== ''
       ? doseRaw
-      : String(item.daily_dose ?? catalogItem?.daily_dose ?? '')
-    const doseCheck = validateDailyDose(fallback, catalogItem)
+      : defaultCapsuleDoseForItem(
+          catalogItem ?? {
+            daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
+            daily_servings_min: null
+          }
+        )
+    const doseCheck = validateCapsuleDose(fallback)
     if (!doseCheck.ok) {
-      const message = doseCheck.code === 'below_min'
-        ? t('expertCaseReviews.doseBelowMin', { min: doseCheck.min })
-        : doseCheck.code === 'above_max'
-          ? t('expertCaseReviews.doseAboveMax', { max: doseCheck.max })
-          : t('expertCaseReviews.doseInvalid')
-      inlineErrorByLine.value[key] = message
-      feedback.notify({ title: message, color: 'error' })
+      // Inline only — no top banner / toast for dose validation.
+      inlineErrorByLine.value[key] = t('expertCaseReviews.doseInvalid')
+      doseByLine.value[key] = String(fallback)
       return
     }
+    doseByLine.value[key] = String(doseCheck.dose)
     dose = doseCheck.dose
+  } else {
+    // Keep／remove: clear dose field errors (dose row is readonly or hidden).
+    if (inlineErrorByLine.value[key] === t('expertCaseReviews.doseInvalid')) {
+      inlineErrorByLine.value[key] = ''
+    }
   }
 
   const reason = (reasonByLine.value[key] || '').trim()
@@ -613,9 +689,15 @@ function openSwap(pkg: Record<string, unknown>, item: Record<string, unknown>) {
   changePlanCode.value = planCode(pkg)
   changeOriginalSellableId.value = itemId(item)
   const key = lineKey(changePlanCode.value, changeOriginalSellableId.value || '')
-  // Seed dose field from line input if present; never from member profile.
-  if (!doseByLine.value[key] && item.daily_dose != null) {
-    doseByLine.value[key] = String(item.daily_dose)
+  // Seed capsule dose (ceil); never from member profile.
+  if (doseByLine.value[key] === undefined) {
+    const catalogItem = catalogById.value.get(itemId(item))
+    doseByLine.value[key] = defaultCapsuleDoseForItem(
+      catalogItem ?? {
+        daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
+        daily_servings_min: null
+      }
+    )
   }
   changeOpen.value = true
 }
@@ -696,7 +778,7 @@ async function resetAll() {
 
 async function submit() {
   const token = readOperatorToken()
-  if (!token || !awaiting.value || finalizeGenerating.value) {
+  if (!token || !canSubmitFinalize.value) {
     return
   }
   busy.value = true
@@ -705,7 +787,7 @@ async function submit() {
       report_highlights?: string
       expert_opinion?: string
     } = {}
-    if (finalizeReportHighlights.value.trim() || finalizeExpertOpinion.value.trim()) {
+    if (hasFinalizeCopy.value) {
       submitPayload.report_highlights = finalizeReportHighlights.value
       submitPayload.expert_opinion = finalizeExpertOpinion.value
     }
@@ -823,15 +905,117 @@ function knowledgePlan(row: Record<string, unknown>): LabeledText {
 
 function seedDoseIfEmpty(pkg: Record<string, unknown>, item: Record<string, unknown>) {
   const key = lineKey(planCode(pkg), itemId(item))
-  if (doseByLine.value[key] !== undefined) {
+  if (doseByLine.value[key] !== undefined && doseByLine.value[key] !== '') {
+    const ceiled = ceilCapsuleDose(doseByLine.value[key])
+    if (ceiled != null && !validateCapsuleDose(doseByLine.value[key]).ok) {
+      // Legacy decimal in local state → ceil for display／edit seed.
+      doseByLine.value[key] = String(ceiled)
+    }
     return
   }
   const catalogItem = catalogById.value.get(itemId(item))
-  if (item.daily_dose != null && item.daily_dose !== '') {
-    doseByLine.value[key] = String(item.daily_dose)
+  const working = workingByKey.value.get(key)
+  if (typeof working?.dose_after === 'number') {
+    doseByLine.value[key] = String(ceilCapsuleDose(working.dose_after) ?? 1)
     return
   }
-  doseByLine.value[key] = defaultDoseForItem(catalogItem ?? null)
+  doseByLine.value[key] = defaultCapsuleDoseForItem(
+    catalogItem ?? {
+      daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
+      daily_servings_min: null
+    }
+  )
+}
+
+function lineDecision(plan: string, sellableId: string): string {
+  const row = workingByKey.value.get(lineKey(plan, sellableId))
+  return typeof row?.decision === 'string' ? row.decision : ''
+}
+
+function itemTitle(item: Record<string, unknown>): string {
+  const labeled = itemDisplayName(item, t).text
+  return productNameWithoutGluedDose(labeled) || labeled
+}
+
+function suggestedCapsuleCount(item: Record<string, unknown>): string {
+  return formatCapsuleDoseDisplay(item.daily_dose as number | string | null | undefined) || '1'
+}
+
+function suggestionLineText(item: Record<string, unknown>): string {
+  const n = suggestedCapsuleCount(item)
+  const catalogItem = catalogById.value.get(itemId(item))
+  const spec = itemSpecText(item, catalogItem ?? null)
+  if (spec) {
+    return t('expertCaseReviews.doseSuggestionLineWithSpec', { n, spec })
+  }
+  return t('expertCaseReviews.doseSuggestionLine', { n })
+}
+
+function doseDisplayText(item: Record<string, unknown>): string {
+  const n = formatCapsuleDoseDisplay(
+    item.daily_dose as number | string | null | undefined
+  )
+  if (!n) {
+    return ''
+  }
+  const catalogItem = catalogById.value.get(itemId(item))
+  const spec = itemSpecText(item, catalogItem ?? null)
+  if (spec) {
+    return t('expertCaseReviews.doseDisplayWithSpec', { n, spec })
+  }
+  return t('expertCaseReviews.doseDisplay', { n })
+}
+
+function adjustmentItemLabel(item: {
+  name?: string | null
+  daily_dose?: number | null
+} | null | undefined): string {
+  if (!item) {
+    return t('expertCaseReviews.adjustmentNone')
+  }
+  const name = productNameWithoutGluedDose(item.name || '') || (item.name || '')
+  const n = formatCapsuleDoseDisplay(item.daily_dose)
+  if (!n) {
+    return name
+  }
+  return `${name}（${t('expertCaseReviews.doseDisplay', { n })}）`
+}
+
+function isDecisionActive(
+  plan: string,
+  sellableId: string,
+  decision: 'approve' | 'reject' | 'adjust'
+): boolean {
+  return lineDecision(plan, sellableId) === decision
+}
+
+function onInlineDoseUpdate(
+  pkg: Record<string, unknown>,
+  item: Record<string, unknown>,
+  value: string
+) {
+  const key = lineKey(planCode(pkg), itemId(item))
+  doseByLine.value[key] = value
+  if (!validateCapsuleDose(value).ok) {
+    inlineErrorByLine.value[key] = t('expertCaseReviews.doseInvalid')
+    return
+  }
+  if (inlineErrorByLine.value[key] === t('expertCaseReviews.doseInvalid')) {
+    inlineErrorByLine.value[key] = ''
+  }
+}
+
+function onInlineDoseBlur(pkg: Record<string, unknown>, item: Record<string, unknown>) {
+  const key = lineKey(planCode(pkg), itemId(item))
+  if (lineDecision(planCode(pkg), itemId(item)) !== 'adjust') {
+    return
+  }
+  const check = validateCapsuleDose(doseByLine.value[key])
+  if (!check.ok) {
+    inlineErrorByLine.value[key] = t('expertCaseReviews.doseInvalid')
+    return
+  }
+  void decide(pkg, item, 'adjust')
 }
 
 function adjustDose(pkg: Record<string, unknown>, item: Record<string, unknown>) {
@@ -998,17 +1182,28 @@ function isCustomerRole(value: unknown) {
         >
           {{ $t('expertCaseReviews.resetAll') }}
         </UButton>
-        <UButton
+        <div
           v-if="awaiting"
-          color="primary"
-          :disabled="busy || finalizeGenerating"
-          data-testid="expert-case-submit"
-          @click="submit"
+          class="flex flex-col items-end gap-1"
         >
-          {{ finalizeGenerating
-            ? $t('expertCaseReviews.finalizeCopyGenerating')
-            : $t('expertCaseReviews.submit') }}
-        </UButton>
+          <UButton
+            color="primary"
+            :disabled="!canSubmitFinalize"
+            data-testid="expert-case-submit"
+            @click="submit"
+          >
+            {{ finalizeGenerating
+              ? $t('expertCaseReviews.finalizeCopyGenerating')
+              : $t('expertCaseReviews.submit') }}
+          </UButton>
+          <p
+            v-if="submitBlockHint"
+            class="max-w-xs text-end text-xs text-error"
+            data-testid="expert-case-submit-block-hint"
+          >
+            {{ submitBlockHint }}
+          </p>
+        </div>
       </template>
     </template>
 
@@ -1468,6 +1663,12 @@ function isCustomerRole(value: unknown) {
           <p class="mt-1 text-xs text-muted">
             {{ $t('expertCaseReviews.schemePlainHint') }}
           </p>
+          <p
+            class="mt-1 text-xs text-muted"
+            data-testid="expert-case-dose-capsule-hint"
+          >
+            {{ $t('expertCaseReviews.doseCapsuleHint') }}
+          </p>
           <div
             v-if="!packages.length"
             class="mt-4 text-sm text-muted"
@@ -1512,20 +1713,24 @@ function isCustomerRole(value: unknown) {
                 v-for="item in packageItems(pkg)"
                 :key="itemId(item)"
                 class="py-3"
+                :class="{
+                  'opacity-60': isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))
+                }"
                 :data-testid="`expert-case-item-${itemId(item)}`"
               >
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div class="min-w-0 flex-1">
                     <p
                       class="font-medium text-highlighted"
+                      :class="{
+                        'line-through text-muted': isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))
+                      }"
                       :title="itemDisplayName(item, t).title || undefined"
+                      data-testid="expert-case-item-name"
                     >
-                      {{ itemDisplayName(item, t).text }}
+                      {{ itemTitle(item) }}
                     </p>
                     <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                      <span>
-                        {{ $t('expertCaseReviews.dose') }}：{{ item.daily_dose }}
-                      </span>
                       <UBadge
                         v-if="item.tier"
                         :color="tierLabelKey(item.tier) === 'primary'
@@ -1537,6 +1742,11 @@ function isCustomerRole(value: unknown) {
                       >
                         {{ tierText(item.tier).text }}
                       </UBadge>
+                      <span
+                        data-testid="expert-case-item-suggestion"
+                      >
+                        {{ suggestionLineText(item) }}
+                      </span>
                       <span
                         v-if="decisionDisplay(lineKey(planCode(pkg), itemId(item)))"
                         :title="decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.title || undefined"
@@ -1576,6 +1786,7 @@ function isCustomerRole(value: unknown) {
                   <UButton
                     size="xs"
                     variant="soft"
+                    :color="isDecisionActive(planCode(pkg), itemId(item), 'approve') ? 'primary' : 'neutral'"
                     :disabled="busy"
                     data-testid="expert-case-approve"
                     @click="decide(pkg, item, 'approve')"
@@ -1594,7 +1805,7 @@ function isCustomerRole(value: unknown) {
                   </UButton>
                   <UButton
                     size="xs"
-                    color="warning"
+                    :color="isDecisionActive(planCode(pkg), itemId(item), 'adjust') ? 'primary' : 'warning'"
                     variant="soft"
                     :disabled="busy"
                     data-testid="expert-case-adjust-dose"
@@ -1605,7 +1816,7 @@ function isCustomerRole(value: unknown) {
                   <UButton
                     size="xs"
                     color="primary"
-                    variant="soft"
+                    variant="outline"
                     :disabled="busy"
                     data-testid="expert-case-swap"
                     @click="openSwap(pkg, item)"
@@ -1615,30 +1826,58 @@ function isCustomerRole(value: unknown) {
                 </div>
                 <div
                   v-if="awaiting"
-                  class="mt-2 grid gap-2 sm:grid-cols-2"
+                  class="mt-2"
                 >
-                  <div>
-                    <UInput
-                      v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
-                      :placeholder="$t('expertCaseReviews.reason')"
-                      size="sm"
-                      data-testid="expert-case-inline-reason"
-                    />
-                    <p
-                      class="mt-1 text-xs text-muted"
-                      data-testid="expert-case-inline-reason-hint"
-                    >
-                      {{ $t('expertCaseReviews.reasonAdminOnlyHint') }}
-                    </p>
-                  </div>
                   <UInput
-                    v-model="doseByLine[lineKey(planCode(pkg), itemId(item))]"
-                    :placeholder="String(item.daily_dose ?? '')"
+                    v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
+                    :placeholder="$t('expertCaseReviews.reason')"
                     size="sm"
-                    type="number"
-                    step="0.1"
-                    data-testid="expert-case-inline-dose"
+                    data-testid="expert-case-inline-reason"
                   />
+                  <p
+                    class="mt-1 text-xs text-muted"
+                    data-testid="expert-case-inline-reason-hint"
+                  >
+                    {{ $t('expertCaseReviews.reasonAdminOnlyHint') }}
+                  </p>
+                </div>
+                <!-- 移除：隱藏劑量列 -->
+                <div
+                  v-if="awaiting && isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))"
+                  class="mt-2 text-xs text-muted"
+                  data-testid="expert-case-dose-removed-hint"
+                >
+                  {{ $t('expertCaseReviews.doseRemovedHint') }}
+                </div>
+                <!-- 調劑量：stepper 可編 -->
+                <div
+                  v-else-if="awaiting && isCapsuleDoseEditable(lineDecision(planCode(pkg), itemId(item)))"
+                  class="mt-2"
+                  data-testid="expert-case-inline-dose-row"
+                >
+                  <CapsuleDoseStepper
+                    :model-value="doseByLine[lineKey(planCode(pkg), itemId(item))] ?? suggestedCapsuleCount(item)"
+                    :disabled="busy"
+                    :invalid="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))] === $t('expertCaseReviews.doseInvalid')"
+                    test-id="expert-case-inline-dose"
+                    @update:model-value="onInlineDoseUpdate(pkg, item, $event)"
+                    @blur="onInlineDoseBlur(pkg, item)"
+                  />
+                </div>
+                <!-- 保留／未決：建議顆數唯讀；須切調劑量才可編 -->
+                <div
+                  v-else-if="awaiting"
+                  class="mt-2"
+                  data-testid="expert-case-dose-readonly"
+                >
+                  <p class="text-sm text-highlighted">
+                    {{ $t('expertCaseReviews.doseSuggestedReadonly', {
+                      n: suggestedCapsuleCount(item)
+                    }) }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ $t('expertCaseReviews.doseKeepEditHint') }}
+                  </p>
                 </div>
                 <p
                   v-if="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))]"
@@ -1703,33 +1942,43 @@ function isCustomerRole(value: unknown) {
               <li
                 v-for="item in packageItems(pkg)"
                 :key="`cmp-item-${itemId(item)}-${item.is_new ? 'new' : 'orig'}`"
+                class="space-y-0.5"
               >
-                <span
+                <p
                   :class="{ 'line-through text-muted': item.removed === true }"
                   :title="itemDisplayName(item, t).title || undefined"
+                  data-testid="expert-case-cmp-item-name"
                 >
-                  {{ itemDisplayName(item, t).text }} · {{ item.daily_dose }}
-                </span>
-                <span
-                  v-if="item.is_new"
-                  class="ms-2 text-xs text-primary"
+                  {{ itemTitle(item) }}
+                </p>
+                <p
+                  v-if="!item.removed && doseDisplayText(item)"
+                  class="text-xs text-muted"
+                  data-testid="expert-case-cmp-item-dose"
                 >
-                  · {{ $t('expertCaseReviews.addedBadge') }}
-                </span>
-                <span
-                  v-if="item.decision && !revisedPackages.length"
-                  class="ms-2 text-xs text-muted"
-                  :title="mapDecisionLabel(item.decision, t)?.title || undefined"
-                  data-testid="expert-case-cmp-decision"
-                >
-                  · {{ mapDecisionLabel(item.decision, t)?.text }}
-                </span>
-                <span
-                  v-if="item.display_reason"
-                  class="ms-2 text-muted"
-                >
-                  — {{ item.display_reason }}
-                </span>
+                  {{ doseDisplayText(item) }}
+                </p>
+                <p class="text-xs text-muted">
+                  <span
+                    v-if="item.is_new"
+                    class="text-primary"
+                  >
+                    {{ $t('expertCaseReviews.addedBadge') }}
+                  </span>
+                  <span
+                    v-if="item.decision && !revisedPackages.length"
+                    :title="mapDecisionLabel(item.decision, t)?.title || undefined"
+                    data-testid="expert-case-cmp-decision"
+                  >
+                    <template v-if="item.is_new"> · </template>
+                    {{ mapDecisionLabel(item.decision, t)?.text }}
+                  </span>
+                  <span
+                    v-if="item.display_reason"
+                  >
+                    — {{ item.display_reason }}
+                  </span>
+                </p>
               </li>
             </ul>
           </div>
@@ -1827,15 +2076,11 @@ function isCustomerRole(value: unknown) {
             </p>
             <p class="mt-1 text-muted">
               {{ $t('expertCaseReviews.adjustmentOriginal') }}：
-              {{ row.original_item
-                ? `${row.original_item.name}${row.original_item.daily_dose != null ? ` · ${row.original_item.daily_dose}` : ''}`
-                : $t('expertCaseReviews.adjustmentNone') }}
+              {{ adjustmentItemLabel(row.original_item) }}
             </p>
             <p class="mt-1 text-muted">
               {{ $t('expertCaseReviews.adjustmentNew') }}：
-              {{ row.new_item
-                ? `${row.new_item.name}${row.new_item.daily_dose != null ? ` · ${row.new_item.daily_dose}` : ''}`
-                : $t('expertCaseReviews.adjustmentNone') }}
+              {{ adjustmentItemLabel(row.new_item) }}
             </p>
             <p
               v-if="row.reason"

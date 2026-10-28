@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import {
-  defaultDoseForItem,
+  defaultCapsuleDoseForItem,
+  validateCapsuleDose
+} from '~/utils/expert-case-dose'
+import {
   reasonIsFilled,
-  validateDailyDose,
   type ExpertCaseItemChangeMode,
   type SellablePickRow
 } from '~/utils/expert-case-sellable'
@@ -35,16 +37,10 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const selectedId = ref<string | null>(null)
-const dose = ref('')
+const dose = ref('1')
 const reason = ref('')
 const localError = ref('')
-
-const selectedItem = computed(() => {
-  if (!selectedId.value) {
-    return null
-  }
-  return props.items.find(row => row.id === selectedId.value) ?? null
-})
+const doseError = ref('')
 
 const title = computed(() => {
   return props.mode === 'add'
@@ -54,12 +50,13 @@ const title = computed(() => {
 
 function resetForm() {
   localError.value = ''
+  doseError.value = ''
   reason.value = ''
   selectedId.value = props.mode === 'swap' ? (props.initialSellableId || null) : null
   const initial = selectedId.value
     ? props.items.find(row => row.id === selectedId.value) ?? null
     : null
-  dose.value = defaultDoseForItem(initial)
+  dose.value = defaultCapsuleDoseForItem(initial)
 }
 
 watch(
@@ -78,8 +75,19 @@ watch(selectedId, (id, prev) => {
     return
   }
   const item = props.items.find(row => row.id === id) ?? null
-  dose.value = defaultDoseForItem(item)
+  dose.value = defaultCapsuleDoseForItem(item)
   localError.value = ''
+  doseError.value = ''
+})
+
+watch(dose, () => {
+  if (!dose.value.trim()) {
+    doseError.value = ''
+    return
+  }
+  doseError.value = validateCapsuleDose(dose.value).ok
+    ? ''
+    : t('expertCaseReviews.doseInvalid')
 })
 
 function onOpen(value: boolean) {
@@ -88,6 +96,7 @@ function onOpen(value: boolean) {
 
 function submit() {
   localError.value = ''
+  doseError.value = ''
   if (!selectedId.value) {
     localError.value = t('expertCaseReviews.pickerSelectRequired')
     return
@@ -96,9 +105,9 @@ function submit() {
     localError.value = t('expertCaseReviews.reasonRequiredMemberFacing')
     return
   }
-  const doseCheck = validateDailyDose(dose.value, selectedItem.value)
+  const doseCheck = validateCapsuleDose(dose.value)
   if (!doseCheck.ok) {
-    localError.value = doseErrorMessage(doseCheck)
+    doseError.value = t('expertCaseReviews.doseInvalid')
     return
   }
   emit('confirm', {
@@ -106,18 +115,6 @@ function submit() {
     dailyDose: doseCheck.dose,
     reason: reason.value.trim()
   })
-}
-
-function doseErrorMessage(
-  check: Exclude<ReturnType<typeof validateDailyDose>, { ok: true }>
-) {
-  if (check.code === 'required' || check.code === 'invalid') {
-    return t('expertCaseReviews.doseInvalid')
-  }
-  if (check.code === 'below_min') {
-    return t('expertCaseReviews.doseBelowMin', { min: check.min })
-  }
-  return t('expertCaseReviews.doseAboveMax', { max: check.max })
 }
 </script>
 
@@ -154,24 +151,25 @@ function doseErrorMessage(
           :label="$t('expertCaseReviews.dose')"
           required
         >
-          <UInput
+          <CapsuleDoseStepper
             v-model="dose"
-            type="number"
-            step="0.1"
-            size="sm"
             :disabled="busy"
-            data-testid="expert-case-item-change-dose"
+            :invalid="Boolean(doseError)"
+            test-id="expert-case-item-change-dose"
           />
-          <template
-            v-if="selectedItem && selectedItem.daily_servings_min !== null && selectedItem.daily_servings_max !== null"
-            #hint
-          >
-            {{ $t('expertCaseReviews.pickerDoseRange', {
-              min: selectedItem.daily_servings_min,
-              max: selectedItem.daily_servings_max
-            }) }}
+          <template #hint>
+            <span class="text-muted">
+              {{ $t('expertCaseReviews.doseCapsuleHint') }}
+            </span>
           </template>
         </UFormField>
+        <p
+          v-if="doseError"
+          class="text-sm text-error"
+          data-testid="expert-case-item-change-dose-error"
+        >
+          {{ doseError }}
+        </p>
 
         <UFormField
           :label="$t('expertCaseReviews.reasonMemberFacing')"
@@ -212,7 +210,7 @@ function doseErrorMessage(
       </UButton>
       <UButton
         color="primary"
-        :disabled="busy || catalogPending"
+        :disabled="busy || catalogPending || Boolean(doseError)"
         :loading="busy"
         data-testid="expert-case-item-change-confirm"
         @click="submit"

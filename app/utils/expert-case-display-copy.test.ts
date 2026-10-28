@@ -74,4 +74,16 @@ describe('expert case display copy', () => {
     expect(en.expertCaseReviews.missingReportChip.toLowerCase()).toContain('report')
     expect(en.expertCaseReviews.missingSignalsHint.toLowerCase()).toContain('still')
   })
+
+  it('defines capsule dose + empty-copy submit gate copy (UIUX)', () => {
+    expect(zh.expertCaseReviews.doseUnit).toBe('顆')
+    expect(zh.expertCaseReviews.doseInvalid).toBe('請輸入 ≥1 的整數（顆）')
+    expect(zh.expertCaseReviews.doseSuggestionLineWithSpec).toContain('建議：每日 {n} 顆')
+    expect(zh.expertCaseReviews.doseSuggestionLineWithSpec).toContain('規格 {spec}')
+    expect(zh.expertCaseReviews.doseKeepEditHint).toContain('調劑量')
+    expect(zh.expertCaseReviews.submitNeedsCopy).toBe('請先產生或填寫至少一段定稿文案')
+    expect(zh.expertCaseReviews.submitDoseBlocked).toContain('劑量')
+    expect(en.expertCaseReviews.doseInvalid.toLowerCase()).toContain('integer')
+    expect(en.expertCaseReviews.submitNeedsCopy.toLowerCase()).toContain('finalize')
+  })
 })

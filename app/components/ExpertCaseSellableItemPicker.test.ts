@@ -12,7 +12,8 @@ const items: SellablePickRow[] = [
     sale_status: 'on_sale',
     daily_dose: 1,
     daily_servings_min: 1,
-    daily_servings_max: 2
+    daily_servings_max: 2,
+    spec_text: '1000 mg'
   },
   {
     id: 'off-1',
@@ -22,7 +23,8 @@ const items: SellablePickRow[] = [
     sale_status: 'off_sale',
     daily_dose: 1,
     daily_servings_min: 1,
-    daily_servings_max: 2
+    daily_servings_max: 2,
+    spec_text: null
   },
   {
     id: 'on-2',
@@ -32,7 +34,8 @@ const items: SellablePickRow[] = [
     sale_status: 'on_sale',
     daily_dose: 1,
     daily_servings_min: 0.5,
-    daily_servings_max: 3
+    daily_servings_max: 3,
+    spec_text: null
   }
 ]
 
