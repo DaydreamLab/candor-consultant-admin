@@ -50,11 +50,12 @@ import {
   defaultCapsuleDoseForItem,
   formatCapsuleDoseDisplay,
   hasFinalizeCopyContent,
-  isCapsuleDoseEditable,
   isCapsuleDoseHidden,
   itemSpecText,
   productNameWithoutGluedDose,
-  validateCapsuleDose
+  resolveLineDecision,
+  validateCapsuleDose,
+  type ExpertLineDecision
 } from '~/utils/expert-case-dose'
 import {
   parseSellablePickRow,
@@ -88,6 +89,8 @@ const errorMessage = ref('')
 const memberError = ref('')
 const reasonByLine = ref<Record<string, string>>({})
 const doseByLine = ref<Record<string, string>>({})
+/** Optimistic UI decision — set on click so「調劑量」expands stepper before PATCH. */
+const decisionByLine = ref<Record<string, ExpertLineDecision>>({})
 const inlineErrorByLine = ref<Record<string, string>>({})
 
 const catalog = ref<SellablePickRow[]>([])
@@ -244,7 +247,8 @@ const workingByKey = computed(() => {
 
 watch(workingByKey, (map) => {
   for (const [key, row] of map) {
-    if (row.decision !== 'adjust') {
+    const decision = resolveLineDecision(decisionByLine.value[key], row.decision as string)
+    if (decision !== 'adjust') {
       continue
     }
     if (doseByLine.value[key] !== undefined && doseByLine.value[key] !== '') {
@@ -263,20 +267,33 @@ const hasFinalizeCopy = computed(() => {
   )
 })
 
+function collectAdjustLineKeys(): string[] {
+  const keys = new Set<string>()
+  for (const [key, row] of workingByKey.value) {
+    if (resolveLineDecision(decisionByLine.value[key], row.decision as string) === 'adjust') {
+      keys.add(key)
+    }
+  }
+  for (const [key, decision] of Object.entries(decisionByLine.value)) {
+    if (decision === 'adjust') {
+      keys.add(key)
+    }
+  }
+  return [...keys]
+}
+
 /** Any「調劑量」列的顆數未通過整數驗證 → 擋送出（無 top banner）。 */
 const doseBlocksSubmit = computed(() => {
   if (!awaiting.value) {
     return false
   }
-  for (const [key, row] of workingByKey.value) {
-    if (row.decision !== 'adjust') {
-      continue
-    }
+  for (const key of collectAdjustLineKeys()) {
+    const row = workingByKey.value.get(key)
     const raw = doseByLine.value[key]
     const fallback
       = raw !== undefined && raw !== ''
         ? raw
-        : (typeof row.dose_after === 'number'
+        : (typeof row?.dose_after === 'number'
             ? String(ceilCapsuleDose(row.dose_after) ?? '')
             : '')
     if (!validateCapsuleDose(fallback).ok) {
@@ -319,16 +336,21 @@ const comparisonPackages = computed((): Record<string, unknown>[] => {
     const items: Record<string, unknown>[] = packageItems(pkg).map((item) => {
       const key = lineKey(plan, itemId(item))
       const row = workingByKey.value.get(key)
-      if (!row) {
+      const localDecision = decisionByLine.value[key]
+      if (!row && !localDecision) {
         return { ...item }
       }
-      const decision = typeof row.decision === 'string' ? row.decision : ''
-      const afterId = typeof row.sellable_item_after === 'string' ? row.sellable_item_after : ''
+      const serverDecision = typeof row?.decision === 'string' ? row.decision : ''
+      const decision = resolveLineDecision(localDecision, serverDecision)
+      const afterId = typeof row?.sellable_item_after === 'string' ? row.sellable_item_after : ''
       const catalogHit = afterId ? catalogById.value.get(afterId) : undefined
+      const localDose = doseByLine.value[key]
       const doseAfter
-        = typeof row.dose_after === 'number'
-          ? row.dose_after
-          : item.daily_dose
+        = localDose !== undefined && localDose !== '' && validateCapsuleDose(localDose).ok
+          ? Number(localDose)
+          : (typeof row?.dose_after === 'number'
+              ? row.dose_after
+              : item.daily_dose)
       const name
         = catalogHit?.name
           || (typeof item.name === 'string' ? item.name : undefined)
@@ -338,9 +360,9 @@ const comparisonPackages = computed((): Record<string, unknown>[] => {
         name: afterId && afterId !== itemId(item) ? name : item.name,
         sellable_item_id: afterId || item.sellable_item_id,
         daily_dose: decision === 'adjust' ? doseAfter : item.daily_dose,
-        removed: decision === 'reject' || row.removed === true,
-        decision,
-        display_reason: typeof row.reason === 'string' ? row.reason : undefined
+        removed: decision === 'reject' || row?.removed === true,
+        decision: decision || serverDecision,
+        display_reason: typeof row?.reason === 'string' ? row.reason : undefined
       }
     })
 
@@ -513,6 +535,10 @@ onUnmounted(() => {
 async function load() {
   const token = readOperatorToken()
   crumbLabel.value = null
+  reasonByLine.value = {}
+  doseByLine.value = {}
+  decisionByLine.value = {}
+  inlineErrorByLine.value = {}
   if (!token || !caseId.value) {
     detail.value = null
     memberData.value = null
@@ -626,6 +652,16 @@ async function decide(
   const sellableId = itemId(item)
   const key = lineKey(plan, sellableId)
 
+  // Flip UI immediately (stepper／readonly／removed) before reason／PATCH gates.
+  decisionByLine.value[key] = decision
+
+  if (decision === 'adjust') {
+    seedDoseIfEmpty(pkg, item)
+  } else if (inlineErrorByLine.value[key] === t('expertCaseReviews.doseInvalid')) {
+    // Keep／remove: clear dose field errors (dose row is readonly or hidden).
+    inlineErrorByLine.value[key] = ''
+  }
+
   if (decision === 'reject' || decision === 'adjust') {
     if (!ensureInlineReason(key)) {
       return
@@ -653,11 +689,6 @@ async function decide(
     }
     doseByLine.value[key] = String(doseCheck.dose)
     dose = doseCheck.dose
-  } else {
-    // Keep／remove: clear dose field errors (dose row is readonly or hidden).
-    if (inlineErrorByLine.value[key] === t('expertCaseReviews.doseInvalid')) {
-      inlineErrorByLine.value[key] = ''
-    }
   }
 
   const reason = (reasonByLine.value[key] || '').trim()
@@ -671,7 +702,9 @@ async function decide(
       daily_dose: decision === 'adjust' ? dose : null,
       sellable_item_after: decision === 'adjust' ? sellableId : null
     })
-    inlineErrorByLine.value[key] = ''
+    if (inlineErrorByLine.value[key] !== t('expertCaseReviews.doseInvalid')) {
+      inlineErrorByLine.value[key] = ''
+    }
   } catch (error) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
@@ -763,6 +796,7 @@ async function resetAll() {
     detail.value = await adminResetExpertCaseReviewItems(config.public.apiBase, token, caseId.value)
     reasonByLine.value = {}
     doseByLine.value = {}
+    decisionByLine.value = {}
     inlineErrorByLine.value = {}
   } catch (error) {
     feedback.notify({
@@ -846,7 +880,9 @@ async function exportExcel() {
 
 function decisionDisplay(key: string): LabeledText | null {
   const row = workingByKey.value.get(key)
-  return mapDecisionLabel(row?.decision, t)
+  const server = typeof row?.decision === 'string' ? row.decision : ''
+  const decision = resolveLineDecision(decisionByLine.value[key], server)
+  return decision ? mapDecisionLabel(decision, t) : null
 }
 
 async function copyConversationId() {
@@ -927,9 +963,11 @@ function seedDoseIfEmpty(pkg: Record<string, unknown>, item: Record<string, unkn
   )
 }
 
-function lineDecision(plan: string, sellableId: string): string {
-  const row = workingByKey.value.get(lineKey(plan, sellableId))
-  return typeof row?.decision === 'string' ? row.decision : ''
+function lineDecision(plan: string, sellableId: string): ExpertLineDecision | '' {
+  const key = lineKey(plan, sellableId)
+  const row = workingByKey.value.get(key)
+  const server = typeof row?.decision === 'string' ? row.decision : ''
+  return resolveLineDecision(decisionByLine.value[key], server)
 }
 
 function itemTitle(item: Record<string, unknown>): string {
@@ -984,7 +1022,7 @@ function adjustmentItemLabel(item: {
 function isDecisionActive(
   plan: string,
   sellableId: string,
-  decision: 'approve' | 'reject' | 'adjust'
+  decision: ExpertLineDecision
 ): boolean {
   return lineDecision(plan, sellableId) === decision
 }
@@ -1019,7 +1057,7 @@ function onInlineDoseBlur(pkg: Record<string, unknown>, item: Record<string, unk
 }
 
 function adjustDose(pkg: Record<string, unknown>, item: Record<string, unknown>) {
-  seedDoseIfEmpty(pkg, item)
+  // seed + optimistic decision happen inside decide(); keep this as the click entry.
   void decide(pkg, item, 'adjust')
 }
 
@@ -1841,44 +1879,17 @@ function isCustomerRole(value: unknown) {
                     {{ $t('expertCaseReviews.reasonAdminOnlyHint') }}
                   </p>
                 </div>
-                <!-- 移除：隱藏劑量列 -->
-                <div
-                  v-if="awaiting && isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))"
-                  class="mt-2 text-xs text-muted"
-                  data-testid="expert-case-dose-removed-hint"
-                >
-                  {{ $t('expertCaseReviews.doseRemovedHint') }}
-                </div>
-                <!-- 調劑量：stepper 可編 -->
-                <div
-                  v-else-if="awaiting && isCapsuleDoseEditable(lineDecision(planCode(pkg), itemId(item)))"
-                  class="mt-2"
-                  data-testid="expert-case-inline-dose-row"
-                >
-                  <CapsuleDoseStepper
-                    :model-value="doseByLine[lineKey(planCode(pkg), itemId(item))] ?? suggestedCapsuleCount(item)"
-                    :disabled="busy"
-                    :invalid="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))] === $t('expertCaseReviews.doseInvalid')"
-                    test-id="expert-case-inline-dose"
-                    @update:model-value="onInlineDoseUpdate(pkg, item, $event)"
-                    @blur="onInlineDoseBlur(pkg, item)"
-                  />
-                </div>
-                <!-- 保留／未決：建議顆數唯讀；須切調劑量才可編 -->
-                <div
-                  v-else-if="awaiting"
-                  class="mt-2"
-                  data-testid="expert-case-dose-readonly"
-                >
-                  <p class="text-sm text-highlighted">
-                    {{ $t('expertCaseReviews.doseSuggestedReadonly', {
-                      n: suggestedCapsuleCount(item)
-                    }) }}
-                  </p>
-                  <p class="mt-0.5 text-xs text-muted">
-                    {{ $t('expertCaseReviews.doseKeepEditHint') }}
-                  </p>
-                </div>
+                <ExpertCaseLineDosePanel
+                  :decision="lineDecision(planCode(pkg), itemId(item))"
+                  :awaiting="awaiting"
+                  :model-value="doseByLine[lineKey(planCode(pkg), itemId(item))] ?? suggestedCapsuleCount(item)"
+                  :suggested-count="suggestedCapsuleCount(item)"
+                  :busy="busy"
+                  :invalid="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))] === $t('expertCaseReviews.doseInvalid')"
+                  test-id-prefix="expert-case"
+                  @update:model-value="onInlineDoseUpdate(pkg, item, $event)"
+                  @blur="onInlineDoseBlur(pkg, item)"
+                />
                 <p
                   v-if="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))]"
                   class="mt-2 text-sm text-error"
