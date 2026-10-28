@@ -12,7 +12,8 @@ const items: SellablePickRow[] = [
     sale_status: 'on_sale',
     daily_dose: 1,
     daily_servings_min: 1,
-    daily_servings_max: 2
+    daily_servings_max: 2,
+    spec_text: '1000 mg'
   }
 ]
 
@@ -22,10 +23,12 @@ const stubs = {
     template: '<div v-if="open"><slot name="body" /><slot name="footer" :close="() => {}" /></div>'
   },
   UFormField: { template: '<div><slot /><slot name="hint" /></div>' },
-  UInput: {
-    props: ['modelValue'],
+  CapsuleDoseStepper: {
+    props: ['modelValue', 'disabled', 'invalid', 'testId'],
     emits: ['update:modelValue'],
-    template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+    template:
+      '<input :data-testid="testId + \'-input\'" :value="modelValue" '
+      + '@input="$emit(\'update:modelValue\', $event.target.value)" />'
   },
   UTextarea: {
     props: ['modelValue'],
@@ -94,5 +97,31 @@ describe('ExpertCaseItemChangeModal', () => {
       dailyDose: 1,
       reason: '適合補充油脂'
     }])
+  })
+
+  it('rejects non-integer / 0 capsule dose with fixed error copy', async () => {
+    const wrapper = mount(ExpertCaseItemChangeModal, {
+      props: {
+        open: true,
+        mode: 'swap',
+        items,
+        initialSellableId: 'on-1'
+      },
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs
+      }
+    })
+
+    await flushPromises()
+    await wrapper.find('[data-testid="expert-case-item-change-dose-input"]').setValue('0')
+    await wrapper.find('[data-testid="expert-case-item-change-reason"]').setValue('調整')
+    await flushPromises()
+    await wrapper.find('[data-testid="expert-case-item-change-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="expert-case-item-change-dose-error"]').text())
+      .toContain('expertCaseReviews.doseInvalid')
+    expect(wrapper.emitted('confirm')).toBeFalsy()
   })
 })
