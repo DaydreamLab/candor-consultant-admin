@@ -192,4 +192,42 @@ describe('ExpertCaseFinalizeCopyCard', () => {
     expect(wrapper.find('[data-testid="expert-case-finalize-copy-locked-report"]').text())
       .toContain('locked highlights')
   })
+
+  it('missing goals/report soft chips do not disable generate', async () => {
+    generateMock.mockResolvedValue({
+      ...EXPERT_FINALIZE_COPY_MOCK,
+      cache_hit: false
+    })
+    const wrapper = mount(ExpertCaseFinalizeCopyCard, {
+      props: {
+        caseId: 'c4',
+        locked: false,
+        reportHighlights: '',
+        expertOpinion: '',
+        missingGoals: true,
+        missingReport: true
+      },
+      global: { stubs, mocks: { $t: (k: string) => k } }
+    })
+
+    expect(wrapper.find('[data-testid="expert-case-finalize-copy-missing-goals-chip"]').exists())
+      .toBe(true)
+    expect(wrapper.find('[data-testid="expert-case-finalize-copy-missing-report-chip"]').exists())
+      .toBe(true)
+    expect(wrapper.find('[data-testid="expert-case-finalize-copy-missing-hint"]').exists())
+      .toBe(true)
+
+    const generateBtn = wrapper.find('[data-testid="expert-case-finalize-copy-generate"]')
+    expect(generateBtn.exists()).toBe(true)
+    expect((generateBtn.element as HTMLButtonElement).disabled).toBe(false)
+
+    await generateBtn.trigger('click')
+    await flushPromises()
+    expect(generateMock).toHaveBeenCalledWith(
+      'https://example.test/api/v1',
+      'tok',
+      'c4',
+      { force: false }
+    )
+  })
 })

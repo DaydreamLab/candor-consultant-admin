@@ -88,6 +88,7 @@
 | AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
 | AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
 | 專家檢視／定稿對話文案 | `/expert-case-reviews/{id}` 方案／權重下方獨立卡（產生兩段 MD、左右並排編輯、cache soft chip、dirty 覆蓋確認、定稿鎖定） | 可用 | 接線中（待 [candor-core #103](https://github.com/DaydreamLab/candor-core/pull/103)；本機可 `NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK=1`） | M3 |
+| 專家檢視／缺報告・缺目標 chip | `/expert-case-reviews/{id}` 頂欄＋會員資料區＋定稿卡 soft chip（白話「缺報告」「缺目標」；**不挡**產生／定案；由 member-data `goals`／`health_report` 推導） | 可用 | 已接（消費既有 member-data；無獨立 API 旗標） | M3 |
 | 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 可用 | 接線中 | KM1 |
 | 知識管理／片段審核 | `/knowledge/chunks` | 可用 | 接線中 | KM1 |
 | 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 可用 | 接線中 | KM2 |
@@ -225,8 +226,9 @@
 
 ---
 
-**最後更新**：2026-10-28（專家檢視定稿對話文案獨立卡；消費 core #103 finalize-copy）
+**最後更新**：2026-10-28（專家檢視缺報告／缺目標 soft chip；不挡定稿產生／定案）
 
+- 2026-10-28：專家案件詳情缺報告／缺目標 soft chip（頂欄＋goals／report 標題＋定稿卡；不挡 generate／submit；由 member-data 推導）。core 若日後提供顯式旗標可改消費；`docs/04` 請雙寫
 - 2026-10-28：專家案件詳情「定稿對話文案」獨立卡（四態；generate／submit 帶兩段 MD；cache_hit soft chip；dirty 覆蓋確認）。接線待 core #103；`docs/04` 請雙寫
 - 2026-10-28：設定組側欄＝設定｜隱私權｜CTA 目錄｜AI 助理；路由 `/settings`｜`/settings/privacy`｜`/settings/cta-catalog`；總頁錨點僅支付｜發票｜報告判讀｜其他；空 hash 不強制 replace；expert 隱藏 CTA 側欄項。core `docs/04` 路徑敘述請雙寫
 - 2026-10-27：CTA client 路徑對齊 core #98（`situation-matrix`）；設定 left anchors＋列表／編輯／矩陣 UI；仍 Mock 至 core 部署；`docs/04` 待雙寫

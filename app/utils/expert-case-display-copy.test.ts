@@ -64,4 +64,14 @@ describe('expert case display copy', () => {
     expect(en.expertCaseReviews.filterAwaiting.toLowerCase()).toContain('pending')
     expect(en.expertCaseReviews.statusAwaiting.toLowerCase()).toContain('expert')
   })
+
+  it('defines missing goals/report soft chip copy (advisory only)', () => {
+    expect(zh.expertCaseReviews.missingGoalsChip).toBe('缺目標')
+    expect(zh.expertCaseReviews.missingReportChip).toBe('缺報告')
+    expect(zh.expertCaseReviews.missingSignalsHint).toContain('不挡')
+    expect(zh.expertCaseReviews.missingSignalsHint).toContain('定案')
+    expect(en.expertCaseReviews.missingGoalsChip.toLowerCase()).toContain('goals')
+    expect(en.expertCaseReviews.missingReportChip.toLowerCase()).toContain('report')
+    expect(en.expertCaseReviews.missingSignalsHint.toLowerCase()).toContain('still')
+  })
 })
