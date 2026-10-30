@@ -1,5 +1,6 @@
 import type { ShipStatus, ShipmentEvent, ShipmentRow } from '~/types/admin'
 import { SHIP_FLOW } from '~/utils/demo'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 
 /** Map core shipment.status (and aliases) onto admin UI ShipStatus. */
 export function mapShipStatus(raw: unknown): ShipStatus | null {
@@ -68,7 +69,10 @@ function scalarText(value: unknown): string {
 }
 
 function timeText(value: unknown): string {
-  return scalarText(value)
+  if (typeof value !== 'string' || !value.trim()) {
+    return scalarText(value)
+  }
+  return formatLocalDateTime(value, { style: 'full', empty: '' })
 }
 
 function recipientName(order: Record<string, unknown> | null | undefined): string {

@@ -10,6 +10,7 @@ import {
   adminSubmitExpertCaseReview
 } from '~/utils/admin-api'
 import { readFinalizeCopyFromDetail } from '~/utils/expert-finalize-copy'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import {
   adjustmentReasonIsMemberFacing,
   excludedReasonParts,
@@ -1147,11 +1148,8 @@ function formatDateTime(value: unknown) {
   if (typeof value !== 'string' || !value.trim()) {
     return null
   }
-  const time = Date.parse(value)
-  if (Number.isNaN(time)) {
-    return value
-  }
-  return new Date(time).toLocaleString()
+  const formatted = formatLocalDateTime(value, { style: 'intl-numeric', empty: '' })
+  return formatted || null
 }
 
 function toChatMessage(row: Record<string, unknown>, index: number) {

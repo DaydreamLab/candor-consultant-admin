@@ -30,6 +30,7 @@ import {
   parseDailyLearningFromWeightSetDetail,
   safetyTechnical
 } from '~/utils/daily-learning'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import type {
   DailyLearningDraftResult,
   DailyLearningGeneralProposal,
@@ -321,18 +322,7 @@ function safetyConfirmMeta(proposalId: string) {
 }
 
 function formatConfirmAt(iso: string) {
-  const parsed = Date.parse(iso)
-  if (Number.isNaN(parsed)) {
-    return iso
-  }
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(parsed))
-  } catch {
-    return iso
-  }
+  return formatLocalDateTime(iso, { style: 'intl-short', empty: iso })
 }
 
 async function loadSelectedDraft() {

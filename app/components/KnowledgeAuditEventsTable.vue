@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { KnowledgeAuditEvent } from '~/types/knowledge'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { isKnowledgeResourceUuid } from '~/utils/knowledge-audit'
 
 const props = defineProps<{
@@ -8,6 +9,10 @@ const props = defineProps<{
 }>()
 
 const localePath = useLocalePath()
+
+function formatAuditTime(value: string | null | undefined) {
+  return formatLocalDateTime(value, { style: 'full' })
+}
 
 function chunkAuditPath(row: KnowledgeAuditEvent): string | null {
   const id = row.chunk_id?.trim()
@@ -65,7 +70,7 @@ function datasetAuditPath(row: KnowledgeAuditEvent): string | null {
         {{ row.id || '—' }}
       </td>
       <td class="px-4 py-3 whitespace-nowrap text-muted">
-        {{ row.created_at || '—' }}
+        {{ formatAuditTime(row.created_at) }}
       </td>
       <td class="px-4 py-3 font-mono text-xs">
         {{ row.action || '—' }}
