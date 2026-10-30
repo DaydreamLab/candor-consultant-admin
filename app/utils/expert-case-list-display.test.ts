@@ -30,11 +30,13 @@ describe('expert-case-list-display', () => {
     expect(isExpertCaseDemoRow({ source: 'api' })).toBe(false)
   })
 
-  it('formats timestamps or em-dash', () => {
+  it('formats timestamps in viewer timezone or em-dash', () => {
     expect(formatExpertCaseListTime(null)).toBe('—')
     expect(formatExpertCaseListTime('')).toBe('—')
     expect(formatExpertCaseListTime('not-a-date')).toBe('not-a-date')
-    expect(formatExpertCaseListTime('2026-10-25T14:22:00+08:00')).toBe('2026-10-25 14:22')
+    expect(formatExpertCaseListTime('2026-10-25T06:22:00Z', 'Asia/Taipei')).toBe('2026-10-25 14:22')
+    expect(formatExpertCaseListTime('2026-10-25T06:22:00Z', 'UTC')).toBe('2026-10-25 06:22')
+    expect(formatExpertCaseListTime('2026-10-25 06:22:00+00', 'Asia/Taipei')).toBe('2026-10-25 14:22')
     expect(expertCaseUserId({ user_id: ' user_1 ' })).toBe('user_1')
   })
 })

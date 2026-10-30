@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AdminApiError, adminListOrders } from '~/utils/admin-api'
 import { money } from '~/utils/format'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 
 type OrderColumn = 'number' | 'createdAt' | 'recipient' | 'status' | 'item' | 'amount'
@@ -296,18 +297,7 @@ function textOf(value: unknown) {
 }
 
 function createdAtOf(value: unknown) {
-  if (typeof value !== 'string' || !value.trim()) {
-    return t('status.na')
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${month}/${day} ${hours}:${minutes}`
+  return formatLocalDateTime(value, { style: 'list', empty: t('status.na') })
 }
 
 function paymentBadgeOf(row: Record<string, unknown>) {

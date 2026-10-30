@@ -8,6 +8,7 @@ import {
   adminRetryOrderInvoice
 } from '~/utils/admin-api'
 import { money } from '~/utils/format'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
@@ -675,17 +676,11 @@ function timeText(value: unknown) {
   if (typeof value !== 'string' || !value.trim()) {
     return textOf(value)
   }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  return new Intl.DateTimeFormat(locale.value === 'en' ? 'en-US' : 'zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
+  return formatLocalDateTime(value, {
+    style: 'intl-numeric',
+    locale: locale.value === 'en' ? 'en-US' : 'zh-TW',
+    empty: textOf(value)
+  })
 }
 
 function textOf(value: unknown) {
