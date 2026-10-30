@@ -1582,7 +1582,10 @@
       "q": "搜尋",
       "qPlaceholder": "品名、SKU 或代碼",
       "category": "分類",
-      "saleStatus": "販售狀態"
+      "saleStatus": "販售狀態",
+      "core": "核心",
+      "coreYes": "核心",
+      "coreNo": "非核心"
     },
     "sections": {
       "identity": "商品",
