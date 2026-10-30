@@ -6,6 +6,7 @@ import { readOperatorToken } from '~/utils/operator-session'
 const VIEW_STORAGE_KEY = 'candor.products.view'
 const CATEGORY_ALL = 'all'
 const SALE_ALL = 'all'
+const CORE_ALL = 'all'
 const OFF_SALE = new Set(['off_sale', 'discontinued', 'stopped', 'inactive'])
 const SERVING_KEYS = ['servings_per_container', 'serving_per_container', 'serving_per_contain']
 
@@ -20,6 +21,7 @@ const errorMessage = ref('')
 const query = ref('')
 const categoryFilter = ref<string[]>([CATEGORY_ALL])
 const saleFilter = ref(SALE_ALL)
+const coreFilter = ref(CORE_ALL)
 const view = ref<'card' | 'list'>('card')
 const togglingIds = ref<Set<string>>(new Set())
 
@@ -46,6 +48,12 @@ const saleOptions = computed(() => [
   { label: t('products.offSale'), value: 'off_sale' }
 ])
 
+const coreOptions = computed(() => [
+  { label: t('products.filters.any'), value: CORE_ALL },
+  { label: t('products.filters.coreYes'), value: 'core' },
+  { label: t('products.filters.coreNo'), value: 'not_core' }
+])
+
 const selectedCategories = computed(() => {
   return categoryFilter.value.filter(value => value !== CATEGORY_ALL)
 })
@@ -63,6 +71,7 @@ const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   const selected = new Set(selectedCategories.value)
   const sale = saleFilter.value
+  const core = coreFilter.value
   return sellableItems.value.filter((row) => {
     if (selected.size > 0 && !selected.has(categoryOf(row))) {
       return false
@@ -71,6 +80,12 @@ const filtered = computed(() => {
       return false
     }
     if (sale === 'off_sale' && !offSaleOf(row)) {
+      return false
+    }
+    if (core === 'core' && !isCoreOf(row)) {
+      return false
+    }
+    if (core === 'not_core' && isCoreOf(row)) {
       return false
     }
     return !q || searchableText(row).includes(q)
@@ -93,7 +108,7 @@ watch(categoryFilter, (value, previous) => {
   }
 })
 
-watch([query, categoryFilter, saleFilter], () => {
+watch([query, categoryFilter, saleFilter, coreFilter], () => {
   page.value = 1
 })
 
@@ -300,6 +315,10 @@ function offSaleOf(row: Record<string, unknown>) {
   return OFF_SALE.has(scalarText(row.sale_status).trim().toLowerCase())
 }
 
+function isCoreOf(row: Record<string, unknown>) {
+  return row.is_core === true
+}
+
 function hasBadges(row: Record<string, unknown>) {
   return Boolean(categoryOf(row) || offSaleOf(row))
 }
@@ -385,6 +404,17 @@ function failText(error: unknown) {
           <USelect
             v-model="saleFilter"
             :items="saleOptions"
+            value-key="value"
+            class="w-full"
+          />
+        </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('products.filters.core') }}
+          </label>
+          <USelect
+            v-model="coreFilter"
+            :items="coreOptions"
             value-key="value"
             class="w-full"
           />

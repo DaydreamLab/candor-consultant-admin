@@ -1569,7 +1569,10 @@
       "q": "Search",
       "qPlaceholder": "Name, SKU, or code",
       "category": "Category",
-      "saleStatus": "Sale status"
+      "saleStatus": "Sale status",
+      "core": "Core",
+      "coreYes": "Core",
+      "coreNo": "Not core"
     },
     "sections": {
       "identity": "Product",
