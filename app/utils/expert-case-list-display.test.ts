@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  expertCaseMemberDisplayName,
   expertCaseMemberName,
   expertCaseUserId,
   formatExpertCaseListTime,
@@ -8,7 +9,12 @@ import {
 } from './expert-case-list-display'
 
 describe('expert-case-list-display', () => {
-  it('prefers display name over user id', () => {
+  it('prefers email, then display name, then short user id', () => {
+    expect(expertCaseMemberName({
+      user_email: 'member@example.com',
+      user_display_name: '林小美',
+      user_id: 'user_8f3a1111c2'
+    })).toBe('member@example.com')
     expect(expertCaseMemberName({
       user_display_name: '林小美',
       user_id: 'user_8f3a1111c2'
@@ -16,6 +22,16 @@ describe('expert-case-list-display', () => {
     expect(expertCaseMemberName({
       user_id: 'user_8f3a1111c2'
     })).toBe('user_8f3…c2')
+  })
+
+  it('uses display name for the secondary member line', () => {
+    expect(expertCaseMemberDisplayName({
+      user_email: 'member@example.com',
+      user_display_name: '林小美'
+    })).toBe('林小美')
+    expect(expertCaseMemberDisplayName({
+      user_email: 'member@example.com'
+    })).toBe('—')
   })
 
   it('shortens long ids and leaves short ones intact', () => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { isDevelopingPath } from '~/utils/nav'
+import { isDevelopingPath, normalizeAdminPath } from '~/utils/nav'
 
 const localePath = useLocalePath()
 const route = useRoute()
@@ -48,6 +48,16 @@ const { items: crumbs } = usePageCrumbs()
 useAdminPageHead(crumbs)
 const navbarStore = useNavbarActions()
 const navbarActions = computed(() => navbarStore.value.current)
+
+/** Expert case detail sticky toolbar needs flush panel body (no top/side padding). */
+const panelBodyClass = computed(() => {
+  const path = normalizeAdminPath(route.path)
+  if (/^\/expert-case-reviews\/[^/]+$/.test(path)) {
+    // sm:p-0 required: theme body keeps `sm:p-6` which would otherwise win over bare `p-0`.
+    return 'flex flex-col flex-1 overflow-y-auto p-0 sm:p-0'
+  }
+  return 'flex flex-col gap-4 sm:gap-6 flex-1 overflow-y-auto p-5 sm:p-7'
+})
 
 function onNavbarPrimary(event: MouseEvent) {
   const actions = navbarActions.value
@@ -257,7 +267,7 @@ onUnmounted(() => {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardPanel :ui="{ body: 'p-5 sm:p-7' }">
+    <UDashboardPanel :ui="{ body: panelBodyClass }">
       <template #header>
         <UDashboardNavbar :ui="{ title: 'min-w-0' }">
           <template #leading>

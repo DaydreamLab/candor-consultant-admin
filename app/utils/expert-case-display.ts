@@ -409,6 +409,7 @@ export function parsePackageRationales(snapshot: unknown): PackageRationaleView[
 }
 
 export type ItemContributionBlock = {
+  package_plan_code: string
   sellable_item_id: string
   name: string | null
   contributions: ContributionKv[][]
@@ -423,6 +424,7 @@ export function parseItemContributionBlocks(snapshot: unknown): ItemContribution
     if (!isRecord(pkg) || !Array.isArray(pkg.items)) {
       continue
     }
+    const planCode = typeof pkg.package_plan_code === 'string' ? pkg.package_plan_code : ''
     for (const item of pkg.items) {
       if (!isRecord(item)) {
         continue
@@ -436,6 +438,7 @@ export function parseItemContributionBlocks(snapshot: unknown): ItemContribution
       }
       const sellableId = typeof item.sellable_item_id === 'string' ? item.sellable_item_id : ''
       out.push({
+        package_plan_code: planCode,
         sellable_item_id: sellableId,
         name: typeof item.name === 'string'
           ? item.name

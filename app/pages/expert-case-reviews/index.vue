@@ -1,79 +1,122 @@
 <script setup lang="ts">
-import { AdminApiError, adminListExpertCaseReviews } from '~/utils/admin-api'
 import {
+  AdminApiError,
+  adminExportExpertCaseReview,
+  adminListExpertCaseReviews
+} from '~/utils/admin-api'
+import {
+  expertCaseMemberDisplayName,
   expertCaseMemberName,
-  expertCaseUserId,
   formatExpertCaseListTime,
-  isExpertCaseDemoRow,
-  shortExpertCaseId
+  isExpertCaseDemoRow
 } from '~/utils/expert-case-list-display'
 import { caseStatusLabel } from '~/utils/expert-case-labels'
 import { readOperatorToken } from '~/utils/operator-session'
 
+type CaseColumn = 'member' | 'status' | 'createdAt' | 'reviewedAt' | 'actions'
+type ColumnAlign = 'left' | 'center' | 'right'
+
 const FILTER_ANY = 'all'
-const PAGE_SIZE = 20
-const STATUS_FILTERS = new Set(['awaiting_review', 'reviewed'])
+const PAGE_SIZE = 10
+const FETCH_SIZE = 50
+const CASE_STATUSES = ['awaiting_review', 'reviewed'] as const
+const STATUS_FILTERS = new Set<string>(CASE_STATUSES)
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const feedback = useOpsFeedback()
 
-const rows = ref<Record<string, unknown>[]>([])
+const cases = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
+const page = ref(1)
+const hasMore = ref(false)
+const exportingId = ref<string | null>(null)
+let loadSeq = 0
+let nextOffset = 0
 
-function statusFromQuery() {
-  const raw = route.query.status
+function queryString(name: string) {
+  const raw = route.query[name]
   const value = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
-  if (typeof value === 'string' && STATUS_FILTERS.has(value)) {
-    return value
-  }
-  return FILTER_ANY
+  return typeof value === 'string' ? value : ''
 }
 
-const filterStatus = ref(statusFromQuery())
-let loadSeq = 0
+const filterStatus = ref(
+  STATUS_FILTERS.has(queryString('status')) ? queryString('status') : FILTER_ANY
+)
 
-const filterChips = computed(() => [
-  { label: t('expertCaseReviews.filterAll'), value: FILTER_ANY },
+const columns: { key: CaseColumn, align: ColumnAlign, width?: string }[] = [
+  { key: 'member', align: 'left', width: 'w-[32%]' },
+  { key: 'status', align: 'left', width: 'w-[8rem]' },
+  { key: 'createdAt', align: 'left', width: 'w-[10rem]' },
+  { key: 'reviewedAt', align: 'left', width: 'w-[10rem]' },
+  { key: 'actions', align: 'right', width: 'w-[12rem]' }
+]
+
+const statusOptions = computed(() => [
+  { label: t('expertCaseReviews.filters.any'), value: FILTER_ANY },
   { label: t('expertCaseReviews.filterAwaiting'), value: 'awaiting_review' },
   { label: t('expertCaseReviews.filterReviewed'), value: 'reviewed' }
 ])
 
+const rows = computed(() => {
+  const start = (page.value - 1) * PAGE_SIZE
+  return cases.value.slice(start, start + PAGE_SIZE)
+})
+const paginationTotal = computed(() => cases.value.length + (hasMore.value ? 1 : 0))
+
 if (import.meta.client) {
   watch(filterStatus, () => {
-    void load()
+    void load(true)
   }, { immediate: true })
 }
 
-async function load() {
+async function load(reset: boolean) {
   const seq = ++loadSeq
   const token = readOperatorToken()
   if (!token) {
-    rows.value = []
+    cases.value = []
+    hasMore.value = false
     errorMessage.value = t('expertCaseReviews.failed')
     pending.value = false
     return
   }
+
+  if (reset) {
+    cases.value = []
+    page.value = 1
+    nextOffset = 0
+    hasMore.value = false
+  }
+
   pending.value = true
   errorMessage.value = ''
   try {
-    const query: { status?: string, limit: number } = { limit: PAGE_SIZE }
-    if (filterStatus.value !== FILTER_ANY) {
-      query.status = filterStatus.value
-    }
-    const list = await adminListExpertCaseReviews(config.public.apiBase, token, query)
+    const fetched = await adminListExpertCaseReviews(config.public.apiBase, token, {
+      status: filterStatus.value === FILTER_ANY ? undefined : filterStatus.value,
+      limit: FETCH_SIZE,
+      offset: nextOffset
+    })
     if (seq !== loadSeq) {
       return
     }
-    rows.value = list
+    if (!reset && fetched.length === 0) {
+      hasMore.value = false
+      page.value = Math.max(1, Math.ceil(cases.value.length / PAGE_SIZE))
+      return
+    }
+    cases.value = reset ? fetched : [...cases.value, ...fetched]
+    nextOffset += fetched.length
+    hasMore.value = fetched.length >= FETCH_SIZE
   } catch (error) {
     if (seq !== loadSeq) {
       return
     }
-    rows.value = []
+    cases.value = []
+    hasMore.value = false
     errorMessage.value = error instanceof AdminApiError && error.message
       ? error.message
       : t('expertCaseReviews.failed')
@@ -81,6 +124,17 @@ async function load() {
     if (seq === loadSeq) {
       pending.value = false
     }
+  }
+}
+
+function goToPage(next: number) {
+  if (pending.value || next < 1 || next === page.value) {
+    return
+  }
+  page.value = next
+  const start = (next - 1) * PAGE_SIZE
+  if (start >= cases.value.length && hasMore.value) {
+    void load(false)
   }
 }
 
@@ -98,6 +152,31 @@ function statusColor(status: unknown): 'success' | 'warning' | 'neutral' {
   return 'neutral'
 }
 
+function columnLabel(key: CaseColumn) {
+  switch (key) {
+    case 'member':
+      return t('expertCaseReviews.colUser')
+    case 'status':
+      return t('expertCaseReviews.colStatus')
+    case 'createdAt':
+      return t('expertCaseReviews.colCreated')
+    case 'reviewedAt':
+      return t('expertCaseReviews.colReviewed')
+    case 'actions':
+      return t('col.actions')
+  }
+}
+
+function alignClass(align: ColumnAlign) {
+  if (align === 'center') {
+    return 'text-center'
+  }
+  if (align === 'right') {
+    return 'text-right'
+  }
+  return ''
+}
+
 function detailPath(row: Record<string, unknown>) {
   return localePath(`/expert-case-reviews/${row.id}`)
 }
@@ -105,185 +184,176 @@ function detailPath(row: Record<string, unknown>) {
 function openRow(row: Record<string, unknown>) {
   void router.push(detailPath(row))
 }
+
+function rowKey(row: Record<string, unknown>, index: number) {
+  const id = row.id
+  return typeof id === 'string' && id.trim() ? id : `case-${index}`
+}
+
+function caseId(row: Record<string, unknown>) {
+  return typeof row.id === 'string' ? row.id : ''
+}
+
+async function exportRow(row: Record<string, unknown>) {
+  const id = caseId(row)
+  const token = readOperatorToken()
+  if (!id || !token || exportingId.value) {
+    return
+  }
+  exportingId.value = id
+  try {
+    const { blob, filename } = await adminExportExpertCaseReview(
+      config.public.apiBase,
+      token,
+      id
+    )
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    feedback.notify({
+      title: error instanceof AdminApiError && error.message
+        ? error.message
+        : t('expertCaseReviews.failed'),
+      color: 'error'
+    })
+  } finally {
+    exportingId.value = null
+  }
+}
 </script>
 
 <template>
   <PageHeader
     :title="$t('expertCaseReviews.title')"
     :description="$t('expertCaseReviews.subtitle')"
+    plain
   >
-    <div
-      v-if="errorMessage"
-      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
-      data-testid="expert-case-error"
-    >
-      <div class="flex min-w-0 items-center gap-2">
-        <UIcon
-          name="i-lucide-triangle-alert"
-          class="size-4 shrink-0"
-        />
-        <span>{{ errorMessage }}</span>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-elevated p-4">
+        <div
+          class="min-w-36"
+          data-testid="expert-case-status-filter"
+        >
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('expertCaseReviews.filters.status') }}
+          </label>
+          <USelect
+            v-model="filterStatus"
+            :items="statusOptions"
+            value-key="value"
+            class="w-full"
+          />
+        </div>
       </div>
-      <UButton
-        color="neutral"
-        variant="soft"
-        size="sm"
-        data-testid="expert-case-retry"
-        @click="load"
+
+      <p
+        v-if="errorMessage"
+        class="text-sm text-error"
+        data-testid="expert-case-error"
       >
-        {{ $t('expertCaseReviews.retry') }}
-      </UButton>
-    </div>
-
-    <div
-      class="mb-4 flex flex-wrap items-center gap-2"
-      role="group"
-      :aria-label="$t('expertCaseReviews.filterGroup')"
-      data-testid="expert-case-status-filter"
-    >
-      <UButton
-        v-for="chip in filterChips"
-        :key="chip.value"
-        size="sm"
-        :color="filterStatus === chip.value ? 'primary' : 'neutral'"
-        :variant="filterStatus === chip.value ? 'soft' : 'outline'"
-        :data-testid="`expert-case-filter-${chip.value}`"
-        @click="filterStatus = chip.value"
+        {{ errorMessage }}
+      </p>
+      <p
+        v-else-if="pending && !cases.length"
+        class="text-sm text-muted"
+        data-testid="expert-case-loading"
       >
-        {{ chip.label }}
-      </UButton>
-    </div>
-
-    <div
-      v-if="pending"
-      class="overflow-hidden rounded-xl border border-default bg-elevated"
-      data-testid="expert-case-loading"
-    >
-      <table class="app-table w-full min-w-[40rem] text-left text-base">
-        <thead class="border-b border-default bg-muted/40 text-sm text-muted">
-          <tr>
-            <th>{{ $t('expertCaseReviews.colUser') }}</th>
-            <th>{{ $t('expertCaseReviews.colStatus') }}</th>
-            <th>{{ $t('expertCaseReviews.colCreated') }}</th>
-            <th>{{ $t('expertCaseReviews.colReviewed') }}</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="n in 5"
-            :key="n"
-            class="border-b border-default last:border-0"
-          >
-            <td class="py-3">
-              <USkeleton class="mb-2 h-4 w-28" />
-              <USkeleton class="h-3 w-40" />
-            </td>
-            <td><USkeleton class="h-6 w-24 rounded-full" /></td>
-            <td><USkeleton class="h-4 w-32" /></td>
-            <td><USkeleton class="h-4 w-32" /></td>
-            <td><USkeleton class="ml-auto h-8 w-16" /></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <EmptyPanel
-      v-else-if="errorMessage"
-      dashed
-      :title="$t('expertCaseReviews.errorTitle')"
-      :description="$t('expertCaseReviews.errorBody')"
-      data-testid="expert-case-error-empty"
-    >
-      <UButton
-        icon="i-lucide-refresh-cw"
-        @click="load"
-      >
-        {{ $t('expertCaseReviews.refresh') }}
-      </UButton>
-    </EmptyPanel>
-
-    <EmptyPanel
-      v-else-if="!rows.length"
-      dashed
-      :title="$t('expertCaseReviews.emptyTitle')"
-      :description="$t('expertCaseReviews.emptyBody')"
-      data-testid="expert-case-empty"
-    >
-      <UButton
-        icon="i-lucide-refresh-cw"
-        variant="soft"
-        @click="load"
-      >
-        {{ $t('expertCaseReviews.refresh') }}
-      </UButton>
-    </EmptyPanel>
-
-    <div
-      v-else
-      class="overflow-hidden rounded-xl border border-default bg-elevated"
-      data-testid="expert-case-table"
-    >
-      <div class="overflow-x-auto">
-        <table class="app-table w-full min-w-[40rem] text-left text-base">
-          <thead class="border-b border-default bg-muted/40 text-sm text-muted">
+        {{ $t('expertCaseReviews.loading') }}
+      </p>
+      <template v-else>
+        <p
+          v-if="!cases.length"
+          class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
+          data-testid="expert-case-empty"
+        >
+          {{ $t('expertCaseReviews.empty') }}
+        </p>
+        <AdminTable
+          v-else
+          compact
+          fixed
+          data-testid="expert-case-table"
+        >
+          <template #colgroup>
+            <colgroup>
+              <col
+                v-for="column in columns"
+                :key="column.key"
+                :class="column.width"
+              >
+            </colgroup>
+          </template>
+          <template #head>
             <tr>
-              <th class="w-[32%]">
-                {{ $t('expertCaseReviews.colUser') }}
-              </th>
-              <th>{{ $t('expertCaseReviews.colStatus') }}</th>
-              <th>{{ $t('expertCaseReviews.colCreated') }}</th>
-              <th>{{ $t('expertCaseReviews.colReviewed') }}</th>
-              <th class="text-end">
-                {{ $t('col.actions') }}
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                :class="[column.width, alignClass(column.align)]"
+              >
+                {{ columnLabel(column.key) }}
               </th>
             </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="row in rows"
-              :key="String(row.id)"
-              class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
-              :data-testid="`expert-case-row-${row.id}`"
-              @click="openRow(row)"
-            >
-              <td class="py-3">
-                <div class="flex flex-wrap items-center gap-2">
-                  <p class="font-semibold text-highlighted">
-                    {{ expertCaseMemberName(row) }}
-                  </p>
-                  <UBadge
-                    v-if="isExpertCaseDemoRow(row)"
-                    color="neutral"
-                    variant="subtle"
-                    class="text-xs font-medium"
-                    data-testid="expert-case-demo-chip"
-                  >
-                    {{ $t('expertCaseReviews.demoChip') }}
-                  </UBadge>
-                </div>
-                <p class="mt-0.5 font-mono text-xs text-muted">
-                  {{ shortExpertCaseId(expertCaseUserId(row) || row.user_id) }}
+          </template>
+          <tr
+            v-for="(row, index) in rows"
+            :key="rowKey(row, index)"
+            class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
+            :data-testid="`expert-case-row-${row.id}`"
+            @click="openRow(row)"
+          >
+            <td class="py-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="font-semibold text-highlighted">
+                  {{ expertCaseMemberName(row) }}
                 </p>
-              </td>
-              <td>
-                <span :title="statusDisplay(row.status).title || undefined">
-                  <StatusBadge
-                    :label="statusDisplay(row.status).text"
-                    :color="statusColor(row.status)"
-                  />
-                </span>
-              </td>
-              <td class="whitespace-nowrap text-sm text-muted">
-                {{ formatExpertCaseListTime(row.created_at) }}
-              </td>
-              <td class="whitespace-nowrap text-sm text-muted">
-                {{ formatExpertCaseListTime(row.reviewed_at) }}
-              </td>
-              <td
-                class="text-end"
-                @click.stop
-              >
+                <UBadge
+                  v-if="isExpertCaseDemoRow(row)"
+                  color="neutral"
+                  variant="subtle"
+                  class="text-xs font-medium"
+                  data-testid="expert-case-demo-chip"
+                >
+                  {{ $t('expertCaseReviews.demoChip') }}
+                </UBadge>
+              </div>
+              <p class="mt-0.5 text-xs text-muted">
+                {{ expertCaseMemberDisplayName(row) }}
+              </p>
+            </td>
+            <td>
+              <span :title="statusDisplay(row.status).title || undefined">
+                <StatusBadge
+                  :label="statusDisplay(row.status).text"
+                  :color="statusColor(row.status)"
+                />
+              </span>
+            </td>
+            <td class="whitespace-nowrap text-sm text-muted">
+              {{ formatExpertCaseListTime(row.created_at) }}
+            </td>
+            <td class="whitespace-nowrap text-sm text-muted">
+              {{ formatExpertCaseListTime(row.reviewed_at) }}
+            </td>
+            <td
+              class="text-end"
+              @click.stop
+            >
+              <div class="inline-flex flex-wrap items-center justify-end gap-2">
+                <UButton
+                  size="sm"
+                  variant="outline"
+                  color="neutral"
+                  :loading="exportingId === caseId(row)"
+                  :disabled="Boolean(exportingId) && exportingId !== caseId(row)"
+                  data-testid="expert-case-export"
+                  @click="exportRow(row)"
+                >
+                  {{ $t('expertCaseReviews.export') }}
+                </UButton>
                 <UButton
                   size="sm"
                   variant="soft"
@@ -292,11 +362,22 @@ function openRow(row: Record<string, unknown>) {
                 >
                   {{ $t('expertCaseReviews.open') }}
                 </UButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </td>
+          </tr>
+          <template #footer>
+            <div class="flex justify-end border-t border-default px-4 py-3">
+              <UPagination
+                :page="page"
+                :items-per-page="PAGE_SIZE"
+                :total="paginationTotal"
+                :disabled="pending"
+                @update:page="goToPage"
+              />
+            </div>
+          </template>
+        </AdminTable>
+      </template>
     </div>
   </PageHeader>
 </template>

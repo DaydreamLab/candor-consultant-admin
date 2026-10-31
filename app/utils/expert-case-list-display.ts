@@ -8,9 +8,11 @@ function asTrimmedString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-/** Prefer human display name; fall back to short user id. */
+/** Prefer member email; then display name; fall back to short user id. */
 export function expertCaseMemberName(row: Record<string, unknown>): string {
   const candidates = [
+    row.user_email,
+    row.email,
     row.user_display_name,
     row.member_display_name,
     row.display_name,
@@ -27,6 +29,24 @@ export function expertCaseMemberName(row: Record<string, unknown>): string {
   }
   const userId = asTrimmedString(row.user_id)
   return userId ? shortExpertCaseId(userId) : '—'
+}
+
+/** Secondary line under member email: display name, or em-dash when missing. */
+export function expertCaseMemberDisplayName(row: Record<string, unknown>): string {
+  const candidates = [
+    row.user_display_name,
+    row.member_display_name,
+    row.display_name,
+    row.member_name,
+    row.user_name
+  ]
+  for (const value of candidates) {
+    const text = asTrimmedString(value)
+    if (text) {
+      return text
+    }
+  }
+  return '—'
 }
 
 export function expertCaseUserId(row: Record<string, unknown>): string {

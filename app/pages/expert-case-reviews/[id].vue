@@ -16,7 +16,6 @@ import {
   excludedReasonParts,
   formatScoreNorm,
   isRecord,
-  itemRationaleText,
   parseAdjustments,
   parseExcludedRows,
   parseItemContributionBlocks,
@@ -34,14 +33,12 @@ import {
   conditionLabel,
   decisionLabel as mapDecisionLabel,
   displayNameOrUntitled,
-  goalLabel,
   itemDisplayName,
   operatorRoleLabel,
   packagePlanCodeLabel,
   profileFieldDisplayLabel,
   reportResultStatusLabel,
   resolveExpertProfileSections,
-  shortConversationId,
   tierDisplayLabel,
   type ExpertProfileSectionView,
   type LabeledText
@@ -110,6 +107,14 @@ const changeMode = ref<ExpertCaseItemChangeMode>('swap')
 const changePlanCode = ref('')
 const changeOriginalSellableId = ref<string | null>(null)
 
+const editOpen = ref(false)
+const editPkg = ref<Record<string, unknown> | null>(null)
+const editItem = ref<Record<string, unknown> | null>(null)
+
+const weightBackgroundOpen = ref(false)
+const weightBackgroundPlanCode = ref('')
+const profileUpdateOpen = ref(false)
+
 const finalizeReportHighlights = ref('')
 const finalizeExpertOpinion = ref('')
 const finalizeGenerating = ref(false)
@@ -175,14 +180,6 @@ const statusChipColor = computed((): 'success' | 'warning' | 'neutral' => {
   return 'neutral'
 })
 
-const conversationIdFull = computed(() => {
-  return typeof detail.value?.conversation_id === 'string' ? detail.value.conversation_id : ''
-})
-
-const conversationIdShort = computed(() => shortConversationId(conversationIdFull.value))
-
-const copyConversationFeedback = ref('')
-
 const packages = computed(() => {
   const snap = detail.value?.original_snapshot
   if (!isRecord(snap) || !Array.isArray(snap.packages)) {
@@ -231,6 +228,30 @@ const weightTopDomains = computed(() => {
 const weightContributionBlocks = computed(() => {
   return parseItemContributionBlocks(detail.value?.original_snapshot)
 })
+
+const weightBackgroundPlanLabel = computed((): LabeledText => {
+  const code = weightBackgroundPlanCode.value
+  const pkg = packages.value.find(row => planCode(row) === code)
+  if (pkg) {
+    return planDisplay(pkg)
+  }
+  return planCodeDisplay(code)
+})
+
+const weightBackgroundRationales = computed(() => {
+  const code = weightBackgroundPlanCode.value
+  return weightRationales.value.filter(block => block.package_plan_code === code)
+})
+
+const weightBackgroundContributions = computed(() => {
+  const code = weightBackgroundPlanCode.value
+  return weightContributionBlocks.value.filter(block => block.package_plan_code === code)
+})
+
+function openWeightBackground(pkg: Record<string, unknown>) {
+  weightBackgroundPlanCode.value = planCode(pkg)
+  weightBackgroundOpen.value = true
+}
 
 const workingByKey = computed(() => {
   const map = new Map<string, Record<string, unknown>>()
@@ -444,16 +465,6 @@ const changedFieldLabels = computed(() => {
     .map(field => profileFieldLabel(field))
 })
 
-const memberGoals = computed((): LabeledText[] => {
-  const goals = memberData.value?.goals
-  if (!Array.isArray(goals)) {
-    return []
-  }
-  return goals
-    .filter((goal): goal is string => typeof goal === 'string' && goal.trim().length > 0)
-    .map(goal => goalLabel(goal, t))
-})
-
 const memberMessages = computed(() => {
   const bag = memberData.value?.messages
   if (!isRecord(bag) || !Array.isArray(bag.messages)) {
@@ -509,10 +520,12 @@ const healthReportResults = computed((): HealthReportResult[] => {
 
 const assistantMessage = {
   side: 'left' as const,
-  variant: 'soft' as const
+  color: 'neutral' as const,
+  variant: 'subtle' as const
 }
 const userMessage = {
   side: 'right' as const,
+  color: 'neutral' as const,
   variant: 'solid' as const
 }
 
@@ -677,8 +690,8 @@ async function decide(
       ? doseRaw
       : defaultCapsuleDoseForItem(
           catalogItem ?? {
-            daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
-                      }
+            daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null
+          }
         )
     const doseCheck = validateCapsuleDose(fallback)
     if (!doseCheck.ok) {
@@ -727,12 +740,93 @@ function openSwap(pkg: Record<string, unknown>, item: Record<string, unknown>) {
     const catalogItem = catalogById.value.get(itemId(item))
     doseByLine.value[key] = defaultCapsuleDoseForItem(
       catalogItem ?? {
-        daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
-              }
+        daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null
+      }
     )
   }
   changeOpen.value = true
 }
+
+function openEdit(pkg: Record<string, unknown>, item: Record<string, unknown>) {
+  seedDoseIfEmpty(pkg, item)
+  editPkg.value = pkg
+  editItem.value = item
+  editOpen.value = true
+}
+
+function editLineKey() {
+  if (!editPkg.value || !editItem.value) {
+    return ''
+  }
+  return lineKey(planCode(editPkg.value), itemId(editItem.value))
+}
+
+async function onEditApply(payload: {
+  decision: ExpertLineDecision
+  reason: string
+  dailyDose: number | null
+}) {
+  if (!editPkg.value || !editItem.value) {
+    return
+  }
+  const key = editLineKey()
+  reasonByLine.value[key] = payload.reason
+  if (payload.decision === 'adjust' && payload.dailyDose != null) {
+    doseByLine.value[key] = String(payload.dailyDose)
+  }
+  await decide(editPkg.value, editItem.value, payload.decision)
+  if (!inlineErrorByLine.value[key]) {
+    editOpen.value = false
+  }
+}
+
+function onEditRequestSwap() {
+  if (!editPkg.value || !editItem.value) {
+    return
+  }
+  const pkg = editPkg.value
+  const item = editItem.value
+  editOpen.value = false
+  openSwap(pkg, item)
+}
+
+const comparisonByPlan = computed(() => {
+  const map = new Map<string, Record<string, unknown>>()
+  for (const pkg of comparisonPackages.value) {
+    map.set(planCode(pkg), pkg)
+  }
+  return map
+})
+
+function comparisonPackageFor(plan: string): Record<string, unknown> | null {
+  return comparisonByPlan.value.get(plan) ?? null
+}
+
+const editItemTitle = computed(() => editItem.value ? itemTitle(editItem.value) : '')
+const editSuggestionText = computed(() => editItem.value ? suggestionLineText(editItem.value) : '')
+const editScoreText = computed(() => {
+  if (!editItem.value) {
+    return ''
+  }
+  return formatScoreNorm(editItem.value.score_norm) || ''
+})
+const editInitialDecision = computed((): ExpertLineDecision | '' => {
+  if (!editPkg.value || !editItem.value) {
+    return ''
+  }
+  return lineDecision(planCode(editPkg.value), itemId(editItem.value))
+})
+const editInitialReason = computed(() => reasonByLine.value[editLineKey()] || '')
+const editInitialDose = computed(() => {
+  const key = editLineKey()
+  if (doseByLine.value[key]) {
+    return doseByLine.value[key]!
+  }
+  return editItem.value ? suggestedCapsuleCount(editItem.value) : '1'
+})
+const editSuggestedCount = computed(() => {
+  return editItem.value ? suggestedCapsuleCount(editItem.value) : '1'
+})
 
 function openAdd(pkg: Record<string, unknown>) {
   changeMode.value = 'add'
@@ -884,22 +978,6 @@ function decisionDisplay(key: string): LabeledText | null {
   return decision ? mapDecisionLabel(decision, t) : null
 }
 
-async function copyConversationId() {
-  const full = conversationIdFull.value
-  if (!full || !import.meta.client) {
-    return
-  }
-  try {
-    await navigator.clipboard.writeText(full)
-    copyConversationFeedback.value = t('expertCaseReviews.copied')
-    window.setTimeout(() => {
-      copyConversationFeedback.value = ''
-    }, 1500)
-  } catch {
-    copyConversationFeedback.value = ''
-  }
-}
-
 function planDisplay(pkg: Record<string, unknown>): LabeledText {
   return packagePlanCodeLabel(pkg.package_plan_code, pkg.package_plan_name, t)
 }
@@ -956,8 +1034,8 @@ function seedDoseIfEmpty(pkg: Record<string, unknown>, item: Record<string, unkn
   }
   doseByLine.value[key] = defaultCapsuleDoseForItem(
     catalogItem ?? {
-      daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
-          }
+      daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null
+    }
   )
 }
 
@@ -1015,48 +1093,6 @@ function adjustmentItemLabel(item: {
     return name
   }
   return `${name}（${t('expertCaseReviews.doseDisplay', { n })}）`
-}
-
-function isDecisionActive(
-  plan: string,
-  sellableId: string,
-  decision: ExpertLineDecision
-): boolean {
-  return lineDecision(plan, sellableId) === decision
-}
-
-function onInlineDoseUpdate(
-  pkg: Record<string, unknown>,
-  item: Record<string, unknown>,
-  value: string
-) {
-  const key = lineKey(planCode(pkg), itemId(item))
-  doseByLine.value[key] = value
-  if (!validateCapsuleDose(value).ok) {
-    inlineErrorByLine.value[key] = t('expertCaseReviews.doseInvalid')
-    return
-  }
-  if (inlineErrorByLine.value[key] === t('expertCaseReviews.doseInvalid')) {
-    inlineErrorByLine.value[key] = ''
-  }
-}
-
-function onInlineDoseBlur(pkg: Record<string, unknown>, item: Record<string, unknown>) {
-  const key = lineKey(planCode(pkg), itemId(item))
-  if (lineDecision(planCode(pkg), itemId(item)) !== 'adjust') {
-    return
-  }
-  const check = validateCapsuleDose(doseByLine.value[key])
-  if (!check.ok) {
-    inlineErrorByLine.value[key] = t('expertCaseReviews.doseInvalid')
-    return
-  }
-  void decide(pkg, item, 'adjust')
-}
-
-function adjustDose(pkg: Record<string, unknown>, item: Record<string, unknown>) {
-  // seed + optimistic decision happen inside decide(); keep this as the click entry.
-  void decide(pkg, item, 'adjust')
 }
 
 function tierText(tier: unknown): LabeledText {
@@ -1160,6 +1196,22 @@ function toChatMessage(row: Record<string, unknown>, index: number) {
   }
 }
 
+function chatMessageMarkdown(payload: {
+  content?: string
+  parts?: Array<{ type?: string, text?: string }>
+}) {
+  if (typeof payload.content === 'string' && payload.content.trim()) {
+    return payload.content
+  }
+  const parts = Array.isArray(payload.parts) ? payload.parts : []
+  return parts
+    .filter((part): part is { type: string, text: string } =>
+      part.type === 'text' && typeof part.text === 'string' && part.text.length > 0
+    )
+    .map(part => part.text)
+    .join('\n\n')
+}
+
 function isCustomerRole(value: unknown) {
   return typeof value === 'string' && CUSTOMER_ROLES.has(value)
 }
@@ -1167,89 +1219,16 @@ function isCustomerRole(value: unknown) {
 
 <template>
   <PageHeader plain>
-    <template #actions>
-      <template v-if="detail && !pending">
-        <span
-          v-if="statusChipLabel"
-          :title="statusChipTitle || undefined"
-        >
-          <StatusBadge
-            :label="statusChipLabel"
-            :color="statusChipColor"
-            data-testid="expert-case-status-chip"
-          />
-        </span>
-        <UBadge
-          v-if="missingGoals"
-          color="warning"
-          variant="subtle"
-          :title="$t('expertCaseReviews.missingSignalsHint')"
-          data-testid="expert-case-missing-goals-chip"
-        >
-          {{ $t('expertCaseReviews.missingGoalsChip') }}
-        </UBadge>
-        <UBadge
-          v-if="missingReport"
-          color="warning"
-          variant="subtle"
-          :title="$t('expertCaseReviews.missingSignalsHint')"
-          data-testid="expert-case-missing-report-chip"
-        >
-          {{ $t('expertCaseReviews.missingReportChip') }}
-        </UBadge>
-        <UButton
-          variant="soft"
-          :disabled="busy || pending"
-          data-testid="expert-case-export"
-          @click="exportExcel"
-        >
-          {{ $t('expertCaseReviews.export') }}
-        </UButton>
-        <UButton
-          v-if="awaiting"
-          variant="soft"
-          color="neutral"
-          :disabled="busy"
-          data-testid="expert-case-reset"
-          @click="resetAll"
-        >
-          {{ $t('expertCaseReviews.resetAll') }}
-        </UButton>
-        <div
-          v-if="awaiting"
-          class="flex flex-col items-end gap-1"
-        >
-          <UButton
-            color="primary"
-            :disabled="!canSubmitFinalize"
-            data-testid="expert-case-submit"
-            @click="submit"
-          >
-            {{ finalizeGenerating
-              ? $t('expertCaseReviews.finalizeCopyGenerating')
-              : $t('expertCaseReviews.submit') }}
-          </UButton>
-          <p
-            v-if="submitBlockHint"
-            class="max-w-xs text-end text-xs text-error"
-            data-testid="expert-case-submit-block-hint"
-          >
-            {{ submitBlockHint }}
-          </p>
-        </div>
-      </template>
-    </template>
-
     <p
       v-if="pending"
-      class="text-sm text-muted"
+      class="px-5 py-5 text-sm text-muted sm:px-7 sm:py-7"
       data-testid="expert-case-detail-loading"
     >
       {{ $t('expertCaseReviews.loading') }}
     </p>
     <div
       v-else-if="errorMessage"
-      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
+      class="m-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error sm:m-7"
       data-testid="expert-case-detail-error"
     >
       <div class="flex min-w-0 items-center gap-2">
@@ -1271,262 +1250,741 @@ function isCustomerRole(value: unknown) {
     </div>
 
     <template v-else-if="detail">
-      <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-muted">
-        <span>{{ $t('expertCaseReviews.colUser') }}：{{ memberLabel }}</span>
-        <span class="font-mono text-xs">{{ shortExpertCaseId(detail.user_id) }}</span>
-        <span
-          v-if="conversationIdFull"
-          class="inline-flex flex-wrap items-center gap-1"
-          data-testid="expert-case-conversation-id"
-        >
-          <span>{{ $t('expertCaseReviews.colConversation') }}：</span>
-          <span
-            class="font-mono text-xs"
-            :title="conversationIdFull"
-          >{{ conversationIdShort }}</span>
-          <UButton
-            size="xs"
-            variant="ghost"
-            color="neutral"
-            data-testid="expert-case-conversation-copy"
-            @click="copyConversationId"
-          >
-            {{ copyConversationFeedback || $t('expertCaseReviews.copyId') }}
-          </UButton>
-        </span>
+      <!-- Flush sticky toolbar: full width under navbar, no floating gap -->
+      <div
+        class="sticky top-0 z-20 border-b border-default bg-default px-5 py-3 sm:px-7"
+        data-testid="expert-case-sticky-actions"
+      >
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex min-w-0 flex-wrap items-center gap-2">
+            <p class="truncate text-sm font-semibold text-highlighted">
+              {{ memberLabel }}
+            </p>
+            <span
+              v-if="statusChipLabel"
+              :title="statusChipTitle || undefined"
+            >
+              <StatusBadge
+                :label="statusChipLabel"
+                :color="statusChipColor"
+                data-testid="expert-case-status-chip"
+              />
+            </span>
+            <UBadge
+              v-if="missingGoals"
+              color="warning"
+              variant="subtle"
+              :title="$t('expertCaseReviews.missingSignalsHint')"
+              data-testid="expert-case-missing-goals-chip"
+            >
+              {{ $t('expertCaseReviews.missingGoalsChip') }}
+            </UBadge>
+            <UBadge
+              v-if="missingReport"
+              color="warning"
+              variant="subtle"
+              :title="$t('expertCaseReviews.missingSignalsHint')"
+              data-testid="expert-case-missing-report-chip"
+            >
+              {{ $t('expertCaseReviews.missingReportChip') }}
+            </UBadge>
+          </div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+            <UButton
+              size="sm"
+              variant="outline"
+              color="neutral"
+              :disabled="busy || pending"
+              data-testid="expert-case-export"
+              @click="exportExcel"
+            >
+              {{ $t('expertCaseReviews.export') }}
+            </UButton>
+            <UButton
+              v-if="awaiting"
+              size="sm"
+              variant="soft"
+              color="neutral"
+              :disabled="busy"
+              data-testid="expert-case-reset"
+              @click="resetAll"
+            >
+              {{ $t('expertCaseReviews.resetAll') }}
+            </UButton>
+            <UTooltip
+              v-if="awaiting"
+              :text="submitBlockHint || undefined"
+              :disabled="!submitBlockHint"
+              :content="{ side: 'bottom', align: 'end' }"
+            >
+              <span
+                class="inline-flex"
+                data-testid="expert-case-submit-block-hint"
+                :aria-label="submitBlockHint || undefined"
+              >
+                <UButton
+                  size="sm"
+                  color="primary"
+                  :disabled="!canSubmitFinalize"
+                  data-testid="expert-case-submit"
+                  @click="submit"
+                >
+                  {{ finalizeGenerating
+                    ? $t('expertCaseReviews.finalizeCopyGenerating')
+                    : $t('expertCaseReviews.submit') }}
+                </UButton>
+              </span>
+            </UTooltip>
+          </div>
+        </div>
       </div>
 
-      <!-- Member data: conversation + profile + goal + report -->
-      <section
-        class="mb-8 space-y-4 rounded-xl border border-default bg-elevated p-4"
-        data-testid="expert-case-member-data"
-      >
-        <h2 class="text-lg font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.memberDataTitle') }}
-        </h2>
-        <p
-          v-if="memberPending"
-          class="text-sm text-muted"
-          data-testid="expert-case-member-loading"
+      <div class="space-y-8 px-5 py-5 sm:px-7 sm:py-7">
+        <!-- Member data: left profile/goals · right chat · bottom report -->
+        <section
+          class="space-y-4 rounded-xl border border-default bg-elevated p-4"
+          data-testid="expert-case-member-data"
         >
-          {{ $t('expertCaseReviews.memberDataLoading') }}
-        </p>
-        <p
-          v-else-if="memberError"
-          class="text-sm text-error"
-          data-testid="expert-case-member-error"
-        >
-          {{ memberError }}
-        </p>
-        <template v-else-if="memberData">
-          <div
-            v-if="hasProfileUpdates"
-            class="rounded-lg border border-warning/40 bg-warning/10 px-3 py-3 text-sm"
-            data-testid="expert-case-profile-updates"
+          <h2 class="text-lg font-semibold text-highlighted">
+            {{ $t('expertCaseReviews.memberDataTitle') }}
+          </h2>
+          <p
+            v-if="memberPending"
+            class="text-sm text-muted"
+            data-testid="expert-case-member-loading"
           >
-            <p class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.profileUpdateBanner') }}
-            </p>
-            <p
-              v-if="formatDateTime(profileUpdate?.updated_at)"
-              class="mt-1 text-muted"
-              data-testid="expert-case-profile-updated-at"
-            >
-              {{ $t('expertCaseReviews.profileUpdateAt', {
-                time: formatDateTime(profileUpdate?.updated_at)
-              }) }}
-            </p>
-            <p
-              v-if="changedFieldLabels.length"
-              class="mt-1 text-muted"
-              data-testid="expert-case-profile-changed-fields"
-            >
-              {{ $t('expertCaseReviews.profileChangedFields', {
-                fields: changedFieldLabels.join('、')
-              }) }}
-            </p>
-          </div>
-
-          <div data-testid="expert-case-profile">
-            <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.profileTitle') }}
-            </h3>
-            <p
-              v-if="profileMissingReason === 'legacy_case_without_snapshot'"
-              class="mt-2 text-sm text-muted"
-            >
-              {{ $t('expertCaseReviews.memberDataLegacySnapshot') }}
-            </p>
-            <dl
-              v-else-if="profileSections.length"
-              class="mt-2 grid gap-2 sm:grid-cols-2"
-              data-testid="expert-case-profile-sections"
-            >
-              <div
-                v-for="section in profileSections"
-                :key="section.id"
-                class="rounded-lg bg-default/40 px-3 py-2 text-sm"
-                :data-testid="`expert-case-profile-section-${section.id}`"
-              >
-                <dt class="text-xs text-muted">
-                  {{ section.title }}
-                </dt>
-                <dd
-                  v-if="profileSectionShowsLabeledRows(section)"
-                  class="mt-1 space-y-1 text-highlighted"
-                  :data-testid="section.id === 'intake' ? 'expert-case-intake-rows' : undefined"
-                >
-                  <div
-                    v-for="row in section.rows"
-                    :key="row.key"
-                    class="flex flex-wrap gap-x-2 gap-y-0.5"
-                  >
-                    <span
-                      class="text-muted"
-                      :title="row.title || undefined"
-                    >{{ row.label }}：</span>
-                    <span class="whitespace-pre-wrap break-words">{{ row.value }}</span>
+            {{ $t('expertCaseReviews.memberDataLoading') }}
+          </p>
+          <p
+            v-else-if="memberError"
+            class="text-sm text-error"
+            data-testid="expert-case-member-error"
+          >
+            {{ memberError }}
+          </p>
+          <template v-else-if="memberData">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div class="min-w-0 space-y-4">
+                <div data-testid="expert-case-profile">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-medium text-highlighted">
+                      {{ $t('expertCaseReviews.profileTitle') }}
+                    </h3>
+                    <UButton
+                      v-if="hasProfileUpdates"
+                      size="xs"
+                      color="warning"
+                      variant="ghost"
+                      icon="i-lucide-info"
+                      :title="$t('expertCaseReviews.profileUpdateOpen')"
+                      :aria-label="$t('expertCaseReviews.profileUpdateOpen')"
+                      data-testid="expert-case-profile-updates-open"
+                      @click="profileUpdateOpen = true"
+                    />
                   </div>
-                </dd>
-                <dd
-                  v-else
-                  class="mt-0.5 whitespace-pre-wrap break-words text-highlighted"
-                  :title="section.rows[0]?.title || undefined"
-                  :data-testid="section.id === 'conditions' ? 'expert-case-conditions' : undefined"
-                >
-                  {{ section.rows[0]?.value || '—' }}
-                </dd>
+                  <p
+                    v-if="profileMissingReason === 'legacy_case_without_snapshot'"
+                    class="mt-2 text-sm text-muted"
+                  >
+                    {{ $t('expertCaseReviews.memberDataLegacySnapshot') }}
+                  </p>
+                  <dl
+                    v-else-if="profileSections.length"
+                    class="mt-2 grid gap-2 sm:grid-cols-2"
+                    data-testid="expert-case-profile-sections"
+                  >
+                    <div
+                      v-for="section in profileSections"
+                      :key="section.id"
+                      class="rounded-lg bg-default/40 px-3 py-2 text-sm"
+                      :data-testid="`expert-case-profile-section-${section.id}`"
+                    >
+                      <dt class="text-xs text-muted">
+                        {{ section.title }}
+                      </dt>
+                      <dd
+                        v-if="profileSectionShowsLabeledRows(section)"
+                        class="mt-1 space-y-1 text-highlighted"
+                        :data-testid="section.id === 'intake' ? 'expert-case-intake-rows' : undefined"
+                      >
+                        <div
+                          v-for="row in section.rows"
+                          :key="row.key"
+                          class="flex flex-wrap gap-x-2 gap-y-0.5"
+                        >
+                          <span
+                            class="text-muted"
+                            :title="row.title || undefined"
+                          >{{ row.label }}：</span>
+                          <span class="whitespace-pre-wrap break-words">{{ row.value }}</span>
+                        </div>
+                      </dd>
+                      <dd
+                        v-else
+                        class="mt-0.5 whitespace-pre-wrap break-words text-highlighted"
+                        :title="section.rows[0]?.title || undefined"
+                        :data-testid="section.id === 'conditions' ? 'expert-case-conditions' : undefined"
+                      >
+                        {{ section.rows[0]?.value || '—' }}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p
+                    v-else-if="profileSnapshot"
+                    class="mt-2 text-sm text-muted"
+                  >
+                    —
+                  </p>
+                </div>
               </div>
-            </dl>
-            <p
-              v-else-if="profileSnapshot"
-              class="mt-2 text-sm text-muted"
-            >
-              —
-            </p>
-          </div>
 
-          <div data-testid="expert-case-goals">
-            <h3 class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
-              <span>{{ $t('expertCaseReviews.goalsTitle') }}</span>
-              <UBadge
-                v-if="missingGoals"
-                color="warning"
-                variant="subtle"
-                data-testid="expert-case-goals-missing-chip"
+              <!--
+              lg: absolute fill so row height = left column only (chat scrolls inside).
+              max-lg: fixed max height; in-flow so the cell is not collapsed.
+            -->
+              <div
+                class="relative min-w-0 max-lg:min-h-[20rem]"
+                data-testid="expert-case-messages"
               >
-                {{ $t('expertCaseReviews.missingGoalsChip') }}
-              </UBadge>
-            </h3>
-            <p class="mt-1 text-xs text-muted">
-              {{ memberData.goals_source === 'conversation_fallback'
-                ? $t('expertCaseReviews.goalsSourceConversation')
-                : $t('expertCaseReviews.goalsSourceSnapshot') }}
-            </p>
-            <p
-              v-if="!memberGoals.length"
-              class="mt-2 text-sm text-muted"
+                <div class="flex max-h-[28rem] flex-col lg:absolute lg:inset-0 lg:max-h-none">
+                  <h3 class="shrink-0 font-medium text-highlighted">
+                    {{ $t('expertCaseReviews.messagesTitle') }}
+                  </h3>
+                  <p
+                    v-if="!chatMessages.length"
+                    class="mt-2 text-sm text-muted"
+                  >
+                    {{ $t('expertCaseReviews.messagesEmpty') }}
+                  </p>
+                  <div
+                    v-else
+                    class="mt-2 min-h-0 flex-1 overflow-y-auto rounded-lg border border-default bg-default px-2"
+                  >
+                    <UChatMessages
+                      :messages="chatMessages"
+                      :assistant="assistantMessage"
+                      :user="userMessage"
+                      :auto-scroll="false"
+                      :should-scroll-to-bottom="false"
+                      class="py-4"
+                    >
+                      <template #content="slotProps">
+                        <MarkdownPreview
+                          class="expert-case-chat-md"
+                          :source="chatMessageMarkdown(slotProps)"
+                        />
+                      </template>
+                    </UChatMessages>
+                  </div>
+                  <p
+                    v-if="messagesHasMore"
+                    class="mt-2 shrink-0 text-xs text-muted"
+                  >
+                    {{ $t('expertCaseReviews.messagesHasMore') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="border-t border-default pt-4"
+              data-testid="expert-case-report"
             >
-              {{ $t('expertCaseReviews.goalsEmpty') }}
+              <h3 class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
+                <span>{{ $t('expertCaseReviews.reportTitle') }}</span>
+                <UBadge
+                  v-if="missingReport"
+                  color="warning"
+                  variant="subtle"
+                  data-testid="expert-case-report-missing-chip"
+                >
+                  {{ $t('expertCaseReviews.missingReportChip') }}
+                </UBadge>
+              </h3>
+              <p
+                v-if="!healthReport"
+                class="mt-2 text-sm text-muted"
+              >
+                {{ $t('expertCaseReviews.reportEmpty') }}
+              </p>
+              <template v-else>
+                <p
+                  class="mt-1 text-xs text-muted"
+                  :title="healthReportStatus.title || undefined"
+                  data-testid="expert-case-report-status"
+                >
+                  {{ $t('expertCaseReviews.reportStatusLabel') }}：{{ healthReportStatus.text }}
+                </p>
+                <div
+                  v-if="healthReportResults.length"
+                  class="mt-2 max-h-80 overflow-y-auto rounded-lg border border-default"
+                >
+                  <ReportResultTable
+                    :results="healthReportResults"
+                    hide-scrollbar
+                  />
+                </div>
+              </template>
+            </div>
+          </template>
+        </section>
+
+        <!-- Per-plan card: left original (slim) · right working preview / revised -->
+        <section
+          class="space-y-4"
+          data-testid="expert-case-scheme-compare"
+        >
+          <p
+            v-if="!packages.length"
+            class="rounded-xl border border-default bg-elevated p-4 text-sm text-muted"
+          >
+            {{ $t('expertCaseReviews.noPackages') }}
+          </p>
+
+          <div
+            v-for="(pkg, pkgIndex) in packages"
+            :key="planCode(pkg)"
+            class="overflow-hidden rounded-xl border border-default bg-elevated"
+            :data-testid="`expert-case-plan-card-${planCode(pkg)}`"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-default px-4 py-3">
+              <div class="flex min-w-0 flex-wrap items-center gap-2">
+                <h3
+                  class="text-base font-semibold text-highlighted"
+                  :title="planDisplay(pkg).title || undefined"
+                >
+                  {{ planDisplay(pkg).text }}
+                </h3>
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-info"
+                  :title="$t('expertCaseReviews.weightBackgroundOpen')"
+                  :aria-label="$t('expertCaseReviews.weightBackgroundOpen')"
+                  data-testid="expert-case-weight-background-open"
+                  @click="openWeightBackground(pkg)"
+                />
+              </div>
+              <UButton
+                v-if="awaiting"
+                size="xs"
+                variant="soft"
+                color="primary"
+                :disabled="busy"
+                data-testid="expert-case-add-item"
+                @click="openAdd(pkg)"
+              >
+                {{ $t('expertCaseReviews.addItem') }}
+              </UButton>
+            </div>
+
+            <div class="grid grid-cols-1 gap-0 lg:grid-cols-2">
+              <div class="min-w-0 border-b border-default p-4 lg:border-b-0 lg:border-r">
+                <p class="text-xs font-medium text-muted">
+                  {{ $t('expertCaseReviews.original') }}
+                </p>
+                <p
+                  class="mt-0.5 text-xs text-muted"
+                  :data-testid="pkgIndex === 0 ? 'expert-case-dose-capsule-hint' : undefined"
+                >
+                  {{ $t('expertCaseReviews.doseCapsuleHint') }}
+                </p>
+                <p
+                  v-if="!packageItems(pkg).length"
+                  class="mt-3 text-sm text-muted"
+                >
+                  {{ $t('expertCaseReviews.noItems') }}
+                </p>
+                <ul
+                  v-else
+                  class="mt-3 divide-y divide-default"
+                >
+                  <li
+                    v-for="item in packageItems(pkg)"
+                    :key="itemId(item)"
+                    class="flex flex-wrap items-start justify-between gap-3 py-3"
+                    :class="{
+                      'opacity-60': isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))
+                    }"
+                    :data-testid="`expert-case-item-${itemId(item)}`"
+                  >
+                    <div class="min-w-0 flex-1">
+                      <p
+                        class="font-medium text-highlighted"
+                        :class="{
+                          'line-through text-muted': isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))
+                        }"
+                        :title="itemDisplayName(item, t).title || undefined"
+                        data-testid="expert-case-item-name"
+                      >
+                        {{ itemTitle(item) }}
+                      </p>
+                      <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                        <UBadge
+                          v-if="item.tier"
+                          :color="tierLabelKey(item.tier) === 'primary'
+                            ? 'primary'
+                            : tierLabelKey(item.tier) === 'secondary' ? 'info' : 'neutral'"
+                          variant="subtle"
+                          data-testid="expert-case-item-tier"
+                          :title="tierText(item.tier).title || undefined"
+                        >
+                          {{ tierText(item.tier).text }}
+                        </UBadge>
+                        <span data-testid="expert-case-item-suggestion">
+                          {{ suggestionLineText(item) }}
+                        </span>
+                        <span
+                          v-if="decisionDisplay(lineKey(planCode(pkg), itemId(item)))"
+                          :title="decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.title || undefined"
+                          data-testid="expert-case-item-decision"
+                        >
+                          · {{ decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.text }}
+                        </span>
+                      </p>
+                      <p
+                        v-if="formatScoreNorm(item.score_norm)"
+                        class="mt-1 text-sm font-semibold tabular-nums text-primary"
+                        data-testid="expert-case-item-score"
+                      >
+                        {{ formatScoreNorm(item.score_norm) }}
+                      </p>
+                    </div>
+                    <UButton
+                      v-if="awaiting"
+                      size="xs"
+                      variant="soft"
+                      :disabled="busy"
+                      data-testid="expert-case-edit-item"
+                      @click="openEdit(pkg, item)"
+                    >
+                      {{ $t('expertCaseReviews.editItem') }}
+                    </UButton>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="min-w-0 p-4">
+                <p class="text-xs font-medium text-muted">
+                  {{ comparisonTitle }}
+                </p>
+                <template v-if="comparisonPackageFor(planCode(pkg))">
+                  <details
+                    v-if="comparisonPackageFor(planCode(pkg))!.composition_hash"
+                    class="mt-2 text-xs text-muted"
+                    data-testid="expert-case-composition-hash"
+                  >
+                    <summary class="cursor-pointer">
+                      {{ $t('expertCaseReviews.techDetails') }}
+                    </summary>
+                    <p class="mt-1 font-mono break-all">
+                      composition_hash：{{ comparisonPackageFor(planCode(pkg))!.composition_hash }}
+                    </p>
+                  </details>
+                  <p
+                    v-if="!packageItems(comparisonPackageFor(planCode(pkg))!).length"
+                    class="mt-3 text-sm text-muted"
+                  >
+                    {{ $t('expertCaseReviews.noItems') }}
+                  </p>
+                  <ul
+                    v-else
+                    class="mt-3 space-y-2 text-sm"
+                  >
+                    <li
+                      v-for="item in packageItems(comparisonPackageFor(planCode(pkg))!)"
+                      :key="`cmp-item-${itemId(item)}-${item.is_new ? 'new' : 'orig'}`"
+                      class="space-y-0.5"
+                    >
+                      <p
+                        :class="{ 'line-through text-muted': item.removed === true }"
+                        :title="itemDisplayName(item, t).title || undefined"
+                        data-testid="expert-case-cmp-item-name"
+                      >
+                        {{ itemTitle(item) }}
+                      </p>
+                      <p
+                        v-if="!item.removed && doseDisplayText(item)"
+                        class="text-xs text-muted"
+                        data-testid="expert-case-cmp-item-dose"
+                      >
+                        {{ doseDisplayText(item) }}
+                      </p>
+                      <p class="text-xs text-muted">
+                        <span
+                          v-if="item.is_new"
+                          class="text-primary"
+                        >
+                          {{ $t('expertCaseReviews.addedBadge') }}
+                        </span>
+                        <span
+                          v-if="item.decision && !revisedPackages.length"
+                          :title="mapDecisionLabel(item.decision, t)?.title || undefined"
+                          data-testid="expert-case-cmp-decision"
+                        >
+                          <template v-if="item.is_new"> · </template>
+                          {{ mapDecisionLabel(item.decision, t)?.text }}
+                        </span>
+                        <span v-if="item.display_reason">
+                          — {{ item.display_reason }}
+                        </span>
+                      </p>
+                    </li>
+                  </ul>
+                </template>
+                <p
+                  v-else
+                  class="mt-3 text-sm text-muted"
+                >
+                  {{ $t('expertCaseReviews.noItems') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 定稿對話文案：方案／權重下方獨立卡 -->
+        <ExpertCaseFinalizeCopyCard
+          v-model:report-highlights="finalizeReportHighlights"
+          v-model:expert-opinion="finalizeExpertOpinion"
+          :case-id="caseId"
+          :locked="reviewed"
+          :missing-goals="missingGoals"
+          :missing-report="missingReport"
+          @generating-change="finalizeGenerating = $event"
+        />
+
+        <details
+          class="group rounded-xl border border-default bg-elevated"
+          data-testid="expert-case-excluded"
+        >
+          <summary class="cursor-pointer list-none px-4 py-3 font-semibold text-highlighted marker:content-none [&::-webkit-details-marker]:hidden">
+            <span class="inline-flex items-center gap-2">
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-4 shrink-0 transition-transform group-open:rotate-90"
+              />
+              {{ $t('expertCaseReviews.excludedTitle') }}
+            </span>
+          </summary>
+          <div class="border-t border-default px-4 py-3">
+            <p
+              v-if="!excludedRows.length"
+              class="text-sm text-muted"
+            >
+              {{ $t('expertCaseReviews.excludedEmpty') }}
             </p>
             <ul
               v-else
-              class="mt-2 list-disc space-y-1 ps-5 text-sm"
+              class="divide-y divide-default"
             >
               <li
-                v-for="(goal, goalIndex) in memberGoals"
-                :key="`${goal.text}-${goalIndex}`"
-                :title="goal.title || undefined"
+                v-for="row in excludedRows"
+                :key="row.sellable_item_id"
+                class="py-3 text-sm"
+                :data-testid="`expert-case-excluded-${row.sellable_item_id}`"
               >
-                {{ goal.text }}
+                <p
+                  class="font-medium text-highlighted"
+                  :title="excludedItemName(row).title || undefined"
+                >
+                  {{ excludedItemName(row).text }}
+                </p>
+                <p
+                  class="mt-1 text-muted"
+                  data-testid="expert-case-excluded-reason"
+                  :title="excludedReasonDisplay(row.reason_code).title || undefined"
+                >
+                  {{ excludedReasonDisplay(row.reason_code).text }}
+                </p>
               </li>
             </ul>
           </div>
+        </details>
 
-          <div data-testid="expert-case-messages">
-            <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.messagesTitle') }}
-            </h3>
-            <p
-              v-if="!chatMessages.length"
-              class="mt-2 text-sm text-muted"
-            >
-              {{ $t('expertCaseReviews.messagesEmpty') }}
-            </p>
-            <div
-              v-else
-              class="mt-2 max-h-80 overflow-y-auto rounded-lg border border-default px-2"
-            >
-              <UChatMessages
-                :messages="chatMessages"
-                :assistant="assistantMessage"
-                :user="userMessage"
-                :auto-scroll="false"
-                :should-scroll-to-bottom="false"
-                class="py-4"
+        <details
+          class="group rounded-xl border border-default bg-elevated"
+          data-testid="expert-case-adjustments"
+        >
+          <summary class="cursor-pointer list-none px-4 py-3 font-semibold text-highlighted marker:content-none [&::-webkit-details-marker]:hidden">
+            <span class="inline-flex items-center gap-2">
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-4 shrink-0 transition-transform group-open:rotate-90"
               />
-            </div>
-            <p
-              v-if="messagesHasMore"
-              class="mt-2 text-xs text-muted"
-            >
-              {{ $t('expertCaseReviews.messagesHasMore') }}
+              {{ $t('expertCaseReviews.adjustmentsTitle') }}
+            </span>
+          </summary>
+          <div class="border-t border-default px-4 py-3">
+            <p class="text-xs text-muted">
+              {{ $t('expertCaseReviews.adjustmentsMemberFacingHint') }}
             </p>
-          </div>
-
-          <div data-testid="expert-case-report">
-            <h3 class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
-              <span>{{ $t('expertCaseReviews.reportTitle') }}</span>
-              <UBadge
-                v-if="missingReport"
-                color="warning"
-                variant="subtle"
-                data-testid="expert-case-report-missing-chip"
+            <p class="mt-1 text-xs text-muted">
+              {{ $t('expertCaseReviews.adjustmentsAdminOnlyHint') }}
+            </p>
+            <p
+              v-if="!adjustments.length"
+              class="mt-3 text-sm text-muted"
+            >
+              {{ $t('expertCaseReviews.adjustmentsEmpty') }}
+            </p>
+            <ul
+              v-else
+              class="mt-3 space-y-3"
+            >
+              <li
+                v-for="(row, index) in adjustments"
+                :key="`${row.type}-${row.package_plan_code}-${index}`"
+                class="rounded-lg border border-default p-3 text-sm"
+                :data-testid="`expert-case-adjustment-${row.type}-${index}`"
               >
-                {{ $t('expertCaseReviews.missingReportChip') }}
-              </UBadge>
-            </h3>
-            <p
-              v-if="!healthReport"
-              class="mt-2 text-sm text-muted"
+                <p class="font-medium text-highlighted">
+                  <span :title="adjustmentTypeText(row.type).title || undefined">
+                    {{ adjustmentTypeText(row.type).text }}
+                  </span>
+                  ·
+                  <span :title="planCodeDisplay(row.package_plan_code).title || undefined">
+                    {{ planCodeDisplay(row.package_plan_code).text }}
+                  </span>
+                </p>
+                <p class="mt-1 text-muted">
+                  {{ $t('expertCaseReviews.adjustmentOriginal') }}：
+                  {{ adjustmentItemLabel(row.original_item) }}
+                </p>
+                <p class="mt-1 text-muted">
+                  {{ $t('expertCaseReviews.adjustmentNew') }}：
+                  {{ adjustmentItemLabel(row.new_item) }}
+                </p>
+                <p
+                  v-if="row.reason"
+                  class="mt-2"
+                  data-testid="expert-case-adjustment-reason"
+                >
+                  <span class="text-xs text-muted">
+                    {{ adjustmentReasonIsMemberFacing(row.type)
+                      ? $t('expertCaseReviews.adjustmentReasonMember')
+                      : $t('expertCaseReviews.adjustmentReasonAdmin') }}：
+                  </span>
+                  {{ row.reason }}
+                </p>
+                <p class="mt-2 text-xs text-muted">
+                  {{ $t('expertCaseReviews.adjustmentOperator') }}：
+                  <span
+                    :title="!row.operator_display_name
+                      ? (operatorDisplay(row).role?.title || undefined)
+                      : undefined"
+                  >
+                    {{ operatorDisplay(row).primary }}
+                  </span>
+                  <span
+                    v-if="row.operator_display_name && operatorDisplay(row).role"
+                    :title="operatorDisplay(row).role?.title || undefined"
+                  >
+                    （{{ operatorDisplay(row).role?.text }}）
+                  </span>
+                  <span
+                    v-if="formatDateTime(row.adjusted_at)"
+                    class="ms-2"
+                  >
+                    · {{ $t('expertCaseReviews.adjustmentAt') }}：{{ formatDateTime(row.adjusted_at) }}
+                  </span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </details>
+
+        <details
+          v-if="knowledge.length"
+          class="group rounded-xl border border-default bg-elevated"
+          data-testid="expert-case-knowledge"
+        >
+          <summary class="cursor-pointer list-none px-4 py-3 font-semibold text-highlighted marker:content-none [&::-webkit-details-marker]:hidden">
+            <span class="inline-flex items-center gap-2">
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-4 shrink-0 transition-transform group-open:rotate-90"
+              />
+              {{ $t('expertCaseReviews.knowledge') }}
+            </span>
+          </summary>
+          <div class="space-y-3 border-t border-default px-4 py-3">
+            <div
+              v-for="row in knowledge"
+              :key="String(row.id)"
+              class="rounded-lg border border-default p-3 text-sm"
             >
-              {{ $t('expertCaseReviews.reportEmpty') }}
-            </p>
-            <template v-else>
+              <p class="font-medium">
+                <span :title="knowledgeDecision(row)?.title || undefined">
+                  {{ knowledgeDecision(row)?.text || $t('expertCaseReviews.other') }}
+                </span>
+                ·
+                <span :title="knowledgePlan(row).title || undefined">
+                  {{ knowledgePlan(row).text }}
+                </span>
+              </p>
+              <p class="mt-1 text-muted">
+                {{ row.reason || '—' }}
+              </p>
               <p
                 class="mt-1 text-xs text-muted"
-                :title="healthReportStatus.title || undefined"
-                data-testid="expert-case-report-status"
+                :title="knowledgeClassification(row).title || undefined"
+                data-testid="expert-case-knowledge-classification"
               >
-                {{ $t('expertCaseReviews.reportStatusLabel') }}：{{ healthReportStatus.text }}
+                {{ knowledgeClassification(row).text }}
               </p>
-              <div
-                v-if="healthReportResults.length"
-                class="mt-2 max-h-80 overflow-y-auto rounded-lg border border-default"
+              <p
+                v-if="!row.classification_confirmed"
+                class="mt-2 text-xs text-muted"
               >
-                <ReportResultTable
-                  :results="healthReportResults"
-                  hide-scrollbar
-                />
-              </div>
-            </template>
+                {{ $t('expertCaseReviews.classificationViaDailyLearning') }}
+              </p>
+            </div>
           </div>
-        </template>
-      </section>
+        </details>
+      </div>
+    </template>
 
-      <!-- Dev-only engine background: numbers only visible when expanded -->
-      <details
-        class="mb-8 rounded-xl border border-default bg-elevated p-4"
-        data-testid="expert-case-weight-background"
-      >
-        <summary
-          class="cursor-pointer font-semibold text-highlighted"
-          data-testid="expert-case-weight-background-summary"
-        >
-          {{ $t('expertCaseReviews.weightBackgroundTitle') }}
-        </summary>
+    <UModal
+      v-model:open="profileUpdateOpen"
+      :title="$t('expertCaseReviews.profileUpdateBanner')"
+      data-testid="expert-case-profile-updates"
+    >
+      <template #body>
+        <div class="space-y-2 text-sm">
+          <p
+            v-if="formatDateTime(profileUpdate?.updated_at)"
+            class="text-muted"
+            data-testid="expert-case-profile-updated-at"
+          >
+            {{ $t('expertCaseReviews.profileUpdateAt', {
+              time: formatDateTime(profileUpdate?.updated_at)
+            }) }}
+          </p>
+          <p
+            v-if="changedFieldLabels.length"
+            class="text-muted"
+            data-testid="expert-case-profile-changed-fields"
+          >
+            {{ $t('expertCaseReviews.profileChangedFields', {
+              fields: changedFieldLabels.join('、')
+            }) }}
+          </p>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="weightBackgroundOpen"
+      :title="$t('expertCaseReviews.weightBackgroundTitle')"
+      :description="weightBackgroundPlanLabel.text"
+      :ui="{ content: 'sm:max-w-3xl' }"
+      data-testid="expert-case-weight-background"
+    >
+      <template #body>
         <div
-          class="mt-4 space-y-6 text-sm"
+          class="max-h-[70vh] space-y-6 overflow-y-auto text-sm"
           data-testid="expert-case-weight-background-body"
         >
           <p class="text-xs text-muted">
@@ -1538,25 +1996,19 @@ function isCustomerRole(value: unknown) {
               {{ $t('expertCaseReviews.weightRationaleTitle') }}
             </h3>
             <p
-              v-if="!weightRationales.length"
+              v-if="!weightBackgroundRationales.length"
               class="mt-2 text-muted"
             >
               {{ $t('expertCaseReviews.weightRationaleEmpty') }}
             </p>
             <div
-              v-for="block in weightRationales"
+              v-for="block in weightBackgroundRationales"
               :key="block.package_plan_code"
               class="mt-3 rounded-lg border border-default p-3"
             >
               <p
-                class="font-medium text-highlighted"
-                :title="planCodeDisplay(block.package_plan_code, block.package_plan_name).title || undefined"
-              >
-                {{ planCodeDisplay(block.package_plan_code, block.package_plan_name).text }}
-              </p>
-              <p
                 v-if="block.headline"
-                class="mt-1 text-highlighted"
+                class="text-highlighted"
               >
                 {{ block.headline }}
               </p>
@@ -1627,13 +2079,13 @@ function isCustomerRole(value: unknown) {
               {{ $t('expertCaseReviews.weightContributionsTitle') }}
             </h3>
             <p
-              v-if="!weightContributionBlocks.length"
+              v-if="!weightBackgroundContributions.length"
               class="mt-2 text-muted"
             >
               {{ $t('expertCaseReviews.weightContributionsEmpty') }}
             </p>
             <div
-              v-for="block in weightContributionBlocks"
+              v-for="block in weightBackgroundContributions"
               :key="block.sellable_item_id || block.name || 'item'"
               class="mt-3 rounded-lg border border-default p-3"
             >
@@ -1679,493 +2131,22 @@ function isCustomerRole(value: unknown) {
             </div>
           </div>
         </div>
-      </details>
+      </template>
+    </UModal>
 
-      <!-- Left: original_snapshot · Right: revised_snapshot or working_decisions preview -->
-      <section
-        class="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2"
-        data-testid="expert-case-scheme-compare"
-      >
-        <div class="min-w-0 rounded-xl border border-default bg-elevated p-4">
-          <h2 class="text-lg font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.original') }}
-          </h2>
-          <p class="mt-1 text-xs text-muted">
-            {{ $t('expertCaseReviews.originalHint') }}
-          </p>
-          <p class="mt-1 text-xs text-muted">
-            {{ $t('expertCaseReviews.schemePlainHint') }}
-          </p>
-          <p
-            class="mt-1 text-xs text-muted"
-            data-testid="expert-case-dose-capsule-hint"
-          >
-            {{ $t('expertCaseReviews.doseCapsuleHint') }}
-          </p>
-          <div
-            v-if="!packages.length"
-            class="mt-4 text-sm text-muted"
-          >
-            {{ $t('expertCaseReviews.noPackages') }}
-          </div>
-          <div
-            v-for="pkg in packages"
-            :key="planCode(pkg)"
-            class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3
-                class="font-medium text-highlighted"
-                :title="planDisplay(pkg).title || undefined"
-              >
-                {{ planDisplay(pkg).text }}
-              </h3>
-              <UButton
-                v-if="awaiting"
-                size="xs"
-                variant="soft"
-                color="primary"
-                :disabled="busy"
-                data-testid="expert-case-add-item"
-                @click="openAdd(pkg)"
-              >
-                {{ $t('expertCaseReviews.addItem') }}
-              </UButton>
-            </div>
-            <p
-              v-if="!packageItems(pkg).length"
-              class="mt-2 text-sm text-muted"
-            >
-              {{ $t('expertCaseReviews.noItems') }}
-            </p>
-            <ul
-              v-else
-              class="mt-3 divide-y divide-default"
-            >
-              <li
-                v-for="item in packageItems(pkg)"
-                :key="itemId(item)"
-                class="py-3"
-                :class="{
-                  'opacity-60': isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))
-                }"
-                :data-testid="`expert-case-item-${itemId(item)}`"
-              >
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                  <div class="min-w-0 flex-1">
-                    <p
-                      class="font-medium text-highlighted"
-                      :class="{
-                        'line-through text-muted': isCapsuleDoseHidden(lineDecision(planCode(pkg), itemId(item)))
-                      }"
-                      :title="itemDisplayName(item, t).title || undefined"
-                      data-testid="expert-case-item-name"
-                    >
-                      {{ itemTitle(item) }}
-                    </p>
-                    <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                      <UBadge
-                        v-if="item.tier"
-                        :color="tierLabelKey(item.tier) === 'primary'
-                          ? 'primary'
-                          : tierLabelKey(item.tier) === 'secondary' ? 'info' : 'neutral'"
-                        variant="subtle"
-                        data-testid="expert-case-item-tier"
-                        :title="tierText(item.tier).title || undefined"
-                      >
-                        {{ tierText(item.tier).text }}
-                      </UBadge>
-                      <span
-                        data-testid="expert-case-item-suggestion"
-                      >
-                        {{ suggestionLineText(item) }}
-                      </span>
-                      <span
-                        v-if="decisionDisplay(lineKey(planCode(pkg), itemId(item)))"
-                        :title="decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.title || undefined"
-                        data-testid="expert-case-item-decision"
-                      >
-                        · {{ decisionDisplay(lineKey(planCode(pkg), itemId(item)))?.text }}
-                      </span>
-                    </p>
-                    <p
-                      v-if="itemRationaleText(item.item_rationale)"
-                      class="mt-1 text-sm text-muted"
-                      data-testid="expert-case-item-rationale"
-                    >
-                      {{ itemRationaleText(item.item_rationale) }}
-                    </p>
-                  </div>
-                  <div
-                    v-if="formatScoreNorm(item.score_norm)"
-                    class="shrink-0 text-end"
-                    data-testid="expert-case-item-score-line"
-                  >
-                    <p
-                      class="text-lg font-bold tabular-nums text-primary"
-                      data-testid="expert-case-item-score"
-                    >
-                      {{ formatScoreNorm(item.score_norm) }}
-                    </p>
-                    <p class="mt-0.5 max-w-[10rem] text-[11px] leading-snug text-muted">
-                      {{ $t('expertCaseReviews.scoreTooltip') }}
-                    </p>
-                  </div>
-                </div>
-                <div
-                  v-if="awaiting"
-                  class="mt-3 flex flex-wrap gap-2"
-                >
-                  <UButton
-                    size="xs"
-                    variant="soft"
-                    :color="isDecisionActive(planCode(pkg), itemId(item), 'approve') ? 'primary' : 'neutral'"
-                    :disabled="busy"
-                    data-testid="expert-case-approve"
-                    @click="decide(pkg, item, 'approve')"
-                  >
-                    {{ $t('expertCaseReviews.approve') }}
-                  </UButton>
-                  <UButton
-                    size="xs"
-                    color="error"
-                    variant="soft"
-                    :disabled="busy"
-                    data-testid="expert-case-reject"
-                    @click="decide(pkg, item, 'reject')"
-                  >
-                    {{ $t('expertCaseReviews.reject') }}
-                  </UButton>
-                  <UButton
-                    size="xs"
-                    :color="isDecisionActive(planCode(pkg), itemId(item), 'adjust') ? 'primary' : 'warning'"
-                    variant="soft"
-                    :disabled="busy"
-                    data-testid="expert-case-adjust-dose"
-                    @click="adjustDose(pkg, item)"
-                  >
-                    {{ $t('expertCaseReviews.adjust') }}
-                  </UButton>
-                  <UButton
-                    size="xs"
-                    color="primary"
-                    variant="outline"
-                    :disabled="busy"
-                    data-testid="expert-case-swap"
-                    @click="openSwap(pkg, item)"
-                  >
-                    {{ $t('expertCaseReviews.swapItem') }}
-                  </UButton>
-                </div>
-                <div
-                  v-if="awaiting"
-                  class="mt-2"
-                >
-                  <UInput
-                    v-model="reasonByLine[lineKey(planCode(pkg), itemId(item))]"
-                    :placeholder="$t('expertCaseReviews.reason')"
-                    size="sm"
-                    data-testid="expert-case-inline-reason"
-                  />
-                  <p
-                    class="mt-1 text-xs text-muted"
-                    data-testid="expert-case-inline-reason-hint"
-                  >
-                    {{ $t('expertCaseReviews.reasonAdminOnlyHint') }}
-                  </p>
-                </div>
-                <ExpertCaseLineDosePanel
-                  :decision="lineDecision(planCode(pkg), itemId(item))"
-                  :awaiting="awaiting"
-                  :model-value="doseByLine[lineKey(planCode(pkg), itemId(item))] ?? suggestedCapsuleCount(item)"
-                  :suggested-count="suggestedCapsuleCount(item)"
-                  :busy="busy"
-                  :invalid="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))] === $t('expertCaseReviews.doseInvalid')"
-                  test-id-prefix="expert-case"
-                  @update:model-value="onInlineDoseUpdate(pkg, item, $event)"
-                  @blur="onInlineDoseBlur(pkg, item)"
-                />
-                <p
-                  v-if="inlineErrorByLine[lineKey(planCode(pkg), itemId(item))]"
-                  class="mt-2 text-sm text-error"
-                  data-testid="expert-case-inline-error"
-                >
-                  {{ inlineErrorByLine[lineKey(planCode(pkg), itemId(item))] }}
-                </p>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="min-w-0 rounded-xl border border-default bg-elevated p-4">
-          <h2 class="text-lg font-semibold text-highlighted">
-            {{ comparisonTitle }}
-          </h2>
-          <p class="mt-1 text-xs text-muted">
-            {{ revisedPackages.length
-              ? $t('expertCaseReviews.revisedHint')
-              : $t('expertCaseReviews.workingPreviewHint') }}
-          </p>
-          <div
-            v-if="!comparisonPackages.length"
-            class="mt-4 text-sm text-muted"
-          >
-            {{ $t('expertCaseReviews.noPackages') }}
-          </div>
-          <div
-            v-for="pkg in comparisonPackages"
-            :key="`cmp-${planCode(pkg)}`"
-            class="mt-4 border-t border-default pt-4 first:mt-4 first:border-t-0 first:pt-0"
-          >
-            <h3
-              class="font-medium text-highlighted"
-              :title="planDisplay(pkg).title || undefined"
-            >
-              {{ planDisplay(pkg).text }}
-            </h3>
-            <details
-              v-if="pkg.composition_hash"
-              class="mt-1 text-xs text-muted"
-              data-testid="expert-case-composition-hash"
-            >
-              <summary class="cursor-pointer">
-                {{ $t('expertCaseReviews.techDetails') }}
-              </summary>
-              <p class="mt-1 font-mono break-all">
-                composition_hash：{{ pkg.composition_hash }}
-              </p>
-            </details>
-            <p
-              v-if="!packageItems(pkg).length"
-              class="mt-2 text-sm text-muted"
-            >
-              {{ $t('expertCaseReviews.noItems') }}
-            </p>
-            <ul
-              v-else
-              class="mt-3 space-y-2 text-sm"
-            >
-              <li
-                v-for="item in packageItems(pkg)"
-                :key="`cmp-item-${itemId(item)}-${item.is_new ? 'new' : 'orig'}`"
-                class="space-y-0.5"
-              >
-                <p
-                  :class="{ 'line-through text-muted': item.removed === true }"
-                  :title="itemDisplayName(item, t).title || undefined"
-                  data-testid="expert-case-cmp-item-name"
-                >
-                  {{ itemTitle(item) }}
-                </p>
-                <p
-                  v-if="!item.removed && doseDisplayText(item)"
-                  class="text-xs text-muted"
-                  data-testid="expert-case-cmp-item-dose"
-                >
-                  {{ doseDisplayText(item) }}
-                </p>
-                <p class="text-xs text-muted">
-                  <span
-                    v-if="item.is_new"
-                    class="text-primary"
-                  >
-                    {{ $t('expertCaseReviews.addedBadge') }}
-                  </span>
-                  <span
-                    v-if="item.decision && !revisedPackages.length"
-                    :title="mapDecisionLabel(item.decision, t)?.title || undefined"
-                    data-testid="expert-case-cmp-decision"
-                  >
-                    <template v-if="item.is_new"> · </template>
-                    {{ mapDecisionLabel(item.decision, t)?.text }}
-                  </span>
-                  <span
-                    v-if="item.display_reason"
-                  >
-                    — {{ item.display_reason }}
-                  </span>
-                </p>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <!-- 定稿對話文案：方案／權重下方獨立卡 -->
-      <ExpertCaseFinalizeCopyCard
-        v-model:report-highlights="finalizeReportHighlights"
-        v-model:expert-opinion="finalizeExpertOpinion"
-        :case-id="caseId"
-        :locked="reviewed"
-        :missing-goals="missingGoals"
-        :missing-report="missingReport"
-        @generating-change="finalizeGenerating = $event"
-      />
-
-      <section
-        class="mb-8 rounded-xl border border-default bg-elevated p-4"
-        data-testid="expert-case-excluded"
-      >
-        <h2 class="text-lg font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.excludedTitle') }}
-        </h2>
-        <p
-          v-if="!excludedRows.length"
-          class="mt-3 text-sm text-muted"
-        >
-          {{ $t('expertCaseReviews.excludedEmpty') }}
-        </p>
-        <ul
-          v-else
-          class="mt-3 divide-y divide-default"
-        >
-          <li
-            v-for="row in excludedRows"
-            :key="row.sellable_item_id"
-            class="py-3 text-sm"
-            :data-testid="`expert-case-excluded-${row.sellable_item_id}`"
-          >
-            <p
-              class="font-medium text-highlighted"
-              :title="excludedItemName(row).title || undefined"
-            >
-              {{ excludedItemName(row).text }}
-            </p>
-            <p
-              class="mt-1 text-muted"
-              data-testid="expert-case-excluded-reason"
-              :title="excludedReasonDisplay(row.reason_code).title || undefined"
-            >
-              {{ excludedReasonDisplay(row.reason_code).text }}
-            </p>
-          </li>
-        </ul>
-      </section>
-
-      <section
-        class="mb-8 rounded-xl border border-default bg-elevated p-4"
-        data-testid="expert-case-adjustments"
-      >
-        <h2 class="text-lg font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.adjustmentsTitle') }}
-        </h2>
-        <p class="mt-1 text-xs text-muted">
-          {{ $t('expertCaseReviews.adjustmentsMemberFacingHint') }}
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          {{ $t('expertCaseReviews.adjustmentsAdminOnlyHint') }}
-        </p>
-        <p
-          v-if="!adjustments.length"
-          class="mt-3 text-sm text-muted"
-        >
-          {{ $t('expertCaseReviews.adjustmentsEmpty') }}
-        </p>
-        <ul
-          v-else
-          class="mt-3 space-y-3"
-        >
-          <li
-            v-for="(row, index) in adjustments"
-            :key="`${row.type}-${row.package_plan_code}-${index}`"
-            class="rounded-lg border border-default p-3 text-sm"
-            :data-testid="`expert-case-adjustment-${row.type}-${index}`"
-          >
-            <p class="font-medium text-highlighted">
-              <span :title="adjustmentTypeText(row.type).title || undefined">
-                {{ adjustmentTypeText(row.type).text }}
-              </span>
-              ·
-              <span :title="planCodeDisplay(row.package_plan_code).title || undefined">
-                {{ planCodeDisplay(row.package_plan_code).text }}
-              </span>
-            </p>
-            <p class="mt-1 text-muted">
-              {{ $t('expertCaseReviews.adjustmentOriginal') }}：
-              {{ adjustmentItemLabel(row.original_item) }}
-            </p>
-            <p class="mt-1 text-muted">
-              {{ $t('expertCaseReviews.adjustmentNew') }}：
-              {{ adjustmentItemLabel(row.new_item) }}
-            </p>
-            <p
-              v-if="row.reason"
-              class="mt-2"
-              data-testid="expert-case-adjustment-reason"
-            >
-              <span class="text-xs text-muted">
-                {{ adjustmentReasonIsMemberFacing(row.type)
-                  ? $t('expertCaseReviews.adjustmentReasonMember')
-                  : $t('expertCaseReviews.adjustmentReasonAdmin') }}：
-              </span>
-              {{ row.reason }}
-            </p>
-            <p class="mt-2 text-xs text-muted">
-              {{ $t('expertCaseReviews.adjustmentOperator') }}：
-              <span
-                :title="!row.operator_display_name
-                  ? (operatorDisplay(row).role?.title || undefined)
-                  : undefined"
-              >
-                {{ operatorDisplay(row).primary }}
-              </span>
-              <span
-                v-if="row.operator_display_name && operatorDisplay(row).role"
-                :title="operatorDisplay(row).role?.title || undefined"
-              >
-                （{{ operatorDisplay(row).role?.text }}）
-              </span>
-              <span
-                v-if="formatDateTime(row.adjusted_at)"
-                class="ms-2"
-              >
-                · {{ $t('expertCaseReviews.adjustmentAt') }}：{{ formatDateTime(row.adjusted_at) }}
-              </span>
-            </p>
-          </li>
-        </ul>
-      </section>
-
-      <section
-        v-if="knowledge.length"
-        class="space-y-4"
-      >
-        <h2 class="text-lg font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.knowledge') }}
-        </h2>
-        <div
-          v-for="row in knowledge"
-          :key="String(row.id)"
-          class="rounded-xl border border-default p-4 text-sm"
-        >
-          <p class="font-medium">
-            <span :title="knowledgeDecision(row)?.title || undefined">
-              {{ knowledgeDecision(row)?.text || $t('expertCaseReviews.other') }}
-            </span>
-            ·
-            <span :title="knowledgePlan(row).title || undefined">
-              {{ knowledgePlan(row).text }}
-            </span>
-          </p>
-          <p class="mt-1 text-muted">
-            {{ row.reason || '—' }}
-          </p>
-          <p
-            class="mt-1 text-xs text-muted"
-            :title="knowledgeClassification(row).title || undefined"
-            data-testid="expert-case-knowledge-classification"
-          >
-            {{ knowledgeClassification(row).text }}
-          </p>
-          <p
-            v-if="!row.classification_confirmed"
-            class="mt-2 text-xs text-muted"
-          >
-            {{ $t('expertCaseReviews.classificationViaDailyLearning') }}
-          </p>
-        </div>
-      </section>
-    </template>
+    <ExpertCaseItemEditModal
+      v-model:open="editOpen"
+      :item-title="editItemTitle"
+      :suggestion-text="editSuggestionText"
+      :score-text="editScoreText"
+      :initial-decision="editInitialDecision"
+      :initial-reason="editInitialReason"
+      :initial-dose="editInitialDose"
+      :suggested-count="editSuggestedCount"
+      :busy="busy"
+      @apply="onEditApply"
+      @request-swap="onEditRequestSwap"
+    />
 
     <ExpertCaseItemChangeModal
       v-model:open="changeOpen"
@@ -2179,3 +2160,37 @@ function isCustomerRole(value: unknown) {
     />
   </PageHeader>
 </template>
+
+<style scoped>
+/* Inherit bubble text color (e.g. text-inverted on solid user) — beat MarkdownPreview tokens. */
+.expert-case-chat-md :deep(.privacy-md) {
+  color: inherit !important;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.expert-case-chat-md :deep(.privacy-md h1),
+.expert-case-chat-md :deep(.privacy-md h2),
+.expert-case-chat-md :deep(.privacy-md h3),
+.expert-case-chat-md :deep(.privacy-md h4),
+.expert-case-chat-md :deep(.privacy-md strong),
+.expert-case-chat-md :deep(.privacy-md a) {
+  color: inherit !important;
+}
+.expert-case-chat-md :deep(.privacy-md a) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.expert-case-chat-md :deep(.privacy-md code) {
+  background: color-mix(in oklab, currentColor 14%, transparent);
+}
+.expert-case-chat-md :deep(.privacy-md h1) {
+  font-size: 1.05rem;
+}
+.expert-case-chat-md :deep(.privacy-md h2) {
+  font-size: 1rem;
+}
+.expert-case-chat-md :deep(.privacy-md h3),
+.expert-case-chat-md :deep(.privacy-md h4) {
+  font-size: 0.925rem;
+}
+</style>

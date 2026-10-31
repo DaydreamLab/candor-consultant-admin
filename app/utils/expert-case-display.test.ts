@@ -192,6 +192,7 @@ describe('expert-case-display weight background parsers', () => {
       }]
     })
     expect(blocks).toHaveLength(1)
+    expect(blocks[0]?.package_plan_code).toBe('basic')
     expect(blocks[0]?.contributions[0]).toEqual([
       { key: 'signal', value: 'goal' },
       { key: 'weight', value: '0.5' }
