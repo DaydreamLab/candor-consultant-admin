@@ -11,7 +11,6 @@ const items: SellablePickRow[] = [
     sku: 'SKU-FO',
     sale_status: 'on_sale',
     daily_dose: 1,
-    daily_servings_min: 1,
     daily_servings_max: 2,
     spec_text: '1000 mg'
   }

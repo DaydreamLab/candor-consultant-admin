@@ -9,7 +9,6 @@ export type SellablePickRow = {
   sku: string
   sale_status: string
   daily_dose: number | null
-  daily_servings_min: number | null
   daily_servings_max: number | null
   /** SKU strength text (mg／IU…); muted suggestion only — not stepper unit. */
   spec_text: string | null
@@ -35,7 +34,6 @@ export function parseSellablePickRow(row: Record<string, unknown>): SellablePick
     sku: scalarText(row.sku).trim(),
     sale_status: scalarText(row.sale_status).trim().toLowerCase(),
     daily_dose: finiteNumber(row.daily_dose),
-    daily_servings_min: finiteNumber(row.daily_servings_min),
     daily_servings_max: finiteNumber(row.daily_servings_max),
     spec_text: specText || null
   }
@@ -66,12 +64,12 @@ export type DoseValidation
   = | { ok: true, dose: number }
     | { ok: false, code: 'required' | 'invalid' | 'below_min' | 'above_max', min: number | null, max: number | null }
 
-/** Align with sellable_item daily_servings_min／max when present. */
+/** Align with sellable_item daily_dose（floor）／daily_servings_max when present. */
 export function validateDailyDose(
   raw: string | number | null | undefined,
-  item: Pick<SellablePickRow, 'daily_servings_min' | 'daily_servings_max'> | null
+  item: Pick<SellablePickRow, 'daily_dose' | 'daily_servings_max'> | null
 ): DoseValidation {
-  const min = item?.daily_servings_min ?? null
+  const min = item?.daily_dose ?? null
   const max = item?.daily_servings_max ?? null
   if (raw === null || raw === undefined || String(raw).trim() === '') {
     return { ok: false, code: 'required', min, max }
@@ -95,9 +93,6 @@ export function defaultDoseForItem(item: SellablePickRow | null): string {
   }
   if (item.daily_dose !== null) {
     return String(item.daily_dose)
-  }
-  if (item.daily_servings_min !== null) {
-    return String(item.daily_servings_min)
   }
   return ''
 }

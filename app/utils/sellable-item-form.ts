@@ -1,6 +1,5 @@
 export const SAVE_ERROR_FIELDS = [
   'name_zh',
-  'daily_servings_min',
   'daily_servings_max',
   'daily_dose',
   'servings_per_container',

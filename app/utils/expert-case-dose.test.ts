@@ -43,11 +43,9 @@ describe('expert-case-dose', () => {
   it('defaults capsule dose with ceil ≥1', () => {
     expect(defaultCapsuleDoseForItem({
       daily_dose: 1.2,
-      daily_servings_min: 0.5
     })).toBe('2')
     expect(defaultCapsuleDoseForItem({
       daily_dose: null,
-      daily_servings_min: 0.5
     })).toBe('1')
     expect(defaultCapsuleDoseForItem(null)).toBe('1')
   })

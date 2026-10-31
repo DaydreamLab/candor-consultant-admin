@@ -31,7 +31,7 @@ type NutritionError = {
 }
 
 type IntegerKey = 'servings_per_container' | 'unit_price' | 'bottle_price' | 'pack_capacity'
-type DecimalKey = 'daily_servings_min' | 'daily_servings_max' | 'daily_dose'
+type DecimalKey = 'daily_servings_max' | 'daily_dose'
 
 type FormState = {
   code: string
@@ -42,7 +42,6 @@ type FormState = {
   spec_text: string
   servings_per_container: string
   serving_size_text: string
-  daily_servings_min: string
   daily_servings_max: string
   daily_dose: string
   unit_price: string
@@ -73,7 +72,6 @@ const onSaleFields: SaveErrorField[] = [
   'bottle_price',
   'unit_price',
   'servings_per_container',
-  'daily_servings_min',
   'daily_servings_max',
   'daily_dose'
 ]
@@ -219,21 +217,15 @@ function validate() {
       localErrors.servings_per_container = t('products.servingsRequired')
       ok = false
     }
-    const minValue = decimalValue(state.daily_servings_min)
-    const minOk = minValue != null && minValue > 0
-    if (!minOk) {
-      localErrors.daily_servings_min = t('products.dailyMinRequired')
+    const dose = decimalValue(state.daily_dose)
+    const doseOk = dose != null && dose > 0
+    if (!doseOk) {
+      localErrors.daily_dose = t('products.dailyDoseRequired')
       ok = false
     }
     const maxValue = decimalValue(state.daily_servings_max)
-    if (maxValue == null || maxValue <= 0 || (minOk && minValue != null && maxValue < minValue)) {
+    if (maxValue == null || maxValue <= 0 || (doseOk && dose != null && maxValue < dose)) {
       localErrors.daily_servings_max = t('products.dailyMaxRequired')
-      ok = false
-    }
-    const dose = decimalValue(state.daily_dose)
-    const boundsOk = minOk && maxValue != null && minValue != null && maxValue >= minValue && maxValue > 0
-    if (dose == null || dose <= 0 || (boundsOk && minValue != null && maxValue != null && (dose < minValue || dose > maxValue))) {
-      localErrors.daily_dose = t('products.dailyDoseRequired')
       ok = false
     }
   }
@@ -289,7 +281,6 @@ function writeBody() {
     body.sku = state.sku.trim()
   }
   assignInteger(body, 'servings_per_container', state.servings_per_container, updating)
-  assignDecimal(body, 'daily_servings_min', state.daily_servings_min, updating)
   assignDecimal(body, 'daily_servings_max', state.daily_servings_max, updating)
   assignDecimal(body, 'daily_dose', state.daily_dose, updating)
   assignInteger(body, 'unit_price', state.unit_price, updating)
@@ -398,7 +389,6 @@ function resetErrors() {
 function emptyFieldErrors(): Record<SaveErrorField, string> {
   return {
     name_zh: '',
-    daily_servings_min: '',
     daily_servings_max: '',
     daily_dose: '',
     servings_per_container: '',
@@ -452,7 +442,6 @@ function applyItem(item: Record<string, unknown> | null) {
     next.spec_text = scalarText(item.spec_text).trim() || scalarText(item.spec).trim()
     next.servings_per_container = integerText(item.servings_per_container)
     next.serving_size_text = scalarText(item.serving_size_text).trim()
-    next.daily_servings_min = decimalText(item.daily_servings_min)
     next.daily_servings_max = decimalText(item.daily_servings_max)
     next.daily_dose = decimalText(item.daily_dose)
     next.unit_price = integerText(item.unit_price)
@@ -490,7 +479,6 @@ function emptyState(): FormState {
     spec_text: '',
     servings_per_container: '',
     serving_size_text: '',
-    daily_servings_min: '',
     daily_servings_max: '',
     daily_dose: '',
     unit_price: '',
@@ -735,7 +723,7 @@ function scalarText(value: unknown) {
           {{ $t('products.sections.dose') }}
         </h2>
         <div class="mt-4 space-y-4">
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid gap-4 sm:grid-cols-3">
             <UFormField
               :label="$t('products.fields.servingsPerContainer')"
               :required="onSale"
@@ -767,17 +755,19 @@ function scalarText(value: unknown) {
                 {{ $t('products.fields.packCapacityHint') }}
               </p>
             </UFormField>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
             <UFormField
-              :label="$t('products.fields.dailyServingsMin')"
+              :label="$t('products.fields.dailyDose')"
               :required="onSale"
               :ui="requiredMark"
-              :error="fieldError('daily_servings_min') || undefined"
+              :error="fieldError('daily_dose') || undefined"
             >
               <UInput
-                :model-value="state.daily_servings_min"
+                :model-value="state.daily_dose"
                 inputmode="decimal"
                 class="w-full"
-                @update:model-value="setDecimal('daily_servings_min', $event)"
+                @update:model-value="setDecimal('daily_dose', $event)"
               />
             </UFormField>
             <UFormField
@@ -793,19 +783,8 @@ function scalarText(value: unknown) {
                 @update:model-value="setDecimal('daily_servings_max', $event)"
               />
             </UFormField>
-            <UFormField
-              :label="$t('products.fields.dailyDose')"
-              :required="onSale"
-              :ui="requiredMark"
-              :error="fieldError('daily_dose') || undefined"
-            >
-              <UInput
-                :model-value="state.daily_dose"
-                inputmode="decimal"
-                class="w-full"
-                @update:model-value="setDecimal('daily_dose', $event)"
-              />
-            </UFormField>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
             <UFormField
               :label="$t('products.fields.unitPrice')"
               :required="onSale"

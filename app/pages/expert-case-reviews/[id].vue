@@ -678,8 +678,7 @@ async function decide(
       : defaultCapsuleDoseForItem(
           catalogItem ?? {
             daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
-            daily_servings_min: null
-          }
+                      }
         )
     const doseCheck = validateCapsuleDose(fallback)
     if (!doseCheck.ok) {
@@ -729,8 +728,7 @@ function openSwap(pkg: Record<string, unknown>, item: Record<string, unknown>) {
     doseByLine.value[key] = defaultCapsuleDoseForItem(
       catalogItem ?? {
         daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
-        daily_servings_min: null
-      }
+              }
     )
   }
   changeOpen.value = true
@@ -959,8 +957,7 @@ function seedDoseIfEmpty(pkg: Record<string, unknown>, item: Record<string, unkn
   doseByLine.value[key] = defaultCapsuleDoseForItem(
     catalogItem ?? {
       daily_dose: typeof item.daily_dose === 'number' ? item.daily_dose : null,
-      daily_servings_min: null
-    }
+          }
   )
 }
 

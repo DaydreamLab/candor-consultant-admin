@@ -48,7 +48,7 @@ export function validateCapsuleDose(
 }
 
 export function defaultCapsuleDoseForItem(
-  item: Pick<SellablePickRow, 'daily_dose' | 'daily_servings_min'> | null | undefined
+  item: Pick<SellablePickRow, 'daily_dose'> | null | undefined
 ): string {
   if (!item) {
     return '1'
@@ -56,10 +56,6 @@ export function defaultCapsuleDoseForItem(
   const fromDose = ceilCapsuleDose(item.daily_dose)
   if (fromDose != null) {
     return String(fromDose)
-  }
-  const fromMin = ceilCapsuleDose(item.daily_servings_min)
-  if (fromMin != null) {
-    return String(fromMin)
   }
   return '1'
 }
