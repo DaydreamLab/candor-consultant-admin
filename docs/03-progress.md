@@ -62,7 +62,7 @@
 | Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 已接 | M2 |
 | 總覽 | `/`（側欄最上；stats-first 待辦／狀態；舊履約 `<details>` 收合） | 可用 | 已接（Wave-1：既有 list 長度累加；無新 overview／count API） | M3 |
 | 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
-| 出貨推進 | `/shipping`（語意 → shipment；列表／詳情讀取接 core #88 `shipments`／訂單 `shipment_id`，空／不可用回落 mock；推進／新增／刪除仍 Mock） | 可用 | 接線中 | M3 |
+| 出貨推進 | `/shipping`、`/shipping/{id}`（列表直連 `GET /admin/shipments`；內頁讀出貨列＋訂單方案組成／撿包份數，無對話；建立／推進仍 Mock） | 可用 | 接線中 | M3 |
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
 | 訂單 | `/orders` | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話／報告判讀／退款／發票 | `/orders/{id}`（詳情、對話與報告判讀可讀；整筆退款與發票重試已接；「在物流進度查看」深連結已接；取消仍 Mock） | 可用 | 接線中 | M3 |
@@ -171,7 +171,8 @@
 | 報告判讀 LLM 上限 | `GET`／`PATCH /admin/biomarker-interpretation-settings`（`max_llm_calls_per_read`；`null`／空／0＝不限制） | 接線中（待 core #81） |
 | 隱私權政策 | `GET /legal/privacy-policy`（公開）；`GET`／`PATCH /admin/legal/privacy-policy`；`GET …/versions`、`GET …/versions/{version}`（PATCH 僅 ops／admin；expert 403） | 接線中（待 core #87；設定頁左右並排 client-side diff；本機截圖可用 `NUXT_PUBLIC_PRIVACY_POLICY_MOCK=1`） |
 | CTA 目錄 | `GET`／`PATCH /admin/cta-catalog`、`GET`／`PATCH /admin/cta-catalog/{type}`、`GET`／`PATCH /admin/cta-catalog/situation-matrix`（對齊 [candor-core #98](https://github.com/DaydreamLab/candor-core/pull/98)；無 create／delete；寫入僅 admin） | Mock（client 路徑已對齊；待 core 合併部署後關 mock） |
-| 出貨列表／詳情 | `GET /admin/shipments`、`GET /admin/shipment/{id}`（core #88；不可用時由訂單 `shipment_id`／巢狀 `shipment` 回落；再空則 mock） | 接線中 |
+| 出貨列表 | `GET /admin/shipments`（篩選 `status`／`q`／`from`／`to`，分頁 `limit`／`offset`；列表頁直連，不再回落 mock） | 已接 |
+| 出貨詳情 | `/shipping/{id}`：`GET /admin/shipments?q=` 定位列＋`GET /admin/order/{id}` 取方案組成／`daily_dose`（撿包份數）；無對話、無獨立 `GET /admin/shipment/{id}` | 已接 |
 | 出貨建立／推進 | `POST`／`PATCH /admin/order/{id}/shipment` | Mock |
 
 ### Health reports（校正）

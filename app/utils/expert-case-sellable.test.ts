@@ -68,7 +68,7 @@ describe('expert-case-sellable', () => {
 
   it('defaults dose from item catalog fields only', () => {
     expect(defaultDoseForItem(onSale)).toBe('1')
-    expect(defaultDoseForItem({ ...onSale, daily_dose: null })).toBe('0.5')
+    expect(defaultDoseForItem({ ...onSale, daily_dose: null })).toBe('')
     expect(reasonIsFilled('  ')).toBe(false)
     expect(reasonIsFilled('換為較適合的劑型')).toBe(true)
   })

@@ -1,9 +1,5 @@
 import type { ShipmentRow } from '~/types/admin'
-import {
-  AdminApiError,
-  adminGetOrder,
-  adminListOrders
-} from '~/utils/admin-api'
+import { AdminApiError } from '~/utils/admin-api'
 import {
   mapAdminShipmentToRow,
   readShipmentListPayload
@@ -36,11 +32,6 @@ function readMessage(error: unknown) {
   return typeof data?.error_message === 'string' ? data.error_message : ''
 }
 
-function isUnavailable(error: unknown) {
-  const status = error instanceof AdminApiError ? error.statusCode : readStatus(error)
-  return status === 0 || status === 404 || status === 405 || status === 501 || status === 503
-}
-
 async function adminFetchSuccess(
   apiBase: string,
   token: string,
@@ -66,15 +57,24 @@ async function adminFetchSuccess(
   }
 }
 
-/** GET /admin/shipments — core #88 list when deployed. */
+/** GET /admin/shipments */
 export async function adminListShipments(
   apiBase: string,
   token: string,
-  query: { q?: string, status?: string, limit?: number, offset?: number } = {}
+  query: {
+    q?: string
+    status?: string
+    from?: string
+    to?: string
+    limit?: number
+    offset?: number
+  } = {}
 ): Promise<ShipmentRow[]> {
   const data = await adminFetchSuccess(apiBase, token, '/shipments', {
     ...(query.q ? { q: query.q } : {}),
     ...(query.status ? { status: query.status } : {}),
+    ...(query.from ? { from: query.from } : {}),
+    ...(query.to ? { to: query.to } : {}),
     ...(typeof query.limit === 'number' ? { limit: query.limit } : {}),
     ...(typeof query.offset === 'number' ? { offset: query.offset } : {})
   })
@@ -117,103 +117,4 @@ export async function adminGetOrderShipment(
   }
   const order = isRecord(data.order) ? data.order : { id: orderId }
   return mapAdminShipmentToRow(ship, order)
-}
-
-function orderHasShipmentHint(order: Record<string, unknown>) {
-  if (isRecord(order.shipment)) {
-    return true
-  }
-  const shipId = order.shipment_id
-  return typeof shipId === 'string'
-    ? Boolean(shipId.trim())
-    : typeof shipId === 'number' && Number.isFinite(shipId)
-}
-
-/**
- * Prefer GET /admin/shipments; if unavailable/empty, derive from orders that
- * expose shipment_id / nested shipment (core #88). Never invent endpoints.
- */
-export async function loadAdminShippingRows(
-  apiBase: string,
-  token: string
-): Promise<{ rows: ShipmentRow[], source: 'shipments' | 'orders' | 'empty' }> {
-  try {
-    const listed = await adminListShipments(apiBase, token, { limit: 100 })
-    if (listed.length) {
-      return { rows: listed, source: 'shipments' }
-    }
-  } catch (error) {
-    if (!isUnavailable(error)) {
-      throw error
-    }
-  }
-
-  const fromOrders = await loadShipmentsFromOrders(apiBase, token)
-  if (fromOrders.length) {
-    return { rows: fromOrders, source: 'orders' }
-  }
-  return { rows: [], source: 'empty' }
-}
-
-async function loadShipmentsFromOrders(
-  apiBase: string,
-  token: string
-): Promise<ShipmentRow[]> {
-  const orders = await adminListOrders(apiBase, token, { limit: 50, offset: 0 })
-  const byId = new Map<string, ShipmentRow>()
-
-  for (const order of orders) {
-    if (!isRecord(order)) {
-      continue
-    }
-    const nested = isRecord(order.shipment) ? order.shipment : null
-    if (nested) {
-      const mapped = mapAdminShipmentToRow(nested, order)
-      if (mapped) {
-        byId.set(mapped.id, mapped)
-      }
-      continue
-    }
-    if (!orderHasShipmentHint(order)) {
-      continue
-    }
-
-    const orderId = typeof order.id === 'string' || typeof order.id === 'number'
-      ? String(order.id)
-      : ''
-    if (!orderId) {
-      continue
-    }
-
-    try {
-      const viaNested = await adminGetOrderShipment(apiBase, token, orderId)
-      if (viaNested) {
-        byId.set(viaNested.id, viaNested)
-        continue
-      }
-    } catch (error) {
-      if (!isUnavailable(error)) {
-        // keep trying order detail
-      }
-    }
-
-    try {
-      const detail = await adminGetOrder(apiBase, token, orderId)
-      if (!isRecord(detail)) {
-        continue
-      }
-      const ship = isRecord(detail.shipment) ? detail.shipment : null
-      if (!ship) {
-        continue
-      }
-      const mapped = mapAdminShipmentToRow(ship, detail)
-      if (mapped) {
-        byId.set(mapped.id, mapped)
-      }
-    } catch {
-      // skip this order
-    }
-  }
-
-  return [...byId.values()]
 }

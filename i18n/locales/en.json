@@ -763,7 +763,7 @@
       "progress": "Tick the required form stages so Candor can track progress. Not consultation notes.",
       "products": "Catalog and stock on one page: names, Candor shipping labels, on-hand qty, and cost.",
       "selections": "Personalized-product plans only. Which items and qty to ship for this case — not purchasing, not editing the catalog.",
-      "shipping": "Scan shipment status across orders, enter tracking, and advance; per-order summaries stay on order detail.",
+      "shipping": "Scan shipment status and tracking across orders; open a row for order detail.",
       "invoices": "After fulfillment, invoice Candor.",
       "reports": "Shipped items, qty, and cost for reconciliation.",
       "orgs": "Company profile.",
@@ -776,7 +776,7 @@
       "progress": "Firms tick required form stages so Candor can track progress. Not consultation notes.",
       "products": "Each firm’s catalog and stock: names, Candor labels, on-hand qty, and cost.",
       "selections": "Premium only. Which items and qty to ship for this case — not purchasing, not editing the catalog.",
-      "shipping": "Scan shipment status across orders, enter tracking, and advance; per-order summaries stay on order detail.",
+      "shipping": "Scan shipment status and tracking across orders; open a row for order detail.",
       "invoices": "After fulfillment, the firm invoices Candor. Not Candor’s revenue-share ledger.",
       "reports": "Shipped items, qty, and cost. Candor sees all firms; each firm sees only itself.",
       "orgs": "Current partners: Younger, Dashu Pharmacy, Young Lion Pharmacy. Firm staff never see this list.",
@@ -2030,6 +2030,37 @@
     }
   },
   "shipping": {
+    "loading": "Loading…",
+    "failed": "Could not load shipments.",
+    "empty": "No shipments yet",
+    "detailFailed": "Could not load this shipment.",
+    "backToList": "Back to list",
+    "periodDays": "{days} days",
+    "packageEmpty": "This order has no package composition.",
+    "filters": {
+      "any": "All",
+      "q": "Search",
+      "qPlaceholder": "Order number, recipient, or tracking",
+      "status": "Shipment status",
+      "from": "Created from",
+      "to": "Created to"
+    },
+    "columns": {
+      "number": "Order number",
+      "recipient": "Recipient",
+      "status": "Status",
+      "tracking": "Tracking",
+      "updatedAt": "Updated",
+      "item": "Plan"
+    },
+    "sections": {
+      "package": "Package composition",
+      "packageHint": "Pick quantities from daily dose."
+    },
+    "packageColumns": {
+      "name": "Item",
+      "dose": "Pick qty"
+    },
     "expandHint": "Expand a row for the shipping timeline and items; use the side panel to create or edit.",
     "add": "Add shipment",
     "edit": "Edit shipment",
@@ -2048,8 +2079,6 @@
     "apiReadOnlyNote": "Showing core shipments (read-only). Advance / create / delete stay mock until write APIs are ready.",
     "emptyTitle": "No shipments yet",
     "emptyBody": "Paid orders that need shipping will appear here; you can also add a shipment manually.",
-    "loading": "Loading…",
-    "failed": "Could not load shipments. Please try again.",
     "retry": "Retry",
     "refresh": "Refresh",
     "errorTitle": "Unable to show shipments",

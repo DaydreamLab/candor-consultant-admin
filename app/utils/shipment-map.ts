@@ -1,6 +1,24 @@
-import type { ShipStatus, ShipmentEvent, ShipmentRow } from '~/types/admin'
+import type { ApiShipStatus, ShipStatus, ShipmentEvent, ShipmentRow } from '~/types/admin'
 import { SHIP_FLOW } from '~/utils/demo'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
+
+/** Map core shipment.status onto API filter / badge values. */
+export function mapApiShipStatus(raw: unknown): ApiShipStatus | null {
+  if (typeof raw !== 'string') {
+    return null
+  }
+  const value = raw.trim().toLowerCase()
+  if (value === 'picking' || value === 'pick' || value === 'picked') {
+    return 'picking'
+  }
+  if (value === 'in_transit' || value === 'shipped' || value === 'shipping' || value === 'transit') {
+    return 'in_transit'
+  }
+  if (value === 'arrived' || value === 'delivered' || value === 'delivered_at' || value === 'complete' || value === 'completed') {
+    return 'arrived'
+  }
+  return null
+}
 
 /** Map core shipment.status (and aliases) onto admin UI ShipStatus. */
 export function mapShipStatus(raw: unknown): ShipStatus | null {
@@ -198,6 +216,7 @@ export function mapAdminShipmentToRow(
   }
 
   const status = mapShipStatus(ship.status) ?? 'picking'
+  const apiStatus = mapApiShipStatus(ship.status)
   const orderId = scalarText(ship.order_id)
     || scalarText(order?.id)
     || scalarText(ship.orderId)
@@ -208,9 +227,14 @@ export function mapAdminShipmentToRow(
     || scalarText(ship.tracking)
     || null
   const shippedAt = timeText(ship.shipped_at) || null
+  const packagePlanName = scalarText(ship.package_plan_name)
+    || scalarText(order?.package_plan_name)
+    || null
+  const updatedAt = scalarText(ship.updated_at) || null
   const customer = recipientName(order)
     || scalarText(ship.customer)
     || scalarText(ship.recipient_name)
+    || scalarText(ship.member_display_name)
     || orderNo
     || id
   const items = itemsFromShipment(ship)
@@ -224,8 +248,11 @@ export function mapAdminShipmentToRow(
     orgId: scalarText(ship.org_id) || scalarText(order?.org_id) || '',
     customer,
     status,
+    apiStatus,
     tracking: tracking || null,
     shippedAt,
+    packagePlanName,
+    updatedAt,
     items: fallbackItems,
     events: eventsFromShipment(ship, status),
     source: 'api'

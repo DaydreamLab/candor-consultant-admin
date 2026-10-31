@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   displayOrderNo,
   mapAdminShipmentToRow,
+  mapApiShipStatus,
   mapShipStatus,
   readShipmentListPayload,
   shipmentSearchHaystack
@@ -22,6 +23,20 @@ describe('mapShipStatus', () => {
   })
 })
 
+describe('mapApiShipStatus', () => {
+  it('keeps API statuses', () => {
+    expect(mapApiShipStatus('picking')).toBe('picking')
+    expect(mapApiShipStatus('in_transit')).toBe('in_transit')
+    expect(mapApiShipStatus('arrived')).toBe('arrived')
+  })
+
+  it('maps aliases onto API statuses', () => {
+    expect(mapApiShipStatus('delivered')).toBe('arrived')
+    expect(mapApiShipStatus('shipped')).toBe('in_transit')
+    expect(mapApiShipStatus('picked')).toBe('picking')
+  })
+})
+
 describe('mapAdminShipmentToRow', () => {
   it('maps order_id / order_no / tracking_no and derives events', () => {
     const row = mapAdminShipmentToRow({
@@ -30,6 +45,8 @@ describe('mapAdminShipmentToRow', () => {
       order_no: 'ORD-1001',
       status: 'picking',
       tracking_no: null,
+      package_plan_name: '進階方案',
+      updated_at: '2026-10-26T02:00:00Z',
       picked_at: '2026-10-26T01:00:00Z',
       shipped_at: null,
       arrived_at: null
@@ -48,13 +65,16 @@ describe('mapAdminShipmentToRow', () => {
       orderNo: 'ORD-1001',
       customer: '王小明',
       status: 'picking',
+      apiStatus: 'picking',
+      packagePlanName: '進階方案',
+      updatedAt: '2026-10-26T02:00:00Z',
       source: 'api',
       items: [{ sku: 'SKU-A', qty: 2 }]
     })
     expect(row?.events.some(event => event.status === 'picking')).toBe(true)
   })
 
-  it('maps arrived status to delivered', () => {
+  it('maps arrived status to delivered UI and arrived API', () => {
     const row = mapAdminShipmentToRow({
       id: 'shp_2',
       status: 'arrived',
@@ -63,6 +83,7 @@ describe('mapAdminShipmentToRow', () => {
       picked_at: '2026-10-18T08:00:00Z'
     })
     expect(row?.status).toBe('delivered')
+    expect(row?.apiStatus).toBe('arrived')
   })
 })
 

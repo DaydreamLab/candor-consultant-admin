@@ -131,6 +131,8 @@ export interface ShipmentEvent {
   at: string
 }
 
+export type ApiShipStatus = 'picking' | 'in_transit' | 'arrived'
+
 export interface ShipmentRow {
   id: string
   caseId: string
@@ -141,8 +143,12 @@ export interface ShipmentRow {
   orgId: string
   customer: string
   status: ShipStatus
+  /** core shipments.status (list filters / badges); null for mock-only rows */
+  apiStatus?: ApiShipStatus | null
   tracking: string | null
   shippedAt: string | null
+  packagePlanName?: string | null
+  updatedAt?: string | null
   items: { sku: string, qty: number }[]
   events: ShipmentEvent[]
   /** api = loaded from core; mock = ops-store demo */

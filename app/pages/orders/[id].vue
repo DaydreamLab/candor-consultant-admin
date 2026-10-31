@@ -511,13 +511,17 @@ function shipmentFields(row: Record<string, unknown>): FieldRow[] {
 }
 
 const shippingProgressTo = computed(() => {
+  const id = shipmentId.value
+  if (id) {
+    return localePath(`/shipping/${encodeURIComponent(id)}`)
+  }
   const ship = shipment.value
   const tracking = typeof ship?.tracking_no === 'string' ? ship.tracking_no.trim() : ''
   const orderNo = typeof order.value?.order_no === 'string' ? order.value.order_no.trim() : ''
   return localePath({
     path: '/shipping',
     query: shippingProgressQuery({
-      shipmentId: shipmentId.value,
+      shipmentId: null,
       orderNo,
       trackingNo: tracking,
       orderId: orderId.value

@@ -1,266 +1,173 @@
 <script setup lang="ts">
-import type { TimelineItem, FormSubmitEvent } from '@nuxt/ui'
-import { SHIP_STATUS_COLOR } from '~/utils/labels'
-import { shipmentSchema } from '~/utils/schemas'
-import type { ShipmentForm } from '~/utils/schemas'
-import type { ShipmentRow, ShipStatus } from '~/types/admin'
-import { SHIP_FLOW } from '~/utils/demo'
+import type { ApiShipStatus, ShipmentRow } from '~/types/admin'
+import { AdminApiError } from '~/utils/admin-api'
+import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
-import { loadAdminShippingRows } from '~/utils/shipment-api'
-import {
-  displayOrderNo,
-  shipmentSearchHaystack
-} from '~/utils/shipment-map'
-import {
-  itemsSummary,
-  orderNoFromCaseId,
-  shipmentUpdatedAt
-} from '~/utils/shipping-display'
+import { adminListShipments } from '~/utils/shipment-api'
+import { displayOrderNo } from '~/utils/shipment-map'
+import { shipmentUpdatedAt } from '~/utils/shipping-display'
 
+type ShipColumn = 'number' | 'recipient' | 'status' | 'tracking' | 'updatedAt' | 'item'
+type BadgeColor = 'error' | 'primary' | 'success' | 'info' | 'warning' | 'neutral'
+type BadgeVariant = 'outline' | 'soft'
+type ColumnAlign = 'left' | 'center' | 'right'
+
+const PAGE_SIZE = 10
+const FETCH_SIZE = 50
 const FILTER_ANY = 'all'
+const API_SHIP_STATUSES = ['picking', 'in_transit', 'arrived'] as const
+const API_STATUS_SET = new Set<string>(API_SHIP_STATUSES)
+
+const STATUS_BADGE: Record<ApiShipStatus, { color: BadgeColor, variant: BadgeVariant }> = {
+  picking: { color: 'info', variant: 'soft' },
+  in_transit: { color: 'primary', variant: 'soft' },
+  arrived: { color: 'success', variant: 'soft' }
+}
 
 const config = useRuntimeConfig()
-const { locale, t } = useI18n()
+const localePath = useLocalePath()
 const route = useRoute()
-const { moduleDesc } = usePageCopy()
-const { scoped, showOrg, orgLabel, writable } = useOrgScope()
-const ops = useOpsStore()
-const feedback = useOpsFeedback()
-const { shipStatusOptions } = useSelectOptions()
+const { t } = useI18n()
 
-const selectedId = ref<string | null>(null)
-const creating = ref(false)
-const openIds = ref<string[]>([])
-const deleteId = ref<string | null>(null)
-const state = reactive<Partial<ShipmentForm>>({})
-const filterStatus = ref<string>(FILTER_ANY)
-const searchQ = ref('')
+const shipments = ref<ShipmentRow[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
-const highlightId = ref<string | null>(null)
-const apiRows = ref<ShipmentRow[]>([])
-const usingApi = ref(false)
+const page = ref(1)
+const hasMore = ref(false)
 let loadSeq = 0
+let nextOffset = 0
 
-const mockWritable = computed(() => writable.value && !usingApi.value)
+function queryString(name: string) {
+  const raw = route.query[name]
+  const value = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  return typeof value === 'string' ? value : ''
+}
 
-const allRows = computed(() => {
-  if (usingApi.value) {
-    return apiRows.value
-  }
-  return scoped(ops.shipments).map(row => ({ ...row, source: 'mock' as const }))
+const filterStatus = ref(
+  API_STATUS_SET.has(queryString('status')) ? queryString('status') : FILTER_ANY
+)
+const filterQ = ref(initialSearchQ())
+const filterFrom = ref('')
+const filterTo = ref('')
+const debouncedQ = ref(filterQ.value.trim())
+
+let qTimer: ReturnType<typeof setTimeout> | null = null
+
+function initialSearchQ() {
+  return queryString('q').trim()
+}
+
+const deepLinkShipmentId = computed(() => {
+  const shipment = queryString('shipment').trim() || queryString('id').trim()
+  return shipment
 })
 
-const statusFilterOptions = computed(() => [
-  { label: t('shipping.filterAny'), value: FILTER_ANY },
-  ...shipStatusOptions.value
+const columns: { key: ShipColumn, align: ColumnAlign, width?: string, truncate?: boolean }[] = [
+  { key: 'number', align: 'left', width: 'w-[13.5rem]' },
+  { key: 'recipient', align: 'left', width: 'w-[8rem]', truncate: true },
+  { key: 'status', align: 'center', width: 'w-[7rem]' },
+  { key: 'tracking', align: 'left', width: 'w-[10rem]', truncate: true },
+  { key: 'updatedAt', align: 'left', width: 'w-[9.5rem]' },
+  { key: 'item', align: 'left', truncate: true }
+]
+
+const statusOptions = computed(() => [
+  { label: t('shipping.filters.any'), value: FILTER_ANY },
+  ...API_SHIP_STATUSES.map(value => ({
+    label: t(`orders.shipmentStatus.${value}`),
+    value
+  }))
 ])
 
 const rows = computed(() => {
-  const q = searchQ.value.trim().toLowerCase()
-  return allRows.value.filter((row) => {
-    if (filterStatus.value !== FILTER_ANY && row.status !== filterStatus.value) {
-      return false
+  const start = (page.value - 1) * PAGE_SIZE
+  return shipments.value.slice(start, start + PAGE_SIZE)
+})
+const paginationTotal = computed(() => shipments.value.length + (hasMore.value ? 1 : 0))
+
+if (import.meta.client) {
+  watch(deepLinkShipmentId, (id) => {
+    if (!id) {
+      return
     }
-    if (!q) {
-      return true
+    void navigateTo(localePath(`/shipping/${encodeURIComponent(id)}`), { replace: true })
+  }, { immediate: true })
+
+  watch(filterQ, (value) => {
+    if (qTimer) {
+      clearTimeout(qTimer)
     }
-    return shipmentSearchHaystack(row).includes(q)
+    qTimer = setTimeout(() => {
+      debouncedQ.value = value.trim()
+    }, 300)
   })
-})
 
-const selected = computed(() => allRows.value.find(row => row.id === selectedId.value) ?? null)
-const detailOpen = computed(() => creating.value || Boolean(selected.value))
-
-const caseOptions = computed(() => {
-  const shipped = new Set(ops.shipments.map(row => row.caseId))
-  return scoped(ops.cases)
-    .filter(row => row.planId === 'premium' && (row.status === 'ship_due' || row.status === 'keyin_due' || shipped.has(row.id)))
-    .map(row => ({
-      label: `${orderNoFromCaseId(row.id)} · ${locale.value === 'en' ? row.customerEn : row.customer}`,
-      value: row.id
-    }))
-})
-
-function itemLabel(sku: string) {
-  const item = ops.productOf(sku)
-  if (!item) {
-    return sku
-  }
-  return locale.value === 'en' ? item.aLabelEn : item.aLabel
-}
-
-function summaryOf(row: ShipmentRow) {
-  return itemsSummary(
-    row.items,
-    itemLabel,
-    n => t('shipping.itemsMore', { n })
+  watch(
+    [filterStatus, debouncedQ, filterFrom, filterTo],
+    () => {
+      if (deepLinkShipmentId.value) {
+        return
+      }
+      void load(true)
+    },
+    { immediate: true }
   )
 }
 
-function updatedOf(row: ShipmentRow) {
-  return shipmentUpdatedAt(row.events, row.shippedAt) || t('status.na')
-}
-
-function itemsLine(row: ShipmentRow) {
-  return row.items
-    .map(item => `${itemLabel(item.sku)} ×${item.qty}`)
-    .join(', ')
-}
-
-function timelineItems(row: ShipmentRow): TimelineItem[] {
-  const byStatus = new Map(row.events.map(event => [event.status, event.at]))
-  const currentIndex = SHIP_FLOW.indexOf(row.status)
-  return SHIP_FLOW.map((status, index) => ({
-    value: status,
-    date: String(index + 1),
-    title: t(`status.${status}`),
-    description: byStatus.get(status) ?? (index <= currentIndex ? t('status.na') : ''),
-    icon: status === 'delivered' ? 'i-lucide-circle-check' : 'i-lucide-circle-dot'
-  }))
-}
-
-function nextStatus(row: ShipmentRow): ShipStatus | null {
-  const index = SHIP_FLOW.indexOf(row.status)
-  return SHIP_FLOW[index + 1] ?? null
-}
-
-function fillCreate() {
-  Object.assign(state, {
-    caseId: caseOptions.value[0]?.value ?? '',
-    status: 'picking',
-    tracking: ''
-  })
-}
-
-function fillEdit(row: ShipmentRow) {
-  Object.assign(state, {
-    caseId: row.caseId,
-    status: row.status,
-    tracking: row.tracking ?? ''
-  })
-}
-
-function openCreate() {
-  if (!mockWritable.value) {
-    return
+onUnmounted(() => {
+  if (qTimer) {
+    clearTimeout(qTimer)
   }
-  selectedId.value = null
-  creating.value = true
-  fillCreate()
-}
+})
 
-function selectRow(row: ShipmentRow) {
-  creating.value = false
-  selectedId.value = row.id
-  fillEdit(row)
-}
-
-function toggle(id: string) {
-  if (openIds.value.includes(id)) {
-    openIds.value = openIds.value.filter(item => item !== id)
-    return
-  }
-  openIds.value = [...openIds.value, id]
-}
-
-function isOpen(id: string) {
-  return openIds.value.includes(id)
-}
-
-function openRow(row: ShipmentRow) {
-  if (!isOpen(row.id)) {
-    toggle(row.id)
-  }
-  selectRow(row)
-}
-
-function closeDetail() {
-  creating.value = false
-  selectedId.value = null
-}
-
-function onSubmit(event: FormSubmitEvent<ShipmentForm>) {
-  if (!mockWritable.value) {
-    return
-  }
-  const data = event.data
-  const saved = ops.saveShipment({
-    id: selectedId.value ?? undefined,
-    caseId: data.caseId,
-    status: data.status,
-    tracking: data.tracking || null,
-    shippedAt: null
-  })
-  feedback.saved(data.caseId)
-  creating.value = false
-  if (saved) {
-    selectedId.value = saved.id
-    fillEdit(saved)
-  }
-}
-
-function confirmDelete() {
-  if (!deleteId.value || !mockWritable.value) {
-    return
-  }
-  ops.removeShipment(deleteId.value)
-  feedback.deleted(deleteId.value)
-  if (selectedId.value === deleteId.value) {
-    closeDetail()
-  }
-  openIds.value = openIds.value.filter(id => id !== deleteId.value)
-  deleteId.value = null
-}
-
-function advance(row: ShipmentRow) {
-  const next = nextStatus(row)
-  if (!next || !mockWritable.value) {
-    return
-  }
-  ops.saveShipment({
-    id: row.id,
-    caseId: row.caseId,
-    status: next,
-    tracking: row.tracking,
-    shippedAt: row.shippedAt
-  })
-  feedback.saved(row.caseId)
-}
-
-async function load() {
+async function load(reset: boolean) {
   const seq = ++loadSeq
+  const token = readOperatorToken()
+  if (!token) {
+    shipments.value = []
+    hasMore.value = false
+    errorMessage.value = t('shipping.failed')
+    pending.value = false
+    return
+  }
+
+  if (reset) {
+    shipments.value = []
+    page.value = 1
+    nextOffset = 0
+    hasMore.value = false
+  }
+
   pending.value = true
   errorMessage.value = ''
   try {
-    const token = readOperatorToken()
-    if (token) {
-      try {
-        const loaded = await loadAdminShippingRows(config.public.apiBase, token)
-        if (seq !== loadSeq) {
-          return
-        }
-        if (loaded.rows.length) {
-          apiRows.value = loaded.rows
-          usingApi.value = true
-          return
-        }
-      } catch {
-        // API unavailable / empty → mock fallback below so Pages demo still works.
-      }
-    }
+    const fetched = await adminListShipments(config.public.apiBase, token, {
+      status: filterStatus.value === FILTER_ANY ? undefined : filterStatus.value,
+      q: debouncedQ.value || undefined,
+      from: dateBound(filterFrom.value, 'start'),
+      to: dateBound(filterTo.value, 'end'),
+      limit: FETCH_SIZE,
+      offset: nextOffset
+    })
     if (seq !== loadSeq) {
       return
     }
-    apiRows.value = []
-    usingApi.value = false
-  } catch {
+    if (!reset && fetched.length === 0) {
+      hasMore.value = false
+      page.value = Math.max(1, Math.ceil(shipments.value.length / PAGE_SIZE))
+      return
+    }
+    shipments.value = reset ? fetched : [...shipments.value, ...fetched]
+    nextOffset += fetched.length
+    hasMore.value = fetched.length >= FETCH_SIZE
+  } catch (error) {
     if (seq !== loadSeq) {
       return
     }
-    apiRows.value = []
-    usingApi.value = false
-    errorMessage.value = t('shipping.failed')
+    shipments.value = []
+    hasMore.value = false
+    const message = error instanceof AdminApiError ? error.message.trim() : ''
+    errorMessage.value = message || t('shipping.failed')
   } finally {
     if (seq === loadSeq) {
       pending.value = false
@@ -268,464 +175,269 @@ async function load() {
   }
 }
 
-function findRowByQuery(id: string) {
-  const needle = id.trim()
-  return allRows.value.find(item => item.id === needle)
-    ?? allRows.value.find(item => displayOrderNo(item) === needle)
-    ?? allRows.value.find(item => item.orderNo === needle)
-    ?? allRows.value.find(item => item.orderId === needle)
-    ?? allRows.value.find(item => orderNoFromCaseId(item.caseId) === needle)
-    ?? allRows.value.find(item => item.caseId === needle)
-    ?? allRows.value.find(item => item.tracking === needle)
+function dateBound(value: string, edge: 'start' | 'end') {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return undefined
+  }
+  return edge === 'start' ? `${trimmed}T00:00:00` : `${trimmed}T23:59:59`
 }
 
-function applyRouteQuery() {
-  const q = route.query.q
-  if (typeof q === 'string' && q.trim()) {
-    searchQ.value = q.trim()
-  }
-  const shipment = route.query.shipment ?? route.query.id
-  if (typeof shipment === 'string' && shipment.trim()) {
-    const id = shipment.trim()
-    highlightId.value = id
-    const row = findRowByQuery(id)
-      ?? (typeof q === 'string' && q.trim() ? findRowByQuery(q.trim()) : undefined)
-    if (row) {
-      openIds.value = [row.id]
-      selectRow(row)
-      if (import.meta.client) {
-        nextTick(() => {
-          document.getElementById(`ship-row-${row.id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-        })
-      }
-    }
-  } else if (typeof q === 'string' && q.trim()) {
-    const row = findRowByQuery(q.trim())
-    if (row) {
-      highlightId.value = row.id
-      openIds.value = [row.id]
-      selectRow(row)
-      if (import.meta.client) {
-        nextTick(() => {
-          document.getElementById(`ship-row-${row.id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-        })
-      }
-    }
-  }
-}
-
-function clearHighlightSoon() {
-  if (!highlightId.value || !import.meta.client) {
+function goToPage(next: number) {
+  if (pending.value || next < 1 || next === page.value) {
     return
   }
-  window.setTimeout(() => {
-    highlightId.value = null
-  }, 2400)
+  page.value = next
+  const start = (next - 1) * PAGE_SIZE
+  if (start >= shipments.value.length && hasMore.value) {
+    void load(false)
+  }
 }
 
-watch(allRows, (list) => {
-  if (selectedId.value && !list.some(row => row.id === selectedId.value)) {
-    selectedId.value = null
-  }
-})
+function rowKey(row: ShipmentRow, index: number) {
+  return row.id || `ship-${index}`
+}
 
-watch(() => route.fullPath, () => {
-  if (import.meta.client && !pending.value) {
-    applyRouteQuery()
+function openRow(row: ShipmentRow) {
+  const id = typeof row.id === 'string' ? row.id.trim() : ''
+  if (!id) {
+    return
   }
-})
+  void navigateTo(localePath(`/shipping/${encodeURIComponent(id)}`))
+}
 
-onMounted(async () => {
-  await load()
-  applyRouteQuery()
-  clearHighlightSoon()
-})
+function columnLabel(key: ShipColumn) {
+  return t(`shipping.columns.${key}`)
+}
+
+function alignClass(align: ColumnAlign) {
+  if (align === 'center') {
+    return 'text-center'
+  }
+  if (align === 'right') {
+    return 'text-right'
+  }
+  return ''
+}
+
+function cellClass(column: { key: ShipColumn, align: ColumnAlign, truncate?: boolean }) {
+  const classes = [alignClass(column.align)]
+  if (column.truncate) {
+    classes.push('truncate')
+  }
+  if (column.key === 'number') {
+    classes.push('font-medium text-highlighted')
+  } else if (column.key === 'updatedAt') {
+    classes.push('text-muted')
+  }
+  return classes.filter(Boolean).join(' ')
+}
+
+function isBadgeColumn(key: ShipColumn) {
+  return key === 'status'
+}
+
+function apiStatusOf(row: ShipmentRow): ApiShipStatus | null {
+  if (row.apiStatus) {
+    return row.apiStatus
+  }
+  if (row.status === 'picking' || row.status === 'in_transit') {
+    return row.status
+  }
+  if (row.status === 'delivered') {
+    return 'arrived'
+  }
+  return null
+}
+
+function badgeOf(row: ShipmentRow) {
+  const value = apiStatusOf(row)
+  const style = value
+    ? STATUS_BADGE[value]
+    : { color: 'neutral' as const, variant: 'outline' as const }
+  return {
+    label: statusLabel(value),
+    color: style.color,
+    variant: style.variant
+  }
+}
+
+function statusLabel(value: ApiShipStatus | null) {
+  if (!value) {
+    return t('status.na')
+  }
+  const key = `orders.shipmentStatus.${value}`
+  const translated = t(key)
+  return translated === key ? value : translated
+}
+
+function cellText(row: ShipmentRow, key: ShipColumn) {
+  switch (key) {
+    case 'number':
+      return displayOrderNo(row)
+    case 'recipient':
+      return row.customer.trim() || t('status.na')
+    case 'tracking':
+      return row.tracking?.trim() || t('status.na')
+    case 'updatedAt':
+      return updatedOf(row)
+    case 'item':
+      return row.packagePlanName?.trim() || t('status.na')
+    case 'status':
+      return ''
+  }
+}
+
+function updatedOf(row: ShipmentRow) {
+  if (row.updatedAt?.trim()) {
+    return formatLocalDateTime(row.updatedAt, { style: 'list', empty: t('status.na') })
+  }
+  const fromEvents = shipmentUpdatedAt(row.events, row.shippedAt)
+  if (fromEvents) {
+    return formatLocalDateTime(fromEvents, { style: 'list', empty: t('status.na') })
+  }
+  return t('status.na')
+}
 </script>
 
 <template>
   <PageHeader
     :title="$t('nav.shipping')"
-    :description="moduleDesc('shipping')"
+    plain
   >
-    <template #actions>
-      <UButton
-        icon="i-lucide-plus"
-        :disabled="!mockWritable"
-        data-testid="shipping-add"
-        @click="openCreate"
-      >
-        {{ $t('shipping.add') }}
-      </UButton>
-    </template>
-
-    <div
-      v-if="errorMessage"
-      class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
-      data-testid="shipping-error"
-    >
-      <div class="flex min-w-0 items-center gap-2">
-        <UIcon
-          name="i-lucide-triangle-alert"
-          class="size-4 shrink-0"
-        />
-        <span>{{ errorMessage }}</span>
-      </div>
-      <UButton
-        color="neutral"
-        variant="soft"
-        size="sm"
-        data-testid="shipping-retry"
-        @click="load"
-      >
-        {{ $t('shipping.retry') }}
-      </UButton>
-    </div>
-
-    <div class="mb-4 flex flex-wrap items-center gap-3">
-      <USelect
-        v-model="filterStatus"
-        :items="statusFilterOptions"
-        value-key="value"
-        label-key="label"
-        class="w-44"
-        data-testid="shipping-status-filter"
-      />
-      <UInput
-        v-model="searchQ"
-        icon="i-lucide-search"
-        :placeholder="$t('shipping.searchPlaceholder')"
-        class="min-w-64 flex-1"
-        data-testid="shipping-search"
-      />
-    </div>
-
-    <div
-      class="grid items-start gap-5"
-      :class="detailOpen ? 'lg:grid-cols-[minmax(28rem,1fr)_minmax(22rem,26rem)]' : ''"
-    >
-      <div class="min-w-0">
-        <div
-          v-if="pending"
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
-          data-testid="shipping-loading"
-        >
-          <table class="app-table w-full min-w-[52rem] text-left text-base">
-            <thead class="border-b border-default bg-muted/40 text-sm text-muted">
-              <tr>
-                <th>{{ $t('shipping.colOrderMember') }}</th>
-                <th>{{ $t('col.status') }}</th>
-                <th>{{ $t('col.tracking') }}</th>
-                <th>{{ $t('shipping.colUpdated') }}</th>
-                <th>{{ $t('shipping.colItemsSummary') }}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="n in 5"
-                :key="n"
-                class="border-b border-default last:border-0"
-              >
-                <td class="py-3">
-                  <USkeleton class="mb-2 h-4 w-28" />
-                  <USkeleton class="h-3 w-40" />
-                </td>
-                <td><USkeleton class="h-6 w-16 rounded-full" /></td>
-                <td><USkeleton class="h-4 w-28" /></td>
-                <td><USkeleton class="h-4 w-32" /></td>
-                <td><USkeleton class="h-4 w-36" /></td>
-                <td><USkeleton class="ml-auto h-8 w-24" /></td>
-              </tr>
-            </tbody>
-          </table>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-elevated p-4">
+        <div class="min-w-40 grow basis-40">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('shipping.filters.q') }}
+          </label>
+          <UInput
+            v-model="filterQ"
+            icon="i-lucide-search"
+            :placeholder="$t('shipping.filters.qPlaceholder')"
+            class="w-full"
+            data-testid="shipping-search"
+          />
         </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('shipping.filters.status') }}
+          </label>
+          <USelect
+            v-model="filterStatus"
+            :items="statusOptions"
+            value-key="value"
+            class="w-full"
+            data-testid="shipping-status-filter"
+          />
+        </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('shipping.filters.from') }}
+          </label>
+          <UInput
+            v-model="filterFrom"
+            type="date"
+            class="w-full"
+          />
+        </div>
+        <div class="min-w-36">
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('shipping.filters.to') }}
+          </label>
+          <UInput
+            v-model="filterTo"
+            type="date"
+            class="w-full"
+          />
+        </div>
+      </div>
 
-        <EmptyPanel
-          v-else-if="errorMessage"
-          dashed
-          :title="$t('shipping.errorTitle')"
-          :description="$t('shipping.errorBody')"
-          data-testid="shipping-error-empty"
-        >
-          <UButton
-            icon="i-lucide-refresh-cw"
-            @click="load"
-          >
-            {{ $t('shipping.refresh') }}
-          </UButton>
-        </EmptyPanel>
-
-        <EmptyPanel
-          v-else-if="!rows.length"
-          dashed
-          :title="$t('shipping.emptyTitle')"
-          :description="$t('shipping.emptyBody')"
+      <p
+        v-if="errorMessage"
+        class="text-sm text-error"
+        data-testid="shipping-error"
+      >
+        {{ errorMessage }}
+      </p>
+      <p
+        v-else-if="pending && !shipments.length"
+        class="text-sm text-muted"
+        data-testid="shipping-loading"
+      >
+        {{ $t('shipping.loading') }}
+      </p>
+      <template v-else>
+        <p
+          v-if="!shipments.length"
+          class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
           data-testid="shipping-empty"
         >
-          <UButton
-            v-if="mockWritable"
-            icon="i-lucide-plus"
-            @click="openCreate"
-          >
-            {{ $t('shipping.add') }}
-          </UButton>
-        </EmptyPanel>
-
-        <div
+          {{ $t('shipping.empty') }}
+        </p>
+        <AdminTable
           v-else
-          class="overflow-hidden rounded-xl border border-default bg-elevated"
+          compact
+          fixed
           data-testid="shipping-table"
         >
-          <div class="overflow-x-auto">
-            <table class="app-table w-full min-w-[52rem] text-left text-base">
-              <thead class="border-b border-default bg-muted/40 text-sm text-muted">
-                <tr>
-                  <th class="w-[22%]">
-                    {{ $t('shipping.colOrderMember') }}
-                  </th>
-                  <th>{{ $t('col.status') }}</th>
-                  <th>{{ $t('col.tracking') }}</th>
-                  <th>{{ $t('shipping.colUpdated') }}</th>
-                  <th>{{ $t('shipping.colItemsSummary') }}</th>
-                  <th class="text-end">
-                    {{ $t('col.actions') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <template
-                  v-for="row in rows"
-                  :key="row.id"
-                >
-                  <tr
-                    :id="`ship-row-${row.id}`"
-                    class="cursor-pointer border-b border-default last:border-0 hover:bg-muted/40"
-                    :class="[
-                      row.id === selectedId ? 'bg-primary/5' : '',
-                      highlightId === row.id ? 'ring-2 ring-inset ring-primary/50' : ''
-                    ]"
-                    :data-testid="`shipping-row-${row.id}`"
-                    @click="openRow(row)"
-                  >
-                    <td class="py-3">
-                      <div class="flex items-start gap-2">
-                        <UIcon
-                          :name="isOpen(row.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-                          class="mt-1 size-4 shrink-0 text-muted"
-                        />
-                        <div class="min-w-0">
-                          <p class="font-semibold text-highlighted">
-                            {{ row.customer }}
-                          </p>
-                          <p class="mt-0.5 font-mono text-xs text-muted">
-                            {{ displayOrderNo(row) }}
-                            <span class="text-dimmed"> · </span>
-                            {{ row.id }}
-                            <template v-if="showOrg && row.orgId">
-                              <span class="text-dimmed"> · </span>
-                              {{ orgLabel(row.orgId) }}
-                            </template>
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <StatusBadge
-                        :label="$t(`status.${row.status}`)"
-                        :color="SHIP_STATUS_COLOR[row.status]"
-                      />
-                    </td>
-                    <td class="font-mono text-sm">
-                      {{ row.tracking ?? $t('status.na') }}
-                    </td>
-                    <td class="whitespace-nowrap text-sm text-muted">
-                      {{ updatedOf(row) }}
-                    </td>
-                    <td class="max-w-52 truncate text-sm text-muted">
-                      {{ summaryOf(row) }}
-                    </td>
-                    <td
-                      class="text-end"
-                      @click.stop
-                    >
-                      <div class="flex flex-wrap items-center justify-end gap-2">
-                        <UButton
-                          size="sm"
-                          variant="soft"
-                          @click="openRow(row)"
-                        >
-                          {{ $t('shipping.open') }}
-                        </UButton>
-                        <UButton
-                          size="sm"
-                          color="neutral"
-                          variant="soft"
-                          :disabled="!mockWritable || !nextStatus(row)"
-                          @click="advance(row)"
-                        >
-                          {{ $t('shipping.advance') }}
-                        </UButton>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr
-                    v-if="isOpen(row.id)"
-                    class="border-b border-default bg-muted/20"
-                  >
-                    <td
-                      colspan="6"
-                      class="px-4 py-5"
-                    >
-                      <div class="overflow-x-auto pb-2">
-                        <UTimeline
-                          :model-value="row.status"
-                          orientation="horizontal"
-                          size="md"
-                          :items="timelineItems(row)"
-                          class="min-w-[40rem]"
-                        />
-                      </div>
-                      <p class="mt-4 text-sm text-muted">
-                        <span class="font-medium text-default">{{ $t('col.items') }}：</span>
-                        {{ itemsLine(row) || $t('status.na') }}
-                      </p>
-                      <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <UButton
-                          v-if="nextStatus(row) && mockWritable"
-                          :disabled="!mockWritable"
-                          @click="advance(row)"
-                        >
-                          {{ $t('shipping.advanceTo', { status: $t(`status.${nextStatus(row)}`) }) }}
-                        </UButton>
-                        <UButton
-                          v-if="mockWritable"
-                          color="neutral"
-                          variant="soft"
-                          @click="selectRow(row)"
-                        >
-                          {{ $t('actions.edit') }}
-                        </UButton>
-                        <UButton
-                          v-if="mockWritable"
-                          color="error"
-                          variant="outline"
-                          :disabled="!mockWritable"
-                          @click="deleteId = row.id"
-                        >
-                          {{ $t('actions.delete') }}
-                        </UButton>
-                      </div>
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <aside
-        v-if="detailOpen"
-        class="min-w-0 overflow-hidden rounded-xl border border-default bg-elevated lg:sticky lg:top-4"
-      >
-        <DetailPanel
-          :open="detailOpen"
-          :title="creating ? $t('shipping.add') : (usingApi ? $t('shipping.open') : $t('shipping.edit'))"
-          :subtitle="selected ? `${displayOrderNo(selected)} · ${selected.customer}` : $t('form.shipTitle')"
-          :empty="$t('form.emptyDetail')"
-          icon="i-lucide-truck"
-          @close="closeDetail"
-        >
-          <UForm
-            v-if="mockWritable"
-            id="ship-form"
-            :schema="shipmentSchema"
-            :state="state"
-            class="space-y-4"
-            @submit="onSubmit"
-          >
-            <UFormField
-              name="caseId"
-              :label="$t('shipping.fieldOrder')"
-            >
-              <USelect
-                v-model="state.caseId"
-                :items="caseOptions"
-                value-key="value"
-                :disabled="Boolean(selectedId)"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              name="status"
-              :label="$t('col.status')"
-            >
-              <USelect
-                v-model="state.status"
-                :items="shipStatusOptions"
-                value-key="value"
-                class="w-full"
-              />
-            </UFormField>
-            <UFormField
-              name="tracking"
-              :label="$t('col.tracking')"
-            >
-              <UInput
-                v-model="state.tracking"
-                :placeholder="$t('shipping.trackingPlaceholder')"
-                class="w-full"
-              />
-            </UFormField>
-            <p class="text-xs text-muted">
-              {{ $t('shipping.mockNote') }}
-            </p>
-          </UForm>
-          <div
-            v-else-if="selected"
-            class="space-y-3 text-sm"
-          >
-            <p>
-              <span class="text-muted">{{ $t('shipping.fieldOrder') }}：</span>
-              <span class="font-mono">{{ displayOrderNo(selected) }}</span>
-            </p>
-            <p>
-              <span class="text-muted">{{ $t('col.status') }}：</span>
-              {{ $t(`status.${selected.status}`) }}
-            </p>
-            <p>
-              <span class="text-muted">{{ $t('col.tracking') }}：</span>
-              <span class="font-mono">{{ selected.tracking ?? $t('status.na') }}</span>
-            </p>
-            <p class="text-xs text-muted">
-              {{ $t('shipping.apiReadOnlyNote') }}
-            </p>
-          </div>
-          <template #footer>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              @click="closeDetail"
-            >
-              {{ $t('actions.cancel') }}
-            </UButton>
-            <UButton
-              v-if="mockWritable"
-              type="submit"
-              form="ship-form"
-              :disabled="!mockWritable"
-            >
-              {{ $t('actions.save') }}
-            </UButton>
+          <template #colgroup>
+            <colgroup>
+              <col
+                v-for="column in columns"
+                :key="column.key"
+                :class="column.width"
+              >
+            </colgroup>
           </template>
-        </DetailPanel>
-      </aside>
+          <template #head>
+            <tr>
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                :class="[column.width, alignClass(column.align)]"
+              >
+                {{ columnLabel(column.key) }}
+              </th>
+            </tr>
+          </template>
+          <tr
+            v-for="(row, index) in rows"
+            :key="rowKey(row, index)"
+            class="border-b border-default last:border-0"
+            :class="row.id ? 'cursor-pointer hover:bg-muted/40' : ''"
+            :data-testid="`shipping-row-${row.id}`"
+            @click="openRow(row)"
+          >
+            <td
+              v-for="column in columns"
+              :key="column.key"
+              :class="cellClass(column)"
+              :title="column.truncate ? cellText(row, column.key) : undefined"
+            >
+              <UBadge
+                v-if="isBadgeColumn(column.key)"
+                size="sm"
+                v-bind="badgeOf(row)"
+              />
+              <template v-else>
+                {{ cellText(row, column.key) }}
+              </template>
+            </td>
+          </tr>
+          <template #footer>
+            <div class="flex justify-end border-t border-default px-4 py-3">
+              <UPagination
+                :page="page"
+                :items-per-page="PAGE_SIZE"
+                :total="paginationTotal"
+                :disabled="pending"
+                @update:page="goToPage"
+              />
+            </div>
+          </template>
+        </AdminTable>
+      </template>
     </div>
-
-    <ConfirmDelete
-      :open="Boolean(deleteId)"
-      @update:open="(open) => { if (!open) deleteId = null }"
-      @confirm="confirmDelete"
-    />
   </PageHeader>
 </template>
