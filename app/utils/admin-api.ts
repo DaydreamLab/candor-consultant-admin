@@ -1750,8 +1750,9 @@ function sellableItemListOf(data: unknown): unknown[] | null {
 export type LlmUsageCategory = 'chat' | 'report' | 'decision' | 'other'
 
 /**
- * Admin `llm_usage` 匯率資訊（core 每週一查台銀並快取）。
- * `rate_date`＝牌告日期；`fetched_at`＝查詢時間。舊欄 `effective_from` 當 `rate_date` fallback。
+ * Admin `llm_usage` 匯率資訊（core 查中央銀行 WebAPI 並快取）。
+ * `rate_date`＝匯率日期；`fetched_at`＝查詢時間。舊欄 `effective_from` 當 `rate_date` fallback。
+ * `source` 由 core 回傳完整字串（例如「中央銀行 新臺幣/美元 銀行間收盤匯率 (…)」）；admin 不寫死。
  */
 export type LlmUsageFx = {
   base: string
@@ -1944,7 +1945,7 @@ function readLlmUsageFx(value: unknown): LlmUsageFx | null {
   const base = typeof value.base === 'string' && value.base.trim() ? value.base.trim() : 'USD'
   const quote = typeof value.quote === 'string' && value.quote.trim() ? value.quote.trim() : 'TWD'
   const rate = readLlmUsageFxRate(value.rate)
-  // rate_date＝牌告日期；相容讀舊欄 effective_from
+  // rate_date＝匯率日期；相容讀舊欄 effective_from
   const rate_date = llmUsageOptionalText(value.rate_date)
     ?? llmUsageOptionalText(value.effective_from)
   const fetched_at = llmUsageOptionalText(value.fetched_at)

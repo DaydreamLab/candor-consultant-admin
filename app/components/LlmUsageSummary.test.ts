@@ -16,7 +16,7 @@ const labels: Record<string, string> = {
   'llmUsage.tableTotal': '合計',
   'llmUsage.costUnknown': '未知',
   'llmUsage.incompleteNote': '* 含單價未設定的模型，成本未計入該部分。決策依用途細分可再收合一層。',
-  'llmUsage.fxNote': '匯率 {rate}｜牌告日期 {date}｜來源 {source}',
+  'llmUsage.fxNote': '匯率 {rate}｜匯率日期 {date}｜來源 {source}',
   'llmUsage.unknownModel': '（未標示 model）',
   'llmUsage.categories.chat': '聊天',
   'llmUsage.categories.report': '報告',
@@ -35,13 +35,15 @@ function translate(key: string, params?: Record<string, string>) {
   )
 }
 
+const CBC_FX_SOURCE = '中央銀行 新臺幣/美元 銀行間收盤匯率 (https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day)'
+
 const fxOk = {
   base: 'USD',
   quote: 'TWD',
   rate: '32.15',
-  rate_date: '2026-10-27',
-  fetched_at: '2026-10-28T01:00:00Z',
-  source: 'BOT'
+  rate_date: '2026-10-30',
+  fetched_at: '2026-11-03T01:00:00Z',
+  source: CBC_FX_SOURCE
 }
 
 const fixtureNew = {
@@ -217,8 +219,8 @@ describe('LlmUsageSummary', () => {
             quote: 'TWD',
             rate: null,
             rate_date: null,
-            fetched_at: '2026-10-28T01:00:00Z',
-            source: 'BOT'
+            fetched_at: '2026-11-03T01:00:00Z',
+            source: CBC_FX_SOURCE
           }
         }
       }
@@ -275,8 +277,10 @@ describe('LlmUsageSummary', () => {
 
     expect(wrapper.find('[data-testid="llm-usage-incomplete-note"]').text()).toContain('* 含單價未設定')
     expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('匯率 32.15')
-    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('牌告日期 2026-10-27')
-    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('來源 BOT')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('匯率日期 2026-10-30')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('來源 中央銀行')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).not.toContain('https://')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').attributes('title')).toBe(CBC_FX_SOURCE)
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('合計')
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('US$0.142*')
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('NT$4.55')
@@ -372,8 +376,8 @@ describe('LlmUsageSummary', () => {
             quote: 'TWD',
             rate: null,
             rate_date: null,
-            fetched_at: '2026-10-28T01:00:00Z',
-            source: 'BOT'
+            fetched_at: '2026-11-03T01:00:00Z',
+            source: CBC_FX_SOURCE
           }
         },
         defaultDetailsOpen: true

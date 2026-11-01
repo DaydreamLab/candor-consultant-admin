@@ -428,9 +428,28 @@ export function hasLlmUsageDetails(summary: LlmUsageSummaryPayload | null): bool
   return summary.by_category_model.length > 0 || summary.by_model.length > 0
 }
 
-/** 牌告日期優先；沒有則用查詢日期（fetched_at）。 */
+/** 匯率日期優先（rate_date）；沒有則用查詢日期（fetched_at）。 */
 export function fxDisplayDate(fx: LlmUsageFx): string | null {
   return fx.rate_date || fx.fetched_at || null
+}
+
+/**
+ * 來源顯示：直接用 core 的 `source`；過長（含 URL）且含「中央銀行」時
+ * 小字標「中央銀行」，完整字串放 title／tooltip。不寫死 BOT／台銀。
+ */
+export function displayLlmUsageFxSource(source: string | null | undefined): {
+  label: string
+  title: string | null
+} {
+  if (source === null || source === undefined || !source.trim()) {
+    return { label: '—', title: null }
+  }
+  const trimmed = source.trim()
+  const tooLong = trimmed.length > 20 || /https?:\/\//i.test(trimmed)
+  if (tooLong && trimmed.includes('中央銀行')) {
+    return { label: '中央銀行', title: trimmed }
+  }
+  return { label: trimmed, title: null }
 }
 
 /**
@@ -440,14 +459,17 @@ export function fxDisplayDate(fx: LlmUsageFx): string | null {
 export function formatLlmUsageFxNote(fx: LlmUsageFx | null): {
   rate: string
   date: string | null
-  source: string | null
+  sourceLabel: string
+  sourceTitle: string | null
 } | null {
   if (!fx || fx.rate === null || fx.rate === '') {
     return null
   }
+  const source = displayLlmUsageFxSource(fx.source)
   return {
     rate: fx.rate,
     date: fxDisplayDate(fx),
-    source: fx.source
+    sourceLabel: source.label,
+    sourceTitle: source.title
   }
 }

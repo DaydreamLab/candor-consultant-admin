@@ -724,7 +724,7 @@
     "colCost": "Cost",
     "costUnknown": "Unknown",
     "incompleteNote": "* Includes models without unit prices; those costs are excluded. Decision rows can nest by purpose.",
-    "fxNote": "Rate {rate}｜Board date {date}｜Source {source}",
+    "fxNote": "Rate {rate}｜FX date {date}｜Source {source}",
     "categories": {
       "chat": "Chat",
       "report": "Report",

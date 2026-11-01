@@ -187,6 +187,7 @@ describe('readLlmUsage', () => {
   })
 
   it('parses fx with rate_date / fetched_at and effective_from fallback', () => {
+    const cbcSource = '中央銀行 新臺幣/美元 銀行間收盤匯率 (https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day)'
     const withRateDate = readLlmUsage({
       input_tokens: 1,
       output_tokens: 0,
@@ -196,18 +197,18 @@ describe('readLlmUsage', () => {
         base: 'USD',
         quote: 'TWD',
         rate: '32.155',
-        rate_date: '2026-10-27',
-        fetched_at: '2026-10-28T01:00:00Z',
-        source: 'BOT'
+        rate_date: '2026-10-30',
+        fetched_at: '2026-11-03T01:00:00Z',
+        source: cbcSource
       }
     })
     expect(withRateDate?.fx).toEqual({
       base: 'USD',
       quote: 'TWD',
       rate: '32.155',
-      rate_date: '2026-10-27',
-      fetched_at: '2026-10-28T01:00:00Z',
-      source: 'BOT'
+      rate_date: '2026-10-30',
+      fetched_at: '2026-11-03T01:00:00Z',
+      source: cbcSource
     })
     expect(withRateDate?.cost_twd).toBe('0.32')
 
@@ -221,11 +222,12 @@ describe('readLlmUsage', () => {
         rate: 32.1,
         effective_from: '2026-10-20',
         fetched_at: '2026-10-21T02:00:00Z',
-        source: 'BOT'
+        source: cbcSource
       }
     })
     expect(legacyEffectiveFrom?.fx?.rate_date).toBe('2026-10-20')
     expect(legacyEffectiveFrom?.fx?.rate).toBe('32.1')
+    expect(legacyEffectiveFrom?.fx?.source).toBe(cbcSource)
 
     const nullRate = readLlmUsage({
       input_tokens: 1,
@@ -237,8 +239,8 @@ describe('readLlmUsage', () => {
         quote: 'TWD',
         rate: null,
         rate_date: null,
-        fetched_at: '2026-10-28T01:00:00Z',
-        source: 'BOT'
+        fetched_at: '2026-11-03T01:00:00Z',
+        source: cbcSource
       }
     })
     expect(nullRate?.fx?.rate).toBeNull()

@@ -299,11 +299,12 @@ function toggleDetails(event: Event) {
         v-if="fxNote"
         class="mt-1 text-[11.5px] text-muted"
         data-testid="llm-usage-fx-note"
+        :title="fxNote.sourceTitle || undefined"
       >
         {{ t('llmUsage.fxNote', {
           rate: fxNote.rate,
           date: fxNote.date || '—',
-          source: fxNote.source || '—'
+          source: fxNote.sourceLabel
         }) }}
       </p>
     </div>

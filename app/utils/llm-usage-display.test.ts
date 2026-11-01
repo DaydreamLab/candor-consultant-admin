@@ -6,6 +6,7 @@ import {
   displayTotalCostTwd,
   displayTotalCostUsd,
   formatLlmUsageCostPair,
+  displayLlmUsageFxSource,
   formatLlmUsageFxNote,
   formatLlmUsageTokens,
   formatLlmUsageTwd,
@@ -15,6 +16,8 @@ import {
   purposeLabelOf,
   totalTokensOf
 } from '~/utils/llm-usage-display'
+
+const CBC_FX_SOURCE = '中央銀行 新臺幣/美元 銀行間收盤匯率 (https://cpx.cbc.gov.tw/api/OpenData/FTDOpenData_Day)'
 
 const base = {
   input_tokens: 46700,
@@ -171,8 +174,8 @@ describe('llm-usage-display', () => {
         quote: 'TWD',
         rate: null,
         rate_date: null,
-        fetched_at: '2026-10-28T01:00:00Z',
-        source: 'BOT'
+        fetched_at: '2026-11-03T01:00:00Z',
+        source: CBC_FX_SOURCE
       }
     })).toBe(false)
     expect(canShowLlmUsageTwd({
@@ -181,11 +184,26 @@ describe('llm-usage-display', () => {
         base: 'USD',
         quote: 'TWD',
         rate: '32.15',
-        rate_date: '2026-10-27',
-        fetched_at: '2026-10-28T01:00:00Z',
-        source: 'BOT'
+        rate_date: '2026-10-30',
+        fetched_at: '2026-11-03T01:00:00Z',
+        source: CBC_FX_SOURCE
       }
     })).toBe(true)
+  })
+
+  it('shortens long CBC fx.source to 中央銀行 with full title', () => {
+    expect(displayLlmUsageFxSource(CBC_FX_SOURCE)).toEqual({
+      label: '中央銀行',
+      title: CBC_FX_SOURCE
+    })
+    expect(displayLlmUsageFxSource('短來源')).toEqual({
+      label: '短來源',
+      title: null
+    })
+    expect(displayLlmUsageFxSource(null)).toEqual({
+      label: '—',
+      title: null
+    })
   })
 
   it('formats fx note with rate_date falling back to fetched_at', () => {
@@ -195,29 +213,30 @@ describe('llm-usage-display', () => {
       quote: 'TWD',
       rate: null,
       rate_date: null,
-      fetched_at: '2026-10-28T01:00:00Z',
-      source: 'BOT'
+      fetched_at: '2026-11-03T01:00:00Z',
+      source: CBC_FX_SOURCE
     })).toBeNull()
     expect(formatLlmUsageFxNote({
       base: 'USD',
       quote: 'TWD',
       rate: '32.15',
-      rate_date: '2026-10-27',
-      fetched_at: '2026-10-28T01:00:00Z',
-      source: 'BOT'
+      rate_date: '2026-10-30',
+      fetched_at: '2026-11-03T01:00:00Z',
+      source: CBC_FX_SOURCE
     })).toEqual({
       rate: '32.15',
-      date: '2026-10-27',
-      source: 'BOT'
+      date: '2026-10-30',
+      sourceLabel: '中央銀行',
+      sourceTitle: CBC_FX_SOURCE
     })
     expect(formatLlmUsageFxNote({
       base: 'USD',
       quote: 'TWD',
       rate: '32.15',
       rate_date: null,
-      fetched_at: '2026-10-28T01:00:00Z',
-      source: 'BOT'
-    })?.date).toBe('2026-10-28T01:00:00Z')
+      fetched_at: '2026-11-03T01:00:00Z',
+      source: CBC_FX_SOURCE
+    })?.date).toBe('2026-11-03T01:00:00Z')
   })
 
   it('maps purpose labels with or without decision. prefix; unknown stays raw', () => {

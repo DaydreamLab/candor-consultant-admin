@@ -724,7 +724,7 @@
     "colCost": "成本",
     "costUnknown": "未知",
     "incompleteNote": "* 含單價未設定的模型，成本未計入該部分。決策依用途細分可再收合一層。",
-    "fxNote": "匯率 {rate}｜牌告日期 {date}｜來源 {source}",
+    "fxNote": "匯率 {rate}｜匯率日期 {date}｜來源 {source}",
     "categories": {
       "chat": "聊天",
       "report": "報告",
