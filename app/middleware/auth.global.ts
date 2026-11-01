@@ -3,6 +3,8 @@ function isPublicPath(path: string) {
     || path === '/en/login'
     || path === '/privacy-policy'
     || path === '/en/privacy-policy'
+    || path === '/dev/llm-usage-fixture'
+    || path === '/en/dev/llm-usage-fixture'
 }
 
 export default defineNuxtRouteMiddleware((to) => {

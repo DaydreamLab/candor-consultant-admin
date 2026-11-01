@@ -703,6 +703,7 @@
     }
   },
   "llmUsage": {
+    "title": "Token 用量",
     "input": "輸入",
     "output": "輸出",
     "cost": "預估成本",
@@ -710,7 +711,25 @@
     "ntd": "NT${amount}",
     "usd": "${amount}",
     "total": "總計",
-    "unknownModel": "（未標示 model）"
+    "tableTotal": "合計",
+    "unknownModel": "（未標示 model）",
+    "totalTokens": "總 tokens（input＋output）",
+    "estimatedCost": "估算成本",
+    "detailsToggle": "顯示用量明細",
+    "colCategoryModel": "類別／模型",
+    "colInput": "input",
+    "colOutput": "output",
+    "colCacheRead": "cache 讀",
+    "colCacheWrite": "cache 寫",
+    "colCost": "成本",
+    "costUnknown": "未知",
+    "incompleteNote": "* 含單價未設定的模型，成本未計入該部分。",
+    "categories": {
+      "chat": "聊天",
+      "report": "報告",
+      "decision": "決策",
+      "other": "其他"
+    }
   },
   "roles": {
     "platform_viewer": "坦見業主（唯讀）",

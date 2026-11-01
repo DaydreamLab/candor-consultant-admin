@@ -703,6 +703,7 @@
     }
   },
   "llmUsage": {
+    "title": "Token usage",
     "input": "Input",
     "output": "Output",
     "cost": "Est. cost",
@@ -710,7 +711,25 @@
     "ntd": "NT${amount}",
     "usd": "${amount}",
     "total": "Total",
-    "unknownModel": "(unspecified model)"
+    "tableTotal": "Total",
+    "unknownModel": "(unspecified model)",
+    "totalTokens": "Total tokens (input＋output)",
+    "estimatedCost": "Estimated cost",
+    "detailsToggle": "Show usage details",
+    "colCategoryModel": "Category / model",
+    "colInput": "input",
+    "colOutput": "output",
+    "colCacheRead": "cache read",
+    "colCacheWrite": "cache write",
+    "colCost": "Cost",
+    "costUnknown": "Unknown",
+    "incompleteNote": "* Includes models without unit prices; those costs are excluded.",
+    "categories": {
+      "chat": "Chat",
+      "report": "Report",
+      "decision": "Decision",
+      "other": "Other"
+    }
   },
   "roles": {
     "platform_viewer": "Candor owner (read-only)",
