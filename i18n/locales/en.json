@@ -703,6 +703,7 @@
     }
   },
   "llmUsage": {
+    "title": "Token usage",
     "input": "Input",
     "output": "Output",
     "cost": "Est. cost",
@@ -710,7 +711,37 @@
     "ntd": "NT${amount}",
     "usd": "${amount}",
     "total": "Total",
-    "unknownModel": "(unspecified model)"
+    "tableTotal": "Total",
+    "unknownModel": "(unspecified model)",
+    "totalTokens": "Total tokens (input＋output)",
+    "estimatedCost": "Estimated cost",
+    "detailsToggle": "Show usage details",
+    "colCategoryModel": "Category / model",
+    "colInput": "input",
+    "colOutput": "output",
+    "colCacheRead": "cache read",
+    "colCacheWrite": "cache write",
+    "colCost": "Cost",
+    "costUnknown": "Unknown",
+    "incompleteNote": "* Includes models without unit prices; those costs are excluded. Decision rows can nest by purpose.",
+    "fxNote": "Rate {rate}｜FX date {date}｜Source {source}",
+    "categories": {
+      "chat": "Chat",
+      "report": "Report",
+      "decision": "Decision",
+      "other": "Other"
+    },
+    "purposes": {
+      "decision.cta.open_chat": "Chat CTA",
+      "decision.cta.triad_complete": "Triad-complete CTA",
+      "decision.cta.questionnaire_gap": "Questionnaire gap follow-up",
+      "decision.cta.lab_followup": "Lab follow-up / upload CTA",
+      "decision.cta.lab_report_prompt": "Lab report prompt CTA",
+      "decision.reply_is_asking": "Reply is asking",
+      "decision.goal_utterance": "Goal utterance",
+      "reply_is_asking": "Reply is asking",
+      "goal_utterance": "Goal utterance"
+    }
   },
   "roles": {
     "platform_viewer": "Candor owner (read-only)",
