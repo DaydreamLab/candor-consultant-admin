@@ -723,12 +723,22 @@
     "colCacheWrite": "cache write",
     "colCost": "Cost",
     "costUnknown": "Unknown",
-    "incompleteNote": "* Includes models without unit prices; those costs are excluded.",
+    "incompleteNote": "* Includes models without unit prices; those costs are excluded. Decision rows can nest by purpose.",
+    "fxNote": "Rate {rate}｜Board date {date}｜Source {source}",
     "categories": {
       "chat": "Chat",
       "report": "Report",
       "decision": "Decision",
       "other": "Other"
+    },
+    "purposes": {
+      "decision.cta.open_chat": "Chat CTA",
+      "decision.cta.triad_complete": "Triad-complete CTA",
+      "decision.cta.questionnaire_gap": "Questionnaire gap follow-up",
+      "decision.reply_is_asking": "Reply is asking",
+      "decision.goal_utterance": "Goal utterance",
+      "reply_is_asking": "Reply is asking",
+      "goal_utterance": "Goal utterance"
     }
   },
   "roles": {

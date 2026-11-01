@@ -723,12 +723,22 @@
     "colCacheWrite": "cache 寫",
     "colCost": "成本",
     "costUnknown": "未知",
-    "incompleteNote": "* 含單價未設定的模型，成本未計入該部分。",
+    "incompleteNote": "* 含單價未設定的模型，成本未計入該部分。決策依用途細分可再收合一層。",
+    "fxNote": "匯率 {rate}｜牌告日期 {date}｜來源 {source}",
     "categories": {
       "chat": "聊天",
       "report": "報告",
       "decision": "決策",
       "other": "其他"
+    },
+    "purposes": {
+      "decision.cta.open_chat": "對話 CTA",
+      "decision.cta.triad_complete": "基本資料問完 CTA",
+      "decision.cta.questionnaire_gap": "補問缺漏題",
+      "decision.reply_is_asking": "回覆是否在提問",
+      "decision.goal_utterance": "goals 判讀",
+      "reply_is_asking": "回覆是否在提問",
+      "goal_utterance": "goals 判讀"
     }
   },
   "roles": {

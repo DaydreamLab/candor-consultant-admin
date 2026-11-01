@@ -1,6 +1,8 @@
 /**
- * Capture LlmUsageSummary fixture screenshots (no live backend).
+ * Capture LlmUsageSummary screenshots via a temporary Nuxt fixture page (not committed).
  * Usage: node scripts/capture-llm-usage-screenshots.mjs [baseUrl]
+ *
+ * Expects a temp page at /dev/llm-usage-fixture (created by the caller for local capture only).
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -40,9 +42,9 @@ async function main() {
   const browser = await chromium.launch({
     executablePath: '/usr/local/bin/google-chrome',
     headless: true,
-    args: ['--no-sandbox', '--disable-gpu', '--window-size=1440,1200']
+    args: ['--no-sandbox', '--disable-gpu', '--window-size=1440,1400']
   })
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1200 } })
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1400 } })
 
   await waitForApp(page)
   await page.locator('[data-testid="fixture-collapsed"]').waitFor({ state: 'visible', timeout: 30000 })
@@ -55,12 +57,12 @@ async function main() {
   })
 
   const collapsedPath = join(outDir, 'llm-usage-collapsed.png')
-  const expandedPath = join(outDir, 'llm-usage-expanded.png')
-  const legacyPath = join(outDir, 'llm-usage-legacy.png')
+  const expandedPath = join(outDir, 'llm-usage-expanded-purpose.png')
+  const usdOnlyPath = join(outDir, 'llm-usage-usd-only.png')
 
   await shotElement(page, '[data-testid="fixture-collapsed"]', collapsedPath)
   await shotElement(page, '[data-testid="fixture-expanded"]', expandedPath)
-  await shotElement(page, '[data-testid="fixture-legacy"]', legacyPath)
+  await shotElement(page, '[data-testid="fixture-usd-only"]', usdOnlyPath)
 
   await writeFile(
     join(outDir, 'llm-usage-screenshots.json'),
@@ -68,12 +70,12 @@ async function main() {
       baseUrl,
       collapsedPath,
       expandedPath,
-      legacyPath,
+      usdOnlyPath,
       at: new Date().toISOString()
     }, null, 2)
   )
 
-  console.log(JSON.stringify({ ok: true, collapsedPath, expandedPath, legacyPath }, null, 2))
+  console.log(JSON.stringify({ ok: true, collapsedPath, expandedPath, usdOnlyPath }, null, 2))
   await browser.close()
 }
 

@@ -15,7 +15,8 @@ const labels: Record<string, string> = {
   'llmUsage.colCost': '成本',
   'llmUsage.tableTotal': '合計',
   'llmUsage.costUnknown': '未知',
-  'llmUsage.incompleteNote': '* 含單價未設定的模型，成本未計入該部分。',
+  'llmUsage.incompleteNote': '* 含單價未設定的模型，成本未計入該部分。決策依用途細分可再收合一層。',
+  'llmUsage.fxNote': '匯率 {rate}｜牌告日期 {date}｜來源 {source}',
   'llmUsage.unknownModel': '（未標示 model）',
   'llmUsage.categories.chat': '聊天',
   'llmUsage.categories.report': '報告',
@@ -23,8 +24,24 @@ const labels: Record<string, string> = {
   'llmUsage.categories.other': '其他'
 }
 
-function translate(key: string) {
-  return labels[key] ?? key
+function translate(key: string, params?: Record<string, string>) {
+  const template = labels[key] ?? key
+  if (!params) {
+    return template
+  }
+  return Object.entries(params).reduce(
+    (text, [name, value]) => text.replace(`{${name}}`, value),
+    template
+  )
+}
+
+const fxOk = {
+  base: 'USD',
+  quote: 'TWD',
+  rate: '32.15',
+  rate_date: '2026-10-27',
+  fetched_at: '2026-10-28T01:00:00Z',
+  source: 'BOT'
 }
 
 const fixtureNew = {
@@ -34,7 +51,9 @@ const fixtureNew = {
   cache_write_tokens: 0,
   estimated_cost_ntd: null,
   estimated_cost_usd: '0.1420',
+  cost_twd: '4.55',
   cost_complete: false,
+  fx: fxOk,
   by_model: [
     {
       model: 'claude-haiku-4-5',
@@ -44,6 +63,7 @@ const fixtureNew = {
       cache_write_tokens: 0,
       estimated_cost_ntd: '4.42',
       estimated_cost_usd: '0.1370',
+      cost_twd: '4.40',
       cost_known: true
     },
     {
@@ -54,6 +74,7 @@ const fixtureNew = {
       cache_write_tokens: 0,
       estimated_cost_ntd: null,
       estimated_cost_usd: null,
+      cost_twd: null,
       cost_known: false
     }
   ],
@@ -67,6 +88,7 @@ const fixtureNew = {
       cache_write_tokens: 0,
       estimated_cost_ntd: '3.78',
       estimated_cost_usd: '0.1180',
+      cost_twd: '3.78',
       cost_known: true
     },
     {
@@ -78,6 +100,7 @@ const fixtureNew = {
       cache_write_tokens: 0,
       estimated_cost_ntd: '0.61',
       estimated_cost_usd: '0.0190',
+      cost_twd: '0.61',
       cost_known: true
     },
     {
@@ -89,6 +112,7 @@ const fixtureNew = {
       cache_write_tokens: 0,
       estimated_cost_ntd: null,
       estimated_cost_usd: null,
+      cost_twd: null,
       cost_known: false
     },
     {
@@ -100,6 +124,42 @@ const fixtureNew = {
       cache_write_tokens: 0,
       estimated_cost_ntd: '0.16',
       estimated_cost_usd: '0.0050',
+      cost_twd: '0.16',
+      cost_known: true
+    }
+  ],
+  decision_by_purpose_model: [
+    {
+      purpose: 'decision.cta.open_chat',
+      model: 'claude-haiku-4-5',
+      input_tokens: 400,
+      output_tokens: 20,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      estimated_cost_usd: '0.0030',
+      cost_twd: '0.10',
+      cost_known: true
+    },
+    {
+      purpose: 'reply_is_asking',
+      model: 'gpt-6-luna',
+      input_tokens: 10900,
+      output_tokens: 280,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      estimated_cost_usd: null,
+      cost_twd: null,
+      cost_known: false
+    },
+    {
+      purpose: 'goal_utterance',
+      model: 'claude-haiku-4-5',
+      input_tokens: 300,
+      output_tokens: 10,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      estimated_cost_usd: '0.0020',
+      cost_twd: '0.06',
       cost_known: true
     }
   ]
@@ -133,19 +193,50 @@ describe('LlmUsageSummary', () => {
     vi.stubGlobal('useI18n', () => ({ t: translate }))
   })
 
-  it('shows headline totals only by default', () => {
+  it('shows headline totals only by default, with * when cost incomplete', () => {
     const wrapper = mount(LlmUsageSummary, {
       props: { usage: fixtureNew }
     })
 
     expect(wrapper.text()).toContain('Token 用量')
     expect(wrapper.find('[data-testid="llm-usage-total"]').text()).toContain('52,480')
-    expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.142*')
+    // 收合狀態：未知單價 → 總成本加 *
+    expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.142* NT$4.55')
     expect(wrapper.find('[data-testid="llm-usage-details"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-testid="llm-usage-detail-group"]')).toHaveLength(0)
   })
 
-  it('opens category×model details with unknown cost and incomplete note', async () => {
+  it('shows only USD on collapsed total when fx.rate is null', () => {
+    const wrapper = mount(LlmUsageSummary, {
+      props: {
+        usage: {
+          ...fixtureNew,
+          cost_twd: null,
+          fx: {
+            base: 'USD',
+            quote: 'TWD',
+            rate: null,
+            rate_date: null,
+            fetched_at: '2026-10-28T01:00:00Z',
+            source: 'BOT'
+          }
+        }
+      }
+    })
+    expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.142*')
+    expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).not.toContain('NT$')
+  })
+
+  it('shows only USD when fx field is absent', () => {
+    const { fx: _fx, ...withoutFx } = fixtureNew
+    const wrapper = mount(LlmUsageSummary, {
+      props: { usage: withoutFx }
+    })
+    expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.142*')
+    expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).not.toContain('NT$')
+  })
+
+  it('opens category×model details with purpose layer, unknown cost, fx note', async () => {
     const wrapper = mount(LlmUsageSummary, {
       props: { usage: fixtureNew },
       attachTo: document.body
@@ -165,12 +256,82 @@ describe('LlmUsageSummary', () => {
     )
     expect(groups).toHaveLength(3)
 
+    const purposes = wrapper.findAll('[data-testid="llm-usage-detail-purpose"]')
+    expect(purposes.map(p => p.text())).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('對話 CTA'),
+        expect.stringContaining('回覆是否在提問'),
+        expect.stringContaining('goals 判讀')
+      ])
+    )
+    expect(purposes.some(p => p.text().includes('回覆是否在提問') && p.text().includes('US$'))).toBe(false)
+    // 用途小計含未知 → 加 *
+    const asking = purposes.find(p => p.text().includes('回覆是否在提問'))
+    expect(asking?.text()).toContain('*')
+
     const models = wrapper.findAll('[data-testid="llm-usage-detail-model"]')
     expect(models.some(m => m.text().includes('gpt-6-luna') && m.text().includes('未知'))).toBe(true)
-    expect(models.some(m => m.text().includes('claude-haiku-4-5') && m.text().includes('US$0.118'))).toBe(true)
+    expect(models.some(m => m.text().includes('claude-haiku-4-5') && m.text().includes('US$0.118') && m.text().includes('NT$3.78'))).toBe(true)
+
     expect(wrapper.find('[data-testid="llm-usage-incomplete-note"]').text()).toContain('* 含單價未設定')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('匯率 32.15')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('牌告日期 2026-10-27')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').text()).toContain('來源 BOT')
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('合計')
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('US$0.142*')
+    expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('NT$4.55')
+  })
+
+  it('collapses purpose rows on toggle', async () => {
+    const wrapper = mount(LlmUsageSummary, {
+      props: { usage: fixtureNew, defaultDetailsOpen: true },
+      attachTo: document.body
+    })
+
+    const before = wrapper.findAll('[data-testid="llm-usage-detail-model"]').length
+    expect(before).toBeGreaterThan(0)
+
+    const toggles = wrapper.findAll('[data-testid="llm-usage-purpose-toggle"]')
+    expect(toggles.length).toBeGreaterThan(0)
+    await toggles[0]!.trigger('click')
+
+    const after = wrapper.findAll('[data-testid="llm-usage-detail-model"]').length
+    expect(after).toBeLessThan(before)
+  })
+
+  it('shows unknown purpose as raw value', async () => {
+    const wrapper = mount(LlmUsageSummary, {
+      props: {
+        usage: {
+          input_tokens: 10,
+          output_tokens: 1,
+          estimated_cost_usd: '0.0100',
+          cost_twd: '0.32',
+          cost_complete: true,
+          fx: fxOk,
+          by_category_model: [{
+            category: 'decision',
+            model: 'claude-haiku-4-5',
+            input_tokens: 10,
+            output_tokens: 1,
+            estimated_cost_usd: '0.0100',
+            cost_twd: '0.32',
+            cost_known: true
+          }],
+          decision_by_purpose_model: [{
+            purpose: 'decision.custom.brand_new',
+            model: 'claude-haiku-4-5',
+            input_tokens: 10,
+            output_tokens: 1,
+            estimated_cost_usd: '0.0100',
+            cost_twd: '0.32',
+            cost_known: true
+          }]
+        },
+        defaultDetailsOpen: true
+      }
+    })
+    expect(wrapper.find('[data-testid="llm-usage-detail-purpose"]').text()).toContain('decision.custom.brand_new')
   })
 
   it('falls back to by_model details when by_category_model is absent', async () => {
@@ -182,10 +343,45 @@ describe('LlmUsageSummary', () => {
     expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.1')
     await wrapper.find('[data-testid="llm-usage-info"]').trigger('click')
     expect(wrapper.findAll('[data-testid="llm-usage-detail-group"]')).toHaveLength(0)
+    expect(wrapper.findAll('[data-testid="llm-usage-detail-purpose"]')).toHaveLength(0)
     const models = wrapper.findAll('[data-testid="llm-usage-detail-model"]')
     expect(models).toHaveLength(2)
     expect(models[0]!.text()).toContain('claude-sonnet-4-5')
     expect(models[1]!.text()).toContain('claude-haiku')
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').exists()).toBe(false)
+  })
+
+  it('falls back to flat decision models when decision_by_purpose_model is absent', async () => {
+    const { decision_by_purpose_model: _p, ...withoutPurpose } = fixtureNew
+    const wrapper = mount(LlmUsageSummary, {
+      props: { usage: withoutPurpose, defaultDetailsOpen: true }
+    })
+    expect(wrapper.findAll('[data-testid="llm-usage-detail-purpose"]')).toHaveLength(0)
+    const models = wrapper.findAll('[data-testid="llm-usage-detail-model"]')
+    expect(models.some(m => m.text().includes('gpt-6-luna'))).toBe(true)
+  })
+
+  it('hides fx note and NTD in details when rate is null', async () => {
+    const wrapper = mount(LlmUsageSummary, {
+      props: {
+        usage: {
+          ...fixtureNew,
+          cost_twd: null,
+          fx: {
+            base: 'USD',
+            quote: 'TWD',
+            rate: null,
+            rate_date: null,
+            fetched_at: '2026-10-28T01:00:00Z',
+            source: 'BOT'
+          }
+        },
+        defaultDetailsOpen: true
+      }
+    })
+    expect(wrapper.find('[data-testid="llm-usage-fx-note"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('US$0.142*')
+    expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).not.toContain('NT$')
   })
 
   it('degrades to zeros when usage is null and hides info icon', () => {

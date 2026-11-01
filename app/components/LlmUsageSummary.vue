@@ -2,17 +2,24 @@
 import { readLlmUsage } from '~/utils/admin-api'
 import {
   buildLlmUsageDetailRows,
+  canShowLlmUsageTwd,
+  displayTotalCostTwd,
   displayTotalCostUsd,
+  formatLlmUsageCostPair,
+  formatLlmUsageFxNote,
   formatLlmUsageTokens,
-  formatLlmUsageUsd,
   hasLlmUsageDetails,
-  totalTokensOf
+  purposeLabelOf,
+  totalTokensOf,
+  type LlmUsageDetailRow
 } from '~/utils/llm-usage-display'
 
 const props = defineProps<{
   usage?: Record<string, unknown> | null
   /** 截圖／示範用：掛載時展開明細 */
   defaultDetailsOpen?: boolean
+  /** 截圖用：預設收合的用途 key（其餘用途展開） */
+  defaultCollapsedPurposes?: string[]
 }>()
 
 const { t } = useI18n()
@@ -21,29 +28,33 @@ const summary = computed(() => readLlmUsage(props.usage ?? null))
 const detailsOpen = ref(Boolean(props.defaultDetailsOpen))
 /** 點擊或 defaultDetailsOpen 時釘住，避免 mouseleave 立刻收合 */
 const detailsPinned = ref(Boolean(props.defaultDetailsOpen))
+/** 收合中的用途列 key；預設全展開。 */
+const collapsedPurposes = ref<Set<string>>(
+  new Set(props.defaultCollapsedPurposes ?? [])
+)
 
 const showDetails = computed(() => hasLlmUsageDetails(summary.value))
 
 const totalTokens = computed(() => (summary.value ? totalTokensOf(summary.value) : 0))
 
-const totalCost = computed(() => {
-  if (!summary.value) {
-    return { amount: '0.0000' as string | null, incomplete: false }
-  }
-  return displayTotalCostUsd(summary.value)
-})
+const showTwd = computed(() => (summary.value ? canShowLlmUsageTwd(summary.value) : false))
 
 const totalCostLabel = computed(() => {
-  const formatted = formatLlmUsageUsd(totalCost.value.amount, totalCost.value.incomplete)
-  if (formatted) {
-    return formatted
+  if (!summary.value) {
+    return 'US$0'
   }
-  return totalCost.value.incomplete ? '*' : 'US$0'
+  const usd = displayTotalCostUsd(summary.value)
+  return formatLlmUsageCostPair({
+    usd: usd.amount,
+    twd: displayTotalCostTwd(summary.value),
+    incomplete: usd.incomplete,
+    showTwd: showTwd.value
+  })
 })
 
-const detailRows = computed(() => {
+const allDetailRows = computed(() => {
   if (!summary.value) {
-    return []
+    return [] as LlmUsageDetailRow[]
   }
   return buildLlmUsageDetailRows(summary.value, {
     category: (category) => {
@@ -52,19 +63,65 @@ const detailRows = computed(() => {
       return label === key ? category : label
     },
     model: model => model || t('llmUsage.unknownModel'),
+    purpose: (purpose) => {
+      const mapped = purposeLabelOf(purpose)
+      if (mapped !== purpose) {
+        return mapped
+      }
+      const key = `llmUsage.purposes.${purpose}`
+      const label = t(key)
+      return label === key ? purpose : label
+    },
     total: t('llmUsage.tableTotal')
   })
 })
 
-const showIncompleteNote = computed(() =>
-  detailRows.value.some(row => row.cost_incomplete)
+const detailRows = computed(() =>
+  allDetailRows.value.filter((row) => {
+    if (row.kind !== 'model' || !row.purpose_key) {
+      return true
+    }
+    return !collapsedPurposes.value.has(row.purpose_key)
+  })
 )
 
-function costCell(row: { cost_unknown_label: boolean, estimated_cost_usd: string | null, cost_incomplete: boolean }): string {
+const showIncompleteNote = computed(() =>
+  allDetailRows.value.some(row => row.cost_incomplete)
+)
+
+const fxNote = computed(() => {
+  if (!summary.value) {
+    return null
+  }
+  return formatLlmUsageFxNote(summary.value.fx)
+})
+
+function costCell(row: LlmUsageDetailRow): string {
   if (row.cost_unknown_label) {
     return t('llmUsage.costUnknown')
   }
-  return formatLlmUsageUsd(row.estimated_cost_usd, row.cost_incomplete) ?? '—'
+  return formatLlmUsageCostPair({
+    usd: row.estimated_cost_usd,
+    twd: row.cost_twd,
+    incomplete: row.cost_incomplete,
+    showTwd: showTwd.value
+  })
+}
+
+function isPurposeCollapsed(key: string): boolean {
+  return collapsedPurposes.value.has(key)
+}
+
+function togglePurpose(key: string, event: Event) {
+  event.preventDefault()
+  event.stopPropagation()
+  const next = new Set(collapsedPurposes.value)
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+  collapsedPurposes.value = next
 }
 
 function openDetails() {
@@ -138,7 +195,7 @@ function toggleDetails(event: Event) {
 
     <div
       v-if="detailsOpen && showDetails"
-      class="mt-3 w-max min-w-[34rem] max-w-[min(100vw-2rem,40rem)] rounded-lg border border-primary/30 bg-default p-3 shadow-lg"
+      class="mt-3 w-max min-w-[34rem] max-w-[min(100vw-2rem,48rem)] rounded-lg border border-primary/30 bg-default p-3 shadow-lg"
       data-testid="llm-usage-details"
       @click.stop
       @mouseenter="openDetails"
@@ -170,17 +227,45 @@ function toggleDetails(event: Event) {
           <tr
             v-for="row in detailRows"
             :key="row.key"
-            :data-testid="row.kind === 'total' ? 'llm-usage-detail-total' : row.kind === 'group' ? 'llm-usage-detail-group' : 'llm-usage-detail-model'"
+            :data-testid="row.kind === 'total'
+              ? 'llm-usage-detail-total'
+              : row.kind === 'group'
+                ? 'llm-usage-detail-group'
+                : row.kind === 'purpose'
+                  ? 'llm-usage-detail-purpose'
+                  : 'llm-usage-detail-model'"
+            :data-purpose-key="row.purpose_key || undefined"
             :class="{
               'bg-primary/10 font-semibold': row.kind === 'group',
+              'bg-muted/40 font-medium': row.kind === 'purpose',
               'font-bold border-t-2 border-default': row.kind === 'total'
             }"
           >
             <td
               class="border-b border-muted/40 px-1.5 py-1.5"
-              :class="row.kind === 'model' ? 'ps-4 font-normal text-toned' : ''"
+              :class="{
+                'ps-4 font-normal text-toned': row.kind === 'model' && !row.purpose_key,
+                'ps-8 font-normal text-toned': row.kind === 'model' && row.purpose_key,
+                'ps-4': row.kind === 'purpose'
+              }"
             >
-              {{ row.label }}
+              <button
+                v-if="row.kind === 'purpose' && row.purpose_key"
+                type="button"
+                class="inline-flex items-center gap-1 text-left"
+                :aria-expanded="!isPurposeCollapsed(row.purpose_key)"
+                data-testid="llm-usage-purpose-toggle"
+                @click="togglePurpose(row.purpose_key, $event)"
+              >
+                <span
+                  class="inline-block w-3 text-[10px] text-muted"
+                  aria-hidden="true"
+                >{{ isPurposeCollapsed(row.purpose_key) ? '▸' : '▾' }}</span>
+                <span>{{ row.label }}</span>
+              </button>
+              <template v-else>
+                {{ row.label }}
+              </template>
             </td>
             <td class="border-b border-muted/40 px-1.5 py-1.5 text-right tabular-nums">
               {{ formatLlmUsageTokens(row.input_tokens) }}
@@ -209,6 +294,17 @@ function toggleDetails(event: Event) {
         data-testid="llm-usage-incomplete-note"
       >
         {{ t('llmUsage.incompleteNote') }}
+      </p>
+      <p
+        v-if="fxNote"
+        class="mt-1 text-[11.5px] text-muted"
+        data-testid="llm-usage-fx-note"
+      >
+        {{ t('llmUsage.fxNote', {
+          rate: fxNote.rate,
+          date: fxNote.date || '—',
+          source: fxNote.source || '—'
+        }) }}
       </p>
     </div>
   </div>

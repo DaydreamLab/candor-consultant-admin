@@ -1749,6 +1749,19 @@ function sellableItemListOf(data: unknown): unknown[] | null {
 /** Admin `llm_usage` 用途類別（core `by_category_model[].category`）。 */
 export type LlmUsageCategory = 'chat' | 'report' | 'decision' | 'other'
 
+/**
+ * Admin `llm_usage` 匯率資訊（core 每週一查台銀並快取）。
+ * `rate_date`＝牌告日期；`fetched_at`＝查詢時間。舊欄 `effective_from` 當 `rate_date` fallback。
+ */
+export type LlmUsageFx = {
+  base: string
+  quote: string
+  rate: string | null
+  rate_date: string | null
+  fetched_at: string | null
+  source: string | null
+}
+
 /** Admin `llm_usage` per-model row（缺欄時 tokens 降級為 0；舊回應無 cost_known 視為 true）。 */
 export type LlmUsageByModel = {
   model: string
@@ -1758,17 +1771,25 @@ export type LlmUsageByModel = {
   cache_write_tokens: number
   estimated_cost_ntd: string | null
   estimated_cost_usd: string | null
+  /** core 回傳 TWD；無匯率或成本未知時為 null。admin 不自行換算。 */
+  cost_twd: string | null
   cost_known: boolean
 }
 
-/** Admin `llm_usage` 用途 × model 列。 */
+/** Admin `llm_usage` 類別 × model 列。 */
 export type LlmUsageByCategoryModel = LlmUsageByModel & {
   category: string
 }
 
+/** Admin `llm_usage` 決策用途 × model 列（`purpose` 取代 category）。 */
+export type LlmUsageByPurposeModel = LlmUsageByModel & {
+  purpose: string
+}
+
 /**
  * Admin `llm_usage` 加總。
- * 向後相容：無 `by_model`／`by_category_model` → 空陣列；無 cache／cost_* 旗標時給安全預設。
+ * 向後相容：無 `by_model`／`by_category_model`／`decision_by_purpose_model` → 空陣列；
+ * 無 cache／cost_*／fx 時給安全預設。
  */
 export type LlmUsageSummaryPayload = {
   input_tokens: number
@@ -1777,9 +1798,12 @@ export type LlmUsageSummaryPayload = {
   cache_write_tokens: number
   estimated_cost_ntd: string | null
   estimated_cost_usd: string | null
+  cost_twd: string | null
   cost_complete: boolean
+  fx: LlmUsageFx | null
   by_model: LlmUsageByModel[]
   by_category_model: LlmUsageByCategoryModel[]
+  decision_by_purpose_model: LlmUsageByPurposeModel[]
 }
 
 function llmUsageAsInt(value: unknown): number {
@@ -1829,6 +1853,7 @@ function readLlmUsageTokenRow(value: Record<string, unknown>): {
   cache_write_tokens: number
   estimated_cost_ntd: string | null
   estimated_cost_usd: string | null
+  cost_twd: string | null
   cost_known: boolean
 } {
   const cost_known = llmUsageCostKnown(value.cost_known)
@@ -1838,6 +1863,8 @@ function readLlmUsageTokenRow(value: Record<string, unknown>): {
   const estimated_cost_usd = cost_known
     ? llmUsageCostText(value.estimated_cost_usd, 4)
     : llmUsageNullableCost(value.estimated_cost_usd, 4)
+  // cost_twd：無匯率／未知成本時為 null；不把 0 當缺省強制填入
+  const cost_twd = llmUsageNullableCost(value.cost_twd, 2)
   return {
     input_tokens: llmUsageAsInt(value.input_tokens),
     output_tokens: llmUsageAsInt(value.output_tokens),
@@ -1845,6 +1872,7 @@ function readLlmUsageTokenRow(value: Record<string, unknown>): {
     cache_write_tokens: llmUsageAsInt(value.cache_write_tokens),
     estimated_cost_ntd,
     estimated_cost_usd,
+    cost_twd,
     cost_known
   }
 }
@@ -1876,9 +1904,73 @@ function readLlmUsageByCategoryModelRow(value: unknown): LlmUsageByCategoryModel
   }
 }
 
+function readLlmUsageByPurposeModelRow(value: unknown): LlmUsageByPurposeModel | null {
+  if (!isRecord(value)) {
+    return null
+  }
+  const purpose = typeof value.purpose === 'string' ? value.purpose.trim() : ''
+  if (!purpose) {
+    return null
+  }
+  const model = typeof value.model === 'string' ? value.model.trim() : ''
+  return {
+    purpose,
+    model,
+    ...readLlmUsageTokenRow(value)
+  }
+}
+
+function readLlmUsageFxRate(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return null
+    }
+    return trimmed
+  }
+  return null
+}
+
+function readLlmUsageFx(value: unknown): LlmUsageFx | null {
+  if (!isRecord(value)) {
+    return null
+  }
+  const base = typeof value.base === 'string' && value.base.trim() ? value.base.trim() : 'USD'
+  const quote = typeof value.quote === 'string' && value.quote.trim() ? value.quote.trim() : 'TWD'
+  const rate = readLlmUsageFxRate(value.rate)
+  // rate_date＝牌告日期；相容讀舊欄 effective_from
+  const rate_date = llmUsageOptionalText(value.rate_date)
+    ?? llmUsageOptionalText(value.effective_from)
+  const fetched_at = llmUsageOptionalText(value.fetched_at)
+  const source = llmUsageOptionalText(value.source)
+  return {
+    base,
+    quote,
+    rate,
+    rate_date,
+    fetched_at,
+    source
+  }
+}
+
+function llmUsageOptionalText(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+  const trimmed = value.trim()
+  return trimmed || null
+}
+
 /**
  * 正規化 admin `llm_usage`。非物件／null → null；
- * 缺 `by_model`／`by_category_model` 或非陣列 → 對應空陣列。
+ * 缺 `by_model`／`by_category_model`／`decision_by_purpose_model` 或非陣列 → 對應空陣列。
+ * 無 `fx` 或非物件 → null（顯示端只出 USD）。
  */
 export function readLlmUsage(value: unknown): LlmUsageSummaryPayload | null {
   if (!isRecord(value)) {
@@ -1902,6 +1994,15 @@ export function readLlmUsage(value: unknown): LlmUsageSummaryPayload | null {
       }
     }
   }
+  const decision_by_purpose_model: LlmUsageByPurposeModel[] = []
+  if (Array.isArray(value.decision_by_purpose_model)) {
+    for (const row of value.decision_by_purpose_model) {
+      const parsed = readLlmUsageByPurposeModelRow(row)
+      if (parsed) {
+        decision_by_purpose_model.push(parsed)
+      }
+    }
+  }
   const cost_complete = value.cost_complete !== false
   const estimated_cost_ntd = cost_complete
     ? llmUsageCostText(value.estimated_cost_ntd, 2)
@@ -1909,6 +2010,10 @@ export function readLlmUsage(value: unknown): LlmUsageSummaryPayload | null {
   const estimated_cost_usd = cost_complete
     ? llmUsageCostText(value.estimated_cost_usd, 4)
     : llmUsageNullableCost(value.estimated_cost_usd, 4)
+  const cost_twd = llmUsageNullableCost(value.cost_twd, 2)
+  const fx = Object.prototype.hasOwnProperty.call(value, 'fx')
+    ? readLlmUsageFx(value.fx)
+    : null
   return {
     input_tokens: llmUsageAsInt(value.input_tokens),
     output_tokens: llmUsageAsInt(value.output_tokens),
@@ -1916,9 +2021,12 @@ export function readLlmUsage(value: unknown): LlmUsageSummaryPayload | null {
     cache_write_tokens: llmUsageAsInt(value.cache_write_tokens),
     estimated_cost_ntd,
     estimated_cost_usd,
+    cost_twd,
     cost_complete,
+    fx,
     by_model,
-    by_category_model
+    by_category_model,
+    decision_by_purpose_model
   }
 }
 
