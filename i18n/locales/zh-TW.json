@@ -735,6 +735,8 @@
       "decision.cta.open_chat": "對話 CTA",
       "decision.cta.triad_complete": "基本資料問完 CTA",
       "decision.cta.questionnaire_gap": "補問缺漏題",
+      "decision.cta.lab_followup": "建議檢查／上傳 CTA",
+      "decision.cta.lab_report_prompt": "詢問血檢報告 CTA",
       "decision.reply_is_asking": "回覆是否在提問",
       "decision.goal_utterance": "goals 判讀",
       "reply_is_asking": "回覆是否在提問",

@@ -735,6 +735,8 @@
       "decision.cta.open_chat": "Chat CTA",
       "decision.cta.triad_complete": "Triad-complete CTA",
       "decision.cta.questionnaire_gap": "Questionnaire gap follow-up",
+      "decision.cta.lab_followup": "Lab follow-up / upload CTA",
+      "decision.cta.lab_report_prompt": "Lab report prompt CTA",
       "decision.reply_is_asking": "Reply is asking",
       "decision.goal_utterance": "Goal utterance",
       "reply_is_asking": "Reply is asking",

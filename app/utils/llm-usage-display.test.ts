@@ -229,6 +229,10 @@ describe('llm-usage-display', () => {
     expect(purposeLabelOf('decision.goal_utterance')).toBe('goals 判讀')
     expect(purposeLabelOf('decision.cta.triad_complete')).toBe('基本資料問完 CTA')
     expect(purposeLabelOf('decision.cta.questionnaire_gap')).toBe('補問缺漏題')
+    expect(purposeLabelOf('decision.cta.lab_followup')).toBe('建議檢查／上傳 CTA')
+    expect(purposeLabelOf('cta.lab_followup')).toBe('建議檢查／上傳 CTA')
+    expect(purposeLabelOf('decision.cta.lab_report_prompt')).toBe('詢問血檢報告 CTA')
+    expect(purposeLabelOf('cta.lab_report_prompt')).toBe('詢問血檢報告 CTA')
     expect(purposeLabelOf('decision.custom.unknown')).toBe('decision.custom.unknown')
   })
 
