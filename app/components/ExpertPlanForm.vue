@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<{
   saving: boolean
   saveError?: string
   disabled?: boolean
-  /** expert：鎖名稱／售價，僅可改排序與上下架（Irice 11/4）。 */
+  /** expert：鎖名稱／售價，僅可改排序與上下架（core #143 `b7c5ed0`）。 */
   namePriceLocked?: boolean
 }>(), {
   disabled: false,

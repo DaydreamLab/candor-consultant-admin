@@ -22,13 +22,13 @@ const { set } = bindNavbarActions()
 const expertPlanId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || expertPlanId.value)
 
-/** expert／ops／admin 皆可進編輯頁（Irice 11/4：expert 可改 sort_order＋active）。 */
+/** expert／ops／admin 皆可進編輯頁（core #143：expert 可改 sort_order＋active）。 */
 const canAccess = computed(() => {
   const role = session.operator?.role
   return role === 'expert' || role === 'ops' || role === 'admin'
 })
 
-/** expert 鎖名稱／售價；ops／admin 可改全欄。 */
+/** expert 鎖名稱／售價（後端禁 name_zh／name_en／price）；ops／admin 可改全欄。 */
 const namePriceLocked = computed(() => session.operator?.role === 'expert')
 
 const expertPlan = ref<Record<string, unknown> | null>(null)

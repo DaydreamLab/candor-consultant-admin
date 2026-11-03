@@ -336,9 +336,11 @@ export type AdminExpertCaseReviewListQuery = {
   status?: string
   /** `expert_plan`＝付費專家方案案；`legacy`＝舊免費案。省略＝全部。 */
   source?: 'expert_plan' | 'legacy'
-  /** Assumed：B-08／C18 依付款時間排序；core #143 定稿後對齊。 */
-  sort?: 'paid_at' | 'created_at'
-  order?: 'asc' | 'desc'
+  /**
+   * OpenAPI（core #143 `b7c5ed0`）列表 query 僅 status／source／limit／offset。
+   * 排序由後端：`awaiting_review`＋`expert_plan` → `paid_at` ASC；其餘 `created_at` DESC。
+   * 勿再送 sort／order（舊版上傳檔假設，已廢）。
+   */
   limit?: number
   offset?: number
 }
@@ -361,8 +363,8 @@ export function isExpertCaseAlreadyFinalizedError(error: unknown): boolean {
 }
 
 /**
- * expert PATCH 名稱／售價等禁止欄位 → 403／422 `expert_plan_field_forbidden`.
- * Irice 11/4：expert 可改 `active`＋`sort_order`（core #143 後續會對齊）。
+ * expert PATCH `name_zh`／`name_en`／`price` → 403 `expert_plan_field_forbidden`
+ *（core #143 `b7c5ed0`／spec 33）。expert 可改 `active`＋`sort_order`；ops／admin 不變。
  */
 export const EXPERT_PLAN_FIELD_FORBIDDEN_CODE = 'expert_plan_field_forbidden'
 
@@ -1514,8 +1516,14 @@ export type AdminExpertPlan = {
   package_plan_code?: string | null
 }
 
+/**
+ * PATCH body（OpenAPI adminExpertPlanPatch）。
+ * expert 僅應送 active／sort_order；name_zh／name_en／price → 403。
+ * 畫面依設計稿 C14 不露 name_en；ops／admin 仍可經 API 型別送出。
+ */
 export type ExpertPlanWrite = {
   name_zh?: string
+  name_en?: string | null
   price?: number
   active?: boolean
   sort_order?: number

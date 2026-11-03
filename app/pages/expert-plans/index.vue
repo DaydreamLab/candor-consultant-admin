@@ -24,7 +24,7 @@ const deactivateOpen = ref(false)
 const deactivateTarget = ref<Record<string, unknown> | null>(null)
 
 /**
- * expert／ops／admin 皆可進編輯（Irice 11/4：排序不限角色）。
+ * expert／ops／admin 皆可進編輯（core #143 `b7c5ed0`：排序不限角色）。
  * 列表上架／下架亦全角色可用；名稱／售價僅編輯頁 ops／admin 可改。
  */
 const canEdit = computed(() => {

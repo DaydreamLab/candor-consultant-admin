@@ -18,11 +18,14 @@ describe('expert-plan API error codes (core #143)', () => {
     expect(isExpertCaseAlreadyFinalizedError(new AdminApiError(400, '', ''))).toBe(false)
   })
 
-  it('detects expert_plan_field_forbidden', () => {
+  it('detects expert_plan_field_forbidden (403; name_zh／name_en／price)', () => {
     expect(isExpertPlanFieldForbiddenError(
-      new AdminApiError(403, '', EXPERT_PLAN_FIELD_FORBIDDEN_CODE)
+      new AdminApiError(403, 'field forbidden', EXPERT_PLAN_FIELD_FORBIDDEN_CODE)
     )).toBe(true)
     expect(isExpertPlanFieldForbiddenError(new AdminApiError(403, '', 'other'))).toBe(false)
+    expect(isExpertPlanFieldForbiddenError(
+      new AdminApiError(422, '', EXPERT_PLAN_FIELD_FORBIDDEN_CODE)
+    )).toBe(true)
   })
 
   it('detects refund_request_pending', () => {

@@ -87,35 +87,28 @@ const chipOptions = computed(() => [
   { key: 'legacy' as const, label: t('expertCaseReviews.filterSourceLegacy') }
 ])
 
+/** Query 僅 status／source（core #143 OpenAPI）；paid_at 排序由後端預設。 */
 const listQuery = computed(() => {
   switch (activeChip.value) {
     case 'pending':
       return {
         status: 'awaiting_review' as const,
-        source: 'expert_plan' as const,
-        sort: 'paid_at' as const,
-        order: 'asc' as const
+        source: 'expert_plan' as const
       }
     case 'reviewed':
       return {
         status: 'reviewed' as const,
-        source: undefined,
-        sort: 'paid_at' as const,
-        order: 'asc' as const
+        source: undefined
       }
     case 'legacy':
       return {
         status: undefined,
-        source: 'legacy' as const,
-        sort: 'paid_at' as const,
-        order: 'asc' as const
+        source: 'legacy' as const
       }
     default:
       return {
         status: undefined,
-        source: undefined,
-        sort: 'paid_at' as const,
-        order: 'asc' as const
+        source: undefined
       }
   }
 })
@@ -156,8 +149,6 @@ async function load(reset: boolean) {
     const fetched = await adminListExpertCaseReviews(config.public.apiBase, token, {
       status: listQuery.value.status,
       source: listQuery.value.source,
-      sort: listQuery.value.sort,
-      order: listQuery.value.order,
       limit: FETCH_SIZE,
       offset: nextOffset
     })

@@ -58,7 +58,8 @@ export function snapshotFromExpertPlan(plan: Record<string, unknown>): ExpertPla
 export type ExpertPlanFormOptions = {
   /**
    * ops／admin：可改名稱／售價。
-   * expert（Irice 11/4）：僅 active＋sort_order；名稱／售價不進 dirty／patch。
+   * expert（core #143 `b7c5ed0`／Irice 11/4）：僅 active＋sort_order；
+   * name_zh／price 不進 dirty／patch（後端對 name_zh／name_en／price 回 403）。
    */
   allowNamePrice?: boolean
 }
