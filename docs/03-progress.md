@@ -74,6 +74,8 @@
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
+| 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表＋PATCH；**無新增**；對齊 spec 33／core #143） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
+| 退款申請列表 | `/refund-requests`（確認／拒絕；對齊 spec 33） | 可用 | 接線中（待 core #143） | M2 Beta |
 | 採檢服務（LabService） | `/lab-services`、`/lab-services/new`、`/lab-services/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
@@ -151,9 +153,18 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 列表／詳情／品項決定／送出／匯出 | `GET /expert-case-reviews`、`GET`／`PATCH`／`POST …/expert-case-review/{id}/**` | 已接 |
+| 列表／詳情／品項決定／送出／匯出 | `GET /expert-case-reviews`、`GET`／`PATCH`／`POST …/expert-case-review/{id}/**` | 已接（列表支援 `source=expert_plan\|legacy`；定稿畫面顯示單價參考＋開案金額） |
 | 定稿對話文案產生 | `POST /expert-case-review/{id}/finalize-copy/generate`（`force`；回 `report_highlights`／`expert_opinion`／`content_hash`／`cache_hit`） | 接線中（待 core #103；本機 mock 旗標可開） |
 | 送出定稿帶兩段文案 | `POST …/submit` 可選 `report_highlights`／`expert_opinion` | 接線中（待 core #103） |
+
+### Expert plans／refund requests（spec 33）
+
+| 能力 | 端點 | 狀態 |
+|------|------|------|
+| 專家方案列表／詳情／更新 | `GET /admin/expert-plans`、`GET`／`PATCH /admin/expert-plan/{id}` | 接線中（畫面已做；待 core #143；**無** create） |
+| 退款申請列表／確認／拒絕 | `GET /admin/refund-requests`、`POST …/confirm`、`POST …/reject` | 接線中（待 core #143） |
+| 訂單詳情專家方案明細／退款申請狀態 | `GET /admin/order/{id}`（`lines.kind=expert_plan`、`refund_request_status`／`display`） | 接線中（待 core #143） |
+| 整筆退款閘門（已寄出不可退） | `POST /admin/order/{id}/refund` → 409 `not_refundable` | 接線中（按鈕對齊 shipment null／picking；錯誤顯示 core message） |
 
 ### Orders／shipments
 

@@ -13,10 +13,10 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
     ])
   })
 
-  it('lists each nav key exactly once (22 items)', () => {
+  it('lists each nav key exactly once (24 items)', () => {
     const keys = NAV_GROUPS.flatMap(g => g.items.map(i => i.key))
-    expect(keys).toHaveLength(22)
-    expect(new Set(keys).size).toBe(22)
+    expect(keys).toHaveLength(24)
+    expect(new Set(keys).size).toBe(24)
   })
 
   it('places workbench as top-level without badge or group label', () => {
@@ -31,8 +31,15 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
   it('places shipping in cases group without badge; progress in developing', () => {
     const ops = NAV_GROUPS.find(g => g.key === 'ops')!
     const developing = NAV_GROUPS.find(g => g.key === 'developing')!
-    expect(ops.items.map(i => i.key)).toEqual(['reviews', 'orders', 'shipping', 'users'])
+    expect(ops.items.map(i => i.key)).toEqual([
+      'reviews',
+      'orders',
+      'refundRequests',
+      'shipping',
+      'users'
+    ])
     expect(ops.items.find(i => i.key === 'shipping')?.developing).toBe(false)
+    expect(ops.items.find(i => i.key === 'refundRequests')?.developing).toBe(false)
     expect(developing.items.map(i => i.key)).toContain('progress')
     expect(developing.items.map(i => i.key)).not.toContain('shipping')
   })
@@ -40,7 +47,13 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
   it('places labServices in catalog with coming-soon badge; labs stay in developing', () => {
     const catalog = NAV_GROUPS.find(g => g.key === 'catalog')!
     const developing = NAV_GROUPS.find(g => g.key === 'developing')!
-    expect(catalog.items.map(i => i.key)).toEqual(['packagePlans', 'products', 'labServices'])
+    expect(catalog.items.map(i => i.key)).toEqual([
+      'packagePlans',
+      'expertPlans',
+      'products',
+      'labServices'
+    ])
+    expect(catalog.items.find(i => i.key === 'expertPlans')?.developing).toBe(false)
     expect(catalog.items.find(i => i.key === 'labServices')?.developing).not.toBe(false)
     expect(developing.items.map(i => i.key)).toEqual([
       'cases',

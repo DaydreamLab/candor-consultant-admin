@@ -1,0 +1,217 @@
+<script setup lang="ts">
+import {
+  AdminApiError,
+  adminGetExpertPlan,
+  adminUpdateExpertPlan,
+  type ExpertPlanWrite
+} from '~/utils/admin-api'
+import { EXPERT_PLAN_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
+import { usePackagePlanLeaveGuard } from '~/composables/usePackagePlanLeaveGuard'
+import { normalizeAdminPath } from '~/utils/nav'
+import { readOperatorToken } from '~/utils/operator-session'
+
+const config = useRuntimeConfig()
+const route = useRoute()
+const localePath = useLocalePath()
+const { t, locale } = useI18n()
+const session = useSessionStore()
+const crumbLabel = useExpertPlanCrumbLabel()
+const { set } = bindNavbarActions()
+
+const expertPlanId = computed(() => String(route.params.id ?? ''))
+const title = computed(() => crumbLabel.value || expertPlanId.value)
+const canEdit = computed(() => session.operator?.role !== 'expert')
+
+const expertPlan = ref<Record<string, unknown> | null>(null)
+const pending = ref(true)
+const saving = ref(false)
+const errorMessage = ref('')
+const formDirty = ref(false)
+const saveNotice = ref<'success' | 'noChanges' | null>(null)
+
+const { confirmLeave, allowNavigationWithoutConfirm } = usePackagePlanLeaveGuard(
+  formDirty,
+  () => t('expertPlans.leaveConfirm')
+)
+
+watch([saving, pending, expertPlan, locale, canEdit], () => {
+  if (pending.value || !expertPlan.value || !canEdit.value) {
+    set(null)
+    return
+  }
+  set({
+    showDelete: false,
+    deleteDisabled: false,
+    deleting: false,
+    busy: saving.value,
+    onDelete: () => {},
+    primaryLabel: t('actions.save'),
+    primaryLoading: saving.value,
+    primaryForm: EXPERT_PLAN_FORM_ID,
+    onPrimary: null
+  })
+}, { immediate: true })
+
+if (import.meta.client) {
+  watch(expertPlanId, (id) => {
+    void load(id)
+  }, { immediate: true })
+}
+
+onUnmounted(() => {
+  if (!normalizeAdminPath(route.path).startsWith('/expert-plans/')) {
+    crumbLabel.value = null
+  }
+})
+
+async function load(id: string) {
+  crumbLabel.value = null
+  expertPlan.value = null
+  errorMessage.value = ''
+  formDirty.value = false
+  saveNotice.value = null
+
+  const token = readOperatorToken()
+  if (!token || !id) {
+    pending.value = false
+    errorMessage.value = t('expertPlans.failed')
+    return
+  }
+
+  pending.value = true
+  try {
+    const row = await adminGetExpertPlan(config.public.apiBase, token, id)
+    if (expertPlanId.value !== id) {
+      return
+    }
+    expertPlan.value = row
+    crumbLabel.value = planName(row)
+    errorMessage.value = ''
+  } catch (error) {
+    if (expertPlanId.value !== id) {
+      return
+    }
+    expertPlan.value = null
+    errorMessage.value = failText(error, t('expertPlans.failed'))
+  } finally {
+    if (expertPlanId.value === id) {
+      pending.value = false
+    }
+  }
+}
+
+async function onSave(payload: ExpertPlanWrite) {
+  const token = readOperatorToken()
+  const id = expertPlanId.value
+  if (!token || !id || !canEdit.value) {
+    errorMessage.value = t('expertPlans.saveFailed')
+    return
+  }
+
+  saving.value = true
+  errorMessage.value = ''
+  saveNotice.value = null
+  try {
+    const row = await adminUpdateExpertPlan(config.public.apiBase, token, id, payload)
+    if (expertPlanId.value !== id) {
+      return
+    }
+    expertPlan.value = row
+    crumbLabel.value = planName(row)
+    formDirty.value = false
+    saveNotice.value = 'success'
+  } catch (error) {
+    if (expertPlanId.value !== id) {
+      return
+    }
+    errorMessage.value = failText(error, t('expertPlans.saveFailed'))
+  } finally {
+    if (expertPlanId.value === id) {
+      saving.value = false
+    }
+  }
+}
+
+function onNoChanges() {
+  saveNotice.value = 'noChanges'
+  errorMessage.value = ''
+}
+
+function onCancel() {
+  if (!confirmLeave()) {
+    return
+  }
+  allowNavigationWithoutConfirm()
+  void navigateTo(localePath('/expert-plans'))
+}
+
+watch(formDirty, (dirty) => {
+  if (dirty) {
+    saveNotice.value = null
+  }
+})
+
+function planName(row: Record<string, unknown>) {
+  return scalarText(row.name_zh).trim() || scalarText(row.name).trim() || null
+}
+
+function scalarText(value: unknown) {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  return ''
+}
+
+function failText(error: unknown, fallback: string) {
+  const message = error instanceof AdminApiError ? error.message.trim() : ''
+  return message || fallback
+}
+</script>
+
+<template>
+  <PageHeader
+    :title="title"
+    plain
+  >
+    <UAlert
+      v-if="saveNotice === 'success' && expertPlan"
+      color="success"
+      variant="subtle"
+      class="mb-4"
+      :title="$t('expertPlans.saveOk')"
+    />
+    <UAlert
+      v-if="saveNotice === 'noChanges' && expertPlan"
+      color="neutral"
+      variant="subtle"
+      class="mb-4"
+      :title="$t('expertPlans.noChanges')"
+    />
+    <p
+      v-if="errorMessage"
+      class="mb-4 text-sm text-error"
+    >
+      {{ errorMessage }}
+    </p>
+    <p
+      v-if="pending"
+      class="text-sm text-muted"
+    >
+      {{ $t('expertPlans.loading') }}
+    </p>
+    <ExpertPlanForm
+      v-else-if="expertPlan"
+      :disabled="!canEdit"
+      :expert-plan="expertPlan"
+      :saving="saving"
+      :save-error="errorMessage"
+      @dirty-change="formDirty = $event"
+      @cancel="onCancel"
+      @no-changes="onNoChanges"
+      @save="onSave"
+    />
+  </PageHeader>
+</template>

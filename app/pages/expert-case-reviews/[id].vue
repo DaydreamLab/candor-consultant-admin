@@ -4,11 +4,13 @@ import {
   adminExportExpertCaseReview,
   adminGetExpertCaseMemberData,
   adminGetExpertCaseReview,
+  adminGetOrder,
   adminListSellableItems,
   adminPatchExpertCaseReviewItem,
   adminResetExpertCaseReviewItems,
   adminSubmitExpertCaseReview
 } from '~/utils/admin-api'
+import { money } from '~/utils/format'
 import { readFinalizeCopyFromDetail } from '~/utils/expert-finalize-copy'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import {
@@ -80,6 +82,7 @@ const crumbLabel = useExpertCaseCrumbLabel()
 
 const detail = ref<Record<string, unknown> | null>(null)
 const memberData = ref<Record<string, unknown> | null>(null)
+const linkedOrder = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
 const memberPending = ref(false)
 const busy = ref(false)
@@ -123,6 +126,34 @@ const caseId = computed(() => String(route.params.id || ''))
 
 const awaiting = computed(() => detail.value?.status === 'awaiting_review')
 const reviewed = computed(() => detail.value?.status === 'reviewed')
+
+const linkedOrderId = computed(() => {
+  const value = detail.value?.order_id
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim()
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  return ''
+})
+
+const isExpertPlanCase = computed(() => Boolean(linkedOrderId.value))
+
+/** 開案金額：專家方案案總價固定等於此金額，不隨品項變動。 */
+const openingAmount = computed(() => {
+  const fromOrder = numberOf(linkedOrder.value?.amount_total)
+  if (fromOrder != null) {
+    return fromOrder
+  }
+  return numberOf(detail.value?.opening_amount)
+    ?? numberOf(detail.value?.expert_plan_price)
+    ?? numberOf(detail.value?.amount_total)
+})
+
+const openingAmountText = computed(() => {
+  return openingAmount.value == null ? '' : money(openingAmount.value)
+})
 
 function syncFinalizeCopyFromDetail(row: Record<string, unknown> | null) {
   const copy = readFinalizeCopyFromDetail(row)
@@ -556,20 +587,24 @@ async function load() {
   if (!token || !caseId.value) {
     detail.value = null
     memberData.value = null
+    linkedOrder.value = null
     errorMessage.value = t('expertCaseReviews.failed')
     pending.value = false
     return
   }
   pending.value = true
   errorMessage.value = ''
+  linkedOrder.value = null
   try {
     detail.value = await adminGetExpertCaseReview(config.public.apiBase, token, caseId.value)
     syncFinalizeCopyFromDetail(detail.value)
     crumbLabel.value = memberLabel.value
     void loadMemberData(token)
+    void loadLinkedOrder(token, detail.value)
   } catch (error) {
     detail.value = null
     memberData.value = null
+    linkedOrder.value = null
     finalizeReportHighlights.value = ''
     finalizeExpertOpinion.value = ''
     errorMessage.value = error instanceof AdminApiError && error.message
@@ -577,6 +612,19 @@ async function load() {
       : t('expertCaseReviews.failed')
   } finally {
     pending.value = false
+  }
+}
+
+async function loadLinkedOrder(token: string, row: Record<string, unknown> | null) {
+  const orderId = typeof row?.order_id === 'string' ? row.order_id.trim() : ''
+  if (!orderId) {
+    linkedOrder.value = null
+    return
+  }
+  try {
+    linkedOrder.value = await adminGetOrder(config.public.apiBase, token, orderId)
+  } catch {
+    linkedOrder.value = null
   }
 }
 
@@ -1215,6 +1263,34 @@ function chatMessageMarkdown(payload: {
 function isCustomerRole(value: unknown) {
   return typeof value === 'string' && CUSTOMER_ROLES.has(value)
 }
+
+function numberOf(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
+    return Number(value)
+  }
+  return null
+}
+
+/** 品項單價（僅參考）：優先 snapshot／catalog 的 unit_price。 */
+function itemUnitPrice(item: Record<string, unknown>) {
+  const fromItem = numberOf(item.unit_price)
+  if (fromItem != null) {
+    return fromItem
+  }
+  const sellableId = itemId(item)
+  if (!sellableId) {
+    return null
+  }
+  return catalogById.value.get(sellableId)?.unit_price ?? null
+}
+
+function itemUnitPriceText(item: Record<string, unknown>) {
+  const price = itemUnitPrice(item)
+  return price == null ? '' : money(price)
+}
 </script>
 
 <template>
@@ -1270,6 +1346,14 @@ function isCustomerRole(value: unknown) {
                 data-testid="expert-case-status-chip"
               />
             </span>
+            <UBadge
+              v-if="isExpertPlanCase"
+              color="info"
+              variant="subtle"
+              data-testid="expert-case-expert-plan-chip"
+            >
+              {{ $t('nav.expertPlans') }}
+            </UBadge>
             <UBadge
               v-if="missingGoals"
               color="warning"
@@ -1337,6 +1421,22 @@ function isCustomerRole(value: unknown) {
             </UTooltip>
           </div>
         </div>
+      </div>
+
+      <div
+        v-if="isExpertPlanCase && openingAmountText"
+        class="border-b border-default bg-elevated px-5 py-3 sm:px-7"
+        data-testid="expert-case-opening-amount"
+      >
+        <p class="text-sm text-muted">
+          {{ $t('expertCaseReviews.openingAmountLabel') }}
+        </p>
+        <p class="tabular-money mt-1 text-lg font-semibold text-highlighted">
+          {{ openingAmountText }}
+        </p>
+        <p class="mt-1 text-xs text-muted">
+          {{ $t('expertCaseReviews.openingAmountHint') }}
+        </p>
       </div>
 
       <div class="space-y-8 px-5 py-5 sm:px-7 sm:py-7">
@@ -1650,6 +1750,16 @@ function isCustomerRole(value: unknown) {
                       >
                         {{ formatScoreNorm(item.score_norm) }}
                       </p>
+                      <p
+                        v-if="itemUnitPriceText(item)"
+                        class="mt-1 text-xs text-muted"
+                        data-testid="expert-case-item-unit-price"
+                      >
+                        {{ $t('expertCaseReviews.unitPriceReference') }}：
+                        <span class="tabular-money font-medium text-highlighted">
+                          {{ itemUnitPriceText(item) }}
+                        </span>
+                      </p>
                     </div>
                     <UButton
                       v-if="awaiting"
@@ -1710,6 +1820,16 @@ function isCustomerRole(value: unknown) {
                         data-testid="expert-case-cmp-item-dose"
                       >
                         {{ doseDisplayText(item) }}
+                      </p>
+                      <p
+                        v-if="!item.removed && itemUnitPriceText(item)"
+                        class="text-xs text-muted"
+                        data-testid="expert-case-cmp-item-unit-price"
+                      >
+                        {{ $t('expertCaseReviews.unitPriceReference') }}：
+                        <span class="tabular-money font-medium text-highlighted">
+                          {{ itemUnitPriceText(item) }}
+                        </span>
                       </p>
                       <p class="text-xs text-muted">
                         <span

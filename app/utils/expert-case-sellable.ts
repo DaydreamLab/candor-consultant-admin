@@ -10,6 +10,8 @@ export type SellablePickRow = {
   sale_status: string
   daily_dose: number | null
   daily_servings_max: number | null
+  /** Catalog unit price (TWD); reference only on expert-plan finalize. */
+  unit_price: number | null
   /** SKU strength text (mg／IU…); muted suggestion only — not stepper unit. */
   spec_text: string | null
 }
@@ -35,6 +37,7 @@ export function parseSellablePickRow(row: Record<string, unknown>): SellablePick
     sale_status: scalarText(row.sale_status).trim().toLowerCase(),
     daily_dose: finiteNumber(row.daily_dose),
     daily_servings_max: finiteNumber(row.daily_servings_max),
+    unit_price: finiteNumber(row.unit_price),
     spec_text: specText || null
   }
 }

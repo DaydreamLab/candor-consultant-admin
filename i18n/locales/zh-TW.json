@@ -18,6 +18,8 @@
     "progress": "履約進度",
     "products": "保健品",
     "packagePlans": "銷售方案",
+    "expertPlans": "專家方案",
+    "refundRequests": "退款申請",
     "labServices": "採檢服務",
     "expertTuning": "專家訓練",
     "aiAssistant": "AI 助理",
@@ -95,6 +97,14 @@
     "invoiceRetry": "重試發票",
     "invoiceRetryFailed": "發票重試失敗。",
     "viewInShipping": "在物流進度查看",
+    "refundRequestDisplay": {
+      "requested": "退款申請中"
+    },
+    "refundRequestStatus": {
+      "requested": "已申請",
+      "refunded": "已退款",
+      "rejected": "已拒絕"
+    },
     "filters": {
       "any": "全部",
       "q": "搜尋",
@@ -112,6 +122,7 @@
       "summary": "摘要",
       "recipient": "收件與發票",
       "package": "方案組成",
+      "expertPlan": "專家方案",
       "labLines": "其他明細",
       "payments": "付款",
       "shipment": "出貨",
@@ -152,6 +163,7 @@
     },
     "lineColumns": {
       "name": "銷售方案",
+      "expertPlan": "專家方案",
       "dailyDose": "每日份數（下限）",
       "unitPrice": "單價",
       "monthlyCost": "期間費用",
@@ -172,6 +184,7 @@
       "recipient_address": "地址",
       "recipient_email": "Email",
       "package_plan_name": "銷售方案",
+      "refund_request_status": "退款申請",
       "payment_status": "付款狀態",
       "paid_at": "付款時間",
       "paid_amount": "付款金額",
@@ -319,6 +332,59 @@
       "status": "狀態",
       "price": "價格",
       "summary": "內容摘要"
+    }
+  },
+  "expertPlans": {
+    "description": "可以編輯專家方案的名稱、售價、上下架（這版不做「新增」）",
+    "loading": "[TODO] expertPlans.loading",
+    "failed": "[TODO] expertPlans.failed",
+    "empty": "[TODO] expertPlans.empty",
+    "saveFailed": "[TODO] expertPlans.saveFailed",
+    "saveOk": "[TODO] expertPlans.saveOk",
+    "noChanges": "[TODO] expertPlans.noChanges",
+    "leaveConfirm": "[TODO] expertPlans.leaveConfirm",
+    "packagePlanHint": "code 與綁定方案不可改",
+    "fields": {
+      "code": "[TODO] expertPlans.fields.code",
+      "package_plan": "[TODO] expertPlans.fields.package_plan",
+      "name_zh": "名稱",
+      "name_en": "[TODO] expertPlans.fields.name_en",
+      "price": "售價",
+      "sort_order": "[TODO] expertPlans.fields.sort_order",
+      "active": "上下架"
+    },
+    "status": {
+      "active": "[TODO] expertPlans.status.active",
+      "inactive": "[TODO] expertPlans.status.inactive"
+    }
+  },
+  "refundRequests": {
+    "description": "列出使用者的退款申請和狀態；每天確認：確認就整筆退回開案金額，或拒絕",
+    "loading": "[TODO] refundRequests.loading",
+    "failed": "[TODO] refundRequests.failed",
+    "empty": "[TODO] refundRequests.empty",
+    "confirmOk": "[TODO] refundRequests.confirmOk",
+    "confirmFailed": "[TODO] refundRequests.confirmFailed",
+    "rejectOk": "[TODO] refundRequests.rejectOk",
+    "rejectFailed": "[TODO] refundRequests.rejectFailed",
+    "filters": {
+      "any": "[TODO] refundRequests.filters.any",
+      "status": "[TODO] refundRequests.filters.status"
+    },
+    "columns": {
+      "order": "訂單",
+      "status": "[TODO] refundRequests.columns.status",
+      "amount": "開案金額",
+      "createdAt": "[TODO] refundRequests.columns.createdAt"
+    },
+    "status": {
+      "requested": "已申請",
+      "refunded": "已退款",
+      "rejected": "已拒絕"
+    },
+    "actions": {
+      "confirm": "確認退款",
+      "reject": "拒絕"
     }
   },
   "labServices": {
@@ -861,8 +927,11 @@
     "filterGroup": "狀態篩選",
     "filters": {
       "any": "全部",
-      "status": "狀態"
+      "status": "狀態",
+      "source": "[TODO] expertCaseReviews.filters.source"
     },
+    "filterSourceExpertPlan": "專家方案",
+    "filterSourceLegacy": "[TODO] expertCaseReviews.filterSourceLegacy",
     "statusAwaiting": "待專家檢視",
     "statusReviewed": "已定稿",
     "demoChip": "範例",
@@ -871,8 +940,13 @@
     "colUser": "會員",
     "colConversation": "對話",
     "colStatus": "狀態",
+    "colOrder": "訂單",
+    "colExpertPlan": "專家方案",
     "colCreated": "建立",
     "colReviewed": "定稿",
+    "openingAmountLabel": "開案金額",
+    "openingAmountHint": "總價固定等於開案金額，單價只是參考",
+    "unitPriceReference": "單價",
     "open": "開啟",
     "detailTitle": "案件詳情",
     "original": "引擎原版",

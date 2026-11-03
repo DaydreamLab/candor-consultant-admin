@@ -10,6 +10,10 @@ import {
 import { money } from '~/utils/format'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { normalizeAdminPath } from '~/utils/nav'
+import {
+  isOrderShipmentRefundable,
+  orderHasRefundableCardPayment
+} from '~/utils/order-refund-gate'
 import { readOperatorToken } from '~/utils/operator-session'
 import {
   mapHealthReportResultRow,
@@ -78,8 +82,10 @@ const canRefund = computed(() => {
   if (!canOps.value || !order.value) {
     return false
   }
-  const rows = recordsOf(order.value.payments)
-  return rows.some(row => row.status === 'succeeded' && row.method === 'card')
+  if (!orderHasRefundableCardPayment(order.value.payments)) {
+    return false
+  }
+  return isOrderShipmentRefundable(recordOf(order.value.shipment))
 })
 
 const canRetryInvoice = computed(() => {
@@ -102,6 +108,27 @@ const recipientFields = computed(() => recipientOf(order.value))
 const packageInfo = computed(() => packageOf(order.value))
 const packageComponents = computed(() => packageInfo.value?.components ?? [])
 const labLines = computed(() => labLinesOf(order.value))
+const expertPlanLines = computed(() => expertPlanLinesOf(order.value))
+const refundRequestStatus = computed(() => {
+  const raw = order.value?.refund_request_status
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
+})
+const refundRequestDisplay = computed(() => {
+  const display = order.value?.refund_request_display
+  if (typeof display === 'string' && display.trim()) {
+    return display.trim()
+  }
+  if (refundRequestStatus.value === 'requested') {
+    return t('orders.refundRequestDisplay.requested')
+  }
+  if (refundRequestStatus.value === 'refunded') {
+    return t('orders.refundRequestStatus.refunded')
+  }
+  if (refundRequestStatus.value === 'rejected') {
+    return t('orders.refundRequestStatus.rejected')
+  }
+  return ''
+})
 const payments = computed(() => recordsOf(order.value?.payments))
 const shipment = computed(() => recordOf(order.value?.shipment))
 const shipmentId = computed(() => {
@@ -356,6 +383,22 @@ function packageOf(data: Record<string, unknown> | null) {
 
 function labLinesOf(data: Record<string, unknown> | null) {
   return recordsOf(data?.lines).filter(row => row.kind === 'lab_service')
+}
+
+function expertPlanLinesOf(data: Record<string, unknown> | null) {
+  return recordsOf(data?.lines).filter(row => row.kind === 'expert_plan')
+}
+
+function expertPlanLineName(row: Record<string, unknown>) {
+  return textOf(row.expert_plan_name)
+    || textOf(row.expert_plan_name_zh)
+    || textOf(row.name)
+    || textOf(row.expert_plan_code)
+    || t('status.na')
+}
+
+function expertPlanLinePrice(row: Record<string, unknown>) {
+  return amountText(row.expert_plan_price ?? row.unit_price ?? row.amount ?? row.price)
 }
 
 function techOf(data: Record<string, unknown> | null, pkg: Record<string, unknown> | null): FieldRow[] {
@@ -950,6 +993,69 @@ function isRecord(value: unknown): value is Record<string, unknown> {
             {{ $t('orders.loading') }}
           </p>
           <template v-else>
+            <details
+              v-if="expertPlanLines.length || refundRequestDisplay"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
+              data-testid="order-expert-plan-section"
+            >
+              <summary class="cursor-pointer list-none px-4 py-3 group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span class="flex items-center justify-between gap-3">
+                  <span class="text-base font-semibold text-highlighted">
+                    {{ $t('orders.sections.expertPlan') }}
+                  </span>
+                  <UIcon
+                    name="i-lucide-chevron-right"
+                    class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                  />
+                </span>
+              </summary>
+              <div
+                v-if="refundRequestDisplay"
+                class="border-b border-default px-4 py-3"
+                data-testid="order-refund-request-status"
+              >
+                <p class="text-sm text-muted">
+                  {{ $t('orders.fields.refund_request_status') }}
+                </p>
+                <p class="mt-1 text-sm font-medium text-highlighted">
+                  {{ refundRequestDisplay }}
+                </p>
+              </div>
+              <div
+                v-if="expertPlanLines.length"
+                class="overflow-x-auto"
+              >
+                <table class="w-full text-left text-sm">
+                  <thead class="border-b border-default bg-muted/40 text-muted">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.expertPlan') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.price') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in expertPlanLines"
+                      :key="`expert-plan-line-${index}`"
+                      class="border-b border-default last:border-0"
+                      data-testid="order-expert-plan-line"
+                    >
+                      <td class="px-4 py-3 text-highlighted">
+                        {{ expertPlanLineName(row) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ expertPlanLinePrice(row) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+
             <details
               v-if="packageInfo"
               open

@@ -17,6 +17,7 @@ const onSale: SellablePickRow = {
   sale_status: 'on_sale',
   daily_dose: 1,
   daily_servings_max: 2,
+  unit_price: 320,
   spec_text: '2000 IU'
 }
 
@@ -48,6 +49,7 @@ describe('expert-case-sellable', () => {
       sale_status: 'on_sale',
       daily_dose: 2,
       daily_servings_max: 3,
+      unit_price: null,
       spec_text: null
     })
   })

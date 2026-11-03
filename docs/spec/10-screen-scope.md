@@ -18,8 +18,9 @@
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| reviews | `/expert-case-reviews`、`/expert-case-reviews/{id}` | **in-scope** | 專家檢視（真實案件主路徑）。不是 spec 不做的簽核 `reviews` |
-| orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`，報告判讀已接 `GET /admin/order/{id}/health-report`。「在物流進度查看」→ `/shipping?shipment=&q=`（對齊 `order_no`／`shipment_id`）。取消仍 Mock |
+| reviews | `/expert-case-reviews`、`/expert-case-reviews/{id}` | **in-scope** | 專家檢視（真實案件主路徑）。列表可篩 `source=expert_plan`（待處理專家方案案件）。定稿顯示單價參考＋開案金額。不是 spec 不做的簽核 `reviews` |
+| orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`，報告判讀已接 `GET /admin/order/{id}/health-report`。專家方案明細與退款申請狀態（spec 33）。「在物流進度查看」→ `/shipping?shipment=&q=`。已寄出不可退（按鈕對齊）。取消仍 Mock |
+| refundRequests | `/refund-requests` | **in-scope** | 退款申請列表；確認退款／拒絕（spec 33；待 core #143） |
 | shipping | `/shipping` | **in-scope（語意）** | 側欄標籤「物流進度」；列表／詳情讀取接 core #88（空／不可用回落 mock）；推進寫入仍 Mock。列表已接 → **無**「即將上線」badge。→ 訂單 shipment；勿另立 selection 出貨 API。勿與開發中「履約進度」`progress` 混淆 |
 | users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
 
@@ -35,6 +36,7 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
+| expertPlans | `/expert-plans`、`/expert-plans/{id}` | **in-scope** | 專家方案列表＋編輯（名稱／售價／上下架）；**無新增**（spec 33／Irice 11/03）。code 與綁定 package_plan 不可改 |
 | products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
 | labServices | `/lab-services`、`/lab-services/new`、`/lab-services/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/lab-services`；正式組內 **即將上線** badge。勿與開發中「採檢」`/labs` 混淆 |
 

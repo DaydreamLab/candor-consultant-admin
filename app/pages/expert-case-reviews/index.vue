@@ -13,14 +13,16 @@ import {
 import { caseStatusLabel } from '~/utils/expert-case-labels'
 import { readOperatorToken } from '~/utils/operator-session'
 
-type CaseColumn = 'member' | 'status' | 'createdAt' | 'reviewedAt' | 'actions'
+type CaseColumn = 'member' | 'status' | 'order' | 'expertPlan' | 'createdAt' | 'reviewedAt' | 'actions'
 type ColumnAlign = 'left' | 'center' | 'right'
 
 const FILTER_ANY = 'all'
 const PAGE_SIZE = 10
 const FETCH_SIZE = 50
 const CASE_STATUSES = ['awaiting_review', 'reviewed'] as const
+const CASE_SOURCES = ['expert_plan', 'legacy'] as const
 const STATUS_FILTERS = new Set<string>(CASE_STATUSES)
+const SOURCE_FILTERS = new Set<string>(CASE_SOURCES)
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
@@ -47,12 +49,17 @@ function queryString(name: string) {
 const filterStatus = ref(
   STATUS_FILTERS.has(queryString('status')) ? queryString('status') : FILTER_ANY
 )
+const filterSource = ref(
+  SOURCE_FILTERS.has(queryString('source')) ? queryString('source') : FILTER_ANY
+)
 
 const columns: { key: CaseColumn, align: ColumnAlign, width?: string }[] = [
-  { key: 'member', align: 'left', width: 'w-[32%]' },
-  { key: 'status', align: 'left', width: 'w-[8rem]' },
-  { key: 'createdAt', align: 'left', width: 'w-[10rem]' },
-  { key: 'reviewedAt', align: 'left', width: 'w-[10rem]' },
+  { key: 'member', align: 'left', width: 'w-[22%]' },
+  { key: 'status', align: 'left', width: 'w-[7rem]' },
+  { key: 'order', align: 'left', width: 'w-[10rem]' },
+  { key: 'expertPlan', align: 'left', width: 'w-[12rem]' },
+  { key: 'createdAt', align: 'left', width: 'w-[9rem]' },
+  { key: 'reviewedAt', align: 'left', width: 'w-[9rem]' },
   { key: 'actions', align: 'right', width: 'w-[12rem]' }
 ]
 
@@ -62,6 +69,12 @@ const statusOptions = computed(() => [
   { label: t('expertCaseReviews.filterReviewed'), value: 'reviewed' }
 ])
 
+const sourceOptions = computed(() => [
+  { label: t('expertCaseReviews.filters.any'), value: FILTER_ANY },
+  { label: t('expertCaseReviews.filterSourceExpertPlan'), value: 'expert_plan' },
+  { label: t('expertCaseReviews.filterSourceLegacy'), value: 'legacy' }
+])
+
 const rows = computed(() => {
   const start = (page.value - 1) * PAGE_SIZE
   return cases.value.slice(start, start + PAGE_SIZE)
@@ -69,7 +82,7 @@ const rows = computed(() => {
 const paginationTotal = computed(() => cases.value.length + (hasMore.value ? 1 : 0))
 
 if (import.meta.client) {
-  watch(filterStatus, () => {
+  watch([filterStatus, filterSource], () => {
     void load(true)
   }, { immediate: true })
 }
@@ -97,6 +110,9 @@ async function load(reset: boolean) {
   try {
     const fetched = await adminListExpertCaseReviews(config.public.apiBase, token, {
       status: filterStatus.value === FILTER_ANY ? undefined : filterStatus.value,
+      source: filterSource.value === FILTER_ANY
+        ? undefined
+        : (filterSource.value as 'expert_plan' | 'legacy'),
       limit: FETCH_SIZE,
       offset: nextOffset
     })
@@ -158,6 +174,10 @@ function columnLabel(key: CaseColumn) {
       return t('expertCaseReviews.colUser')
     case 'status':
       return t('expertCaseReviews.colStatus')
+    case 'order':
+      return t('expertCaseReviews.colOrder')
+    case 'expertPlan':
+      return t('expertCaseReviews.colExpertPlan')
     case 'createdAt':
       return t('expertCaseReviews.colCreated')
     case 'reviewedAt':
@@ -165,6 +185,30 @@ function columnLabel(key: CaseColumn) {
     case 'actions':
       return t('col.actions')
   }
+}
+
+function orderLabel(row: Record<string, unknown>) {
+  const orderNo = textOf(row.order_no) || textOf(row.order_number)
+  const orderId = textOf(row.order_id)
+  return orderNo || orderId || '—'
+}
+
+function expertPlanLabel(row: Record<string, unknown>) {
+  return textOf(row.expert_plan_name)
+    || textOf(row.expert_plan_name_zh)
+    || textOf(row.expert_plan_code)
+    || textOf(row.expert_plan_id)
+    || '—'
+}
+
+function textOf(value: unknown) {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim()
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  return ''
 }
 
 function alignClass(align: ColumnAlign) {
@@ -244,6 +288,20 @@ async function exportRow(row: Record<string, unknown>) {
           <USelect
             v-model="filterStatus"
             :items="statusOptions"
+            value-key="value"
+            class="w-full"
+          />
+        </div>
+        <div
+          class="min-w-36"
+          data-testid="expert-case-source-filter"
+        >
+          <label class="mb-1 block text-xs text-muted">
+            {{ $t('expertCaseReviews.filters.source') }}
+          </label>
+          <USelect
+            v-model="filterSource"
+            :items="sourceOptions"
             value-key="value"
             class="w-full"
           />
@@ -331,6 +389,12 @@ async function exportRow(row: Record<string, unknown>) {
                   :color="statusColor(row.status)"
                 />
               </span>
+            </td>
+            <td class="text-sm text-highlighted">
+              {{ orderLabel(row) }}
+            </td>
+            <td class="text-sm text-highlighted">
+              {{ expertPlanLabel(row) }}
             </td>
             <td class="whitespace-nowrap text-sm text-muted">
               {{ formatExpertCaseListTime(row.created_at) }}

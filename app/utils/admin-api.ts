@@ -331,6 +331,8 @@ export type AdminOrderListQuery = {
 
 export type AdminExpertCaseReviewListQuery = {
   status?: string
+  /** `expert_plan`＝付費專家方案案；`legacy`＝舊免費案。省略＝全部。 */
+  source?: 'expert_plan' | 'legacy'
   limit?: number
   offset?: number
 }
@@ -1456,6 +1458,220 @@ export async function adminUpdatePackagePlan(
     }
     throw new AdminApiError(readStatus(error), readMessage(error))
   }
+}
+
+/** Spec 33 — expert_plans catalog (list／get／patch；無 create). */
+export type AdminExpertPlan = {
+  id: string
+  code: string
+  package_plan_id: string
+  name_zh: string
+  name_en: string | null
+  price: number
+  active: boolean
+  sort_order: number
+  package_plan_name_zh?: string | null
+  package_plan_code?: string | null
+}
+
+export type ExpertPlanWrite = {
+  name_zh?: string
+  name_en?: string | null
+  price?: number
+  active?: boolean
+  sort_order?: number
+}
+
+export async function adminListExpertPlans(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/expert-plans'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readExpertPlanRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetExpertPlan(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-plan/${encodeURIComponent(id)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminUpdateExpertPlan(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: ExpertPlanWrite
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-plan/${encodeURIComponent(id)}`),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export type AdminRefundRequestListQuery = {
+  status?: string
+  limit?: number
+  offset?: number
+}
+
+export async function adminListRefundRequests(
+  apiBase: string,
+  token: string,
+  query: AdminRefundRequestListQuery = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/refund-requests'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: compactRefundRequestQuery(query)
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readRefundRequestRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminConfirmRefundRequest(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/refund-request/${encodeURIComponent(id)}/confirm`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminRejectRefundRequest(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/refund-request/${encodeURIComponent(id)}/reject`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+function readExpertPlanRows(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) {
+    return data.filter(isRecord)
+  }
+  if (!isRecord(data)) {
+    return []
+  }
+  if (Array.isArray(data.expert_plans)) {
+    return data.expert_plans.filter(isRecord)
+  }
+  if (Array.isArray(data.items)) {
+    return data.items.filter(isRecord)
+  }
+  return []
+}
+
+function readRefundRequestRows(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) {
+    return data.filter(isRecord)
+  }
+  if (!isRecord(data)) {
+    return []
+  }
+  if (Array.isArray(data.refund_requests)) {
+    return data.refund_requests.filter(isRecord)
+  }
+  if (Array.isArray(data.items)) {
+    return data.items.filter(isRecord)
+  }
+  return []
+}
+
+function compactRefundRequestQuery(query: AdminRefundRequestListQuery) {
+  const params: Record<string, string | number> = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      params[key] = value
+      continue
+    }
+    if (typeof value === 'string' && value.trim()) {
+      params[key] = value.trim()
+    }
+  }
+  return params
 }
 
 export async function adminListSellableItems(apiBase: string, token: string) {
