@@ -35,7 +35,7 @@ const base = {
 } satisfies LlmUsageSummaryPayload
 
 const labels = {
-  category: (c: string) => ({ chat: '聊天', report: '報告', decision: '決策' }[c] ?? c),
+  category: (c: string) => ({ chat: '聊天', report: '報告解析', decision: '決策', other: '其他' }[c] ?? c),
   model: (m: string) => m || '（未標示 model）',
   purpose: purposeLabelOf,
   total: '合計'
@@ -424,6 +424,92 @@ describe('llm-usage-display', () => {
     expect(rows.some(r => r.kind === 'model' && r.label === 'gpt-6-luna' && r.purpose_key)).toBe(true)
     // decision category should NOT also flatten by_category_model models when purpose present
     expect(rows.filter(r => r.kind === 'model' && !r.purpose_key && r.label === 'gpt-6-luna')).toHaveLength(0)
+  })
+
+  it('reconciles d1b14565-shaped report payload: category sums equal headline totalTokens; report labeled 報告解析', () => {
+    // extract 30+668、chat 2797+327、decision goal_utterance 1014+200 → 5,036
+    const summary: LlmUsageSummaryPayload = {
+      ...base,
+      input_tokens: 3841,
+      output_tokens: 1195,
+      cache_read_tokens: 0,
+      cache_write_tokens: 2965,
+      estimated_cost_usd: '0.0500',
+      cost_twd: '1.61',
+      cost_complete: true,
+      by_category_model: [
+        {
+          category: 'report',
+          model: 'claude-haiku-4-5',
+          input_tokens: 30,
+          output_tokens: 668,
+          cache_read_tokens: 0,
+          cache_write_tokens: 2965,
+          estimated_cost_ntd: null,
+          estimated_cost_usd: '0.0200',
+          cost_twd: '0.64',
+          cost_known: true
+        },
+        {
+          category: 'chat',
+          model: 'claude-haiku-4-5',
+          input_tokens: 2797,
+          output_tokens: 327,
+          cache_read_tokens: 0,
+          cache_write_tokens: 0,
+          estimated_cost_ntd: null,
+          estimated_cost_usd: '0.0200',
+          cost_twd: '0.64',
+          cost_known: true
+        },
+        {
+          category: 'decision',
+          model: 'claude-haiku-4-5',
+          input_tokens: 1014,
+          output_tokens: 200,
+          cache_read_tokens: 0,
+          cache_write_tokens: 0,
+          estimated_cost_ntd: null,
+          estimated_cost_usd: '0.0100',
+          cost_twd: '0.32',
+          cost_known: true
+        }
+      ],
+      decision_by_purpose_model: [
+        {
+          purpose: 'goal_utterance',
+          model: 'claude-haiku-4-5',
+          input_tokens: 1014,
+          output_tokens: 200,
+          cache_read_tokens: 0,
+          cache_write_tokens: 0,
+          estimated_cost_ntd: null,
+          estimated_cost_usd: '0.0100',
+          cost_twd: '0.32',
+          cost_known: true
+        }
+      ]
+    }
+
+    expect(totalTokensOf(summary)).toBe(5036)
+
+    const groups = groupByCategoryModel(summary.by_category_model)
+    const categorySum = groups.reduce(
+      (sum, g) => sum + g.input_tokens + g.output_tokens,
+      0
+    )
+    expect(categorySum).toBe(totalTokensOf(summary))
+
+    const rows = buildLlmUsageDetailRows(summary, labels)
+    const reportGroup = rows.find(r => r.kind === 'group' && r.label === '報告解析')
+    expect(reportGroup).toBeTruthy()
+    expect(reportGroup!.input_tokens + reportGroup!.output_tokens).toBe(698)
+
+    const totalRow = rows.find(r => r.kind === 'total')
+    expect(totalRow).toBeTruthy()
+    expect(totalRow!.input_tokens).toBe(summary.input_tokens)
+    expect(totalRow!.output_tokens).toBe(summary.output_tokens)
+    expect(totalRow!.input_tokens + totalRow!.output_tokens).toBe(5036)
   })
 
   it('falls back to flat decision models when decision_by_purpose_model is empty', () => {

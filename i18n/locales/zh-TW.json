@@ -716,6 +716,8 @@
     "totalTokens": "總 tokens（input＋output）",
     "estimatedCost": "估算成本",
     "detailsToggle": "顯示用量明細",
+    "breakdownEquals": "總 tokens＝{parts}",
+    "cacheExcludedNote": "不含 cache 讀／寫",
     "colCategoryModel": "類別／模型",
     "colInput": "input",
     "colOutput": "output",
@@ -727,7 +729,7 @@
     "fxNote": "匯率 {rate}｜匯率日期 {date}｜來源 {source}",
     "categories": {
       "chat": "聊天",
-      "report": "報告",
+      "report": "報告解析",
       "decision": "決策",
       "other": "其他"
     },
