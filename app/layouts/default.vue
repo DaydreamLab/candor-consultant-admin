@@ -6,6 +6,11 @@ const localePath = useLocalePath()
 const route = useRoute()
 const { t } = useI18n()
 const session = useSessionStore()
+const runtimeConfig = useRuntimeConfig()
+const appVersionLabel = computed(() => {
+  const version = String(runtimeConfig.public.appVersion || '').trim()
+  return version || 'dev'
+})
 
 const open = ref(false)
 const developing = computed(() => isDevelopingPath(route.path))
@@ -263,6 +268,13 @@ onUnmounted(() => {
               @click="logout"
             />
           </div>
+          <p
+            v-if="!collapsed"
+            class="min-w-0 truncate px-1 font-mono text-[11px] leading-none text-dimmed"
+            data-testid="app-version"
+          >
+            {{ appVersionLabel }}
+          </p>
         </div>
       </template>
     </UDashboardSidebar>
