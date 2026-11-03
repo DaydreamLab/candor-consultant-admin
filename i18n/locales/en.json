@@ -716,6 +716,8 @@
     "totalTokens": "Total tokens (input＋output)",
     "estimatedCost": "Estimated cost",
     "detailsToggle": "Show usage details",
+    "breakdownEquals": "Total tokens＝{parts}",
+    "cacheExcludedNote": "Excludes cache read／write",
     "colCategoryModel": "Category / model",
     "colInput": "input",
     "colOutput": "output",
@@ -727,7 +729,7 @@
     "fxNote": "Rate {rate}｜FX date {date}｜Source {source}",
     "categories": {
       "chat": "Chat",
-      "report": "Report",
+      "report": "Report parsing",
       "decision": "Decision",
       "other": "Other"
     },

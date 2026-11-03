@@ -861,13 +861,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                   </button>
                 </div>
               </div>
-              <button
-                type="button"
-                class="mt-1 w-full cursor-pointer text-left"
-                @click="reportOpen = !reportOpen"
-              >
+              <div class="mt-1">
                 <LlmUsageSummary :usage="reportUsage" />
-              </button>
+              </div>
             </div>
             <div
               v-show="reportOpen"

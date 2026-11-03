@@ -7,6 +7,8 @@ const labels: Record<string, string> = {
   'llmUsage.totalTokens': '總 tokens（input＋output）',
   'llmUsage.estimatedCost': '估算成本',
   'llmUsage.detailsToggle': '顯示用量明細',
+  'llmUsage.breakdownEquals': '總 tokens＝{parts}',
+  'llmUsage.cacheExcludedNote': '不含 cache 讀／寫',
   'llmUsage.colCategoryModel': '類別／模型',
   'llmUsage.colInput': 'input',
   'llmUsage.colOutput': 'output',
@@ -19,7 +21,7 @@ const labels: Record<string, string> = {
   'llmUsage.fxNote': '匯率 {rate}｜匯率日期 {date}｜來源 {source}',
   'llmUsage.unknownModel': '（未標示 model）',
   'llmUsage.categories.chat': '聊天',
-  'llmUsage.categories.report': '報告',
+  'llmUsage.categories.report': '報告解析',
   'llmUsage.categories.decision': '決策',
   'llmUsage.categories.other': '其他'
 }
@@ -167,6 +169,68 @@ const fixtureNew = {
   ]
 }
 
+/** beta 報告 d1b14565 形狀：extract＋chat＋decision.goal_utterance 皆帶 report_id，總 input+output＝5,036 */
+const fixtureReportD1b14565 = {
+  input_tokens: 3841,
+  output_tokens: 1195,
+  cache_read_tokens: 0,
+  cache_write_tokens: 2965,
+  estimated_cost_ntd: null,
+  estimated_cost_usd: '0.0500',
+  cost_twd: '1.61',
+  cost_complete: true,
+  fx: fxOk,
+  by_model: [],
+  by_category_model: [
+    {
+      category: 'report',
+      model: 'claude-haiku-4-5',
+      input_tokens: 30,
+      output_tokens: 668,
+      cache_read_tokens: 0,
+      cache_write_tokens: 2965,
+      estimated_cost_usd: '0.0200',
+      cost_twd: '0.64',
+      cost_known: true
+    },
+    {
+      category: 'chat',
+      model: 'claude-haiku-4-5',
+      input_tokens: 2797,
+      output_tokens: 327,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      estimated_cost_usd: '0.0200',
+      cost_twd: '0.64',
+      cost_known: true
+    },
+    {
+      category: 'decision',
+      model: 'claude-haiku-4-5',
+      input_tokens: 1014,
+      output_tokens: 200,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      estimated_cost_usd: '0.0100',
+      cost_twd: '0.32',
+      cost_known: true
+    }
+  ],
+  decision_by_purpose_model: [
+    {
+      purpose: 'goal_utterance',
+      model: 'claude-haiku-4-5',
+      input_tokens: 1014,
+      output_tokens: 200,
+      cache_read_tokens: 0,
+      cache_write_tokens: 0,
+      estimated_cost_usd: '0.0100',
+      cost_twd: '0.32',
+      cost_known: true
+    }
+  ]
+}
+
 const fixtureLegacy = {
   input_tokens: 100,
   output_tokens: 40,
@@ -190,15 +254,53 @@ const fixtureLegacy = {
   ]
 }
 
+const stubs = {
+  UButton: {
+    name: 'UButton',
+    props: ['icon', 'color', 'variant', 'size', 'square'],
+    inheritAttrs: true,
+    emits: ['click'],
+    template: `
+      <button
+        type="button"
+        v-bind="$attrs"
+        @click.stop="$emit('click', $event)"
+      >
+        <slot />
+      </button>
+    `
+  },
+  UModal: {
+    name: 'UModal',
+    props: {
+      open: { type: Boolean, default: false },
+      title: { type: String, default: '' },
+      ui: { type: Object, default: undefined }
+    },
+    emits: ['update:open'],
+    template: `
+      <div v-if="open" data-stub="llm-usage-modal">
+        <slot name="body" />
+      </div>
+    `
+  }
+}
+
+function mountSummary(props: Record<string, unknown> = {}, attachTo?: HTMLElement) {
+  return mount(LlmUsageSummary, {
+    props,
+    attachTo,
+    global: { stubs }
+  })
+}
+
 describe('LlmUsageSummary', () => {
   beforeEach(() => {
     vi.stubGlobal('useI18n', () => ({ t: translate }))
   })
 
   it('shows headline totals only by default, with * when cost incomplete', () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: fixtureNew }
-    })
+    const wrapper = mountSummary({ usage: fixtureNew })
 
     expect(wrapper.text()).toContain('Token 用量')
     expect(wrapper.find('[data-testid="llm-usage-total"]').text()).toContain('52,480')
@@ -209,19 +311,17 @@ describe('LlmUsageSummary', () => {
   })
 
   it('shows only USD on collapsed total when fx.rate is null', () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: {
-        usage: {
-          ...fixtureNew,
-          cost_twd: null,
-          fx: {
-            base: 'USD',
-            quote: 'TWD',
-            rate: null,
-            rate_date: null,
-            fetched_at: '2026-11-03T01:00:00Z',
-            source: CBC_FX_SOURCE
-          }
+    const wrapper = mountSummary({
+      usage: {
+        ...fixtureNew,
+        cost_twd: null,
+        fx: {
+          base: 'USD',
+          quote: 'TWD',
+          rate: null,
+          rate_date: null,
+          fetched_at: '2026-11-03T01:00:00Z',
+          source: CBC_FX_SOURCE
         }
       }
     })
@@ -231,32 +331,32 @@ describe('LlmUsageSummary', () => {
 
   it('shows only USD when fx field is absent', () => {
     const { fx: _fx, ...withoutFx } = fixtureNew
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: withoutFx }
-    })
+    const wrapper = mountSummary({ usage: withoutFx })
     expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.142*')
     expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).not.toContain('NT$')
   })
 
-  it('opens category×model details with purpose layer, unknown cost, fx note', async () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: fixtureNew },
-      attachTo: document.body
-    })
+  it('opens category×model details in modal on info click, with purpose layer, unknown cost, fx note', async () => {
+    const wrapper = mountSummary({ usage: fixtureNew }, document.body)
 
     await wrapper.find('[data-testid="llm-usage-info"]').trigger('click')
     const details = wrapper.find('[data-testid="llm-usage-details"]')
+    expect(details.exists()).toBe(true)
     expect(details.isVisible()).toBe(true)
 
     const groups = wrapper.findAll('[data-testid="llm-usage-detail-group"]')
     expect(groups.map(g => g.text())).toEqual(
       expect.arrayContaining([
         expect.stringContaining('聊天'),
-        expect.stringContaining('報告'),
+        expect.stringContaining('報告解析'),
         expect.stringContaining('決策')
       ])
     )
     expect(groups).toHaveLength(3)
+
+    expect(wrapper.find('[data-testid="llm-usage-breakdown"]').text()).toContain('總 tokens＝')
+    expect(wrapper.find('[data-testid="llm-usage-breakdown"]').text()).toContain('報告解析')
+    expect(wrapper.find('[data-testid="llm-usage-cache-note"]').text()).toBe('不含 cache 讀／寫')
 
     const purposes = wrapper.findAll('[data-testid="llm-usage-detail-purpose"]')
     expect(purposes.map(p => p.text())).toEqual(
@@ -286,11 +386,48 @@ describe('LlmUsageSummary', () => {
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('NT$4.55')
   })
 
-  it('collapses purpose rows on toggle', async () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: fixtureNew, defaultDetailsOpen: true },
-      attachTo: document.body
+  it('reconciles d1b14565-shaped report usage: categories sum to headline and report is 報告解析', async () => {
+    const wrapper = mountSummary({ usage: fixtureReportD1b14565 }, document.body)
+
+    expect(wrapper.find('[data-testid="llm-usage-total"]').text()).toContain('5,036')
+
+    await wrapper.find('[data-testid="llm-usage-info"]').trigger('click')
+
+    const groups = wrapper.findAll('[data-testid="llm-usage-detail-group"]')
+    const reportGroup = groups.find(g => g.text().includes('報告解析'))
+    expect(reportGroup).toBeTruthy()
+    expect(reportGroup!.text()).toContain('30')
+    expect(reportGroup!.text()).toContain('668')
+    expect(groups.some(g => /\b報告\b/.test(g.text().replace('報告解析', '')))).toBe(false)
+
+    const breakdown = wrapper.find('[data-testid="llm-usage-breakdown"]').text()
+    expect(breakdown).toBe('總 tokens＝聊天 3,124＋報告解析 698＋決策 1,214')
+    expect(wrapper.find('[data-testid="llm-usage-cache-note"]').text()).toBe('不含 cache 讀／寫')
+
+    const totalRow = wrapper.find('[data-testid="llm-usage-detail-total"]')
+    expect(totalRow.text()).toContain('3,841')
+    expect(totalRow.text()).toContain('1,195')
+  })
+
+  it('stops click from bubbling to parent row handlers', async () => {
+    const parentClick = vi.fn()
+    const Parent = {
+      components: { LlmUsageSummary },
+      template: '<div @click="onParent"><LlmUsageSummary :usage="usage" /></div>',
+      setup() {
+        return { usage: fixtureNew, onParent: parentClick }
+      }
+    }
+    const wrapper = mount(Parent, {
+      global: { stubs }
     })
+    await wrapper.find('[data-testid="llm-usage-info"]').trigger('click')
+    expect(parentClick).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="llm-usage-details"]').exists()).toBe(true)
+  })
+
+  it('collapses purpose rows on toggle', async () => {
+    const wrapper = mountSummary({ usage: fixtureNew, defaultDetailsOpen: true }, document.body)
 
     const before = wrapper.findAll('[data-testid="llm-usage-detail-model"]').length
     expect(before).toBeGreaterThan(0)
@@ -304,50 +441,47 @@ describe('LlmUsageSummary', () => {
   })
 
   it('shows unknown purpose as raw value', async () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: {
-        usage: {
+    const wrapper = mountSummary({
+      usage: {
+        input_tokens: 10,
+        output_tokens: 1,
+        estimated_cost_usd: '0.0100',
+        cost_twd: '0.32',
+        cost_complete: true,
+        fx: fxOk,
+        by_category_model: [{
+          category: 'decision',
+          model: 'claude-haiku-4-5',
           input_tokens: 10,
           output_tokens: 1,
           estimated_cost_usd: '0.0100',
           cost_twd: '0.32',
-          cost_complete: true,
-          fx: fxOk,
-          by_category_model: [{
-            category: 'decision',
-            model: 'claude-haiku-4-5',
-            input_tokens: 10,
-            output_tokens: 1,
-            estimated_cost_usd: '0.0100',
-            cost_twd: '0.32',
-            cost_known: true
-          }],
-          decision_by_purpose_model: [{
-            purpose: 'decision.custom.brand_new',
-            model: 'claude-haiku-4-5',
-            input_tokens: 10,
-            output_tokens: 1,
-            estimated_cost_usd: '0.0100',
-            cost_twd: '0.32',
-            cost_known: true
-          }]
-        },
-        defaultDetailsOpen: true
-      }
+          cost_known: true
+        }],
+        decision_by_purpose_model: [{
+          purpose: 'decision.custom.brand_new',
+          model: 'claude-haiku-4-5',
+          input_tokens: 10,
+          output_tokens: 1,
+          estimated_cost_usd: '0.0100',
+          cost_twd: '0.32',
+          cost_known: true
+        }]
+      },
+      defaultDetailsOpen: true
     })
     expect(wrapper.find('[data-testid="llm-usage-detail-purpose"]').text()).toContain('decision.custom.brand_new')
   })
 
   it('falls back to by_model details when by_category_model is absent', async () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: fixtureLegacy }
-    })
+    const wrapper = mountSummary({ usage: fixtureLegacy })
 
     expect(wrapper.find('[data-testid="llm-usage-total"]').text()).toContain('140')
     expect(wrapper.find('[data-testid="llm-usage-total-cost"]').text()).toBe('US$0.1')
     await wrapper.find('[data-testid="llm-usage-info"]').trigger('click')
     expect(wrapper.findAll('[data-testid="llm-usage-detail-group"]')).toHaveLength(0)
     expect(wrapper.findAll('[data-testid="llm-usage-detail-purpose"]')).toHaveLength(0)
+    expect(wrapper.find('[data-testid="llm-usage-breakdown"]').exists()).toBe(false)
     const models = wrapper.findAll('[data-testid="llm-usage-detail-model"]')
     expect(models).toHaveLength(2)
     expect(models[0]!.text()).toContain('claude-sonnet-4-5')
@@ -357,31 +491,27 @@ describe('LlmUsageSummary', () => {
 
   it('falls back to flat decision models when decision_by_purpose_model is absent', async () => {
     const { decision_by_purpose_model: _p, ...withoutPurpose } = fixtureNew
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: withoutPurpose, defaultDetailsOpen: true }
-    })
+    const wrapper = mountSummary({ usage: withoutPurpose, defaultDetailsOpen: true })
     expect(wrapper.findAll('[data-testid="llm-usage-detail-purpose"]')).toHaveLength(0)
     const models = wrapper.findAll('[data-testid="llm-usage-detail-model"]')
     expect(models.some(m => m.text().includes('gpt-6-luna'))).toBe(true)
   })
 
   it('hides fx note and NTD in details when rate is null', async () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: {
-        usage: {
-          ...fixtureNew,
-          cost_twd: null,
-          fx: {
-            base: 'USD',
-            quote: 'TWD',
-            rate: null,
-            rate_date: null,
-            fetched_at: '2026-11-03T01:00:00Z',
-            source: CBC_FX_SOURCE
-          }
-        },
-        defaultDetailsOpen: true
-      }
+    const wrapper = mountSummary({
+      usage: {
+        ...fixtureNew,
+        cost_twd: null,
+        fx: {
+          base: 'USD',
+          quote: 'TWD',
+          rate: null,
+          rate_date: null,
+          fetched_at: '2026-11-03T01:00:00Z',
+          source: CBC_FX_SOURCE
+        }
+      },
+      defaultDetailsOpen: true
     })
     expect(wrapper.find('[data-testid="llm-usage-fx-note"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="llm-usage-detail-total"]').text()).toContain('US$0.142*')
@@ -389,9 +519,7 @@ describe('LlmUsageSummary', () => {
   })
 
   it('degrades to zeros when usage is null and hides info icon', () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: { usage: null }
-    })
+    const wrapper = mountSummary({ usage: null })
 
     expect(wrapper.find('[data-testid="llm-usage-info"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="llm-usage-total"]').text()).toContain('0')
@@ -399,21 +527,19 @@ describe('LlmUsageSummary', () => {
   })
 
   it('uses unknown-model label for blank model names in legacy rows', async () => {
-    const wrapper = mount(LlmUsageSummary, {
-      props: {
-        usage: {
+    const wrapper = mountSummary({
+      usage: {
+        input_tokens: 1,
+        output_tokens: 0,
+        estimated_cost_ntd: '0.01',
+        estimated_cost_usd: '0.0003',
+        by_model: [{
+          model: '  ',
           input_tokens: 1,
           output_tokens: 0,
           estimated_cost_ntd: '0.01',
-          estimated_cost_usd: '0.0003',
-          by_model: [{
-            model: '  ',
-            input_tokens: 1,
-            output_tokens: 0,
-            estimated_cost_ntd: '0.01',
-            estimated_cost_usd: '0.0003'
-          }]
-        }
+          estimated_cost_usd: '0.0003'
+        }]
       }
     })
 
