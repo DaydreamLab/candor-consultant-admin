@@ -90,6 +90,7 @@ const ORDER = {
   recipient_name: '王小明',
   recipient_phone: '0912345678',
   recipient_address: '台北市',
+  refund_status: 'requested',
   refund_request_status: 'requested',
   refund_request_display: '退款申請中',
   lines: [
@@ -241,7 +242,7 @@ async function installMocks(page) {
         return route.fulfill({
           status: 409,
           contentType: 'application/json',
-          body: fail('這個案件已由其他專家定稿', 'expert_case_already_reviewed')
+          body: fail('這個案件已由其他專家定稿', 'expert_case_already_finalized')
         })
       }
       return route.fulfill({
@@ -314,6 +315,16 @@ async function installMocks(page) {
         status: 200,
         contentType: 'application/json',
         body: ok({ ...REFUND_REQUEST, status: 'rejected' })
+      })
+    }
+    if (url.includes('/admin/order/') && url.includes('/shipment') && method === 'POST') {
+      return route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: fail(
+          '此訂單有退款申請處理中，處理完成前不能開始理貨。',
+          'refund_request_pending'
+        )
       })
     }
     if (url.includes('/admin/shipments') && method === 'GET') {

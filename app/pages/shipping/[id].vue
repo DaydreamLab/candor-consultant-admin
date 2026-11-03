@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import type { ApiShipStatus } from '~/types/admin'
-import { AdminApiError, adminGetOrder } from '~/utils/admin-api'
+import {
+  AdminApiError,
+  adminGetOrder,
+  adminStartOrderShipment,
+  isRefundRequestPendingError
+} from '~/utils/admin-api'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { normalizeAdminPath } from '~/utils/nav'
-import { isRefundRequestBlockingPicking } from '~/utils/order-refund-gate'
+import {
+  orderBlocksPickingDueToRefund,
+  orderRefundStatus
+} from '~/utils/order-refund-gate'
 import { readOperatorToken } from '~/utils/operator-session'
 import { adminListShipments } from '~/utils/shipment-api'
 import { displayOrderNo, mapApiShipStatus } from '~/utils/shipment-map'
@@ -28,9 +36,12 @@ const title = computed(() => shipLabel.value || shipmentId.value)
 
 const pending = ref(true)
 const errorMessage = ref('')
+const advancePending = ref(false)
+const advanceError = ref('')
 const order = ref<Record<string, unknown> | null>(null)
 const shipment = ref<Record<string, unknown> | null>(null)
 let loadSeq = 0
+const feedback = useOpsFeedback()
 
 const orderNo = computed(() => optionalText(order.value?.order_no) || optionalText(shipment.value?.order_no) || t('status.na'))
 const recipientName = computed(() => optionalText(order.value?.recipient_name) || optionalText(shipment.value?.recipient_name))
@@ -61,21 +72,21 @@ const updatedAt = computed(() => {
   return formatLocalDateTime(shipment.value?.updated_at, { style: 'list', empty: t('status.na') })
 })
 
-const refundRequestStatus = computed(() => {
-  const raw = order.value?.refund_request_status
-  return typeof raw === 'string' ? raw.trim() : ''
-})
+const refundRequestStatus = computed(() => orderRefundStatus(order.value))
 
-/** B-17／C19：退款申請處理中不能開始理貨。 */
-const pickingBlockedByRefund = computed(() => {
-  return isRefundRequestBlockingPicking(refundRequestStatus.value)
+/** B-17／C19：退款申請處理中不能開始理貨（core `refund_status`／`refund_request_pending`）. */
+const pickingBlockedByRefund = computed(() => orderBlocksPickingDueToRefund(order.value))
+
+const orderIdForShipment = computed(() => {
+  return optionalText(order.value?.id)
+    || optionalText(shipment.value?.order_id)
 })
 
 const showAdvanceToPicking = computed(() => {
   if (pickingBlockedByRefund.value) {
     return true
   }
-  // 尚未進入理貨／運送／送達時顯示推進（仍為 mock 寫入）。
+  // 定稿不自動建 shipment；尚未進入運送／送達時可 POST 開始理貨
   return apiStatus.value == null
 })
 
@@ -223,6 +234,36 @@ function optionalText(value: unknown) {
   }
   return ''
 }
+
+async function advanceToPicking() {
+  const token = readOperatorToken()
+  const orderId = orderIdForShipment.value
+  advanceError.value = ''
+  if (!token || !orderId || pickingBlockedByRefund.value || advancePending.value) {
+    if (pickingBlockedByRefund.value) {
+      advanceError.value = t('shipping.refundBlocksPicking')
+    }
+    return
+  }
+  advancePending.value = true
+  try {
+    await adminStartOrderShipment(config.public.apiBase, token, orderId)
+    feedback.notify({
+      title: t('shipping.advanceOk'),
+      color: 'success'
+    })
+    await load(shipmentId.value)
+  } catch (error) {
+    if (isRefundRequestPendingError(error)) {
+      advanceError.value = t('shipping.refundBlocksPicking')
+      return
+    }
+    const message = error instanceof AdminApiError ? error.message.trim() : ''
+    advanceError.value = message || t('shipping.advanceFailed')
+  } finally {
+    advancePending.value = false
+  }
+}
 </script>
 
 <template>
@@ -310,19 +351,21 @@ function optionalText(value: unknown) {
             <span class="inline-flex w-fit">
               <UButton
                 color="primary"
-                :disabled="pickingBlockedByRefund"
+                :loading="advancePending"
+                :disabled="pickingBlockedByRefund || advancePending || !orderIdForShipment"
                 data-testid="shipping-advance-to-picking"
+                @click="advanceToPicking"
               >
                 {{ $t('shipping.advanceToPicking') }}
               </UButton>
             </span>
           </UTooltip>
           <p
-            v-if="pickingBlockedByRefund"
+            v-if="pickingBlockedByRefund || advanceError"
             class="text-sm text-muted"
             data-testid="shipping-refund-blocks-picking"
           >
-            {{ $t('shipping.refundBlocksPicking') }}
+            {{ advanceError || $t('shipping.refundBlocksPicking') }}
           </p>
         </div>
 

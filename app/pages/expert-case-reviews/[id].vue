@@ -9,7 +9,7 @@ import {
   adminPatchExpertCaseReviewItem,
   adminResetExpertCaseReviewItems,
   adminSubmitExpertCaseReview,
-  isExpertCaseAlreadyReviewedError
+  isExpertCaseAlreadyFinalizedError
 } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { readFinalizeCopyFromDetail } from '~/utils/expert-finalize-copy'
@@ -991,7 +991,8 @@ async function submit() {
       color: 'success'
     })
   } catch (error) {
-    if (isExpertCaseAlreadyReviewedError(error)) {
+    // 定稿送出不自動理貨（core #143）；僅更新案件狀態。
+    if (isExpertCaseAlreadyFinalizedError(error)) {
       alreadyReviewedAlert.value = true
       return
     }

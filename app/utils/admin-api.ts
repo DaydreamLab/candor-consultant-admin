@@ -343,17 +343,35 @@ export type AdminExpertCaseReviewListQuery = {
   offset?: number
 }
 
-/** Assumed concurrent-finalize code (C23／B-11) until core OpenAPI lands. */
-export const EXPERT_CASE_ALREADY_REVIEWED_CODE = 'expert_case_already_reviewed'
+/** core #143／OpenAPI：同時定稿 → 409 `expert_case_already_finalized`（B-11／C23）. */
+export const EXPERT_CASE_ALREADY_FINALIZED_CODE = 'expert_case_already_finalized'
 
-export function isExpertCaseAlreadyReviewedError(error: unknown): boolean {
+export function isExpertCaseAlreadyFinalizedError(error: unknown): boolean {
   if (!(error instanceof AdminApiError)) {
     return false
   }
-  if (error.code === EXPERT_CASE_ALREADY_REVIEWED_CODE) {
+  if (error.code === EXPERT_CASE_ALREADY_FINALIZED_CODE) {
     return true
   }
-  return error.statusCode === 409
+  // Submit 回 409 且無／舊碼時仍顯示 B-11（對齊輪前過渡）.
+  if (error.statusCode === 409) {
+    return !error.code || error.code === 'expert_case_already_reviewed'
+  }
+  return false
+}
+
+/** expert PATCH 非 active 欄位 → 403／422 `expert_plan_field_forbidden`. */
+export const EXPERT_PLAN_FIELD_FORBIDDEN_CODE = 'expert_plan_field_forbidden'
+
+export function isExpertPlanFieldForbiddenError(error: unknown): boolean {
+  return error instanceof AdminApiError && error.code === EXPERT_PLAN_FIELD_FORBIDDEN_CODE
+}
+
+/** POST /admin/order/{id}/shipment 遇退款申請中 → 409 `refund_request_pending`. */
+export const REFUND_REQUEST_PENDING_CODE = 'refund_request_pending'
+
+export function isRefundRequestPendingError(error: unknown): boolean {
+  return error instanceof AdminApiError && error.code === REFUND_REQUEST_PENDING_CODE
 }
 
 export type AdminExpertCaseReviewDecisionBody = {
@@ -1566,7 +1584,34 @@ export async function adminUpdateExpertPlan(
     if (error instanceof AdminApiError) {
       throw error
     }
-    throw new AdminApiError(readStatus(error), readMessage(error))
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
+  }
+}
+
+/**
+ * core #143：開始理貨 = POST /admin/order/{id}/shipment（定稿不自動建 shipment）。
+ * 遇退款申請中 → 409 `refund_request_pending`。
+ */
+export async function adminStartOrderShipment(apiBase: string, token: string, orderId: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/order/${encodeURIComponent(orderId)}/shipment`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 

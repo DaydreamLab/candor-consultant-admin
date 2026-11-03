@@ -3,6 +3,7 @@ import {
   AdminApiError,
   adminGetExpertPlan,
   adminUpdateExpertPlan,
+  isExpertPlanFieldForbiddenError,
   type ExpertPlanWrite
 } from '~/utils/admin-api'
 import { EXPERT_PLAN_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
@@ -135,6 +136,10 @@ async function onSave(payload: ExpertPlanWrite) {
     saveNotice.value = 'success'
   } catch (error) {
     if (expertPlanId.value !== id) {
+      return
+    }
+    if (isExpertPlanFieldForbiddenError(error)) {
+      errorMessage.value = failText(error, t('expertPlans.fieldForbidden'))
       return
     }
     errorMessage.value = failText(error, t('expertPlans.saveFailed'))

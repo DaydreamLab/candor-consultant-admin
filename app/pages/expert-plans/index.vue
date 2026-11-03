@@ -2,7 +2,8 @@
 import {
   AdminApiError,
   adminListExpertPlans,
-  adminUpdateExpertPlan
+  adminUpdateExpertPlan,
+  isExpertPlanFieldForbiddenError
 } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -130,9 +131,9 @@ async function activate(row: Record<string, unknown>) {
     replaceRow(id, updated)
   } catch (error) {
     feedback.notify({
-      title: error instanceof AdminApiError && error.message
+      title: fieldForbiddenText(error) || (error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertPlans.activateFailed'),
+        : t('expertPlans.activateFailed')),
       color: 'error'
     })
   } finally {
@@ -163,14 +164,22 @@ async function confirmDeactivate() {
     replaceRow(id, updated)
   } catch (error) {
     feedback.notify({
-      title: error instanceof AdminApiError && error.message
+      title: fieldForbiddenText(error) || (error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertPlans.deactivateFailed'),
+        : t('expertPlans.deactivateFailed')),
       color: 'error'
     })
   } finally {
     actionId.value = null
   }
+}
+
+function fieldForbiddenText(error: unknown) {
+  if (!isExpertPlanFieldForbiddenError(error)) {
+    return ''
+  }
+  const message = error instanceof AdminApiError ? error.message.trim() : ''
+  return message || t('expertPlans.fieldForbidden')
 }
 
 function replaceRow(id: string, updated: Record<string, unknown>) {

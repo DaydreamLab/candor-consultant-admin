@@ -351,6 +351,7 @@
     "deactivateBody": "[TODO] expertPlans.deactivateBody",
     "activateFailed": "[TODO] expertPlans.activateFailed",
     "deactivateFailed": "[TODO] expertPlans.deactivateFailed",
+    "fieldForbidden": "[TODO] expertPlans.fieldForbidden",
     "leaveTitle": "[TODO] expertPlans.leaveTitle",
     "leaveBody": "[TODO] expertPlans.leaveBody",
     "leaveStay": "[TODO] expertPlans.leaveStay",
@@ -2221,7 +2222,9 @@
     "advanceToPicking": "[TODO] shipping.advanceToPicking",
     "pickingStatusLabel": "[TODO] shipping.pickingStatusLabel",
     "refundBlocksPicking": "[TODO] shipping.refundBlocksPicking",
-    "refundRequestLabel": "[TODO] shipping.refundRequestLabel"
+    "refundRequestLabel": "[TODO] shipping.refundRequestLabel",
+    "advanceOk": "[TODO] shipping.advanceOk",
+    "advanceFailed": "[TODO] shipping.advanceFailed"
   },
   "audit": {
     "title": "Audit log",

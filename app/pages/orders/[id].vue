@@ -110,11 +110,12 @@ const packageComponents = computed(() => packageInfo.value?.components ?? [])
 const labLines = computed(() => labLinesOf(order.value))
 const expertPlanLines = computed(() => expertPlanLinesOf(order.value))
 const refundRequestStatus = computed(() => {
-  const raw = order.value?.refund_request_status
+  // core #143：`refund_status`；相容舊 `refund_request_status`
+  const raw = order.value?.refund_status ?? order.value?.refund_request_status
   return typeof raw === 'string' && raw.trim() ? raw.trim() : null
 })
 const refundRequestDisplay = computed(() => {
-  const display = order.value?.refund_request_display
+  const display = order.value?.refund_request_display ?? order.value?.refund_status_display
   if (typeof display === 'string' && display.trim()) {
     return display.trim()
   }

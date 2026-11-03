@@ -1,22 +1,34 @@
 /**
  * C15 / DESIGN rule 22：開始理貨後不可退。
- * shipment 必須尚未建立（null）；一進入 picking／之後皆不可退。
+ * core #143：定稿不自動建 shipment；shipment 必須尚未建立（null）。
  */
 export function isOrderShipmentRefundable(shipment: Record<string, unknown> | null | undefined): boolean {
   if (!shipment) {
     return true
   }
-  const status = typeof shipment.status === 'string' ? shipment.status.trim() : ''
   // 有 shipment 列即視為已開始履約／理貨流程 → 不可退
-  if (!status) {
-    return false
-  }
   return false
 }
 
-/** True when a refund request is still open (blocks 開始理貨 — B-17 / C19). */
+/**
+ * core order 退款申請狀態欄位（#143）：優先 `refund_status`，
+ * 過渡相容舊 mock 的 `refund_request_status`。
+ */
+export function orderRefundStatus(order: Record<string, unknown> | null | undefined): string {
+  if (!order) {
+    return ''
+  }
+  const raw = order.refund_status ?? order.refund_request_status
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
+/** True when a refund request is still open (blocks 開始理貨 — B-17／C19／`refund_request_pending`). */
 export function isRefundRequestBlockingPicking(status: unknown): boolean {
   return typeof status === 'string' && status.trim() === 'requested'
+}
+
+export function orderBlocksPickingDueToRefund(order: Record<string, unknown> | null | undefined): boolean {
+  return isRefundRequestBlockingPicking(orderRefundStatus(order))
 }
 
 export function orderHasRefundableCardPayment(payments: unknown): boolean {
