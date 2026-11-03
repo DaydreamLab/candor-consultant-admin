@@ -1,0 +1,71 @@
+name: Deploy prod
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate static site
+        run: pnpm generate
+        env:
+          NUXT_APP_BASE_URL: /
+          NUXT_PUBLIC_API_BASE: https://api.my-candor.com/api/v1
+          NUXT_PUBLIC_CTA_CATALOG_MOCK: '0'
+          NUXT_PUBLIC_FE_SHA: ${{ github.sha }}
+          NUXT_PUBLIC_APP_VERSION: ${{ github.ref_name }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Sync to S3
+        env:
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+        run: |
+          set -euo pipefail
+          OUT=".output/public"
+          aws s3 sync "$OUT" "s3://${S3_BUCKET}" --delete \
+            --exclude "_nuxt/*" \
+            --exclude "_fonts/*" \
+            --cache-control "no-cache"
+          aws s3 sync "$OUT/_nuxt" "s3://${S3_BUCKET}/_nuxt" --delete \
+            --cache-control "public, max-age=31536000, immutable"
+          if [[ -d "$OUT/_fonts" ]]; then
+            aws s3 sync "$OUT/_fonts" "s3://${S3_BUCKET}/_fonts" --delete \
+              --cache-control "public, max-age=31536000, immutable"
+          fi
+
+      - name: Invalidate CloudFront
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          set -euo pipefail
+          aws cloudfront create-invalidation \
+            --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --paths "/*"

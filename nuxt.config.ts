@@ -29,6 +29,8 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://candor-core.dev.daydream-lab.com/api/v1',
       feSha: process.env.NUXT_PUBLIC_FE_SHA || '',
+      /** prod tag 部署寫入（如 `v1.2.3`）；本機／未設時畫面顯示 `dev` */
+      appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '',
       /** 本機截圖／預覽用；正式環境勿開 */
       privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1',
       /**
