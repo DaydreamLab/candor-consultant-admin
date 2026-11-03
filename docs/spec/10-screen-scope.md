@@ -36,7 +36,7 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
-| expertPlans | `/expert-plans`、`/expert-plans/{id}` | **in-scope** | 專家方案列表＋編輯（名稱／售價／排序／上下架）；**無新增**（spec 33／Irice 11/03）。code 與綁定 package_plan 不可改。expert 可改 `active`＋`sort_order`；`name_zh`／`name_en`／`price` → 403（core #143 `b7c5ed0`／Irice 11/4） |
+| expertPlans | `/expert-plans`、`/expert-plans/{id}` | **in-scope** | 專家方案列表＋編輯（名稱／英文名／售價／排序／上下架）；**無新增**（spec 33／Irice 11/03）。code 與綁定 package_plan 不可改。expert 可改 `active`＋`sort_order`；`name_zh`／`name_en`／`price` → 403（core #143 `b7c5ed0`／Irice 11/4；英文名欄位取代 C14 隱藏） |
 | products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
 | labServices | `/lab-services`、`/lab-services/new`、`/lab-services/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/lab-services`；正式組內 **即將上線** badge。勿與開發中「採檢」`/labs` 混淆 |
 

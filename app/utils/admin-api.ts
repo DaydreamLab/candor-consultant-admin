@@ -1519,7 +1519,7 @@ export type AdminExpertPlan = {
 /**
  * PATCH body（OpenAPI adminExpertPlanPatch）。
  * expert 僅應送 active／sort_order；name_zh／name_en／price → 403。
- * 畫面依設計稿 C14 不露 name_en；ops／admin 仍可經 API 型別送出。
+ * Irice 11/4 第二輪：畫面顯示 name_en；ops／admin 可改，expert 唯讀。
  */
 export type ExpertPlanWrite = {
   name_zh?: string

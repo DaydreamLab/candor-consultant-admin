@@ -16,6 +16,7 @@ const EXPERT_PLAN = {
   package_plan_code: 'basic',
   package_plan_name_zh: '基礎保養',
   name_zh: '基本方案',
+  name_en: 'Basic plan',
   price: 6000,
   active: true,
   sort_order: 1
@@ -105,15 +106,8 @@ const ORDER = {
   payments: [
     { status: 'succeeded', method: 'card', amount: 6000 }
   ],
-  shipment: {
-    id: 'shp-ep-001',
-    status: 'pending',
-    order_id: 'ord-ep-001',
-    order_no: 'CND-EP-1001',
-    recipient_name: '王小明',
-    package_plan_name: '基本方案',
-    updated_at: '2026-11-03T10:00:00+08:00'
-  },
+  // B-17：已付款、尚無出貨記錄 → 顯示「訂單確認中」
+  shipment: null,
   package: {
     package_plan_name: '基本方案',
     period_days: 28,
@@ -328,22 +322,11 @@ async function installMocks(page) {
       })
     }
     if (url.includes('/admin/shipments') && method === 'GET') {
+      // B-17：尚無出貨記錄
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: ok({
-          shipments: [
-            {
-              id: 'shp-ep-001',
-              order_id: ORDER.id,
-              order_no: ORDER.order_no,
-              recipient_name: '王小明',
-              package_plan_name: '基本方案',
-              status: 'pending',
-              updated_at: '2026-11-03T10:00:00+08:00'
-            }
-          ]
-        })
+        body: ok({ shipments: [] })
       })
     }
     if (url.includes('/admin/order/') && method === 'GET' && !url.includes('/message') && !url.includes('/health-report')) {
@@ -704,11 +687,12 @@ async function main() {
     await context.close()
   }
 
-  // B-17 shipping blocked
+  // B-17 shipping blocked（訂單確認中＝已付款無 shipment）
   {
     const { context, page } = await newContext(browser, 'admin')
     await waitForApp(page)
-    await page.goto(`${baseUrl}/shipping/shp-ep-001`, { waitUntil: 'networkidle' })
+    await page.goto(`${baseUrl}/shipping/${ORDER.id}`, { waitUntil: 'networkidle' })
+    await page.locator('[data-testid="shipping-phase-order_confirmed"]').waitFor({ state: 'visible', timeout: 30000 })
     await page.locator('[data-testid="shipping-advance-to-picking"]').waitFor({ state: 'visible', timeout: 30000 })
     await page.locator('[data-testid="shipping-refund-blocks-picking"]').waitFor({ state: 'visible', timeout: 15000 })
     await hideChrome(page)

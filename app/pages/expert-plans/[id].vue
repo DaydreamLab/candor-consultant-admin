@@ -28,7 +28,7 @@ const canAccess = computed(() => {
   return role === 'expert' || role === 'ops' || role === 'admin'
 })
 
-/** expert 鎖名稱／售價（後端禁 name_zh／name_en／price）；ops／admin 可改全欄。 */
+/** expert 鎖名稱／英文名／售價（後端禁 name_zh／name_en／price）；ops／admin 可改全欄。 */
 const namePriceLocked = computed(() => session.operator?.role === 'expert')
 
 const expertPlan = ref<Record<string, unknown> | null>(null)

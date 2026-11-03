@@ -360,6 +360,7 @@
       "code": "[TODO] expertPlans.fields.code",
       "package_plan": "[TODO] expertPlans.fields.package_plan",
       "name_zh": "名稱",
+      "name_en": "[TODO] expertPlans.fields.name_en",
       "price": "售價",
       "sort_order": "[TODO] expertPlans.fields.sort_order",
       "active": "上下架"
@@ -2221,6 +2222,9 @@
     "errorBody": "Keep the EmptyPanel baseline on load failure instead of a lone error line.",
     "advanceToPicking": "[TODO] shipping.advanceToPicking",
     "pickingStatusLabel": "[TODO] shipping.pickingStatusLabel",
+    "phaseOrderConfirmed": "[TODO] shipping.phaseOrderConfirmed",
+    "phaseShipped": "[TODO] shipping.phaseShipped",
+    "phaseDelivered": "[TODO] shipping.phaseDelivered",
     "refundBlocksPicking": "[TODO] shipping.refundBlocksPicking",
     "refundRequestLabel": "[TODO] shipping.refundRequestLabel",
     "advanceOk": "[TODO] shipping.advanceOk",

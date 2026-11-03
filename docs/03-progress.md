@@ -74,7 +74,7 @@
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
-| 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表表格＋排序／上架下架；編輯名稱／售價／排序；**無新增**；ops/admin PATCH 全欄、expert 可改 `active`＋`sort_order`，`name_zh`／`name_en`／`price` → 403 `expert_plan_field_forbidden`；對齊設計稿 v4 B-01～B-07／core #143 `b7c5ed0`） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
+| 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表表格＋排序／上架下架；編輯名稱／英文名／售價／排序；**無新增**；ops/admin PATCH 全欄、expert 可改 `active`＋`sort_order`，`name_zh`／`name_en`／`price` → 403；對齊設計稿 v4 B-01～B-07／core #143 `b7c5ed0`／Irice 11/4 第二輪） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
 | 專家案件待處理／定稿 | `/expert-case-reviews`（預設 `awaiting_review&source=expert_plan`；排序由後端 `paid_at` ASC，不送 sort／order）、定稿確認；同時定稿 409 `expert_case_already_finalized`（B-08～B-11）；**定稿不自動理貨** | 可用 | 接線中（待 core #143） | M2 Beta |
 | 退款申請列表 | `/refund-requests?status`、`POST …/confirm`（無 body）、`POST …/reject` `{reason}` 1–200；對齊 B-12～B-16／core #143 | 可用 | 接線中（待 core #143） | M2 Beta |
 | 物流進度擋理貨 | `/shipping/{id}`：退款中 disabled＋原因；`POST /admin/order/{id}/shipment` 遇 `refund_request_pending`；判斷用 order `refund_status`（B-17／C19） | 可用 | 接線中（讀取已接；開始理貨寫入對齊 #143） | M2 Beta |

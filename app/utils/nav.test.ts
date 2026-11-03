@@ -99,6 +99,16 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
     expect(expertKeys).toEqual(['settings', 'privacy', 'aiAssistant'])
   })
 
+  it('hides refundRequests nav for expert; keeps it for ops／admin', () => {
+    expect(NAV_GROUPS.flatMap(g => g.items).find(i => i.key === 'refundRequests')?.opsAdminOnly).toBe(true)
+    const adminOps = visibleNavGroups('consultant_admin', 'admin').find(g => g.key === 'ops')!.items.map(i => i.key)
+    const opsOps = visibleNavGroups('consultant_ops', 'ops').find(g => g.key === 'ops')!.items.map(i => i.key)
+    const expertOps = visibleNavGroups('consultant_ops', 'expert').find(g => g.key === 'ops')!.items.map(i => i.key)
+    expect(adminOps).toContain('refundRequests')
+    expect(opsOps).toContain('refundRequests')
+    expect(expertOps).not.toContain('refundRequests')
+  })
+
   it('marks live official pages as not developing', () => {
     const live = [
       'workbench',

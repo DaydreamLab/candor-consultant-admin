@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<{
   saving: boolean
   saveError?: string
   disabled?: boolean
-  /** expert：鎖名稱／售價，僅可改排序與上下架（core #143 `b7c5ed0`）。 */
+  /** expert：鎖名稱／英文名／售價，僅可改排序與上下架（core #143 `b7c5ed0`）。 */
   namePriceLocked?: boolean
 }>(), {
   disabled: false,
@@ -127,6 +127,14 @@ function onSubmit() {
         v-model="state.name_zh"
         :disabled="namePriceDisabled"
         data-testid="expert-plan-name-zh"
+      />
+    </UFormField>
+
+    <UFormField :label="$t('expertPlans.fields.name_en')">
+      <UInput
+        v-model="state.name_en"
+        :disabled="namePriceDisabled"
+        data-testid="expert-plan-name-en"
       />
     </UFormField>
 

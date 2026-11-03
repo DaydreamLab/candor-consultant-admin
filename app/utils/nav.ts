@@ -13,6 +13,8 @@ export interface NavItem {
   knowledgeOnly?: boolean
   /** 僅 admin／ops 可見（CTA 目錄）；expert 隱藏整項。 */
   ctaCatalogOnly?: boolean
+  /** 僅 ops／admin 可見（退款申請；expert 隱藏，Irice 11/4）。 */
+  opsAdminOnly?: boolean
   /** RouterLink exact：設定總頁勿與 /settings/privacy 等子路徑同時亮起。 */
   exact?: boolean
   /** false：側欄不加「即將上線」。未設視為開發中／未上線。 */
@@ -29,7 +31,7 @@ export interface NavGroup {
 /**
  * 側欄 IA（Irice 2026-10-27／設定組拆頁 2026-10-28）：
  * 總覽（最上、無組標）→ 案件 → 知識 → 商品 → 設定 → 開發中。
- * 每項只出現一次（24；expert 看不到 CTA 則 23）。組 key 與 item key 共用 `nav.*`。
+ * 每項只出現一次（24；expert 看不到 CTA／退款申請則更少）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -44,7 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'reviews', to: '/expert-case-reviews', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
-      { key: 'refundRequests', to: '/refund-requests', icon: 'i-lucide-wallet', developing: false },
+      { key: 'refundRequests', to: '/refund-requests', icon: 'i-lucide-wallet', developing: false, opsAdminOnly: true },
       // shipping：物流進度（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck', developing: false },
       { key: 'users', to: '/users', icon: 'i-lucide-users', developing: false }
@@ -187,6 +189,9 @@ export function visibleNavGroups(
           return false
         }
         if (item.ctaCatalogOnly && !canViewCtaCatalog(operatorRole)) {
+          return false
+        }
+        if (item.opsAdminOnly && operatorRole === 'expert') {
           return false
         }
         return true

@@ -209,7 +209,7 @@
       "atm_account_no": "虛擬帳號",
       "carrier": "物流",
       "tracking_no": "物流單號",
-      "picked_at": "揀貨時間",
+      "picked_at": "理貨時間",
       "shipped_at": "出貨時間",
       "arrived_at": "送達時間",
       "note": "備註",
@@ -263,7 +263,7 @@
       "atm": "ATM"
     },
     "shipmentStatus": {
-      "picking": "揀貨中",
+      "picking": "理貨",
       "in_transit": "運送中",
       "arrived": "已送達"
     },
@@ -360,6 +360,7 @@
       "code": "[TODO] expertPlans.fields.code",
       "package_plan": "綁定方案",
       "name_zh": "名稱",
+      "name_en": "[TODO] expertPlans.fields.name_en",
       "price": "售價",
       "sort_order": "排序",
       "active": "上下架"
@@ -1279,7 +1280,7 @@
     "unscheduled": "未安排",
     "scheduled": "已約採檢",
     "report_ready": "報告已回",
-    "picking": "揀貨中",
+    "picking": "理貨",
     "labeling": "貼標中",
     "in_transit": "運送中",
     "delivered": "已送達",
@@ -1397,7 +1398,7 @@
     "noticeHint": "缺件、低庫存與請款狀態會寄到這個信箱（示範，尚未真正寄信）。",
     "noticeEmail": "通知信箱",
     "warehouse": "預設出貨倉",
-    "warehouseHint": "揀貨與出貨預設從這個倉出去。",
+    "warehouseHint": "理貨與出貨預設從這個倉出去。",
     "labels": "坦見出貨標籤版本",
     "labelsHintFirm": "商品屬顧問公司；出貨前請改貼坦見標籤。下面「現行」是現在要套用的版本。",
     "labelsHintPlatform": "商品屬各顧問公司；出貨前改貼坦見標籤。下面「現行」是現在要套用的版本。",
@@ -2206,6 +2207,9 @@
     "advanceTo": "推進至{status}",
     "advanceToPicking": "推進至理貨",
     "pickingStatusLabel": "理貨",
+    "phaseOrderConfirmed": "訂單確認中",
+    "phaseShipped": "出貨",
+    "phaseDelivered": "已送達",
     "advanceOk": "[TODO] shipping.advanceOk",
     "advanceFailed": "[TODO] shipping.advanceFailed",
     "refundBlocksPicking": "此訂單有退款申請處理中，處理完成前不能開始理貨。",
