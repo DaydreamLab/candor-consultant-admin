@@ -23,10 +23,13 @@ const actionId = ref<string | null>(null)
 const deactivateOpen = ref(false)
 const deactivateTarget = ref<Record<string, unknown> | null>(null)
 
-/** ops／admin can edit; expert can only activate／deactivate (B-03／C22). */
+/**
+ * expert／ops／admin 皆可進編輯（Irice 11/4：排序不限角色）。
+ * 列表上架／下架亦全角色可用；名稱／售價僅編輯頁 ops／admin 可改。
+ */
 const canEdit = computed(() => {
   const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  return role === 'expert' || role === 'ops' || role === 'admin'
 })
 
 const sortedPlans = computed(() => {

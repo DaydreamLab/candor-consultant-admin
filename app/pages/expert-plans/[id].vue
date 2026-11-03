@@ -21,10 +21,15 @@ const { set } = bindNavbarActions()
 
 const expertPlanId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || expertPlanId.value)
-const canEdit = computed(() => {
+
+/** expert／ops／admin 皆可進編輯頁（Irice 11/4：expert 可改 sort_order＋active）。 */
+const canAccess = computed(() => {
   const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  return role === 'expert' || role === 'ops' || role === 'admin'
 })
+
+/** expert 鎖名稱／售價；ops／admin 可改全欄。 */
+const namePriceLocked = computed(() => session.operator?.role === 'expert')
 
 const expertPlan = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
@@ -41,8 +46,8 @@ const {
   allowNavigationWithoutConfirm
 } = useDirtyLeaveModal(formDirty)
 
-watch([saving, pending, expertPlan, locale, canEdit], () => {
-  if (pending.value || !expertPlan.value || !canEdit.value) {
+watch([saving, pending, expertPlan, locale, canAccess], () => {
+  if (pending.value || !expertPlan.value || !canAccess.value) {
     set(null)
     return
   }
@@ -64,8 +69,7 @@ if (import.meta.client) {
     void load(id)
   }, { immediate: true })
 
-  // Expert role has no edit entry (B-03); bounce to list if they hit the URL.
-  watch(canEdit, (ok) => {
+  watch(canAccess, (ok) => {
     if (!ok && !pending.value) {
       void navigateTo(localePath('/expert-plans'))
     }
@@ -117,7 +121,7 @@ async function load(id: string) {
 async function onSave(payload: ExpertPlanWrite) {
   const token = readOperatorToken()
   const id = expertPlanId.value
-  if (!token || !id || !canEdit.value) {
+  if (!token || !id || !canAccess.value) {
     errorMessage.value = t('expertPlans.saveFailed')
     return
   }
@@ -224,8 +228,9 @@ function failText(error: unknown, fallback: string) {
       {{ $t('expertPlans.loading') }}
     </p>
     <ExpertPlanForm
-      v-else-if="expertPlan && canEdit"
-      :disabled="!canEdit"
+      v-else-if="expertPlan && canAccess"
+      :disabled="!canAccess"
+      :name-price-locked="namePriceLocked"
       :expert-plan="expertPlan"
       :saving="saving"
       :save-error="errorMessage"

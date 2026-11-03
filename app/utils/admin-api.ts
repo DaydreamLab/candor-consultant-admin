@@ -360,7 +360,10 @@ export function isExpertCaseAlreadyFinalizedError(error: unknown): boolean {
   return false
 }
 
-/** expert PATCH 非 active 欄位 → 403／422 `expert_plan_field_forbidden`. */
+/**
+ * expert PATCH 名稱／售價等禁止欄位 → 403／422 `expert_plan_field_forbidden`.
+ * Irice 11/4：expert 可改 `active`＋`sort_order`（core #143 後續會對齊）。
+ */
 export const EXPERT_PLAN_FIELD_FORBIDDEN_CODE = 'expert_plan_field_forbidden'
 
 export function isExpertPlanFieldForbiddenError(error: unknown): boolean {

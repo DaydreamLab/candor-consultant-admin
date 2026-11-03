@@ -17,9 +17,12 @@ const props = withDefaults(defineProps<{
   saving: boolean
   saveError?: string
   disabled?: boolean
+  /** expert：鎖名稱／售價，僅可改排序與上下架（Irice 11/4）。 */
+  namePriceLocked?: boolean
 }>(), {
   disabled: false,
-  saveError: ''
+  saveError: '',
+  namePriceLocked: false
 })
 
 const emit = defineEmits<{
@@ -37,8 +40,10 @@ const localError = ref('')
 const fieldError = ref<'price' | null>(null)
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
+const namePriceDisabled = computed(() => fieldsLocked.value || props.namePriceLocked)
+const formOptions = computed(() => ({ allowNamePrice: !props.namePriceLocked }))
 const priceChanged = computed(() => {
-  if (!baseline.value) {
+  if (!baseline.value || props.namePriceLocked) {
     return false
   }
   const next = Number(state.price)
@@ -56,7 +61,7 @@ watch(() => props.saveError, () => {
   localError.value = ''
 })
 
-watch(() => expertPlanFormIsDirty(baseline.value, state), (dirty) => {
+watch(() => expertPlanFormIsDirty(baseline.value, state, formOptions.value), (dirty) => {
   emit('dirty-change', dirty)
 }, { immediate: true })
 
@@ -73,7 +78,7 @@ function onSubmit() {
   }
   localError.value = ''
   fieldError.value = null
-  const issue = validateExpertPlanForm(state)
+  const issue = validateExpertPlanForm(state, formOptions.value)
   if (issue === 'price') {
     fieldError.value = 'price'
     return
@@ -82,7 +87,7 @@ function onSubmit() {
     localError.value = t('expertPlans.saveFailed')
     return
   }
-  const patch = buildExpertPlanPatch(baseline.value, state)
+  const patch = buildExpertPlanPatch(baseline.value, state, formOptions.value)
   if (!Object.keys(patch).length) {
     emit('no-changes')
     return
@@ -120,7 +125,7 @@ function onSubmit() {
     <UFormField :label="$t('expertPlans.fields.name_zh')">
       <UInput
         v-model="state.name_zh"
-        :disabled="fieldsLocked"
+        :disabled="namePriceDisabled"
         data-testid="expert-plan-name-zh"
       />
     </UFormField>
@@ -133,7 +138,7 @@ function onSubmit() {
         v-model="state.price"
         type="number"
         inputmode="numeric"
-        :disabled="fieldsLocked"
+        :disabled="namePriceDisabled"
         data-testid="expert-plan-price"
       />
       <template

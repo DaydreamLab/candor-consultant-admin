@@ -59,4 +59,30 @@ describe('expert-plan-form', () => {
     state.sort_order = '1'
     expect(validateExpertPlanForm(state)).toBeNull()
   })
+
+  it('expert mode only patches active and sort_order', () => {
+    const baseline = snapshotFromExpertPlan(plan)
+    const state = expertPlanFormStateFromPlan(plan)
+    const opts = { allowNamePrice: false }
+    state.name_zh = '被改名稱'
+    state.price = '9999'
+    state.sort_order = '3'
+    state.active = false
+    expect(expertPlanFormIsDirty(baseline, state, opts)).toBe(true)
+    expect(buildExpertPlanPatch(baseline, state, opts)).toEqual({
+      active: false,
+      sort_order: 3
+    })
+    expect(validateExpertPlanForm(state, opts)).toBeNull()
+  })
+
+  it('expert mode ignores name/price-only edits for dirty', () => {
+    const baseline = snapshotFromExpertPlan(plan)
+    const state = expertPlanFormStateFromPlan(plan)
+    const opts = { allowNamePrice: false }
+    state.name_zh = '被改名稱'
+    state.price = '9999'
+    expect(expertPlanFormIsDirty(baseline, state, opts)).toBe(false)
+    expect(buildExpertPlanPatch(baseline, state, opts)).toEqual({})
+  })
 })

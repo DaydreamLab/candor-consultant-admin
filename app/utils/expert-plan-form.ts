@@ -55,28 +55,46 @@ export function snapshotFromExpertPlan(plan: Record<string, unknown>): ExpertPla
   }
 }
 
+export type ExpertPlanFormOptions = {
+  /**
+   * ops／admin：可改名稱／售價。
+   * expert（Irice 11/4）：僅 active＋sort_order；名稱／售價不進 dirty／patch。
+   */
+  allowNamePrice?: boolean
+}
+
 export function expertPlanFormIsDirty(
   baseline: ExpertPlanSnapshot | null,
-  state: ExpertPlanFormState
+  state: ExpertPlanFormState,
+  options: ExpertPlanFormOptions = {}
 ): boolean {
   if (!baseline) {
     return false
   }
+  const allowNamePrice = options.allowNamePrice !== false
   const next = snapshotFromState(state)
-  return next.name_zh !== baseline.name_zh
-    || next.price !== baseline.price
-    || next.active !== baseline.active
-    || next.sort_order !== baseline.sort_order
+  if (allowNamePrice) {
+    if (next.name_zh !== baseline.name_zh || next.price !== baseline.price) {
+      return true
+    }
+  }
+  return next.active !== baseline.active || next.sort_order !== baseline.sort_order
 }
 
-/** Price must be integer > 0 (DESIGN rule 18 / B-05). */
-export function validateExpertPlanForm(state: ExpertPlanFormState): 'name_zh' | 'price' | 'sort_order' | null {
-  if (!state.name_zh.trim()) {
-    return 'name_zh'
-  }
-  const price = finiteNumber(state.price)
-  if (price == null || price < 1 || !Number.isInteger(price)) {
-    return 'price'
+/** Price must be integer > 0 (DESIGN rule 18 / B-05). Expert 略過名稱／售價檢查。 */
+export function validateExpertPlanForm(
+  state: ExpertPlanFormState,
+  options: ExpertPlanFormOptions = {}
+): 'name_zh' | 'price' | 'sort_order' | null {
+  const allowNamePrice = options.allowNamePrice !== false
+  if (allowNamePrice) {
+    if (!state.name_zh.trim()) {
+      return 'name_zh'
+    }
+    const price = finiteNumber(state.price)
+    if (price == null || price < 1 || !Number.isInteger(price)) {
+      return 'price'
+    }
   }
   const sortOrder = finiteNumber(state.sort_order)
   if (sortOrder == null || !Number.isInteger(sortOrder)) {
@@ -87,15 +105,19 @@ export function validateExpertPlanForm(state: ExpertPlanFormState): 'name_zh' | 
 
 export function buildExpertPlanPatch(
   baseline: ExpertPlanSnapshot,
-  state: ExpertPlanFormState
+  state: ExpertPlanFormState,
+  options: ExpertPlanFormOptions = {}
 ): ExpertPlanWrite {
+  const allowNamePrice = options.allowNamePrice !== false
   const next = snapshotFromState(state)
   const patch: ExpertPlanWrite = {}
-  if (next.name_zh !== baseline.name_zh) {
-    patch.name_zh = next.name_zh
-  }
-  if (next.price !== baseline.price) {
-    patch.price = next.price
+  if (allowNamePrice) {
+    if (next.name_zh !== baseline.name_zh) {
+      patch.name_zh = next.name_zh
+    }
+    if (next.price !== baseline.price) {
+      patch.price = next.price
+    }
   }
   if (next.active !== baseline.active) {
     patch.active = next.active
