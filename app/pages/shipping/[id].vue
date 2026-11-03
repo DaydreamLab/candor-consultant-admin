@@ -3,6 +3,7 @@ import type { ApiShipStatus } from '~/types/admin'
 import { AdminApiError, adminGetOrder } from '~/utils/admin-api'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { normalizeAdminPath } from '~/utils/nav'
+import { isRefundRequestBlockingPicking } from '~/utils/order-refund-gate'
 import { readOperatorToken } from '~/utils/operator-session'
 import { adminListShipments } from '~/utils/shipment-api'
 import { displayOrderNo, mapApiShipStatus } from '~/utils/shipment-map'
@@ -58,6 +59,24 @@ const trackingLine = computed(() => {
 })
 const updatedAt = computed(() => {
   return formatLocalDateTime(shipment.value?.updated_at, { style: 'list', empty: t('status.na') })
+})
+
+const refundRequestStatus = computed(() => {
+  const raw = order.value?.refund_request_status
+  return typeof raw === 'string' ? raw.trim() : ''
+})
+
+/** B-17／C19：退款申請處理中不能開始理貨。 */
+const pickingBlockedByRefund = computed(() => {
+  return isRefundRequestBlockingPicking(refundRequestStatus.value)
+})
+
+const showAdvanceToPicking = computed(() => {
+  if (pickingBlockedByRefund.value) {
+    return true
+  }
+  // 尚未進入理貨／運送／送達時顯示推進（仍為 mock 寫入）。
+  return apiStatus.value == null
 })
 
 if (import.meta.client) {
@@ -258,6 +277,17 @@ function optionalText(value: unknown) {
             </template>
           </span>
           <span
+            v-if="refundRequestStatus"
+            class="text-sm text-muted"
+            data-testid="shipping-refund-request-status"
+          >
+            {{ $t('shipping.refundRequestLabel') }}：{{
+              refundRequestStatus === 'requested'
+                ? $t('refundRequests.status.requested')
+                : refundRequestStatus
+            }}
+          </span>
+          <span
             v-if="trackingLine"
             class="font-mono text-sm text-muted"
           >
@@ -266,6 +296,34 @@ function optionalText(value: unknown) {
           <span class="ml-auto text-sm text-muted">
             {{ updatedAt }}
           </span>
+        </div>
+
+        <div
+          v-if="showAdvanceToPicking"
+          class="flex flex-col gap-2 rounded-xl border border-default bg-elevated px-4 py-3"
+          data-testid="shipping-advance-picking"
+        >
+          <UTooltip
+            :text="pickingBlockedByRefund ? $t('shipping.refundBlocksPicking') : undefined"
+            :disabled="!pickingBlockedByRefund"
+          >
+            <span class="inline-flex w-fit">
+              <UButton
+                color="primary"
+                :disabled="pickingBlockedByRefund"
+                data-testid="shipping-advance-to-picking"
+              >
+                {{ $t('shipping.advanceToPicking') }}
+              </UButton>
+            </span>
+          </UTooltip>
+          <p
+            v-if="pickingBlockedByRefund"
+            class="text-sm text-muted"
+            data-testid="shipping-refund-blocks-picking"
+          >
+            {{ $t('shipping.refundBlocksPicking') }}
+          </p>
         </div>
 
         <section

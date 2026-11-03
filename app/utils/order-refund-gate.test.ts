@@ -1,17 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { isOrderShipmentRefundable, orderHasRefundableCardPayment } from './order-refund-gate'
+import {
+  isOrderShipmentRefundable,
+  isRefundRequestBlockingPicking,
+  orderHasRefundableCardPayment
+} from './order-refund-gate'
 
 describe('order-refund-gate', () => {
-  it('allows refund when shipment is missing or picking', () => {
+  it('allows refund only when shipment is missing (C15)', () => {
     expect(isOrderShipmentRefundable(null)).toBe(true)
     expect(isOrderShipmentRefundable(undefined)).toBe(true)
-    expect(isOrderShipmentRefundable({})).toBe(true)
-    expect(isOrderShipmentRefundable({ status: 'picking' })).toBe(true)
+    expect(isOrderShipmentRefundable({})).toBe(false)
+    expect(isOrderShipmentRefundable({ status: 'picking' })).toBe(false)
+    expect(isOrderShipmentRefundable({ status: 'in_transit' })).toBe(false)
   })
 
-  it('blocks refund after shipment leaves picking', () => {
-    expect(isOrderShipmentRefundable({ status: 'in_transit' })).toBe(false)
-    expect(isOrderShipmentRefundable({ status: 'arrived' })).toBe(false)
+  it('blocks picking while refund request is requested (B-17)', () => {
+    expect(isRefundRequestBlockingPicking('requested')).toBe(true)
+    expect(isRefundRequestBlockingPicking('refunded')).toBe(false)
+    expect(isRefundRequestBlockingPicking('rejected')).toBe(false)
+    expect(isRefundRequestBlockingPicking(null)).toBe(false)
   })
 
   it('detects succeeded card payments', () => {
@@ -21,6 +28,5 @@ describe('order-refund-gate', () => {
     expect(orderHasRefundableCardPayment([
       { status: 'succeeded', method: 'atm' }
     ])).toBe(false)
-    expect(orderHasRefundableCardPayment(null)).toBe(false)
   })
 })

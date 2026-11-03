@@ -25,10 +25,13 @@ import { parseKnowledgeGapPayload, parseRetrievalHits } from '~/utils/knowledge-
 
 export class AdminApiError extends Error {
   statusCode: number
+  /** Core `error_code` when present (assumed until OpenAPI lands). */
+  code: string
 
-  constructor(statusCode: number, message: string) {
+  constructor(statusCode: number, message: string, code = '') {
     super(message)
     this.statusCode = statusCode
+    this.code = code
   }
 }
 
@@ -333,8 +336,24 @@ export type AdminExpertCaseReviewListQuery = {
   status?: string
   /** `expert_plan`＝付費專家方案案；`legacy`＝舊免費案。省略＝全部。 */
   source?: 'expert_plan' | 'legacy'
+  /** Assumed：B-08／C18 依付款時間排序；core #143 定稿後對齊。 */
+  sort?: 'paid_at' | 'created_at'
+  order?: 'asc' | 'desc'
   limit?: number
   offset?: number
+}
+
+/** Assumed concurrent-finalize code (C23／B-11) until core OpenAPI lands. */
+export const EXPERT_CASE_ALREADY_REVIEWED_CODE = 'expert_case_already_reviewed'
+
+export function isExpertCaseAlreadyReviewedError(error: unknown): boolean {
+  if (!(error instanceof AdminApiError)) {
+    return false
+  }
+  if (error.code === EXPERT_CASE_ALREADY_REVIEWED_CODE) {
+    return true
+  }
+  return error.statusCode === 409
 }
 
 export type AdminExpertCaseReviewDecisionBody = {
@@ -621,7 +640,7 @@ export async function adminSubmitExpertCaseReview(
     if (error instanceof AdminApiError) {
       throw error
     }
-    throw new AdminApiError(readStatus(error), readMessage(error))
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 
@@ -1476,7 +1495,6 @@ export type AdminExpertPlan = {
 
 export type ExpertPlanWrite = {
   name_zh?: string
-  name_en?: string | null
   price?: number
   active?: boolean
   sort_order?: number
@@ -1605,7 +1623,12 @@ export async function adminConfirmRefundRequest(apiBase: string, token: string, 
   }
 }
 
-export async function adminRejectRefundRequest(apiBase: string, token: string, id: string) {
+export async function adminRejectRefundRequest(
+  apiBase: string,
+  token: string,
+  id: string,
+  reason: string
+) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
       adminUrl(apiBase, `/refund-request/${encodeURIComponent(id)}/reject`),
@@ -1613,7 +1636,8 @@ export async function adminRejectRefundRequest(apiBase: string, token: string, i
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
-        }
+        },
+        body: { reason }
       }
     )
     if (body?.status !== 'success' || !isRecord(body.data)) {
@@ -1624,7 +1648,7 @@ export async function adminRejectRefundRequest(apiBase: string, token: string, i
     if (error instanceof AdminApiError) {
       throw error
     }
-    throw new AdminApiError(readStatus(error), readMessage(error))
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 
@@ -2890,4 +2914,18 @@ function readMessage(error: unknown) {
   }
   const data = (error as { data?: AdminFailure }).data
   return typeof data?.error_message === 'string' ? data.error_message : ''
+}
+
+function readErrorCode(error: unknown) {
+  if (!error || typeof error !== 'object' || !('data' in error)) {
+    return ''
+  }
+  const data = (error as { data?: AdminFailure }).data
+  if (typeof data?.error_code === 'string' && data.error_code.trim()) {
+    return data.error_code.trim()
+  }
+  if (typeof data?.error_code === 'number' && Number.isFinite(data.error_code)) {
+    return String(data.error_code)
+  }
+  return ''
 }

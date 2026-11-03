@@ -74,8 +74,10 @@
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
-| 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表＋PATCH；**無新增**；對齊 spec 33／core #143） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
-| 退款申請列表 | `/refund-requests`（確認／拒絕；對齊 spec 33） | 可用 | 接線中（待 core #143） | M2 Beta |
+| 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表表格＋排序／上架下架；編輯名稱／售價／排序；**無新增**；expert 可上下架不可編輯；對齊設計稿 v4 B-01～B-07／spec 33／core #143） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
+| 專家案件待處理／定稿 | `/expert-case-reviews`（預設「待處理案件」、付款時間排序、舊版免費案件）、定稿確認＋同時定稿錯誤（B-08～B-11） | 可用 | 接線中（待 core #143） | M2 Beta |
+| 退款申請列表 | `/refund-requests`（確認二次確認／拒絕必填原因≤200；空清單／載入失敗；對齊 B-12～B-16／spec 33） | 可用 | 接線中（待 core #143） | M2 Beta |
+| 物流進度擋理貨 | `/shipping/{id}`（退款申請中「推進至理貨」灰掉＋原因；B-17／C19；推進仍 mock） | 可用 | 接線中（讀取已接；寫入 mock） | M2 Beta |
 | 採檢服務（LabService） | `/lab-services`、`/lab-services/new`、`/lab-services/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |

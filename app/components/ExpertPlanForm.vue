@@ -34,13 +34,22 @@ const { t } = useI18n()
 const state = reactive<ExpertPlanFormState>(emptyExpertPlanFormState())
 const baseline = ref<ExpertPlanSnapshot | null>(null)
 const localError = ref('')
+const fieldError = ref<'price' | null>(null)
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
+const priceChanged = computed(() => {
+  if (!baseline.value) {
+    return false
+  }
+  const next = Number(state.price)
+  return Number.isFinite(next) && next !== baseline.value.price
+})
 
 watch(() => props.expertPlan, (plan) => {
   Object.assign(state, expertPlanFormStateFromPlan(plan))
   baseline.value = snapshotFromExpertPlan(plan)
   localError.value = ''
+  fieldError.value = null
 }, { immediate: true })
 
 watch(() => props.saveError, () => {
@@ -63,7 +72,12 @@ function onSubmit() {
     return
   }
   localError.value = ''
+  fieldError.value = null
   const issue = validateExpertPlanForm(state)
+  if (issue === 'price') {
+    fieldError.value = 'price'
+    return
+  }
   if (issue) {
     localError.value = t('expertPlans.saveFailed')
     return
@@ -111,15 +125,10 @@ function onSubmit() {
       />
     </UFormField>
 
-    <UFormField :label="$t('expertPlans.fields.name_en')">
-      <UInput
-        v-model="state.name_en"
-        :disabled="fieldsLocked"
-        data-testid="expert-plan-name-en"
-      />
-    </UFormField>
-
-    <UFormField :label="$t('expertPlans.fields.price')">
+    <UFormField
+      :label="$t('expertPlans.fields.price')"
+      :error="fieldError === 'price' ? $t('expertPlans.priceInvalid') : undefined"
+    >
       <UInput
         v-model="state.price"
         type="number"
@@ -127,6 +136,12 @@ function onSubmit() {
         :disabled="fieldsLocked"
         data-testid="expert-plan-price"
       />
+      <template
+        v-if="priceChanged && fieldError !== 'price'"
+        #hint
+      >
+        <span data-testid="expert-plan-price-hint">{{ $t('expertPlans.priceHint') }}</span>
+      </template>
     </UFormField>
 
     <UFormField :label="$t('expertPlans.fields.sort_order')">
@@ -140,11 +155,19 @@ function onSubmit() {
     </UFormField>
 
     <UFormField :label="$t('expertPlans.fields.active')">
-      <USwitch
-        v-model="state.active"
-        :disabled="fieldsLocked"
-        data-testid="expert-plan-active"
-      />
+      <div class="flex items-center gap-3">
+        <USwitch
+          v-model="state.active"
+          :disabled="fieldsLocked"
+          data-testid="expert-plan-active"
+        />
+        <UBadge
+          :color="state.active ? 'success' : 'neutral'"
+          variant="subtle"
+        >
+          {{ state.active ? $t('expertPlans.status.active') : $t('expertPlans.status.inactive') }}
+        </UBadge>
+      </div>
     </UFormField>
 
     <p

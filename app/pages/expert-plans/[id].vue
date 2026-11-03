@@ -6,7 +6,7 @@ import {
   type ExpertPlanWrite
 } from '~/utils/admin-api'
 import { EXPERT_PLAN_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
-import { usePackagePlanLeaveGuard } from '~/composables/usePackagePlanLeaveGuard'
+import { useDirtyLeaveModal } from '~/composables/useDirtyLeaveModal'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 
@@ -20,7 +20,10 @@ const { set } = bindNavbarActions()
 
 const expertPlanId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || expertPlanId.value)
-const canEdit = computed(() => session.operator?.role !== 'expert')
+const canEdit = computed(() => {
+  const role = session.operator?.role
+  return role === 'ops' || role === 'admin'
+})
 
 const expertPlan = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)
@@ -29,10 +32,13 @@ const errorMessage = ref('')
 const formDirty = ref(false)
 const saveNotice = ref<'success' | 'noChanges' | null>(null)
 
-const { confirmLeave, allowNavigationWithoutConfirm } = usePackagePlanLeaveGuard(
-  formDirty,
-  () => t('expertPlans.leaveConfirm')
-)
+const {
+  leaveOpen,
+  requestLeave,
+  stay,
+  discardAndLeave,
+  allowNavigationWithoutConfirm
+} = useDirtyLeaveModal(formDirty)
 
 watch([saving, pending, expertPlan, locale, canEdit], () => {
   if (pending.value || !expertPlan.value || !canEdit.value) {
@@ -55,6 +61,13 @@ watch([saving, pending, expertPlan, locale, canEdit], () => {
 if (import.meta.client) {
   watch(expertPlanId, (id) => {
     void load(id)
+  }, { immediate: true })
+
+  // Expert role has no edit entry (B-03); bounce to list if they hit the URL.
+  watch(canEdit, (ok) => {
+    if (!ok && !pending.value) {
+      void navigateTo(localePath('/expert-plans'))
+    }
   }, { immediate: true })
 }
 
@@ -137,8 +150,9 @@ function onNoChanges() {
   errorMessage.value = ''
 }
 
-function onCancel() {
-  if (!confirmLeave()) {
+async function onCancel() {
+  const ok = await requestLeave()
+  if (!ok) {
     return
   }
   allowNavigationWithoutConfirm()
@@ -182,6 +196,7 @@ function failText(error: unknown, fallback: string) {
       variant="subtle"
       class="mb-4"
       :title="$t('expertPlans.saveOk')"
+      data-testid="expert-plan-save-ok"
     />
     <UAlert
       v-if="saveNotice === 'noChanges' && expertPlan"
@@ -193,6 +208,7 @@ function failText(error: unknown, fallback: string) {
     <p
       v-if="errorMessage"
       class="mb-4 text-sm text-error"
+      data-testid="expert-plan-page-error"
     >
       {{ errorMessage }}
     </p>
@@ -203,7 +219,7 @@ function failText(error: unknown, fallback: string) {
       {{ $t('expertPlans.loading') }}
     </p>
     <ExpertPlanForm
-      v-else-if="expertPlan"
+      v-else-if="expertPlan && canEdit"
       :disabled="!canEdit"
       :expert-plan="expertPlan"
       :saving="saving"
@@ -213,5 +229,39 @@ function failText(error: unknown, fallback: string) {
       @no-changes="onNoChanges"
       @save="onSave"
     />
+
+    <UModal
+      :open="leaveOpen"
+      :title="$t('expertPlans.leaveTitle')"
+      :description="$t('expertPlans.leaveBody')"
+      :ui="{ footer: 'justify-end gap-2' }"
+      @update:open="(open: boolean) => { if (!open) stay() }"
+    >
+      <template #body>
+        <p
+          class="sr-only"
+          data-testid="expert-plan-leave-modal"
+        >
+          {{ $t('expertPlans.leaveTitle') }}
+        </p>
+      </template>
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="outline"
+          data-testid="expert-plan-leave-stay"
+          @click="stay"
+        >
+          {{ $t('expertPlans.leaveStay') }}
+        </UButton>
+        <UButton
+          color="error"
+          data-testid="expert-plan-leave-discard"
+          @click="discardAndLeave"
+        >
+          {{ $t('expertPlans.leaveDiscard') }}
+        </UButton>
+      </template>
+    </UModal>
   </PageHeader>
 </template>

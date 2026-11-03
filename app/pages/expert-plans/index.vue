@@ -1,15 +1,51 @@
 <script setup lang="ts">
-import { AdminApiError, adminListExpertPlans } from '~/utils/admin-api'
+import {
+  AdminApiError,
+  adminListExpertPlans,
+  adminUpdateExpertPlan
+} from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
 
+type PlanColumn = 'sort_order' | 'name' | 'price' | 'active' | 'actions'
+
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const session = useSessionStore()
+const feedback = useOpsFeedback()
 
 const expertPlans = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
+const actionId = ref<string | null>(null)
+const deactivateOpen = ref(false)
+const deactivateTarget = ref<Record<string, unknown> | null>(null)
+
+/** ops／admin can edit; expert can only activate／deactivate (B-03／C22). */
+const canEdit = computed(() => {
+  const role = session.operator?.role
+  return role === 'ops' || role === 'admin'
+})
+
+const sortedPlans = computed(() => {
+  return [...expertPlans.value].sort((a, b) => {
+    const sa = numberOf(a.sort_order) ?? 0
+    const sb = numberOf(b.sort_order) ?? 0
+    if (sa !== sb) {
+      return sa - sb
+    }
+    return nameOf(a).localeCompare(nameOf(b), 'zh-Hant')
+  })
+})
+
+const columns: { key: PlanColumn, align: 'left' | 'right', width?: string }[] = [
+  { key: 'sort_order', align: 'left', width: 'w-[5rem]' },
+  { key: 'name', align: 'left' },
+  { key: 'price', align: 'right', width: 'w-[8rem]' },
+  { key: 'active', align: 'left', width: 'w-[7rem]' },
+  { key: 'actions', align: 'right', width: 'w-[14rem]' }
+]
 
 if (import.meta.client) {
   void load()
@@ -37,12 +73,8 @@ async function load() {
   }
 }
 
-function openPlan(row: Record<string, unknown>) {
-  const id = idOf(row)
-  if (!id) {
-    return
-  }
-  void navigateTo(localePath(`/expert-plans/${encodeURIComponent(id)}`))
+function columnLabel(key: PlanColumn) {
+  return t(`expertPlans.columns.${key}`)
 }
 
 function idOf(row: Record<string, unknown>) {
@@ -61,18 +93,7 @@ function rowKey(row: Record<string, unknown>, index: number) {
 }
 
 function nameOf(row: Record<string, unknown>) {
-  const zh = textValue(row.name_zh)
-  const en = textValue(row.name_en)
-  const localized = String(locale.value).startsWith('en') ? (en || zh) : (zh || en)
-  return localized || textValue(row.name) || t('status.na')
-}
-
-function packagePlanOf(row: Record<string, unknown>) {
-  return textValue(row.package_plan_name_zh)
-    || textValue(row.package_plan_name)
-    || textValue(row.package_plan_code)
-    || textValue(row.package_plan_id)
-    || t('status.na')
+  return textValue(row.name_zh) || textValue(row.name) || t('status.na')
 }
 
 function priceOf(row: Record<string, unknown>) {
@@ -80,10 +101,82 @@ function priceOf(row: Record<string, unknown>) {
   return n == null ? t('status.na') : money(n)
 }
 
-function activeOf(row: Record<string, unknown>) {
-  return row.active === false
-    ? t('expertPlans.status.inactive')
-    : t('expertPlans.status.active')
+function sortOf(row: Record<string, unknown>) {
+  const n = numberOf(row.sort_order)
+  return n == null ? t('status.na') : String(n)
+}
+
+function isActive(row: Record<string, unknown>) {
+  return row.active !== false
+}
+
+function openEdit(row: Record<string, unknown>) {
+  const id = idOf(row)
+  if (!id || !canEdit.value) {
+    return
+  }
+  void navigateTo(localePath(`/expert-plans/${encodeURIComponent(id)}`))
+}
+
+async function activate(row: Record<string, unknown>) {
+  const id = idOf(row)
+  const token = readOperatorToken()
+  if (!id || !token || actionId.value || isActive(row)) {
+    return
+  }
+  actionId.value = id
+  try {
+    const updated = await adminUpdateExpertPlan(config.public.apiBase, token, id, { active: true })
+    replaceRow(id, updated)
+  } catch (error) {
+    feedback.notify({
+      title: error instanceof AdminApiError && error.message
+        ? error.message
+        : t('expertPlans.activateFailed'),
+      color: 'error'
+    })
+  } finally {
+    actionId.value = null
+  }
+}
+
+function askDeactivate(row: Record<string, unknown>) {
+  if (!isActive(row) || actionId.value) {
+    return
+  }
+  deactivateTarget.value = row
+  deactivateOpen.value = true
+}
+
+async function confirmDeactivate() {
+  const row = deactivateTarget.value
+  const id = row ? idOf(row) : ''
+  const token = readOperatorToken()
+  deactivateOpen.value = false
+  deactivateTarget.value = null
+  if (!id || !token || actionId.value) {
+    return
+  }
+  actionId.value = id
+  try {
+    const updated = await adminUpdateExpertPlan(config.public.apiBase, token, id, { active: false })
+    replaceRow(id, updated)
+  } catch (error) {
+    feedback.notify({
+      title: error instanceof AdminApiError && error.message
+        ? error.message
+        : t('expertPlans.deactivateFailed'),
+      color: 'error'
+    })
+  } finally {
+    actionId.value = null
+  }
+}
+
+function replaceRow(id: string, updated: Record<string, unknown>) {
+  expertPlans.value = expertPlans.value.map((row) => {
+    return idOf(row) === id ? { ...row, ...updated } : row
+  })
 }
 
 function textValue(value: unknown) {
@@ -128,68 +221,129 @@ function numberOf(value: unknown) {
       {{ $t('expertPlans.loading') }}
     </p>
     <p
-      v-else-if="!expertPlans.length"
+      v-else-if="!sortedPlans.length"
       class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
       data-testid="expert-plans-empty"
     >
       {{ $t('expertPlans.empty') }}
     </p>
-    <div
+    <AdminTable
       v-else
-      class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-      data-testid="expert-plans-grid"
+      compact
+      fixed
+      data-testid="expert-plans-table"
     >
-      <button
-        v-for="(row, index) in expertPlans"
+      <template #colgroup>
+        <colgroup>
+          <col
+            v-for="column in columns"
+            :key="column.key"
+            :class="column.width"
+          >
+        </colgroup>
+      </template>
+      <template #head>
+        <tr>
+          <th
+            v-for="column in columns"
+            :key="column.key"
+            :class="[column.width, column.align === 'right' ? 'text-right' : '']"
+          >
+            {{ columnLabel(column.key) }}
+          </th>
+        </tr>
+      </template>
+      <tr
+        v-for="(row, index) in sortedPlans"
         :key="rowKey(row, index)"
-        type="button"
-        class="text-left"
-        :data-testid="`expert-plan-card-${idOf(row) || index}`"
-        @click="openPlan(row)"
+        class="border-b border-default last:border-0"
+        :data-testid="`expert-plan-row-${idOf(row) || index}`"
       >
-        <UCard class="h-full transition hover:border-primary">
-          <template #header>
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="font-semibold text-highlighted">{{ nameOf(row) }}</span>
-              <UBadge
-                :color="row.active === false ? 'neutral' : 'success'"
-                variant="subtle"
-              >
-                {{ activeOf(row) }}
-              </UBadge>
-            </div>
-          </template>
-          <dl class="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt class="text-muted">
-                {{ $t('expertPlans.fields.code') }}
-              </dt>
-              <dd class="mt-1 font-mono text-highlighted">
-                {{ textValue(row.code) || $t('status.na') }}
-              </dd>
-            </div>
-            <div class="text-right">
-              <dt class="text-muted">
-                {{ $t('expertPlans.fields.price') }}
-              </dt>
-              <dd
-                class="tabular-money mt-1 font-medium text-highlighted"
-                data-testid="expert-plan-card-price"
-              >
-                {{ priceOf(row) }}
-              </dd>
-            </div>
-            <div class="col-span-2">
-              <dt class="text-muted">
-                {{ $t('expertPlans.fields.package_plan') }}
-              </dt>
-              <dd class="mt-1 font-medium text-highlighted">
-                {{ packagePlanOf(row) }}
-              </dd>
-            </div>
-          </dl>
-        </UCard>
-      </button>
-    </div>
+        <td class="py-3 tabular-nums text-highlighted">
+          {{ sortOf(row) }}
+        </td>
+        <td class="py-3 font-semibold text-highlighted">
+          {{ nameOf(row) }}
+        </td>
+        <td
+          class="tabular-money py-3 text-right font-medium text-highlighted"
+          data-testid="expert-plan-row-price"
+        >
+          {{ priceOf(row) }}
+        </td>
+        <td class="py-3">
+          <UBadge
+            :color="isActive(row) ? 'success' : 'neutral'"
+            variant="subtle"
+          >
+            {{ isActive(row) ? $t('expertPlans.status.active') : $t('expertPlans.status.inactive') }}
+          </UBadge>
+        </td>
+        <td class="py-3 text-end">
+          <div class="inline-flex flex-wrap items-center justify-end gap-2">
+            <UButton
+              v-if="canEdit"
+              size="sm"
+              color="neutral"
+              variant="outline"
+              data-testid="expert-plan-edit"
+              @click="openEdit(row)"
+            >
+              {{ $t('actions.edit') }}
+            </UButton>
+            <UButton
+              v-if="isActive(row)"
+              size="sm"
+              color="error"
+              variant="soft"
+              :loading="actionId === idOf(row)"
+              :disabled="Boolean(actionId) && actionId !== idOf(row)"
+              data-testid="expert-plan-deactivate"
+              @click="askDeactivate(row)"
+            >
+              {{ $t('expertPlans.deactivate') }}
+            </UButton>
+            <UButton
+              v-else
+              size="sm"
+              color="primary"
+              variant="soft"
+              :loading="actionId === idOf(row)"
+              :disabled="Boolean(actionId) && actionId !== idOf(row)"
+              data-testid="expert-plan-activate"
+              @click="activate(row)"
+            >
+              {{ $t('expertPlans.activate') }}
+            </UButton>
+          </div>
+        </td>
+      </tr>
+    </AdminTable>
+
+    <UModal
+      v-model:open="deactivateOpen"
+      :title="$t('expertPlans.deactivateTitle')"
+      :description="$t('expertPlans.deactivateBody')"
+      :ui="{ footer: 'justify-end gap-2' }"
+      data-testid="expert-plan-deactivate-modal"
+    >
+      <template #footer="{ close }">
+        <UButton
+          color="neutral"
+          variant="outline"
+          data-testid="expert-plan-deactivate-cancel"
+          @click="close()"
+        >
+          {{ $t('actions.cancel') }}
+        </UButton>
+        <UButton
+          color="error"
+          data-testid="expert-plan-deactivate-confirm"
+          @click="confirmDeactivate"
+        >
+          {{ $t('expertPlans.deactivate') }}
+        </UButton>
+      </template>
+    </UModal>
   </PageHeader>
 </template>

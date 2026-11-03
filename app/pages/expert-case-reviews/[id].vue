@@ -8,7 +8,8 @@ import {
   adminListSellableItems,
   adminPatchExpertCaseReviewItem,
   adminResetExpertCaseReviewItems,
-  adminSubmitExpertCaseReview
+  adminSubmitExpertCaseReview,
+  isExpertCaseAlreadyReviewedError
 } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { readFinalizeCopyFromDetail } from '~/utils/expert-finalize-copy'
@@ -121,6 +122,8 @@ const profileUpdateOpen = ref(false)
 const finalizeReportHighlights = ref('')
 const finalizeExpertOpinion = ref('')
 const finalizeGenerating = ref(false)
+const submitConfirmOpen = ref(false)
+const alreadyReviewedAlert = ref(false)
 
 const caseId = computed(() => String(route.params.id || ''))
 
@@ -951,12 +954,22 @@ async function resetAll() {
   }
 }
 
+function askSubmit() {
+  if (!canSubmitFinalize.value) {
+    return
+  }
+  alreadyReviewedAlert.value = false
+  submitConfirmOpen.value = true
+}
+
 async function submit() {
   const token = readOperatorToken()
   if (!token || !canSubmitFinalize.value) {
     return
   }
+  submitConfirmOpen.value = false
   busy.value = true
+  alreadyReviewedAlert.value = false
   try {
     const submitPayload: {
       report_highlights?: string
@@ -978,6 +991,10 @@ async function submit() {
       color: 'success'
     })
   } catch (error) {
+    if (isExpertCaseAlreadyReviewedError(error)) {
+      alreadyReviewedAlert.value = true
+      return
+    }
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
@@ -1411,7 +1428,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   color="primary"
                   :disabled="!canSubmitFinalize"
                   data-testid="expert-case-submit"
-                  @click="submit"
+                  @click="askSubmit"
                 >
                   {{ finalizeGenerating
                     ? $t('expertCaseReviews.finalizeCopyGenerating')
@@ -1422,6 +1439,15 @@ function itemUnitPriceText(item: Record<string, unknown>) {
           </div>
         </div>
       </div>
+
+      <UAlert
+        v-if="alreadyReviewedAlert"
+        color="warning"
+        variant="subtle"
+        class="mx-5 mt-4 sm:mx-7"
+        :title="$t('expertCaseReviews.alreadyReviewed')"
+        data-testid="expert-case-already-reviewed"
+      />
 
       <div
         v-if="isExpertPlanCase && openingAmountText"
@@ -2065,6 +2091,33 @@ function itemUnitPriceText(item: Record<string, unknown>) {
         </details>
       </div>
     </template>
+
+    <UModal
+      v-model:open="submitConfirmOpen"
+      :title="$t('expertCaseReviews.submitConfirmTitle')"
+      :description="$t('expertCaseReviews.submitConfirmBody')"
+      :ui="{ footer: 'justify-end gap-2' }"
+      data-testid="expert-case-submit-confirm"
+    >
+      <template #footer="{ close }">
+        <UButton
+          color="neutral"
+          variant="outline"
+          data-testid="expert-case-submit-cancel"
+          @click="close()"
+        >
+          {{ $t('actions.cancel') }}
+        </UButton>
+        <UButton
+          color="primary"
+          :loading="busy"
+          data-testid="expert-case-submit-confirm-btn"
+          @click="submit"
+        >
+          {{ $t('expertCaseReviews.submit') }}
+        </UButton>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="profileUpdateOpen"

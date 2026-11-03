@@ -13,16 +13,13 @@ import {
 import { caseStatusLabel } from '~/utils/expert-case-labels'
 import { readOperatorToken } from '~/utils/operator-session'
 
-type CaseColumn = 'member' | 'status' | 'order' | 'expertPlan' | 'createdAt' | 'reviewedAt' | 'actions'
+type CaseColumn = 'member' | 'status' | 'order' | 'expertPlan' | 'paidAt' | 'reviewedAt' | 'actions'
 type ColumnAlign = 'left' | 'center' | 'right'
+type ChipKey = 'pending' | 'all' | 'reviewed' | 'legacy'
 
 const FILTER_ANY = 'all'
 const PAGE_SIZE = 10
 const FETCH_SIZE = 50
-const CASE_STATUSES = ['awaiting_review', 'reviewed'] as const
-const CASE_SOURCES = ['expert_plan', 'legacy'] as const
-const STATUS_FILTERS = new Set<string>(CASE_STATUSES)
-const SOURCE_FILTERS = new Set<string>(CASE_SOURCES)
 
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
@@ -46,34 +43,82 @@ function queryString(name: string) {
   return typeof value === 'string' ? value : ''
 }
 
-const filterStatus = ref(
-  STATUS_FILTERS.has(queryString('status')) ? queryString('status') : FILTER_ANY
-)
-const filterSource = ref(
-  SOURCE_FILTERS.has(queryString('source')) ? queryString('source') : FILTER_ANY
-)
+/** B-08：無 query 時預設「待處理案件」＝已付款＋待定稿（awaiting_review + expert_plan）。 */
+function initialChip(): ChipKey {
+  const status = queryString('status')
+  const source = queryString('source')
+  if (!status && !source && !('status' in route.query) && !('source' in route.query)) {
+    return 'pending'
+  }
+  if (status === 'awaiting_review' && source === 'expert_plan') {
+    return 'pending'
+  }
+  if (status === 'reviewed' && !source) {
+    return 'reviewed'
+  }
+  if (source === 'legacy' && !status) {
+    return 'legacy'
+  }
+  if ((!status || status === FILTER_ANY) && (!source || source === FILTER_ANY)) {
+    return 'all'
+  }
+  if (status === 'awaiting_review' && (!source || source === FILTER_ANY)) {
+    return 'pending'
+  }
+  return 'all'
+}
+
+const activeChip = ref<ChipKey>(initialChip())
 
 const columns: { key: CaseColumn, align: ColumnAlign, width?: string }[] = [
   { key: 'member', align: 'left', width: 'w-[22%]' },
   { key: 'status', align: 'left', width: 'w-[7rem]' },
   { key: 'order', align: 'left', width: 'w-[10rem]' },
   { key: 'expertPlan', align: 'left', width: 'w-[12rem]' },
-  { key: 'createdAt', align: 'left', width: 'w-[9rem]' },
+  { key: 'paidAt', align: 'left', width: 'w-[9rem]' },
   { key: 'reviewedAt', align: 'left', width: 'w-[9rem]' },
   { key: 'actions', align: 'right', width: 'w-[12rem]' }
 ]
 
-const statusOptions = computed(() => [
-  { label: t('expertCaseReviews.filters.any'), value: FILTER_ANY },
-  { label: t('expertCaseReviews.filterAwaiting'), value: 'awaiting_review' },
-  { label: t('expertCaseReviews.filterReviewed'), value: 'reviewed' }
+const chipOptions = computed(() => [
+  { key: 'pending' as const, label: t('expertCaseReviews.filterPending') },
+  { key: 'all' as const, label: t('expertCaseReviews.filterAll') },
+  { key: 'reviewed' as const, label: t('expertCaseReviews.filterReviewed') },
+  { key: 'legacy' as const, label: t('expertCaseReviews.filterSourceLegacy') }
 ])
 
-const sourceOptions = computed(() => [
-  { label: t('expertCaseReviews.filters.any'), value: FILTER_ANY },
-  { label: t('expertCaseReviews.filterSourceExpertPlan'), value: 'expert_plan' },
-  { label: t('expertCaseReviews.filterSourceLegacy'), value: 'legacy' }
-])
+const listQuery = computed(() => {
+  switch (activeChip.value) {
+    case 'pending':
+      return {
+        status: 'awaiting_review' as const,
+        source: 'expert_plan' as const,
+        sort: 'paid_at' as const,
+        order: 'asc' as const
+      }
+    case 'reviewed':
+      return {
+        status: 'reviewed' as const,
+        source: undefined,
+        sort: 'paid_at' as const,
+        order: 'asc' as const
+      }
+    case 'legacy':
+      return {
+        status: undefined,
+        source: 'legacy' as const,
+        sort: 'paid_at' as const,
+        order: 'asc' as const
+      }
+    default:
+      return {
+        status: undefined,
+        source: undefined,
+        sort: 'paid_at' as const,
+        order: 'asc' as const
+      }
+  }
+})
 
 const rows = computed(() => {
   const start = (page.value - 1) * PAGE_SIZE
@@ -82,7 +127,7 @@ const rows = computed(() => {
 const paginationTotal = computed(() => cases.value.length + (hasMore.value ? 1 : 0))
 
 if (import.meta.client) {
-  watch([filterStatus, filterSource], () => {
+  watch(activeChip, () => {
     void load(true)
   }, { immediate: true })
 }
@@ -109,10 +154,10 @@ async function load(reset: boolean) {
   errorMessage.value = ''
   try {
     const fetched = await adminListExpertCaseReviews(config.public.apiBase, token, {
-      status: filterStatus.value === FILTER_ANY ? undefined : filterStatus.value,
-      source: filterSource.value === FILTER_ANY
-        ? undefined
-        : (filterSource.value as 'expert_plan' | 'legacy'),
+      status: listQuery.value.status,
+      source: listQuery.value.source,
+      sort: listQuery.value.sort,
+      order: listQuery.value.order,
       limit: FETCH_SIZE,
       offset: nextOffset
     })
@@ -124,7 +169,8 @@ async function load(reset: boolean) {
       page.value = Math.max(1, Math.ceil(cases.value.length / PAGE_SIZE))
       return
     }
-    cases.value = reset ? fetched : [...cases.value, ...fetched]
+    const merged = reset ? fetched : [...cases.value, ...fetched]
+    cases.value = sortByPaidAtAsc(merged)
     nextOffset += fetched.length
     hasMore.value = fetched.length >= FETCH_SIZE
   } catch (error) {
@@ -141,6 +187,24 @@ async function load(reset: boolean) {
       pending.value = false
     }
   }
+}
+
+/** C18 client fallback：依付款時間由舊到新（缺 paid_at 時用 created_at）。 */
+function sortByPaidAtAsc(rowsIn: Record<string, unknown>[]) {
+  return [...rowsIn].sort((a, b) => {
+    const ta = paidAtMs(a)
+    const tb = paidAtMs(b)
+    return ta - tb
+  })
+}
+
+function paidAtMs(row: Record<string, unknown>) {
+  const raw = row.paid_at ?? row.created_at
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    const ms = Date.parse(String(raw))
+    return Number.isFinite(ms) ? ms : 0
+  }
+  return 0
 }
 
 function goToPage(next: number) {
@@ -178,8 +242,8 @@ function columnLabel(key: CaseColumn) {
       return t('expertCaseReviews.colOrder')
     case 'expertPlan':
       return t('expertCaseReviews.colExpertPlan')
-    case 'createdAt':
-      return t('expertCaseReviews.colCreated')
+    case 'paidAt':
+      return t('expertCaseReviews.colPaidAt')
     case 'reviewedAt':
       return t('expertCaseReviews.colReviewed')
     case 'actions':
@@ -199,6 +263,10 @@ function expertPlanLabel(row: Record<string, unknown>) {
     || textOf(row.expert_plan_code)
     || textOf(row.expert_plan_id)
     || '—'
+}
+
+function paidAtLabel(row: Record<string, unknown>) {
+  return formatExpertCaseListTime(row.paid_at ?? row.created_at)
 }
 
 function textOf(value: unknown) {
@@ -277,35 +345,24 @@ async function exportRow(row: Record<string, unknown>) {
     plain
   >
     <div class="flex flex-col gap-4">
-      <div class="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-elevated p-4">
-        <div
-          class="min-w-36"
-          data-testid="expert-case-status-filter"
+      <div
+        class="flex flex-wrap items-center gap-2"
+        data-testid="expert-case-chip-filters"
+      >
+        <UButton
+          v-for="chip in chipOptions"
+          :key="chip.key"
+          size="sm"
+          :color="activeChip === chip.key ? 'primary' : 'neutral'"
+          :variant="activeChip === chip.key ? 'solid' : 'outline'"
+          :data-testid="`expert-case-chip-${chip.key}`"
+          @click="activeChip = chip.key"
         >
-          <label class="mb-1 block text-xs text-muted">
-            {{ $t('expertCaseReviews.filters.status') }}
-          </label>
-          <USelect
-            v-model="filterStatus"
-            :items="statusOptions"
-            value-key="value"
-            class="w-full"
-          />
-        </div>
-        <div
-          class="min-w-36"
-          data-testid="expert-case-source-filter"
-        >
-          <label class="mb-1 block text-xs text-muted">
-            {{ $t('expertCaseReviews.filters.source') }}
-          </label>
-          <USelect
-            v-model="filterSource"
-            :items="sourceOptions"
-            value-key="value"
-            class="w-full"
-          />
-        </div>
+          {{ chip.label }}
+        </UButton>
+        <span class="ml-auto text-xs text-muted">
+          {{ $t('expertCaseReviews.sortPaidAtAsc') }}
+        </span>
       </div>
 
       <p
@@ -397,7 +454,7 @@ async function exportRow(row: Record<string, unknown>) {
               {{ expertPlanLabel(row) }}
             </td>
             <td class="whitespace-nowrap text-sm text-muted">
-              {{ formatExpertCaseListTime(row.created_at) }}
+              {{ paidAtLabel(row) }}
             </td>
             <td class="whitespace-nowrap text-sm text-muted">
               {{ formatExpertCaseListTime(row.reviewed_at) }}

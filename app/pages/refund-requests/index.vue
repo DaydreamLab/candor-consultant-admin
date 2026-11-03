@@ -15,6 +15,7 @@ type ColumnAlign = 'left' | 'center' | 'right'
 const FILTER_ANY = 'all'
 const PAGE_SIZE = 10
 const FETCH_SIZE = 50
+const REJECT_REASON_MAX = 200
 const REFUND_STATUSES = ['requested', 'refunded', 'rejected'] as const
 const STATUS_FILTERS = new Set<string>(REFUND_STATUSES)
 
@@ -31,6 +32,12 @@ const errorMessage = ref('')
 const page = ref(1)
 const hasMore = ref(false)
 const actionId = ref<string | null>(null)
+const confirmOpen = ref(false)
+const confirmTarget = ref<Record<string, unknown> | null>(null)
+const rejectOpen = ref(false)
+const rejectTarget = ref<Record<string, unknown> | null>(null)
+const rejectReason = ref('')
+const rejectError = ref('')
 let loadSeq = 0
 let nextOffset = 0
 
@@ -63,6 +70,15 @@ const statusOptions = computed(() => [
   { label: t('refundRequests.status.refunded'), value: 'refunded' },
   { label: t('refundRequests.status.rejected'), value: 'rejected' }
 ])
+
+const confirmAmountText = computed(() => {
+  const row = confirmTarget.value
+  if (!row) {
+    return money(0)
+  }
+  const n = numberOf(row.amount ?? row.amount_total ?? row.order_amount ?? row.opening_amount)
+  return n == null ? t('status.na') : money(n)
+})
 
 const rows = computed(() => {
   const start = (page.value - 1) * PAGE_SIZE
@@ -209,7 +225,7 @@ function statusColor(status: unknown): 'warning' | 'success' | 'error' | 'neutra
 }
 
 function amountOf(row: Record<string, unknown>) {
-  const n = numberOf(row.amount ?? row.amount_total ?? row.order_amount)
+  const n = numberOf(row.amount ?? row.amount_total ?? row.order_amount ?? row.opening_amount)
   return n == null ? t('status.na') : money(n)
 }
 
@@ -217,10 +233,31 @@ function canAct(row: Record<string, unknown>) {
   return canOps.value && row.status === 'requested'
 }
 
-async function onConfirm(row: Record<string, unknown>) {
-  const id = refundId(row)
+function askConfirm(row: Record<string, unknown>) {
+  if (!canAct(row) || actionId.value) {
+    return
+  }
+  confirmTarget.value = row
+  confirmOpen.value = true
+}
+
+function askReject(row: Record<string, unknown>) {
+  if (!canAct(row) || actionId.value) {
+    return
+  }
+  rejectTarget.value = row
+  rejectReason.value = ''
+  rejectError.value = ''
+  rejectOpen.value = true
+}
+
+async function onConfirm() {
+  const row = confirmTarget.value
+  const id = row ? refundId(row) : ''
   const token = readOperatorToken()
-  if (!id || !token || !canAct(row) || actionId.value) {
+  confirmOpen.value = false
+  confirmTarget.value = null
+  if (!id || !token || !row || !canAct(row) || actionId.value) {
     return
   }
   actionId.value = id
@@ -243,20 +280,28 @@ async function onConfirm(row: Record<string, unknown>) {
   }
 }
 
-async function onReject(row: Record<string, unknown>) {
-  const id = refundId(row)
+async function onReject() {
+  const row = rejectTarget.value
+  const id = row ? refundId(row) : ''
   const token = readOperatorToken()
-  if (!id || !token || !canAct(row) || actionId.value) {
+  const reason = rejectReason.value.trim()
+  if (!reason) {
+    rejectError.value = t('refundRequests.rejectReasonRequired')
     return
   }
+  if (reason.length > REJECT_REASON_MAX) {
+    rejectError.value = t('refundRequests.rejectReasonTooLong')
+    return
+  }
+  if (!id || !token || !row || !canAct(row) || actionId.value) {
+    return
+  }
+  rejectOpen.value = false
   actionId.value = id
   try {
-    const updated = await adminRejectRefundRequest(config.public.apiBase, token, id)
+    const updated = await adminRejectRefundRequest(config.public.apiBase, token, id, reason)
     replaceRow(id, updated)
-    feedback.notify({
-      title: t('refundRequests.rejectOk'),
-      color: 'success'
-    })
+    // B-15：拒絕成功不跳 toast，該列直接變「已拒絕」
   } catch (error) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
@@ -266,6 +311,9 @@ async function onReject(row: Record<string, unknown>) {
     })
   } finally {
     actionId.value = null
+    rejectTarget.value = null
+    rejectReason.value = ''
+    rejectError.value = ''
   }
 }
 
@@ -414,7 +462,7 @@ function numberOf(value: unknown) {
                   :loading="actionId === refundId(row)"
                   :disabled="Boolean(actionId) && actionId !== refundId(row)"
                   data-testid="refund-request-confirm"
-                  @click="onConfirm(row)"
+                  @click="askConfirm(row)"
                 >
                   {{ $t('refundRequests.actions.confirm') }}
                 </UButton>
@@ -425,7 +473,7 @@ function numberOf(value: unknown) {
                   :loading="actionId === refundId(row)"
                   :disabled="Boolean(actionId) && actionId !== refundId(row)"
                   data-testid="refund-request-reject"
-                  @click="onReject(row)"
+                  @click="askReject(row)"
                 >
                   {{ $t('refundRequests.actions.reject') }}
                 </UButton>
@@ -433,7 +481,7 @@ function numberOf(value: unknown) {
               <span
                 v-else
                 class="text-sm text-muted"
-              >{{ $t('status.na') }}</span>
+              >{{ statusLabel(row.status) }}</span>
             </td>
           </tr>
           <template #footer>
@@ -450,5 +498,74 @@ function numberOf(value: unknown) {
         </AdminTable>
       </template>
     </div>
+
+    <UModal
+      v-model:open="confirmOpen"
+      :title="$t('refundRequests.confirmTitle')"
+      :description="$t('refundRequests.confirmBody', { amount: confirmAmountText })"
+      :ui="{ footer: 'justify-end gap-2' }"
+      data-testid="refund-confirm-modal"
+    >
+      <template #footer="{ close }">
+        <UButton
+          color="neutral"
+          variant="outline"
+          data-testid="refund-confirm-cancel"
+          @click="close()"
+        >
+          {{ $t('actions.cancel') }}
+        </UButton>
+        <UButton
+          color="warning"
+          data-testid="refund-confirm-submit"
+          @click="onConfirm"
+        >
+          {{ $t('refundRequests.actions.confirm') }}
+        </UButton>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="rejectOpen"
+      :title="$t('refundRequests.rejectTitle')"
+      :ui="{ footer: 'justify-end gap-2' }"
+      data-testid="refund-reject-modal"
+    >
+      <template #body>
+        <UFormField
+          :label="$t('refundRequests.rejectReasonLabel')"
+          :error="rejectError || undefined"
+        >
+          <UTextarea
+            v-model="rejectReason"
+            :maxlength="REJECT_REASON_MAX"
+            :rows="4"
+            data-testid="refund-reject-reason"
+          />
+          <template #hint>
+            <span class="ml-auto block text-right tabular-nums">
+              {{ rejectReason.length }}/{{ REJECT_REASON_MAX }}
+            </span>
+          </template>
+        </UFormField>
+      </template>
+      <template #footer="{ close }">
+        <UButton
+          color="neutral"
+          variant="outline"
+          data-testid="refund-reject-cancel"
+          @click="close()"
+        >
+          {{ $t('actions.cancel') }}
+        </UButton>
+        <UButton
+          color="error"
+          data-testid="refund-reject-submit"
+          @click="onReject"
+        >
+          {{ $t('refundRequests.actions.reject') }}
+        </UButton>
+      </template>
+    </UModal>
   </PageHeader>
 </template>

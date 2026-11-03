@@ -335,23 +335,40 @@
     }
   },
   "expertPlans": {
-    "description": "可以編輯專家方案的名稱、售價、上下架（這版不做「新增」）",
+    "description": "可以編輯專家方案的名稱、售價、上下架",
     "loading": "[TODO] expertPlans.loading",
     "failed": "[TODO] expertPlans.failed",
     "empty": "[TODO] expertPlans.empty",
     "saveFailed": "[TODO] expertPlans.saveFailed",
     "saveOk": "[TODO] expertPlans.saveOk",
     "noChanges": "[TODO] expertPlans.noChanges",
-    "leaveConfirm": "[TODO] expertPlans.leaveConfirm",
+    "priceHint": "[TODO] expertPlans.priceHint",
+    "priceInvalid": "[TODO] expertPlans.priceInvalid",
     "packagePlanHint": "code 與綁定方案不可改",
+    "activate": "[TODO] expertPlans.activate",
+    "deactivate": "[TODO] expertPlans.deactivate",
+    "deactivateTitle": "[TODO] expertPlans.deactivateTitle",
+    "deactivateBody": "[TODO] expertPlans.deactivateBody",
+    "activateFailed": "[TODO] expertPlans.activateFailed",
+    "deactivateFailed": "[TODO] expertPlans.deactivateFailed",
+    "leaveTitle": "[TODO] expertPlans.leaveTitle",
+    "leaveBody": "[TODO] expertPlans.leaveBody",
+    "leaveStay": "[TODO] expertPlans.leaveStay",
+    "leaveDiscard": "[TODO] expertPlans.leaveDiscard",
     "fields": {
       "code": "[TODO] expertPlans.fields.code",
       "package_plan": "[TODO] expertPlans.fields.package_plan",
       "name_zh": "名稱",
-      "name_en": "[TODO] expertPlans.fields.name_en",
       "price": "售價",
       "sort_order": "[TODO] expertPlans.fields.sort_order",
       "active": "上下架"
+    },
+    "columns": {
+      "sort_order": "[TODO] expertPlans.columns.sort_order",
+      "name": "[TODO] expertPlans.columns.name",
+      "price": "[TODO] expertPlans.columns.price",
+      "active": "[TODO] expertPlans.columns.active",
+      "actions": "[TODO] expertPlans.columns.actions"
     },
     "status": {
       "active": "[TODO] expertPlans.status.active",
@@ -365,8 +382,13 @@
     "empty": "[TODO] refundRequests.empty",
     "confirmOk": "[TODO] refundRequests.confirmOk",
     "confirmFailed": "[TODO] refundRequests.confirmFailed",
-    "rejectOk": "[TODO] refundRequests.rejectOk",
     "rejectFailed": "[TODO] refundRequests.rejectFailed",
+    "confirmTitle": "[TODO] refundRequests.confirmTitle",
+    "confirmBody": "[TODO] refundRequests.confirmBody",
+    "rejectTitle": "[TODO] refundRequests.rejectTitle",
+    "rejectReasonLabel": "[TODO] refundRequests.rejectReasonLabel",
+    "rejectReasonRequired": "[TODO] refundRequests.rejectReasonRequired",
+    "rejectReasonTooLong": "[TODO] refundRequests.rejectReasonTooLong",
     "filters": {
       "any": "[TODO] refundRequests.filters.any",
       "status": "[TODO] refundRequests.filters.status"
@@ -375,7 +397,8 @@
       "order": "訂單",
       "status": "[TODO] refundRequests.columns.status",
       "amount": "開案金額",
-      "createdAt": "[TODO] refundRequests.columns.createdAt"
+      "createdAt": "[TODO] refundRequests.columns.createdAt",
+      "shipmentStatus": "[TODO] refundRequests.columns.shipmentStatus"
     },
     "status": {
       "requested": "已申請",
@@ -1222,7 +1245,13 @@
     "finalizeCopyLockedEmpty": "No finalize copy on this case.",
     "finalizeCopyOverwriteTitle": "Overwrite unsaved edits?",
     "finalizeCopyOverwriteBody": "Regenerating will replace unsaved edits in both sections. This cannot be undone.",
-    "finalizeCopyOverwriteConfirm": "Overwrite and regenerate"
+    "finalizeCopyOverwriteConfirm": "Overwrite and regenerate",
+    "filterPending": "[TODO] expertCaseReviews.filterPending",
+    "sortPaidAtAsc": "[TODO] expertCaseReviews.sortPaidAtAsc",
+    "colPaidAt": "[TODO] expertCaseReviews.colPaidAt",
+    "submitConfirmTitle": "[TODO] expertCaseReviews.submitConfirmTitle",
+    "submitConfirmBody": "[TODO] expertCaseReviews.submitConfirmBody",
+    "alreadyReviewed": "[TODO] expertCaseReviews.alreadyReviewed"
   },
   "table": {
     "empty": "No records yet",
@@ -1537,7 +1566,6 @@
     "privacyLink": "privacy policy",
     "accept": "Got it"
   },
-
   "actions": {
     "add": "Add",
     "edit": "Edit",
@@ -2189,7 +2217,11 @@
     "retry": "Retry",
     "refresh": "Refresh",
     "errorTitle": "Unable to show shipments",
-    "errorBody": "Keep the EmptyPanel baseline on load failure instead of a lone error line."
+    "errorBody": "Keep the EmptyPanel baseline on load failure instead of a lone error line.",
+    "advanceToPicking": "[TODO] shipping.advanceToPicking",
+    "pickingStatusLabel": "[TODO] shipping.pickingStatusLabel",
+    "refundBlocksPicking": "[TODO] shipping.refundBlocksPicking",
+    "refundRequestLabel": "[TODO] shipping.refundRequestLabel"
   },
   "audit": {
     "title": "Audit log",
