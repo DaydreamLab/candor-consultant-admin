@@ -18,6 +18,8 @@
     "progress": "Fulfillment progress",
     "products": "Supplements",
     "packagePlans": "Sales plans",
+    "expertPlans": "專家方案",
+    "refundRequests": "退款申請",
     "labServices": "Collection services",
     "expertTuning": "Expert tuning",
     "aiAssistant": "AI assistant",
@@ -91,6 +93,14 @@
     "messagesEmpty": "No messages yet",
     "copyMessage": "Copy message",
     "viewInShipping": "View in shipping progress",
+    "refundRequestDisplay": {
+      "requested": "退款申請中"
+    },
+    "refundRequestStatus": {
+      "requested": "已申請",
+      "refunded": "已退款",
+      "rejected": "已拒絕"
+    },
     "filters": {
       "any": "All",
       "q": "Search",
@@ -108,6 +118,7 @@
       "summary": "Summary",
       "recipient": "Recipient & invoice",
       "package": "Package composition",
+      "expertPlan": "專家方案",
       "labLines": "Other lines",
       "payments": "Payments",
       "shipment": "Shipment",
@@ -148,6 +159,7 @@
     },
     "lineColumns": {
       "name": "Sales plan",
+      "expertPlan": "專家方案",
       "dailyDose": "Daily servings (floor)",
       "unitPrice": "Unit price",
       "monthlyCost": "Period cost",
@@ -168,6 +180,7 @@
       "recipient_address": "Address",
       "recipient_email": "Email",
       "package_plan_name": "Sales plan",
+      "refund_request_status": "退款申請",
       "payment_status": "Payment status",
       "paid_at": "Paid at",
       "paid_amount": "Paid amount",
@@ -319,6 +332,84 @@
       "status": "Status",
       "price": "Price",
       "summary": "Summary"
+    }
+  },
+  "expertPlans": {
+    "description": "可以編輯專家方案的名稱、售價、上下架",
+    "loading": "[TODO] expertPlans.loading",
+    "failed": "[TODO] expertPlans.failed",
+    "empty": "[TODO] expertPlans.empty",
+    "saveFailed": "[TODO] expertPlans.saveFailed",
+    "saveOk": "[TODO] expertPlans.saveOk",
+    "noChanges": "[TODO] expertPlans.noChanges",
+    "priceHint": "[TODO] expertPlans.priceHint",
+    "priceInvalid": "[TODO] expertPlans.priceInvalid",
+    "packagePlanHint": "code 與綁定方案不可改",
+    "activate": "[TODO] expertPlans.activate",
+    "deactivate": "[TODO] expertPlans.deactivate",
+    "deactivateTitle": "[TODO] expertPlans.deactivateTitle",
+    "deactivateBody": "[TODO] expertPlans.deactivateBody",
+    "activateFailed": "[TODO] expertPlans.activateFailed",
+    "deactivateFailed": "[TODO] expertPlans.deactivateFailed",
+    "fieldForbidden": "[TODO] expertPlans.fieldForbidden",
+    "leaveTitle": "[TODO] expertPlans.leaveTitle",
+    "leaveBody": "[TODO] expertPlans.leaveBody",
+    "leaveStay": "[TODO] expertPlans.leaveStay",
+    "leaveDiscard": "[TODO] expertPlans.leaveDiscard",
+    "fields": {
+      "code": "[TODO] expertPlans.fields.code",
+      "package_plan": "[TODO] expertPlans.fields.package_plan",
+      "name_zh": "名稱",
+      "name_en": "[TODO] expertPlans.fields.name_en",
+      "price": "售價",
+      "sort_order": "[TODO] expertPlans.fields.sort_order",
+      "active": "上下架"
+    },
+    "columns": {
+      "sort_order": "[TODO] expertPlans.columns.sort_order",
+      "name": "[TODO] expertPlans.columns.name",
+      "price": "[TODO] expertPlans.columns.price",
+      "active": "[TODO] expertPlans.columns.active",
+      "actions": "[TODO] expertPlans.columns.actions"
+    },
+    "status": {
+      "active": "[TODO] expertPlans.status.active",
+      "inactive": "[TODO] expertPlans.status.inactive"
+    }
+  },
+  "refundRequests": {
+    "description": "列出使用者的退款申請和狀態；每天確認：確認就整筆退回開案金額，或拒絕",
+    "loading": "[TODO] refundRequests.loading",
+    "failed": "[TODO] refundRequests.failed",
+    "empty": "[TODO] refundRequests.empty",
+    "confirmOk": "[TODO] refundRequests.confirmOk",
+    "confirmFailed": "[TODO] refundRequests.confirmFailed",
+    "rejectFailed": "[TODO] refundRequests.rejectFailed",
+    "confirmTitle": "[TODO] refundRequests.confirmTitle",
+    "confirmBody": "[TODO] refundRequests.confirmBody",
+    "rejectTitle": "[TODO] refundRequests.rejectTitle",
+    "rejectReasonLabel": "[TODO] refundRequests.rejectReasonLabel",
+    "rejectReasonRequired": "[TODO] refundRequests.rejectReasonRequired",
+    "rejectReasonTooLong": "[TODO] refundRequests.rejectReasonTooLong",
+    "filters": {
+      "any": "[TODO] refundRequests.filters.any",
+      "status": "[TODO] refundRequests.filters.status"
+    },
+    "columns": {
+      "order": "訂單",
+      "status": "[TODO] refundRequests.columns.status",
+      "amount": "開案金額",
+      "createdAt": "[TODO] refundRequests.columns.createdAt",
+      "shipmentStatus": "[TODO] refundRequests.columns.shipmentStatus"
+    },
+    "status": {
+      "requested": "已申請",
+      "refunded": "已退款",
+      "rejected": "已拒絕"
+    },
+    "actions": {
+      "confirm": "確認退款",
+      "reject": "拒絕"
     }
   },
   "labServices": {
@@ -861,8 +952,11 @@
     "filterGroup": "Status filter",
     "filters": {
       "any": "All",
-      "status": "Status"
+      "status": "Status",
+      "source": "[TODO] expertCaseReviews.filters.source"
     },
+    "filterSourceExpertPlan": "專家方案",
+    "filterSourceLegacy": "[TODO] expertCaseReviews.filterSourceLegacy",
     "statusAwaiting": "Awaiting expert review",
     "statusReviewed": "Finalized",
     "demoChip": "Sample",
@@ -871,8 +965,13 @@
     "colUser": "Member",
     "colConversation": "Conversation",
     "colStatus": "Status",
+    "colOrder": "訂單",
+    "colExpertPlan": "專家方案",
     "colCreated": "Created",
     "colReviewed": "Finalized",
+    "openingAmountLabel": "開案金額",
+    "openingAmountHint": "總價固定等於開案金額，單價只是參考",
+    "unitPriceReference": "單價",
     "open": "Open",
     "detailTitle": "Case detail",
     "original": "Engine original",
@@ -1148,7 +1247,13 @@
     "finalizeCopyLockedEmpty": "No finalize copy on this case.",
     "finalizeCopyOverwriteTitle": "Overwrite unsaved edits?",
     "finalizeCopyOverwriteBody": "Regenerating will replace unsaved edits in both sections. This cannot be undone.",
-    "finalizeCopyOverwriteConfirm": "Overwrite and regenerate"
+    "finalizeCopyOverwriteConfirm": "Overwrite and regenerate",
+    "filterPending": "[TODO] expertCaseReviews.filterPending",
+    "sortPaidAtAsc": "[TODO] expertCaseReviews.sortPaidAtAsc",
+    "colPaidAt": "[TODO] expertCaseReviews.colPaidAt",
+    "submitConfirmTitle": "[TODO] expertCaseReviews.submitConfirmTitle",
+    "submitConfirmBody": "[TODO] expertCaseReviews.submitConfirmBody",
+    "alreadyReviewed": "[TODO] expertCaseReviews.alreadyReviewed"
   },
   "table": {
     "empty": "No records yet",
@@ -1463,7 +1568,6 @@
     "privacyLink": "privacy policy",
     "accept": "Got it"
   },
-
   "actions": {
     "add": "Add",
     "edit": "Edit",
@@ -2115,7 +2219,16 @@
     "retry": "Retry",
     "refresh": "Refresh",
     "errorTitle": "Unable to show shipments",
-    "errorBody": "Keep the EmptyPanel baseline on load failure instead of a lone error line."
+    "errorBody": "Keep the EmptyPanel baseline on load failure instead of a lone error line.",
+    "advanceToPicking": "[TODO] shipping.advanceToPicking",
+    "pickingStatusLabel": "[TODO] shipping.pickingStatusLabel",
+    "phaseOrderConfirmed": "[TODO] shipping.phaseOrderConfirmed",
+    "phaseShipped": "[TODO] shipping.phaseShipped",
+    "phaseDelivered": "[TODO] shipping.phaseDelivered",
+    "refundBlocksPicking": "[TODO] shipping.refundBlocksPicking",
+    "refundRequestLabel": "[TODO] shipping.refundRequestLabel",
+    "advanceOk": "[TODO] shipping.advanceOk",
+    "advanceFailed": "[TODO] shipping.advanceFailed"
   },
   "audit": {
     "title": "Audit log",

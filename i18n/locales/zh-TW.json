@@ -18,6 +18,8 @@
     "progress": "履約進度",
     "products": "保健品",
     "packagePlans": "銷售方案",
+    "expertPlans": "專家方案",
+    "refundRequests": "退款申請",
     "labServices": "採檢服務",
     "expertTuning": "專家訓練",
     "aiAssistant": "AI 助理",
@@ -95,6 +97,14 @@
     "invoiceRetry": "重試發票",
     "invoiceRetryFailed": "發票重試失敗。",
     "viewInShipping": "在物流進度查看",
+    "refundRequestDisplay": {
+      "requested": "退款申請中"
+    },
+    "refundRequestStatus": {
+      "requested": "已申請",
+      "refunded": "已退款",
+      "rejected": "已拒絕"
+    },
     "filters": {
       "any": "全部",
       "q": "搜尋",
@@ -112,6 +122,7 @@
       "summary": "摘要",
       "recipient": "收件與發票",
       "package": "方案組成",
+      "expertPlan": "專家方案",
       "labLines": "其他明細",
       "payments": "付款",
       "shipment": "出貨",
@@ -152,6 +163,7 @@
     },
     "lineColumns": {
       "name": "銷售方案",
+      "expertPlan": "專家方案",
       "dailyDose": "每日份數（下限）",
       "unitPrice": "單價",
       "monthlyCost": "期間費用",
@@ -172,6 +184,7 @@
       "recipient_address": "地址",
       "recipient_email": "Email",
       "package_plan_name": "銷售方案",
+      "refund_request_status": "退款申請",
       "payment_status": "付款狀態",
       "paid_at": "付款時間",
       "paid_amount": "付款金額",
@@ -196,7 +209,7 @@
       "atm_account_no": "虛擬帳號",
       "carrier": "物流",
       "tracking_no": "物流單號",
-      "picked_at": "揀貨時間",
+      "picked_at": "理貨時間",
       "shipped_at": "出貨時間",
       "arrived_at": "送達時間",
       "note": "備註",
@@ -250,7 +263,7 @@
       "atm": "ATM"
     },
     "shipmentStatus": {
-      "picking": "揀貨中",
+      "picking": "理貨",
       "in_transit": "運送中",
       "arrived": "已送達"
     },
@@ -319,6 +332,84 @@
       "status": "狀態",
       "price": "價格",
       "summary": "內容摘要"
+    }
+  },
+  "expertPlans": {
+    "description": "可以編輯專家方案的名稱、售價、上下架",
+    "loading": "讀取中…",
+    "failed": "載入失敗，請重新整理",
+    "empty": "目前沒有專家方案",
+    "saveFailed": "儲存失敗，請稍後再試",
+    "saveOk": "已儲存",
+    "noChanges": "沒有任何變更。",
+    "priceHint": "已付款的案件維持原本的金額",
+    "priceInvalid": "請輸入大於 0 的金額",
+    "packagePlanHint": "code 與綁定方案不可改",
+    "activate": "上架",
+    "deactivate": "下架",
+    "deactivateTitle": "下架方案",
+    "deactivateBody": "下架後使用者將無法購買此方案，已購買的案件不受影響。",
+    "activateFailed": "上架失敗，請稍後再試。",
+    "deactivateFailed": "下架失敗，請稍後再試。",
+    "fieldForbidden": "您沒有權限修改這個欄位。",
+    "leaveTitle": "尚未儲存變更",
+    "leaveBody": "離開後這次的修改不會保留。",
+    "leaveStay": "繼續編輯",
+    "leaveDiscard": "放棄變更並離開",
+    "fields": {
+      "code": "方案代碼",
+      "package_plan": "綁定方案",
+      "name_zh": "名稱",
+      "name_en": "英文名稱",
+      "price": "售價",
+      "sort_order": "排序",
+      "active": "上下架"
+    },
+    "columns": {
+      "sort_order": "排序",
+      "name": "名稱",
+      "price": "售價",
+      "active": "上下架",
+      "actions": "操作"
+    },
+    "status": {
+      "active": "上架中",
+      "inactive": "已下架"
+    }
+  },
+  "refundRequests": {
+    "description": "列出使用者的退款申請和狀態；每天確認：確認就整筆退回開案金額，或拒絕",
+    "loading": "讀取中…",
+    "failed": "載入失敗，請重新整理。",
+    "empty": "目前沒有退款申請",
+    "confirmOk": "已確認退款",
+    "confirmFailed": "退款處理失敗，請稍後再試。",
+    "rejectFailed": "退款處理失敗，請稍後再試。",
+    "confirmTitle": "確定要退款嗎？",
+    "confirmBody": "確認後將退款 {amount}，無法復原。",
+    "rejectTitle": "拒絕退款",
+    "rejectReasonLabel": "拒絕原因（會顯示給使用者）",
+    "rejectReasonRequired": "請填寫拒絕原因",
+    "rejectReasonTooLong": "拒絕原因最多 200 字。",
+    "filters": {
+      "any": "全部",
+      "status": "狀態"
+    },
+    "columns": {
+      "order": "訂單",
+      "status": "狀態",
+      "amount": "開案金額",
+      "createdAt": "申請時間",
+      "shipmentStatus": "出貨狀態"
+    },
+    "status": {
+      "requested": "已申請",
+      "refunded": "已退款",
+      "rejected": "已拒絕"
+    },
+    "actions": {
+      "confirm": "確認退款",
+      "reject": "拒絕"
     }
   },
   "labServices": {
@@ -858,11 +949,16 @@
     "filterAll": "全部",
     "filterAwaiting": "待檢視",
     "filterReviewed": "已定稿",
+    "filterPending": "待處理案件",
     "filterGroup": "狀態篩選",
     "filters": {
       "any": "全部",
-      "status": "狀態"
+      "status": "狀態",
+      "source": "來源"
     },
+    "filterSourceExpertPlan": "專家方案",
+    "filterSourceLegacy": "舊版免費案件",
+    "sortPaidAtAsc": "依付款時間由舊到新",
     "statusAwaiting": "待專家檢視",
     "statusReviewed": "已定稿",
     "demoChip": "範例",
@@ -871,8 +967,17 @@
     "colUser": "會員",
     "colConversation": "對話",
     "colStatus": "狀態",
+    "colOrder": "訂單",
+    "colExpertPlan": "專家方案",
     "colCreated": "建立",
+    "colPaidAt": "付款時間",
     "colReviewed": "定稿",
+    "submitConfirmTitle": "送出定稿",
+    "submitConfirmBody": "定稿後使用者即可查看方案，內容將無法再修改。",
+    "alreadyReviewed": "這個案件已由其他專家定稿",
+    "openingAmountLabel": "開案金額",
+    "openingAmountHint": "總價固定等於開案金額，單價只是參考",
+    "unitPriceReference": "單價",
     "open": "開啟",
     "detailTitle": "案件詳情",
     "original": "引擎原版",
@@ -1175,7 +1280,7 @@
     "unscheduled": "未安排",
     "scheduled": "已約採檢",
     "report_ready": "報告已回",
-    "picking": "揀貨中",
+    "picking": "理貨",
     "labeling": "貼標中",
     "in_transit": "運送中",
     "delivered": "已送達",
@@ -1293,7 +1398,7 @@
     "noticeHint": "缺件、低庫存與請款狀態會寄到這個信箱（示範，尚未真正寄信）。",
     "noticeEmail": "通知信箱",
     "warehouse": "預設出貨倉",
-    "warehouseHint": "揀貨與出貨預設從這個倉出去。",
+    "warehouseHint": "理貨與出貨預設從這個倉出去。",
     "labels": "坦見出貨標籤版本",
     "labelsHintFirm": "商品屬顧問公司；出貨前請改貼坦見標籤。下面「現行」是現在要套用的版本。",
     "labelsHintPlatform": "商品屬各顧問公司；出貨前改貼坦見標籤。下面「現行」是現在要套用的版本。",
@@ -2100,6 +2205,15 @@
     "open": "開啟",
     "advance": "推進",
     "advanceTo": "推進至{status}",
+    "advanceToPicking": "推進至理貨",
+    "pickingStatusLabel": "理貨",
+    "phaseOrderConfirmed": "訂單確認中",
+    "phaseShipped": "出貨",
+    "phaseDelivered": "已送達",
+    "advanceOk": "已開始理貨。",
+    "advanceFailed": "開始理貨失敗，請稍後再試。",
+    "refundBlocksPicking": "此訂單有退款申請處理中，處理完成前不能開始理貨。",
+    "refundRequestLabel": "退款申請",
     "filterAny": "全部狀態",
     "searchPlaceholder": "搜尋訂單／會員／物流單號",
     "colOrderMember": "訂單／會員",

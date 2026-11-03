@@ -1,11 +1,25 @@
 <script setup lang="ts">
 import type { ApiShipStatus } from '~/types/admin'
-import { AdminApiError, adminGetOrder } from '~/utils/admin-api'
+import {
+  AdminApiError,
+  adminGetOrder,
+  adminStartOrderShipment,
+  isRefundRequestPendingError
+} from '~/utils/admin-api'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { normalizeAdminPath } from '~/utils/nav'
+import {
+  orderBlocksPickingDueToRefund,
+  orderRefundStatus
+} from '~/utils/order-refund-gate'
 import { readOperatorToken } from '~/utils/operator-session'
 import { adminListShipments } from '~/utils/shipment-api'
-import { displayOrderNo, mapApiShipStatus } from '~/utils/shipment-map'
+import { displayOrderNo } from '~/utils/shipment-map'
+import {
+  resolveShippingPhase,
+  shippingPhaseSteps,
+  type ShippingPhaseKey
+} from '~/utils/shipping-phase'
 
 type BadgeColor = 'error' | 'primary' | 'success' | 'info' | 'warning' | 'neutral'
 type BadgeVariant = 'outline' | 'soft'
@@ -27,9 +41,12 @@ const title = computed(() => shipLabel.value || shipmentId.value)
 
 const pending = ref(true)
 const errorMessage = ref('')
+const advancePending = ref(false)
+const advanceError = ref('')
 const order = ref<Record<string, unknown> | null>(null)
 const shipment = ref<Record<string, unknown> | null>(null)
 let loadSeq = 0
+const feedback = useOpsFeedback()
 
 const orderNo = computed(() => optionalText(order.value?.order_no) || optionalText(shipment.value?.order_no) || t('status.na'))
 const recipientName = computed(() => optionalText(order.value?.recipient_name) || optionalText(shipment.value?.recipient_name))
@@ -47,7 +64,13 @@ const components = computed(() => {
   const pkg = recordOf(order.value?.package)
   return recordsOf(pkg?.components)
 })
-const apiStatus = computed(() => mapApiShipStatus(shipment.value?.status))
+const phase = computed(() => resolveShippingPhase(order.value, shipment.value))
+const apiStatus = computed(() => {
+  if (phase.value === 'picking' || phase.value === 'in_transit' || phase.value === 'arrived') {
+    return phase.value
+  }
+  return null
+})
 const tracking = computed(() => optionalText(shipment.value?.tracking_no) || optionalText(shipment.value?.tracking))
 const carrier = computed(() => optionalText(shipment.value?.carrier))
 const trackingLine = computed(() => {
@@ -58,6 +81,36 @@ const trackingLine = computed(() => {
 })
 const updatedAt = computed(() => {
   return formatLocalDateTime(shipment.value?.updated_at, { style: 'list', empty: t('status.na') })
+})
+
+const refundRequestStatus = computed(() => orderRefundStatus(order.value))
+
+/** B-17／C19：退款申請處理中不能開始理貨（core `refund_status`／`refund_request_pending`）. */
+const pickingBlockedByRefund = computed(() => orderBlocksPickingDueToRefund(order.value))
+
+const orderIdForShipment = computed(() => {
+  return optionalText(order.value?.id)
+    || optionalText(shipment.value?.order_id)
+})
+
+const showAdvanceToPicking = computed(() => {
+  if (pickingBlockedByRefund.value) {
+    return true
+  }
+  // 定稿不自動建 shipment；訂單確認中（已付款、尚無出貨）可 POST 開始理貨
+  return phase.value === 'order_confirmed'
+})
+
+const phaseRows = computed(() => {
+  const current = phase.value
+  const steps = shippingPhaseSteps()
+  const currentIndex = current ? steps.indexOf(current) : -1
+  return steps.map((key, index) => ({
+    key,
+    label: phaseLabel(key),
+    current: key === current,
+    done: currentIndex >= 0 && index < currentIndex
+  }))
 })
 
 if (import.meta.client) {
@@ -97,41 +150,46 @@ async function load(id: string) {
       return
     }
     const row = listed.find(item => item.id === id) ?? null
-    if (!row) {
-      errorMessage.value = t('shipping.detailFailed')
+
+    if (row) {
+      const orderId = typeof row.orderId === 'string' ? row.orderId.trim() : ''
+      if (!orderId) {
+        errorMessage.value = t('shipping.detailFailed')
+        return
+      }
+      const detail = await adminGetOrder(config.public.apiBase, token, orderId)
+      if (seq !== loadSeq || shipmentId.value !== id) {
+        return
+      }
+      order.value = detail
+      const nested = recordOf(detail.shipment)
+      shipment.value = nested && optionalText(nested.id) === id
+        ? nested
+        : {
+            id: row.id,
+            order_id: row.orderId,
+            order_no: row.orderNo,
+            recipient_name: row.customer,
+            package_plan_name: row.packagePlanName,
+            status: row.apiStatus ?? row.status,
+            tracking_no: row.tracking,
+            updated_at: row.updatedAt
+          }
+      const label = typeof detail.order_no === 'string' && detail.order_no.trim()
+        ? detail.order_no.trim()
+        : displayOrderNo(row)
+      shipLabel.value = label
       return
     }
 
-    const orderId = typeof row.orderId === 'string' ? row.orderId.trim() : ''
-    if (!orderId) {
-      errorMessage.value = t('shipping.detailFailed')
-      return
-    }
-
-    const detail = await adminGetOrder(config.public.apiBase, token, orderId)
+    // 尚無出貨記錄：route id 當 order id（B-17 訂單確認中）
+    const detail = await adminGetOrder(config.public.apiBase, token, id)
     if (seq !== loadSeq || shipmentId.value !== id) {
       return
     }
-
     order.value = detail
-    const nested = recordOf(detail.shipment)
-    shipment.value = nested && optionalText(nested.id) === id
-      ? nested
-      : {
-          id: row.id,
-          order_id: row.orderId,
-          order_no: row.orderNo,
-          recipient_name: row.customer,
-          package_plan_name: row.packagePlanName,
-          status: row.apiStatus ?? row.status,
-          tracking_no: row.tracking,
-          updated_at: row.updatedAt
-        }
-
-    const label = typeof detail.order_no === 'string' && detail.order_no.trim()
-      ? detail.order_no.trim()
-      : displayOrderNo(row)
-    shipLabel.value = label
+    shipment.value = recordOf(detail.shipment)
+    shipLabel.value = optionalText(detail.order_no) || id
   } catch (error) {
     if (seq !== loadSeq || shipmentId.value !== id) {
       return
@@ -153,19 +211,29 @@ function badgeOf() {
     ? STATUS_BADGE[value]
     : { color: 'neutral' as const, variant: 'outline' as const }
   return {
-    label: statusLabel(value),
+    label: phaseLabel(phase.value),
     color: style.color,
     variant: style.variant
   }
 }
 
-function statusLabel(value: ApiShipStatus | null) {
+function phaseLabel(value: ShippingPhaseKey | null) {
   if (!value) {
     return t('status.na')
   }
-  const key = `orders.shipmentStatus.${value}`
-  const translated = t(key)
-  return translated === key ? value : translated
+  if (value === 'order_confirmed') {
+    return t('shipping.phaseOrderConfirmed')
+  }
+  if (value === 'picking') {
+    return t('shipping.pickingStatusLabel')
+  }
+  if (value === 'in_transit') {
+    return t('shipping.phaseShipped')
+  }
+  if (value === 'arrived') {
+    return t('shipping.phaseDelivered')
+  }
+  return t('status.na')
 }
 
 function componentKey(row: Record<string, unknown>, index: number) {
@@ -203,6 +271,36 @@ function optionalText(value: unknown) {
     return String(value)
   }
   return ''
+}
+
+async function advanceToPicking() {
+  const token = readOperatorToken()
+  const orderId = orderIdForShipment.value
+  advanceError.value = ''
+  if (!token || !orderId || pickingBlockedByRefund.value || advancePending.value) {
+    if (pickingBlockedByRefund.value) {
+      advanceError.value = t('shipping.refundBlocksPicking')
+    }
+    return
+  }
+  advancePending.value = true
+  try {
+    await adminStartOrderShipment(config.public.apiBase, token, orderId)
+    feedback.notify({
+      title: t('shipping.advanceOk'),
+      color: 'success'
+    })
+    await load(shipmentId.value)
+  } catch (error) {
+    if (isRefundRequestPendingError(error)) {
+      advanceError.value = t('shipping.refundBlocksPicking')
+      return
+    }
+    const message = error instanceof AdminApiError ? error.message.trim() : ''
+    advanceError.value = message || t('shipping.advanceFailed')
+  } finally {
+    advancePending.value = false
+  }
 }
 </script>
 
@@ -246,6 +344,7 @@ function optionalText(value: unknown) {
         >
           <UBadge
             size="sm"
+            data-testid="shipping-phase-badge"
             v-bind="badgeOf()"
           />
           <span class="font-mono text-sm text-highlighted">
@@ -258,6 +357,17 @@ function optionalText(value: unknown) {
             </template>
           </span>
           <span
+            v-if="refundRequestStatus"
+            class="text-sm text-muted"
+            data-testid="shipping-refund-request-status"
+          >
+            {{ $t('shipping.refundRequestLabel') }}：{{
+              refundRequestStatus === 'requested'
+                ? $t('refundRequests.status.requested')
+                : refundRequestStatus
+            }}
+          </span>
+          <span
             v-if="trackingLine"
             class="font-mono text-sm text-muted"
           >
@@ -266,6 +376,98 @@ function optionalText(value: unknown) {
           <span class="ml-auto text-sm text-muted">
             {{ updatedAt }}
           </span>
+        </div>
+
+        <div
+          class="grid gap-4 lg:grid-cols-[12rem_minmax(0,1fr)]"
+          data-testid="shipping-phase-layout"
+        >
+          <ol
+            class="flex flex-col gap-2 rounded-xl border border-default bg-elevated px-4 py-3"
+            data-testid="shipping-phase-timeline"
+          >
+            <li
+              v-for="row in phaseRows"
+              :key="row.key"
+              class="text-sm"
+              :class="row.current
+                ? 'font-semibold text-highlighted'
+                : row.done
+                  ? 'text-muted'
+                  : 'text-muted/70'"
+              :data-testid="`shipping-phase-${row.key}`"
+              :data-current="row.current ? 'true' : 'false'"
+            >
+              {{ row.label }}
+            </li>
+          </ol>
+
+          <div class="flex flex-col gap-4">
+            <div
+              class="rounded-xl border border-default bg-elevated px-4 py-3 text-sm"
+              data-testid="shipping-side-fields"
+            >
+              <dl class="grid gap-2 sm:grid-cols-[6rem_minmax(0,1fr)]">
+                <dt class="text-muted">
+                  {{ $t('shipping.columns.recipient') }}
+                </dt>
+                <dd class="text-highlighted">
+                  {{ recipientName || $t('status.na') }}
+                </dd>
+                <dt class="text-muted">
+                  {{ $t('shipping.columns.item') }}
+                </dt>
+                <dd class="text-highlighted">
+                  {{ packagePlanName }}
+                </dd>
+                <template v-if="refundRequestStatus">
+                  <dt class="text-muted">
+                    {{ $t('shipping.refundRequestLabel') }}
+                  </dt>
+                  <dd
+                    class="text-highlighted"
+                    data-testid="shipping-refund-side"
+                  >
+                    {{
+                      refundRequestStatus === 'requested'
+                        ? $t('refundRequests.status.requested')
+                        : refundRequestStatus
+                    }}
+                  </dd>
+                </template>
+              </dl>
+            </div>
+
+            <div
+              v-if="showAdvanceToPicking"
+              class="flex flex-col gap-2 rounded-xl border border-default bg-elevated px-4 py-3"
+              data-testid="shipping-advance-picking"
+            >
+              <UTooltip
+                :text="pickingBlockedByRefund ? $t('shipping.refundBlocksPicking') : undefined"
+                :disabled="!pickingBlockedByRefund"
+              >
+                <span class="inline-flex w-fit">
+                  <UButton
+                    color="primary"
+                    :loading="advancePending"
+                    :disabled="pickingBlockedByRefund || advancePending || !orderIdForShipment"
+                    data-testid="shipping-advance-to-picking"
+                    @click="advanceToPicking"
+                  >
+                    {{ $t('shipping.advanceToPicking') }}
+                  </UButton>
+                </span>
+              </UTooltip>
+              <p
+                v-if="pickingBlockedByRefund || advanceError"
+                class="text-sm text-muted"
+                data-testid="shipping-refund-blocks-picking"
+              >
+                {{ advanceError || $t('shipping.refundBlocksPicking') }}
+              </p>
+            </div>
+          </div>
         </div>
 
         <section
@@ -286,37 +488,28 @@ function optionalText(value: unknown) {
           >
             {{ $t('shipping.packageEmpty') }}
           </p>
-          <div
+          <AdminTable
             v-else
-            class="overflow-x-auto"
+            compact
           >
-            <table class="w-full text-left text-sm">
-              <thead class="border-b border-default bg-muted/40 text-muted">
-                <tr>
-                  <th class="px-4 py-3 font-medium">
-                    {{ $t('shipping.packageColumns.name') }}
-                  </th>
-                  <th class="px-4 py-3 text-center font-medium">
-                    {{ $t('shipping.packageColumns.dose') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, index) in components"
-                  :key="componentKey(row, index)"
-                  class="border-b border-default last:border-0"
-                >
-                  <td class="px-4 py-3 text-highlighted">
-                    {{ componentName(row) }}
-                  </td>
-                  <td class="px-4 py-3 text-center font-medium text-highlighted">
-                    {{ doseOf(row) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <template #head>
+              <tr>
+                <th>{{ $t('shipping.packageColumns.name') }}</th>
+                <th class="text-right">
+                  {{ $t('shipping.packageColumns.dose') }}
+                </th>
+              </tr>
+            </template>
+            <tr
+              v-for="(row, index) in components"
+              :key="componentKey(row, index)"
+            >
+              <td>{{ componentName(row) }}</td>
+              <td class="text-right tabular-nums">
+                {{ doseOf(row) }}
+              </td>
+            </tr>
+          </AdminTable>
         </section>
       </template>
     </div>

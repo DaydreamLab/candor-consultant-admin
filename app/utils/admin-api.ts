@@ -25,10 +25,13 @@ import { parseKnowledgeGapPayload, parseRetrievalHits } from '~/utils/knowledge-
 
 export class AdminApiError extends Error {
   statusCode: number
+  /** Core `error_code` when present (assumed until OpenAPI lands). */
+  code: string
 
-  constructor(statusCode: number, message: string) {
+  constructor(statusCode: number, message: string, code = '') {
     super(message)
     this.statusCode = statusCode
+    this.code = code
   }
 }
 
@@ -331,8 +334,49 @@ export type AdminOrderListQuery = {
 
 export type AdminExpertCaseReviewListQuery = {
   status?: string
+  /** `expert_plan`＝付費專家方案案；`legacy`＝舊免費案。省略＝全部。 */
+  source?: 'expert_plan' | 'legacy'
+  /**
+   * OpenAPI（core #143 `b7c5ed0`）列表 query 僅 status／source／limit／offset。
+   * 排序由後端：`awaiting_review`＋`expert_plan` → `paid_at` ASC；其餘 `created_at` DESC。
+   * 勿再送 sort／order（舊版上傳檔假設，已廢）。
+   */
   limit?: number
   offset?: number
+}
+
+/** core #143／OpenAPI：同時定稿 → 409 `expert_case_already_finalized`（B-11／C23）. */
+export const EXPERT_CASE_ALREADY_FINALIZED_CODE = 'expert_case_already_finalized'
+
+export function isExpertCaseAlreadyFinalizedError(error: unknown): boolean {
+  if (!(error instanceof AdminApiError)) {
+    return false
+  }
+  if (error.code === EXPERT_CASE_ALREADY_FINALIZED_CODE) {
+    return true
+  }
+  // Submit 回 409 且無／舊碼時仍顯示 B-11（對齊輪前過渡）.
+  if (error.statusCode === 409) {
+    return !error.code || error.code === 'expert_case_already_reviewed'
+  }
+  return false
+}
+
+/**
+ * expert PATCH `name_zh`／`name_en`／`price` → 403 `expert_plan_field_forbidden`
+ *（core #143 `b7c5ed0`／spec 33）。expert 可改 `active`＋`sort_order`；ops／admin 不變。
+ */
+export const EXPERT_PLAN_FIELD_FORBIDDEN_CODE = 'expert_plan_field_forbidden'
+
+export function isExpertPlanFieldForbiddenError(error: unknown): boolean {
+  return error instanceof AdminApiError && error.code === EXPERT_PLAN_FIELD_FORBIDDEN_CODE
+}
+
+/** POST /admin/order/{id}/shipment 遇退款申請中 → 409 `refund_request_pending`. */
+export const REFUND_REQUEST_PENDING_CODE = 'refund_request_pending'
+
+export function isRefundRequestPendingError(error: unknown): boolean {
+  return error instanceof AdminApiError && error.code === REFUND_REQUEST_PENDING_CODE
 }
 
 export type AdminExpertCaseReviewDecisionBody = {
@@ -619,7 +663,7 @@ export async function adminSubmitExpertCaseReview(
     if (error instanceof AdminApiError) {
       throw error
     }
-    throw new AdminApiError(readStatus(error), readMessage(error))
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 
@@ -1456,6 +1500,258 @@ export async function adminUpdatePackagePlan(
     }
     throw new AdminApiError(readStatus(error), readMessage(error))
   }
+}
+
+/** Spec 33 — expert_plans catalog (list／get／patch；無 create). */
+export type AdminExpertPlan = {
+  id: string
+  code: string
+  package_plan_id: string
+  name_zh: string
+  name_en: string | null
+  price: number
+  active: boolean
+  sort_order: number
+  package_plan_name_zh?: string | null
+  package_plan_code?: string | null
+}
+
+/**
+ * PATCH body（OpenAPI adminExpertPlanPatch）。
+ * expert 僅應送 active／sort_order；name_zh／name_en／price → 403。
+ * Irice 11/4 第二輪：畫面顯示 name_en；ops／admin 可改，expert 唯讀。
+ */
+export type ExpertPlanWrite = {
+  name_zh?: string
+  name_en?: string | null
+  price?: number
+  active?: boolean
+  sort_order?: number
+}
+
+export async function adminListExpertPlans(apiBase: string, token: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/expert-plans'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readExpertPlanRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminGetExpertPlan(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-plan/${encodeURIComponent(id)}`),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminUpdateExpertPlan(
+  apiBase: string,
+  token: string,
+  id: string,
+  payload: ExpertPlanWrite
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/expert-plan/${encodeURIComponent(id)}`),
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: payload
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
+  }
+}
+
+/**
+ * core #143：開始理貨 = POST /admin/order/{id}/shipment（定稿不自動建 shipment）。
+ * 遇退款申請中 → 409 `refund_request_pending`。
+ */
+export async function adminStartOrderShipment(apiBase: string, token: string, orderId: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/order/${encodeURIComponent(orderId)}/shipment`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
+  }
+}
+
+export type AdminRefundRequestListQuery = {
+  status?: string
+  limit?: number
+  offset?: number
+}
+
+export async function adminListRefundRequests(
+  apiBase: string,
+  token: string,
+  query: AdminRefundRequestListQuery = {}
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/refund-requests'), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: compactRefundRequestQuery(query)
+    })
+    if (body?.status !== 'success') {
+      throw new AdminApiError(500, '')
+    }
+    return readRefundRequestRows(body.data)
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminConfirmRefundRequest(apiBase: string, token: string, id: string) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/refund-request/${encodeURIComponent(id)}/confirm`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminRejectRefundRequest(
+  apiBase: string,
+  token: string,
+  id: string,
+  reason: string
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(
+      adminUrl(apiBase, `/refund-request/${encodeURIComponent(id)}/reject`),
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: { reason }
+      }
+    )
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
+  }
+}
+
+function readExpertPlanRows(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) {
+    return data.filter(isRecord)
+  }
+  if (!isRecord(data)) {
+    return []
+  }
+  if (Array.isArray(data.expert_plans)) {
+    return data.expert_plans.filter(isRecord)
+  }
+  if (Array.isArray(data.items)) {
+    return data.items.filter(isRecord)
+  }
+  return []
+}
+
+function readRefundRequestRows(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) {
+    return data.filter(isRecord)
+  }
+  if (!isRecord(data)) {
+    return []
+  }
+  if (Array.isArray(data.refund_requests)) {
+    return data.refund_requests.filter(isRecord)
+  }
+  if (Array.isArray(data.items)) {
+    return data.items.filter(isRecord)
+  }
+  return []
+}
+
+function compactRefundRequestQuery(query: AdminRefundRequestListQuery) {
+  const params: Record<string, string | number> = {}
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      params[key] = value
+      continue
+    }
+    if (typeof value === 'string' && value.trim()) {
+      params[key] = value.trim()
+    }
+  }
+  return params
 }
 
 export async function adminListSellableItems(apiBase: string, token: string) {
@@ -2674,4 +2970,18 @@ function readMessage(error: unknown) {
   }
   const data = (error as { data?: AdminFailure }).data
   return typeof data?.error_message === 'string' ? data.error_message : ''
+}
+
+function readErrorCode(error: unknown) {
+  if (!error || typeof error !== 'object' || !('data' in error)) {
+    return ''
+  }
+  const data = (error as { data?: AdminFailure }).data
+  if (typeof data?.error_code === 'string' && data.error_code.trim()) {
+    return data.error_code.trim()
+  }
+  if (typeof data?.error_code === 'number' && Number.isFinite(data.error_code)) {
+    return String(data.error_code)
+  }
+  return ''
 }
