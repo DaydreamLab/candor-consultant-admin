@@ -9,6 +9,17 @@ Operator 端：商品／庫存／價格帶、訂單出貨、報告校正與權�
 
 登入已打 core `POST /api/v1/admin/auth/login`。其餘畫面仍是**前端 Mock**（多租戶示範資料）。目標為單租戶 operator 後台，範圍見 [docs/00-overview.md](docs/00-overview.md)。
 
+### Beta（GitHub Pages）部署
+
+推送符合 `beta-*` 的 tag 才會觸發 Pages 部署（例如 `beta-20261104-1`）；merge／push 到 `main` **不會**自動部署。
+
+```bash
+git tag beta-YYYYMMDD-N <sha>
+git push origin beta-YYYYMMDD-N
+```
+
+也可在 Actions 以 `workflow_dispatch` 手動跑「Deploy to GitHub Pages」。正式站走 `v*` tag（見 `deploy-prod.yml`），與 `beta-*` 互不觸發。
+
 ## 技術棧
 
 | 技術 | 用途 |
