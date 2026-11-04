@@ -9,6 +9,18 @@ Operator 端：商品／庫存／價格帶、訂單出貨、報告校正與權�
 
 登入已打 core `POST /api/v1/admin/auth/login`。其餘畫面仍是**前端 Mock**（多租戶示範資料）。目標為單租戶 operator 後台，範圍見 [docs/00-overview.md](docs/00-overview.md)。
 
+### Beta（GitHub Pages）部署
+
+推送固定 tag `beta` 才會觸發 Pages 部署（與 candor-core、前台同一做法）；merge／push 到 `main` **不會**自動部署。
+
+```bash
+git tag -f beta <sha>
+git push origin :refs/tags/beta
+git push origin beta
+```
+
+單純 force 移動既有遠端 tag 時，Actions 不一定會再跑；先刪遠端 `beta` 再推較可靠。也可在 Actions 以 `workflow_dispatch` 手動跑「Deploy to GitHub Pages」。正式站走 `v*` tag（見 `deploy-prod.yml`），與固定 `beta` 互不觸發。
+
 ## 技術棧
 
 | 技術 | 用途 |
