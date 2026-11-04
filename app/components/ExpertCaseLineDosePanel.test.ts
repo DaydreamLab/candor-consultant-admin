@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest'
 import ExpertCaseLineDosePanel from './ExpertCaseLineDosePanel.vue'
 
 const messages: Record<string, string> = {
-  'expertCaseReviews.dose': '劑量',
-  'expertCaseReviews.doseUnit': '顆',
-  'expertCaseReviews.doseRemovedHint': '已標記移除；定稿後不會進入會員方案。',
-  'expertCaseReviews.doseSuggestedReadonly': '劑量（建議）：{n} 顆',
-  'expertCaseReviews.doseKeepEditHint': '須切換「調劑量」才可編輯。'
+  'custom.dose': '劑量',
+  'custom.doseUnit': '顆',
+  'custom.doseRemovedHint': '已標記移除；定稿後不會進入會員方案。',
+  'custom.doseSuggestedReadonly': '劑量（建議）：{n} 顆',
+  'custom.doseKeepEditHint': '須切換「調劑量」才可編輯。'
 }
 
 function mountPanel(decision: string) {

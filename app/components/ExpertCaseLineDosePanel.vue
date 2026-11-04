@@ -32,7 +32,7 @@ const mode = computed(() => dosePanelMode(props.decision))
     class="mt-2 text-xs text-muted"
     :data-testid="`${testIdPrefix}-dose-removed-hint`"
   >
-    {{ $t('expertCaseReviews.doseRemovedHint') }}
+    {{ $t('custom.doseRemovedHint') }}
   </div>
   <!-- 調劑量：stepper 可編 -->
   <div
@@ -41,7 +41,7 @@ const mode = computed(() => dosePanelMode(props.decision))
     :data-testid="`${testIdPrefix}-inline-dose-row`"
   >
     <label class="mb-1 block text-sm text-highlighted">
-      {{ $t('expertCaseReviews.dose') }}
+      {{ $t('custom.dose') }}
     </label>
     <CapsuleDoseStepper
       :model-value="modelValue"
@@ -59,10 +59,10 @@ const mode = computed(() => dosePanelMode(props.decision))
     :data-testid="`${testIdPrefix}-dose-readonly`"
   >
     <p class="text-sm text-highlighted">
-      {{ $t('expertCaseReviews.doseSuggestedReadonly', { n: suggestedCount }) }}
+      {{ $t('custom.doseSuggestedReadonly', { n: suggestedCount }) }}
     </p>
     <p class="mt-0.5 text-xs text-muted">
-      {{ $t('expertCaseReviews.doseKeepEditHint') }}
+      {{ $t('custom.doseKeepEditHint') }}
     </p>
   </div>
 </template>

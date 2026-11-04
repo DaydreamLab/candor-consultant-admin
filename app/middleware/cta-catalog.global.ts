@@ -2,7 +2,7 @@ import { canViewCtaCatalog } from '~/utils/cta-catalog-access'
 
 function isCtaCatalogPath(path: string) {
   const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/'
-  return stripped === '/settings/cta-catalog' || stripped.startsWith('/settings/cta-catalog/')
+  return stripped === '/settings/guidance' || stripped.startsWith('/settings/guidance/')
 }
 
 export default defineNuxtRouteMiddleware((to) => {

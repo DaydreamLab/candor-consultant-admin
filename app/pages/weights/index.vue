@@ -10,21 +10,21 @@ function labelOf(row: WeightSetMock) {
 }
 
 function openRow(row: WeightSetMock) {
-  void navigateTo(localePath(`/expert-tuning/weights/${encodeURIComponent(row.id)}`))
+  void navigateTo(localePath(`/weights/${encodeURIComponent(row.id)}`))
 }
 </script>
 
 <template>
   <PageHeader
-    :title="$t('nav.expertTuning')"
-    :description="$t('expertTuning.description')"
+    :title="$t('nav.weights')"
+    :description="$t('weights.description')"
   >
     <ExpertTuningTabs />
     <p
       v-if="!weightSets.length"
       class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
     >
-      {{ $t('expertTuning.emptyList') }}
+      {{ $t('weights.emptyList') }}
     </p>
     <AdminTable
       v-else
@@ -32,10 +32,10 @@ function openRow(row: WeightSetMock) {
     >
       <template #head>
         <tr>
-          <th>{{ $t('expertTuning.columns.version') }}</th>
-          <th>{{ $t('expertTuning.columns.status') }}</th>
-          <th>{{ $t('expertTuning.columns.label') }}</th>
-          <th>{{ $t('expertTuning.columns.updatedAt') }}</th>
+          <th>{{ $t('weights.columns.version') }}</th>
+          <th>{{ $t('weights.columns.status') }}</th>
+          <th>{{ $t('weights.columns.label') }}</th>
+          <th>{{ $t('weights.columns.updatedAt') }}</th>
         </tr>
       </template>
       <tr
@@ -49,7 +49,7 @@ function openRow(row: WeightSetMock) {
         </td>
         <td>
           <StatusBadge
-            :label="$t(`expertTuning.status.${row.status}`)"
+            :label="$t(`weights.status.${row.status}`)"
             :color="WEIGHT_SET_STATUS_COLOR[row.status]"
           />
         </td>
@@ -62,7 +62,7 @@ function openRow(row: WeightSetMock) {
       </tr>
     </AdminTable>
     <p class="mt-3 text-xs text-muted">
-      {{ $t('expertTuning.mockHint') }}
+      {{ $t('weights.mockHint') }}
     </p>
   </PageHeader>
 </template>

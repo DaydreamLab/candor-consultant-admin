@@ -1,4 +1,4 @@
-/** Local mock only — not wired to `/admin/lab-services` or appointment HTTP. */
+/** Local mock only — not wired to `/admin/checkups` or appointment HTTP. */
 
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7
 

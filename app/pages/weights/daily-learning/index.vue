@@ -55,7 +55,7 @@ const canLoadDrafts = computed(() => canReadWeightSets(operatorRole.value))
 
 function needRolesHint(roles: readonly string[]) {
   const labels = roles.map(role => t(`roles.${role}`)).join('、')
-  return t('expertTuning.dailyLearning.needRoles', { roles: labels })
+  return t('weights.dailyLearning.needRoles', { roles: labels })
 }
 
 const generateNeedHint = computed(() => needRolesHint(DAILY_LEARNING_GENERATE_ROLES))
@@ -184,17 +184,17 @@ watch(
 function classificationOptions(proposed: DailyLearningProposedClassification) {
   const items = [
     {
-      label: t('expertTuning.dailyLearning.classification.reusable'),
+      label: t('weights.dailyLearning.classification.reusable'),
       value: 'reusable'
     },
     {
-      label: t('expertTuning.dailyLearning.classification.personal_risk'),
+      label: t('weights.dailyLearning.classification.personal_risk'),
       value: 'personal_risk'
     }
   ]
   if (proposed === 'pending') {
     items.push({
-      label: t('expertTuning.dailyLearning.classification.pending'),
+      label: t('weights.dailyLearning.classification.pending'),
       value: 'pending'
     })
   }
@@ -206,30 +206,30 @@ function canAcceptGeneral(proposal: DailyLearningGeneralProposal) {
 }
 
 function unnamedIngredient() {
-  return t('expertTuning.dailyLearning.unnamed.ingredient')
+  return t('weights.dailyLearning.unnamed.ingredient')
 }
 
 function unnamedDomain() {
-  return t('expertTuning.dailyLearning.unnamed.domain')
+  return t('weights.dailyLearning.unnamed.domain')
 }
 
 function unnamedBiomarker() {
-  return t('expertTuning.dailyLearning.unnamed.biomarker')
+  return t('weights.dailyLearning.unnamed.biomarker')
 }
 
 function unnamedCondition() {
-  return t('expertTuning.dailyLearning.unnamed.condition')
+  return t('weights.dailyLearning.unnamed.condition')
 }
 
 /** Name chips for expert UI — never UUID. */
 function generalNameLine(proposal: DailyLearningGeneralProposal) {
   if (proposal.kind === 'signal_domain_weight') {
-    return t('expertTuning.dailyLearning.nameLine.signal', {
+    return t('weights.dailyLearning.nameLine.signal', {
       biomarker: displayNameOr(proposal.biomarker_name, unnamedBiomarker()),
       domain: displayNameOr(proposal.domain_name, unnamedDomain())
     })
   }
-  return t('expertTuning.dailyLearning.nameLine.ingredientDomain', {
+  return t('weights.dailyLearning.nameLine.ingredientDomain', {
     ingredient: displayNameOr(proposal.ingredient_name, unnamedIngredient()),
     domain: displayNameOr(proposal.domain_name, unnamedDomain())
   })
@@ -237,31 +237,31 @@ function generalNameLine(proposal: DailyLearningGeneralProposal) {
 
 function safetyNameLine(proposal: DailyLearningSafetyProposal) {
   if (proposal.kind === 'contraindication_exclude_to_warn') {
-    return t('expertTuning.dailyLearning.nameLine.contra', {
+    return t('weights.dailyLearning.nameLine.contra', {
       ingredient: displayNameOr(proposal.ingredient_name, unnamedIngredient()),
       condition: displayNameOr(proposal.condition_name, unnamedCondition())
     })
   }
   if (proposal.kind === 'interaction_exclude_to_penalize') {
-    return t('expertTuning.dailyLearning.nameLine.interaction', {
+    return t('weights.dailyLearning.nameLine.interaction', {
       a: displayNameOr(proposal.ingredient_a_name, unnamedIngredient()),
       b: displayNameOr(proposal.ingredient_b_name, unnamedIngredient())
     })
   }
-  return t('expertTuning.dailyLearning.nameLine.ul', {
+  return t('weights.dailyLearning.nameLine.ul', {
     ingredient: displayNameOr(proposal.ingredient_name, unnamedIngredient())
   })
 }
 
 function safetyKindLabel(kind: DailyLearningSafetyProposal['kind']) {
-  return t(`expertTuning.dailyLearning.safetyKind.${kind}`)
+  return t(`weights.dailyLearning.safetyKind.${kind}`)
 }
 
 function apiErrorMessage(error: unknown) {
   if (error instanceof AdminApiError && error.message) {
     return error.message
   }
-  return t('expertTuning.dailyLearning.failed')
+  return t('weights.dailyLearning.failed')
 }
 
 async function refreshPendingDrafts() {
@@ -273,7 +273,7 @@ async function refreshPendingDrafts() {
   }
   const token = readOperatorToken()
   if (!token) {
-    listError.value = t('expertTuning.dailyLearning.listFailed')
+    listError.value = t('weights.dailyLearning.listFailed')
     return
   }
   listBusy.value = true
@@ -285,12 +285,12 @@ async function refreshPendingDrafts() {
       && !pending.some(row => row.id === selectedPendingId.value)) {
       selectedPendingId.value = undefined
     }
-    listError.value = listRefreshErrorMessage(false, '', t('expertTuning.dailyLearning.listFailed'))
+    listError.value = listRefreshErrorMessage(false, '', t('weights.dailyLearning.listFailed'))
   } catch (error) {
     listError.value = listRefreshErrorMessage(
       true,
       apiErrorMessage(error),
-      t('expertTuning.dailyLearning.listFailed')
+      t('weights.dailyLearning.listFailed')
     )
   } finally {
     listBusy.value = false
@@ -333,7 +333,7 @@ async function loadSelectedDraft() {
   const id = selectedPendingId.value
   if (!token || !id) {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.loadNeedSelect'),
+      title: t('weights.dailyLearning.loadNeedSelect'),
       color: 'warning'
     })
     return
@@ -344,11 +344,11 @@ async function loadSelectedDraft() {
     const data = await adminGetWeightSet(config.public.apiBase, token, id)
     const view = parseDailyLearningFromWeightSetDetail(data)
     if (!view) {
-      throw new AdminApiError(500, t('expertTuning.dailyLearning.parseFailed'))
+      throw new AdminApiError(500, t('weights.dailyLearning.parseFailed'))
     }
     applyLoadedDraft(view)
     feedback.notify({
-      title: t('expertTuning.dailyLearning.loadOk'),
+      title: t('weights.dailyLearning.loadOk'),
       color: 'success'
     })
   } catch (error) {
@@ -364,7 +364,7 @@ async function generateDraft() {
   }
   const token = readOperatorToken()
   if (!token) {
-    errorMessage.value = t('expertTuning.dailyLearning.failed')
+    errorMessage.value = t('weights.dailyLearning.failed')
     return
   }
   busy.value = true
@@ -383,12 +383,12 @@ async function generateDraft() {
     )
     const view = parseDailyLearningDraft(data)
     if (!view) {
-      throw new AdminApiError(500, t('expertTuning.dailyLearning.parseFailed'))
+      throw new AdminApiError(500, t('weights.dailyLearning.parseFailed'))
     }
     applyLoadedDraft(view)
     selectedPendingId.value = view.weight_set.id
     feedback.notify({
-      title: t('expertTuning.dailyLearning.draftOk'),
+      title: t('weights.dailyLearning.draftOk'),
       color: 'success'
     })
     void refreshPendingDrafts()
@@ -412,7 +412,7 @@ async function confirmGeneral() {
   }
   if (!allClassificationsLocked.value) {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.needClassification'),
+      title: t('weights.dailyLearning.needClassification'),
       color: 'warning'
     })
     return
@@ -432,7 +432,7 @@ async function confirmGeneral() {
 
   if (!body.confirmations.length && view.proposals.length) {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.needClassification'),
+      title: t('weights.dailyLearning.needClassification'),
       color: 'warning'
     })
     return
@@ -449,7 +449,7 @@ async function confirmGeneral() {
     )
     step.value = 'general_confirmed'
     feedback.notify({
-      title: t('expertTuning.dailyLearning.confirmOk'),
+      title: t('weights.dailyLearning.confirmOk'),
       color: 'success'
     })
   } catch (error) {
@@ -462,14 +462,14 @@ async function confirmGeneral() {
 function openSafetyConfirm(proposal: DailyLearningSafetyProposal) {
   if (step.value === 'idle' || step.value === 'drafted') {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.safetyNeedGeneralFirst'),
+      title: t('weights.dailyLearning.safetyNeedGeneralFirst'),
       color: 'warning'
     })
     return
   }
   if (!safetyExpanded.value[proposal.id]) {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.safetyExpandFirst'),
+      title: t('weights.dailyLearning.safetyExpandFirst'),
       color: 'warning'
     })
     return
@@ -512,7 +512,7 @@ async function confirmSafetyOne() {
       dryRunSummary.value = ''
     }
     feedback.notify({
-      title: t('expertTuning.dailyLearning.safetyConfirmOk'),
+      title: t('weights.dailyLearning.safetyConfirmOk'),
       color: 'success'
     })
   } catch (error) {
@@ -533,7 +533,7 @@ async function runDryRun() {
   }
   if (step.value === 'idle' || step.value === 'drafted') {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.dryRunNeedConfirm'),
+      title: t('weights.dailyLearning.dryRunNeedConfirm'),
       color: 'warning'
     })
     return
@@ -551,11 +551,11 @@ async function runDryRun() {
     const top3 = typeof data.top3_change_total === 'number' ? data.top3_change_total : null
     const max = typeof data.max_top3_changes === 'number' ? data.max_top3_changes : null
     dryRunSummary.value = passed === true
-      ? t('expertTuning.dailyLearning.dryRunPassed', {
+      ? t('weights.dailyLearning.dryRunPassed', {
           top3: top3 ?? '—',
           max: max ?? '—'
         })
-      : t('expertTuning.dailyLearning.dryRunFailed', {
+      : t('weights.dailyLearning.dryRunFailed', {
           top3: top3 ?? '—',
           max: max ?? '—'
         })
@@ -578,7 +578,7 @@ async function publishDraft() {
   }
   if (step.value !== 'dry_run_done') {
     feedback.notify({
-      title: t('expertTuning.dailyLearning.publishNeedDryRun'),
+      title: t('weights.dailyLearning.publishNeedDryRun'),
       color: 'warning'
     })
     return
@@ -598,7 +598,7 @@ async function publishDraft() {
     )
     step.value = 'published'
     feedback.notify({
-      title: t('expertTuning.dailyLearning.publishOk'),
+      title: t('weights.dailyLearning.publishOk'),
       color: 'success'
     })
   } catch (error) {
@@ -617,8 +617,8 @@ onMounted(() => {
 
 <template>
   <PageHeader
-    :title="$t('expertTuning.dailyLearning.title')"
-    :description="$t('expertTuning.dailyLearning.description')"
+    :title="$t('weights.dailyLearning.title')"
+    :description="$t('weights.dailyLearning.description')"
   >
     <ExpertTuningTabs />
 
@@ -640,7 +640,7 @@ onMounted(() => {
           ? 'border-primary/40 bg-primary/5 text-highlighted'
           : 'border-default text-muted'"
       >
-        {{ index + 1 }}. {{ $t(`expertTuning.dailyLearning.${labelKey}`) }}
+        {{ index + 1 }}. {{ $t(`weights.dailyLearning.${labelKey}`) }}
       </li>
     </ol>
 
@@ -649,20 +649,20 @@ onMounted(() => {
       data-testid="daily-learning-load"
     >
       <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('expertTuning.dailyLearning.loadTitle') }}
+        {{ $t('weights.dailyLearning.loadTitle') }}
       </h2>
       <p class="text-sm text-muted">
-        {{ $t('expertTuning.dailyLearning.loadHint') }}
+        {{ $t('weights.dailyLearning.loadHint') }}
       </p>
       <div class="flex flex-wrap items-end gap-3">
         <UFormField
-          :label="$t('expertTuning.dailyLearning.loadSelectLabel')"
+          :label="$t('weights.dailyLearning.loadSelectLabel')"
           class="min-w-[16rem] flex-1"
         >
           <USelect
             v-model="selectedPendingId"
             :items="pendingSelectItems"
-            :placeholder="$t('expertTuning.dailyLearning.loadSelectPlaceholder')"
+            :placeholder="$t('weights.dailyLearning.loadSelectPlaceholder')"
             :disabled="!canLoadDrafts || listBusy || busy"
             data-testid="daily-learning-load-select"
           />
@@ -675,7 +675,7 @@ onMounted(() => {
           data-testid="daily-learning-load-refresh"
           @click="refreshPendingDrafts"
         >
-          {{ $t('expertTuning.dailyLearning.loadRefresh') }}
+          {{ $t('weights.dailyLearning.loadRefresh') }}
         </UButton>
         <UButton
           color="primary"
@@ -684,7 +684,7 @@ onMounted(() => {
           data-testid="daily-learning-load-submit"
           @click="loadSelectedDraft"
         >
-          {{ $t('expertTuning.dailyLearning.loadSubmit') }}
+          {{ $t('weights.dailyLearning.loadSubmit') }}
         </UButton>
       </div>
       <p
@@ -699,20 +699,20 @@ onMounted(() => {
         class="text-sm text-muted"
         data-testid="daily-learning-load-empty"
       >
-        {{ $t('expertTuning.dailyLearning.loadEmpty') }}
+        {{ $t('weights.dailyLearning.loadEmpty') }}
       </p>
     </section>
 
     <section class="mb-6 space-y-3 rounded-xl border border-default bg-elevated p-4">
       <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('expertTuning.dailyLearning.generateTitle') }}
+        {{ $t('weights.dailyLearning.generateTitle') }}
       </h2>
       <p class="text-sm text-muted">
-        {{ $t('expertTuning.dailyLearning.generateHint') }}
+        {{ $t('weights.dailyLearning.generateHint') }}
       </p>
       <div class="flex flex-wrap items-end gap-3">
         <UFormField
-          :label="$t('expertTuning.dailyLearning.dateLabel')"
+          :label="$t('weights.dailyLearning.dateLabel')"
           class="min-w-[12rem]"
         >
           <UInput
@@ -729,7 +729,7 @@ onMounted(() => {
           data-testid="daily-learning-generate"
           @click="generateDraft"
         >
-          {{ $t('expertTuning.dailyLearning.generate') }}
+          {{ $t('weights.dailyLearning.generate') }}
         </UButton>
         <p
           v-if="!canGenerate"
@@ -744,7 +744,7 @@ onMounted(() => {
         class="text-sm text-muted"
         data-testid="daily-learning-draft-meta"
       >
-        {{ $t('expertTuning.dailyLearning.draftMeta', {
+        {{ $t('weights.dailyLearning.draftMeta', {
           version: draft.weight_set.version,
           date: draft.date || '—',
           status: draft.weight_set.status
@@ -754,7 +754,7 @@ onMounted(() => {
           class="ms-2 text-success"
           data-testid="daily-learning-general-confirmed"
         >
-          · {{ $t('expertTuning.dailyLearning.generalConfirmed', {
+          · {{ $t('weights.dailyLearning.generalConfirmed', {
             at: formatConfirmAt(draft.confirmed_at)
           }) }}
         </span>
@@ -776,10 +776,10 @@ onMounted(() => {
       >
         <div>
           <h2 class="text-lg font-semibold text-highlighted">
-            {{ $t('expertTuning.dailyLearning.generalTitle') }}
+            {{ $t('weights.dailyLearning.generalTitle') }}
           </h2>
           <p class="mt-1 text-sm text-muted">
-            {{ $t('expertTuning.dailyLearning.generalHint') }}
+            {{ $t('weights.dailyLearning.generalHint') }}
           </p>
         </div>
 
@@ -787,7 +787,7 @@ onMounted(() => {
           v-if="!draft.proposals.length"
           class="rounded-lg border border-dashed border-default px-4 py-6 text-center text-sm text-muted"
         >
-          {{ $t('expertTuning.dailyLearning.generalEmpty') }}
+          {{ $t('weights.dailyLearning.generalEmpty') }}
         </p>
 
         <article
@@ -799,30 +799,30 @@ onMounted(() => {
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0 flex-1 space-y-1">
               <p class="text-sm font-medium text-highlighted">
-                {{ $t(`expertTuning.dailyLearning.decision.${row.decision}`) }}
+                {{ $t(`weights.dailyLearning.decision.${row.decision}`) }}
                 <span
                   v-if="row.adjustment_type"
                   class="ms-2 font-normal text-muted"
                 >
-                  · {{ $t(`expertTuning.dailyLearning.adjustment.${row.adjustment_type}`) }}
+                  · {{ $t(`weights.dailyLearning.adjustment.${row.adjustment_type}`) }}
                 </span>
               </p>
               <p class="text-sm text-muted">
-                {{ row.classification_rationale || $t('expertTuning.dailyLearning.noRationale') }}
+                {{ row.classification_rationale || $t('weights.dailyLearning.noRationale') }}
               </p>
               <p class="text-xs text-muted">
-                {{ $t('expertTuning.dailyLearning.aiSuggested', {
-                  value: $t(`expertTuning.dailyLearning.classification.${row.proposed_classification}`)
+                {{ $t('weights.dailyLearning.aiSuggested', {
+                  value: $t(`weights.dailyLearning.classification.${row.proposed_classification}`)
                 }) }}
-                · {{ $t(`expertTuning.dailyLearning.source.${row.classification_source}`) }}
+                · {{ $t(`weights.dailyLearning.source.${row.classification_source}`) }}
                 <span
                   v-if="row.needs_human"
                   class="ms-1 text-warning"
-                >· {{ $t('expertTuning.dailyLearning.needsHuman') }}</span>
+                >· {{ $t('weights.dailyLearning.needsHuman') }}</span>
               </p>
             </div>
             <UFormField
-              :label="$t('expertTuning.dailyLearning.yourJudgement')"
+              :label="$t('weights.dailyLearning.yourJudgement')"
               class="w-44"
             >
               <USelect
@@ -840,7 +840,7 @@ onMounted(() => {
             class="mt-4 space-y-3 border-t border-default pt-4"
           >
             <p class="text-xs font-semibold uppercase tracking-wide text-muted">
-              {{ $t('expertTuning.dailyLearning.linkedGenerals') }}
+              {{ $t('weights.dailyLearning.linkedGenerals') }}
             </p>
             <div
               v-for="proposal in row.general_proposals"
@@ -858,7 +858,7 @@ onMounted(() => {
                 v-if="proposal.plain_language_source === 'template'"
                 class="mt-1 text-xs text-muted"
               >
-                {{ $t('expertTuning.dailyLearning.plainSourceTemplate') }}
+                {{ $t('weights.dailyLearning.plainSourceTemplate') }}
               </p>
               <div class="mt-2 flex flex-wrap items-center gap-3">
                 <UCheckbox
@@ -866,14 +866,14 @@ onMounted(() => {
                   :disabled="busy
                     || step !== 'drafted'
                     || !canAcceptGeneral(proposal)"
-                  :label="$t('expertTuning.dailyLearning.acceptGeneral')"
+                  :label="$t('weights.dailyLearning.acceptGeneral')"
                   data-testid="daily-learning-general-accept"
                 />
                 <span
                   v-if="!canAcceptGeneral(proposal)"
                   class="text-xs text-muted"
                 >
-                  {{ $t('expertTuning.dailyLearning.generalOnlyReusable') }}
+                  {{ $t('weights.dailyLearning.generalOnlyReusable') }}
                 </span>
               </div>
               <div class="mt-2">
@@ -884,8 +884,8 @@ onMounted(() => {
                   @click="generalTechOpen[proposal.id] = !generalTechOpen[proposal.id]"
                 >
                   {{ generalTechOpen[proposal.id]
-                    ? $t('expertTuning.dailyLearning.techDetailsHide')
-                    : $t('expertTuning.dailyLearning.techDetails') }}
+                    ? $t('weights.dailyLearning.techDetailsHide')
+                    : $t('weights.dailyLearning.techDetails') }}
                 </button>
                 <pre
                   v-if="generalTechOpen[proposal.id]"
@@ -904,7 +904,7 @@ onMounted(() => {
           data-testid="daily-learning-confirm-general"
           @click="confirmGeneral"
         >
-          {{ $t('expertTuning.dailyLearning.confirmGeneral') }}
+          {{ $t('weights.dailyLearning.confirmGeneral') }}
         </UButton>
       </section>
 
@@ -914,13 +914,13 @@ onMounted(() => {
       >
         <div>
           <h2 class="text-lg font-semibold text-highlighted">
-            {{ $t('expertTuning.dailyLearning.safetyTitle') }}
+            {{ $t('weights.dailyLearning.safetyTitle') }}
           </h2>
           <p class="mt-1 text-sm text-muted">
-            {{ $t('expertTuning.dailyLearning.safetyHint') }}
+            {{ $t('weights.dailyLearning.safetyHint') }}
           </p>
           <p class="mt-1 text-xs font-medium text-warning">
-            {{ $t('expertTuning.dailyLearning.safetyRiskBadge') }}
+            {{ $t('weights.dailyLearning.safetyRiskBadge') }}
           </p>
         </div>
 
@@ -928,7 +928,7 @@ onMounted(() => {
           v-if="!draft.safety_proposals.length"
           class="text-sm text-muted"
         >
-          {{ $t('expertTuning.dailyLearning.safetyEmpty') }}
+          {{ $t('weights.dailyLearning.safetyEmpty') }}
         </p>
 
         <article
@@ -943,8 +943,8 @@ onMounted(() => {
             </span>
             <span class="text-xs text-muted">
               {{ safetyApplied[proposal.id]
-                ? $t('expertTuning.dailyLearning.safetyStatusApplied')
-                : $t('expertTuning.dailyLearning.safetyStatusDefault') }}
+                ? $t('weights.dailyLearning.safetyStatusApplied')
+                : $t('weights.dailyLearning.safetyStatusDefault') }}
             </span>
           </div>
 
@@ -955,8 +955,8 @@ onMounted(() => {
             @click="safetyExpanded[proposal.id] = !safetyExpanded[proposal.id]"
           >
             {{ safetyExpanded[proposal.id]
-              ? $t('expertTuning.dailyLearning.safetyCollapse')
-              : $t('expertTuning.dailyLearning.safetyExpand') }}
+              ? $t('weights.dailyLearning.safetyCollapse')
+              : $t('weights.dailyLearning.safetyExpand') }}
           </button>
 
           <div
@@ -974,7 +974,7 @@ onMounted(() => {
               v-if="proposal.plain_language_source === 'template'"
               class="mt-1 text-xs text-muted"
             >
-              {{ $t('expertTuning.dailyLearning.plainSourceTemplate') }}
+              {{ $t('weights.dailyLearning.plainSourceTemplate') }}
             </p>
             <div>
               <button
@@ -983,8 +983,8 @@ onMounted(() => {
                 @click="safetyTechOpen[proposal.id] = !safetyTechOpen[proposal.id]"
               >
                 {{ safetyTechOpen[proposal.id]
-                  ? $t('expertTuning.dailyLearning.techDetailsHide')
-                  : $t('expertTuning.dailyLearning.techDetails') }}
+                  ? $t('weights.dailyLearning.techDetailsHide')
+                  : $t('weights.dailyLearning.techDetails') }}
               </button>
               <pre
                 v-if="safetyTechOpen[proposal.id]"
@@ -996,7 +996,7 @@ onMounted(() => {
               class="text-xs text-success"
               data-testid="daily-learning-safety-confirmed-meta"
             >
-              {{ $t('expertTuning.dailyLearning.safetyConfirmedBy', {
+              {{ $t('weights.dailyLearning.safetyConfirmedBy', {
                 role: $t(`roles.${safetyConfirmMeta(proposal.id)!.role}`),
                 at: formatConfirmAt(safetyConfirmMeta(proposal.id)!.confirmed_at)
               }) }}
@@ -1014,7 +1014,7 @@ onMounted(() => {
               data-testid="daily-learning-safety-confirm-btn"
               @click="openSafetyConfirm(proposal)"
             >
-              {{ $t('expertTuning.dailyLearning.safetyConfirmOne') }}
+              {{ $t('weights.dailyLearning.safetyConfirmOne') }}
             </UButton>
           </div>
         </article>
@@ -1025,10 +1025,10 @@ onMounted(() => {
         data-testid="daily-learning-apply"
       >
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('expertTuning.dailyLearning.applyTitle') }}
+          {{ $t('weights.dailyLearning.applyTitle') }}
         </h2>
         <p class="text-sm text-muted">
-          {{ $t('expertTuning.dailyLearning.applyHint') }}
+          {{ $t('weights.dailyLearning.applyHint') }}
         </p>
         <div class="flex flex-wrap items-center gap-2">
           <UButton
@@ -1042,7 +1042,7 @@ onMounted(() => {
             data-testid="daily-learning-dry-run"
             @click="runDryRun"
           >
-            {{ $t('expertTuning.dailyLearning.dryRun') }}
+            {{ $t('weights.dailyLearning.dryRun') }}
           </UButton>
           <p
             v-if="!canDryRun"
@@ -1058,7 +1058,7 @@ onMounted(() => {
             data-testid="daily-learning-publish"
             @click="publishDraft"
           >
-            {{ $t('expertTuning.dailyLearning.publish') }}
+            {{ $t('weights.dailyLearning.publish') }}
           </UButton>
           <p
             v-if="!canPublish"
@@ -1078,7 +1078,7 @@ onMounted(() => {
         </p>
         <UFormField
           v-if="dryRunGatePassed === false"
-          :label="$t('expertTuning.dailyLearning.overrideReason')"
+          :label="$t('weights.dailyLearning.overrideReason')"
           class="max-w-md"
         >
           <UInput
@@ -1093,11 +1093,11 @@ onMounted(() => {
       v-model:open="safetyConfirmOpen"
       color="warning"
       :double="true"
-      :title="$t('expertTuning.dailyLearning.safetyDialogTitle')"
+      :title="$t('weights.dailyLearning.safetyDialogTitle')"
       :description="safetyConfirmTarget
         ? `${safetyNameLine(safetyConfirmTarget)}\n${safetyConfirmTarget.plain_language}`
         : ''"
-      :confirm-label="$t('expertTuning.dailyLearning.safetyDialogConfirm')"
+      :confirm-label="$t('weights.dailyLearning.safetyDialogConfirm')"
       @confirm="confirmSafetyOne"
     />
   </PageHeader>

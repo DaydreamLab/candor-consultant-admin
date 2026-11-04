@@ -11,7 +11,7 @@ describe('CapsuleDoseStepper', () => {
       },
       global: {
         mocks: {
-          $t: (key: string) => (key === 'expertCaseReviews.doseUnit' ? '顆' : key)
+          $t: (key: string) => (key === 'custom.doseUnit' ? '顆' : key)
         }
       }
     })

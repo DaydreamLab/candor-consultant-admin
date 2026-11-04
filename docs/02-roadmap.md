@@ -54,7 +54,7 @@
 **範圍**
 
 - `PATCH`／`retry` admin health-reports（畫面可掛設定）
-- `/admin/weight-sets/**`（畫面可掛設定）
+- `/admin/weights/**`（畫面可掛設定）
 - Operator CRUD（admin；畫面可掛設定）
 - 代操去識別化（可掛使用者／設定）
 

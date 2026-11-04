@@ -30,7 +30,7 @@ watch([cancelling, pending, appointment, locale, canCancel], () => {
     deleting: false,
     busy: cancelling.value,
     onDelete: () => {},
-    primaryLabel: t('labAppointments.actions.cancel'),
+    primaryLabel: t('appointments.actions.cancel'),
     primaryLoading: cancelling.value,
     primaryForm: null,
     onPrimary: () => {
@@ -56,13 +56,13 @@ function load(id: string) {
   pending.value = true
   if (!id) {
     pending.value = false
-    errorMessage.value = t('labAppointments.failed')
+    errorMessage.value = t('appointments.failed')
     return
   }
   const row = store.getAppointment(id)
   if (!row) {
     pending.value = false
-    errorMessage.value = t('labAppointments.notFound')
+    errorMessage.value = t('appointments.notFound')
     return
   }
   appointment.value = row
@@ -79,7 +79,7 @@ function onCancel() {
   errorMessage.value = ''
   const row = store.cancelAppointment(id)
   if (!row) {
-    errorMessage.value = t('labAppointments.cancelFailed')
+    errorMessage.value = t('appointments.cancelFailed')
     cancelling.value = false
     return
   }
@@ -104,7 +104,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
 <template>
   <PageHeader
     :title="title"
-    :description="$t('labAppointments.detailDescription')"
+    :description="$t('appointments.detailDescription')"
     plain
   >
     <p
@@ -117,7 +117,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
       v-if="pending"
       class="text-sm text-muted"
     >
-      {{ $t('labAppointments.loading') }}
+      {{ $t('appointments.loading') }}
     </p>
     <div
       v-else-if="appointment"
@@ -133,7 +133,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
       <dl class="grid gap-3 rounded-xl border border-default bg-elevated p-4 text-sm md:grid-cols-2">
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.member') }}
+            {{ $t('appointments.fields.member') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ appointment.user_display_name }}
@@ -144,20 +144,20 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.status') }}
+            {{ $t('appointments.fields.status') }}
           </dt>
           <dd class="mt-1">
             <UBadge
               :color="appointment.status === 'booked' ? 'success' : 'neutral'"
               variant="subtle"
             >
-              {{ $t(`labAppointments.status.${appointment.status}`) }}
+              {{ $t(`appointments.status.${appointment.status}`) }}
             </UBadge>
           </dd>
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.service') }}
+            {{ $t('appointments.fields.service') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ serviceName(appointment) }}
@@ -168,7 +168,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.partner') }}
+            {{ $t('appointments.fields.partner') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ appointment.partner_name }}
@@ -176,7 +176,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.slot') }}
+            {{ $t('appointments.fields.slot') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ appointment.appointment_date }}
@@ -185,7 +185,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.amount') }}
+            {{ $t('appointments.fields.amount') }}
           </dt>
           <dd class="tabular-money mt-1 font-medium text-highlighted">
             {{ money(appointment.amount_total) }}
@@ -193,7 +193,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.booked_at') }}
+            {{ $t('appointments.fields.booked_at') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ appointment.booked_at }}
@@ -201,7 +201,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         </div>
         <div v-if="appointment.cancelled_at">
           <dt class="text-muted">
-            {{ $t('labAppointments.fields.cancelled_at') }}
+            {{ $t('appointments.fields.cancelled_at') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ appointment.cancelled_at }}
@@ -211,7 +211,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
 
       <section class="rounded-xl border border-default bg-elevated p-4">
         <h2 class="text-sm font-semibold text-highlighted">
-          {{ $t('labAppointments.fields.selected_items') }}
+          {{ $t('appointments.fields.selected_items') }}
         </h2>
         <ul class="mt-3 divide-y divide-default">
           <li
@@ -224,7 +224,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
                 {{ itemName(item) }}
               </p>
               <p class="text-xs text-muted">
-                {{ item.required ? $t('labAppointments.required') : $t('labAppointments.optional') }}
+                {{ item.required ? $t('appointments.required') : $t('appointments.optional') }}
               </p>
             </div>
             <p class="tabular-money font-medium text-highlighted">
@@ -238,7 +238,7 @@ function itemName(item: LabAppointmentMock['selected_items'][number]) {
         v-if="!canCancel"
         class="text-sm text-muted"
       >
-        {{ $t('labAppointments.cancelledHint') }}
+        {{ $t('appointments.cancelledHint') }}
       </p>
     </div>
   </PageHeader>

@@ -5,15 +5,15 @@ const localePath = useLocalePath()
 const route = useRoute()
 
 const tabs = [
-  { key: 'copies', to: '/ai-assistant' },
-  { key: 'site', to: '/ai-assistant/site' },
-  { key: 'claimTerms', to: '/ai-assistant/claim-terms' }
+  { key: 'copies', to: '/assistant' },
+  { key: 'site', to: '/assistant/site' },
+  { key: 'claimTerms', to: '/assistant/claim-terms' }
 ] as const
 
 function active(to: string) {
   const current = normalizeAdminPath(route.path)
-  if (to === '/ai-assistant') {
-    return current === '/ai-assistant'
+  if (to === '/assistant') {
+    return current === '/assistant'
   }
   return current === to || current.startsWith(`${to}/`)
 }
@@ -29,7 +29,7 @@ function active(to: string) {
       :variant="active(tab.to) ? 'soft' : 'ghost'"
       size="sm"
     >
-      {{ $t(`aiAssistant.tabs.${tab.key}`) }}
+      {{ $t(`assistant.tabs.${tab.key}`) }}
     </UButton>
   </div>
 </template>

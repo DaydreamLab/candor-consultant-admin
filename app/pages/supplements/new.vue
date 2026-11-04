@@ -30,7 +30,7 @@ watch([saving, locale], () => {
 async function onSave(payload: SellableItemWrite) {
   const token = readOperatorToken()
   if (!token) {
-    notifySaveError(t('products.saveFailed'))
+    notifySaveError(t('supplements.saveFailed'))
     return
   }
 
@@ -40,10 +40,10 @@ async function onSave(payload: SellableItemWrite) {
     const created = await adminCreateSellableItem(config.public.apiBase, token, payload)
     const id = idOf(created)
     if (id) {
-      await navigateTo(localePath(`/products/${encodeURIComponent(id)}`))
+      await navigateTo(localePath(`/supplements/${encodeURIComponent(id)}`))
       return
     }
-    await navigateTo(localePath('/products'))
+    await navigateTo(localePath('/supplements'))
   } catch (error) {
     const message = failText(error)
     if (fieldOfSaveError(message)) {
@@ -69,7 +69,7 @@ function idOf(row: Record<string, unknown>) {
 
 function failText(error: unknown) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
-  return message || t('products.saveFailed')
+  return message || t('supplements.saveFailed')
 }
 
 function notifySaveError(message: string) {

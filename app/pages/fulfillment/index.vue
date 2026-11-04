@@ -110,7 +110,7 @@ function toggle(row: ProgressRow, key: FlagKey, value: boolean | undefined) {
 
 <template>
   <PageHeader
-    :title="$t('nav.progress')"
+    :title="$t('nav.fulfillment')"
     :description="moduleDesc('progress')"
   >
     <template #actions>

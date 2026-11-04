@@ -81,10 +81,10 @@ const columns: { key: CaseColumn, align: ColumnAlign, width?: string }[] = [
 ]
 
 const chipOptions = computed(() => [
-  { key: 'pending' as const, label: t('expertCaseReviews.filterPending') },
-  { key: 'all' as const, label: t('expertCaseReviews.filterAll') },
-  { key: 'reviewed' as const, label: t('expertCaseReviews.filterReviewed') },
-  { key: 'legacy' as const, label: t('expertCaseReviews.filterSourceLegacy') }
+  { key: 'pending' as const, label: t('custom.filterPending') },
+  { key: 'all' as const, label: t('custom.filterAll') },
+  { key: 'reviewed' as const, label: t('custom.filterReviewed') },
+  { key: 'legacy' as const, label: t('custom.filterSourceLegacy') }
 ])
 
 /** Query 僅 status／source（core #143 OpenAPI）；paid_at 排序由後端預設。 */
@@ -131,7 +131,7 @@ async function load(reset: boolean) {
   if (!token) {
     cases.value = []
     hasMore.value = false
-    errorMessage.value = t('expertCaseReviews.failed')
+    errorMessage.value = t('custom.failed')
     pending.value = false
     return
   }
@@ -172,7 +172,7 @@ async function load(reset: boolean) {
     hasMore.value = false
     errorMessage.value = error instanceof AdminApiError && error.message
       ? error.message
-      : t('expertCaseReviews.failed')
+      : t('custom.failed')
   } finally {
     if (seq === loadSeq) {
       pending.value = false
@@ -226,17 +226,17 @@ function statusColor(status: unknown): 'success' | 'warning' | 'neutral' {
 function columnLabel(key: CaseColumn) {
   switch (key) {
     case 'member':
-      return t('expertCaseReviews.colUser')
+      return t('custom.colUser')
     case 'status':
-      return t('expertCaseReviews.colStatus')
+      return t('custom.colStatus')
     case 'order':
-      return t('expertCaseReviews.colOrder')
+      return t('custom.colOrder')
     case 'expertPlan':
-      return t('expertCaseReviews.colExpertPlan')
+      return t('custom.colExpertPlan')
     case 'paidAt':
-      return t('expertCaseReviews.colPaidAt')
+      return t('custom.colPaidAt')
     case 'reviewedAt':
-      return t('expertCaseReviews.colReviewed')
+      return t('custom.colReviewed')
     case 'actions':
       return t('col.actions')
   }
@@ -281,7 +281,7 @@ function alignClass(align: ColumnAlign) {
 }
 
 function detailPath(row: Record<string, unknown>) {
-  return localePath(`/expert-case-reviews/${row.id}`)
+  return localePath(`/custom/${row.id}`)
 }
 
 function openRow(row: Record<string, unknown>) {
@@ -320,7 +320,7 @@ async function exportRow(row: Record<string, unknown>) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.failed'),
+        : t('custom.failed'),
       color: 'error'
     })
   } finally {
@@ -331,8 +331,8 @@ async function exportRow(row: Record<string, unknown>) {
 
 <template>
   <PageHeader
-    :title="$t('expertCaseReviews.title')"
-    :description="$t('expertCaseReviews.subtitle')"
+    :title="$t('custom.title')"
+    :description="$t('custom.subtitle')"
     plain
   >
     <div class="flex flex-col gap-4">
@@ -352,7 +352,7 @@ async function exportRow(row: Record<string, unknown>) {
           {{ chip.label }}
         </UButton>
         <span class="ml-auto text-xs text-muted">
-          {{ $t('expertCaseReviews.sortPaidAtAsc') }}
+          {{ $t('custom.sortPaidAtAsc') }}
         </span>
       </div>
 
@@ -368,7 +368,7 @@ async function exportRow(row: Record<string, unknown>) {
         class="text-sm text-muted"
         data-testid="expert-case-loading"
       >
-        {{ $t('expertCaseReviews.loading') }}
+        {{ $t('custom.loading') }}
       </p>
       <template v-else>
         <p
@@ -376,7 +376,7 @@ async function exportRow(row: Record<string, unknown>) {
           class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
           data-testid="expert-case-empty"
         >
-          {{ $t('expertCaseReviews.empty') }}
+          {{ $t('custom.empty') }}
         </p>
         <AdminTable
           v-else
@@ -423,7 +423,7 @@ async function exportRow(row: Record<string, unknown>) {
                   class="text-xs font-medium"
                   data-testid="expert-case-demo-chip"
                 >
-                  {{ $t('expertCaseReviews.demoChip') }}
+                  {{ $t('custom.demoChip') }}
                 </UBadge>
               </div>
               <p class="mt-0.5 text-xs text-muted">
@@ -464,7 +464,7 @@ async function exportRow(row: Record<string, unknown>) {
                   data-testid="expert-case-export"
                   @click="exportRow(row)"
                 >
-                  {{ $t('expertCaseReviews.export') }}
+                  {{ $t('custom.export') }}
                 </UButton>
                 <UButton
                   size="sm"
@@ -472,7 +472,7 @@ async function exportRow(row: Record<string, unknown>) {
                   :to="detailPath(row)"
                   data-testid="expert-case-open"
                 >
-                  {{ $t('expertCaseReviews.open') }}
+                  {{ $t('custom.open') }}
                 </UButton>
               </div>
             </td>

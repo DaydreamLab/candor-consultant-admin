@@ -18,7 +18,7 @@
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| reviews | `/expert-case-reviews`、`/expert-case-reviews/{id}` | **in-scope** | 專家檢視（真實案件主路徑）。列表可篩 `source=expert_plan`（待處理專家方案案件）。定稿顯示單價參考＋開案金額。不是 spec 不做的簽核 `reviews` |
+| custom | `/custom`、`/custom/{id}` | **in-scope** | 專家檢視（真實案件主路徑）。列表可篩 `source=expert_plan`（待處理專家方案案件）。定稿顯示單價參考＋開案金額。不是 spec 不做的簽核 `reviews` |
 | orders | `/orders`、`/orders/{id}` | **in-scope** | 列表已接 `GET /admin/orders`。詳情頁 `orders/[id].vue` 已接 `GET /admin/order/{id}`，對話已接 `GET /admin/order/{id}/message`，報告判讀已接 `GET /admin/order/{id}/health-report`。專家方案明細與退款申請狀態（spec 33）。「在物流進度查看」→ `/shipping?shipment=&q=`。已寄出不可退（按鈕對齊）。取消仍 Mock |
 | refundRequests | `/refund-requests` | **in-scope** | 退款申請列表；確認退款／拒絕（spec 33；待 core #143） |
 | shipping | `/shipping` | **in-scope（語意）** | 側欄標籤「物流進度」；列表／詳情讀取接 core #88（空／不可用回落 mock）；推進寫入仍 Mock。列表已接 → **無**「即將上線」badge。→ 訂單 shipment；勿另立 selection 出貨 API。勿與開發中「履約進度」`progress` 混淆 |
@@ -29,16 +29,16 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | knowledge | `/knowledge/datasets`、`/knowledge/datasets/{id}`、`/knowledge/chunks`、`/knowledge/retrieval-preview`、`/knowledge/audit`、`/knowledge/dataset-groups`、`/knowledge/overview`、`/knowledge/config` | **in-scope** | 公開參考知識庫；直連 `GET`／`POST`／`PATCH /admin/knowledge/**`（見 [12-knowledge-management.md](12-knowledge-management.md)）。路由與程式用 knowledge，不用 rag。頁內 top tabs |
-| expertTuning | `/expert-tuning`、`/expert-tuning/weights/{id}`、`/expert-tuning/daily-learning`、`/expert-tuning/training`、`/expert-tuning/training/{id}` | **in-scope（語意）** | 側欄在「知識」（與知識管理同組）。權重為列表點進詳情（本地 mock）。每日學習確認直連 `POST /admin/weight-sets/daily-learning-*`（ADR 0028／core #75；提案欄位 schema 待補）。訓練批次為本地 mock。不讀營運訂單／會員對話。不是簽核 `reviews` |
+| weights | `/weights`、`/weights/weights/{id}`、`/weights/daily-learning`、`/weights/training`、`/weights/training/{id}` | **in-scope（語意）** | 側欄在「知識」（與知識管理同組）。權重為列表點進詳情（本地 mock）。每日學習確認直連 `POST /admin/weight-sets/daily-learning-*`（ADR 0028／core #75；提案欄位 schema 待補）。訓練批次為本地 mock。不讀營運訂單／會員對話。不是簽核 `reviews` |
 
 ### 商品（組 key: `catalog`）
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| packagePlans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
+| plans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
 | expertPlans | `/expert-plans`、`/expert-plans/{id}` | **in-scope** | 專家方案列表＋編輯（名稱／英文名／售價／排序／上下架）；**無新增**（spec 33／Irice 11/03）。code 與綁定 package_plan 不可改。expert 可改 `active`＋`sort_order`；`name_zh`／`name_en`／`price` → 403（core #143 `b7c5ed0`／Irice 11/4；英文名欄位取代 C14 隱藏） |
-| products | `/products`、`/products/new`、`/products/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
-| labServices | `/lab-services`、`/lab-services/new`、`/lab-services/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/lab-services`；正式組內 **即將上線** badge。勿與開發中「採檢」`/labs` 混淆 |
+| supplements | `/supplements`、`/supplements/new`、`/supplements/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
+| checkups | `/checkups`、`/checkups/new`、`/checkups/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/checkups`；正式組內 **即將上線** badge。勿與開發中「採檢」`/scheduling` 混淆 |
 
 ### 設定（組 key: `system`）
 
@@ -48,8 +48,8 @@
 |---------|------|------|----------|
 | settings | `/settings` | 部分 | 總頁；left anchors：**支付｜發票｜報告判讀｜其他**（**無**隱私／CTA 錨）。Operator 帳號可落此；勿做 org 設定。側欄直連 `/settings#payment` 避開空 hash 卡死。**無** badge |
 | privacy | `/settings/privacy` | **in-scope** | 自總頁錨點拆出；沿用隱私權政策 CMS（`/admin/legal/privacy-policy**`，對齊 core #87）；公開頁 `/privacy-policy` 免登入。權限沿用 ops／admin 可儲存。**無** badge |
-| ctaCatalog | `/settings/cta-catalog` | **in-scope（語意）** | 自總頁錨點拆出；列表／編輯／情境矩陣；無 create／delete；admin 可編、ops 只讀、expert **隱藏整項**；Mock 至 core CTA catalog API。**無** badge |
-| aiAssistant | `/ai-assistant` | **in-scope** | 站台／client config 等；**無** badge |
+| guidance | `/settings/guidance` | **in-scope（語意）** | 自總頁錨點拆出；列表／編輯／情境矩陣；無 create／delete；admin 可編、ops 只讀、expert **隱藏整項**；Mock 至 core CTA catalog API。**無** badge |
+| assistant | `/assistant` | **in-scope** | 站台／client config 等；**無** badge |
 
 ### 開發中（組 key: `developing`）
 
@@ -58,9 +58,9 @@
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`）。勿與側欄組名「案件」或「專家檢視」混淆 |
-| labs | `/labs` | **不做** | 案件式檢驗排程不採用（與下方 `labAppointments` 不同） |
-| labAppointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消；列表含 7 天行事曆 modal）；無 HTTP。不是不做的 `labs` |
-| progress | `/progress` | **不做**（範例頁） | 示範履約階段看板；產品保留討論用殼。勿改名為「物流進度」（正式物流見案件組 `shipping`） |
+| scheduling | `/scheduling` | **不做** | 案件式檢驗排程不採用（與下方 `labAppointments` 不同） |
+| appointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消；列表含 7 天行事曆 modal）；無 HTTP。不是不做的 `labs` |
+| fulfillment | `/fulfillment` | **不做**（範例頁） | 示範履約階段看板；產品保留討論用殼。勿改名為「物流進度」（正式物流見案件組 `shipping`） |
 | selections | `/selections` | **不做** | keyin／手改組成不採用 |
 | invoices | `/invoices` | **不做** | 顧問請款單不採用 |
 | reports | `/reports` | 示範殼 | 非 core 報表 API；可留空或日後另開 ADR |
@@ -81,7 +81,7 @@
 | 訂單詳情／取消／讀對話／報告判讀 | `/admin/order/{id}`（`/orders/{id}` 可讀詳情、對話與報告判讀；物流深連結已接；取消仍 Mock） |
 | 出貨列表／詳情 | `/admin/shipments`、`/admin/shipment/{id}`（`/shipping` 讀取；空／不可用回落 mock；推進寫入仍 Mock） |
 | PackagePlan 詳情／寫入 | `/admin/package-plan/{id}`（列表已接 `GET /admin/package-plans`，只顯示） |
-| LabService 主檔 | `/admin/lab-services`（畫面 `/lab-services` 已 mock；非排程 `labs`） |
+| LabService 主檔 | `/admin/checkups`（畫面 `/checkups` 已 mock；非排程 `labs`） |
 | LabAppointment | 無 HTTP（畫面 `/lab-appointments` 已 mock） |
 | 報告校正 | admin health-reports PATCH／retry |
 | Weight sets | `/admin/weight-sets/**` |

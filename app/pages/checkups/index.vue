@@ -9,7 +9,7 @@ const store = useLabServiceMockStore()
 const services = computed(() => store.listServices())
 
 function openService(row: LabServiceMock) {
-  void navigateTo(localePath(`/lab-services/${encodeURIComponent(row.id)}`))
+  void navigateTo(localePath(`/checkups/${encodeURIComponent(row.id)}`))
 }
 
 function nameOf(row: LabServiceMock) {
@@ -19,20 +19,20 @@ function nameOf(row: LabServiceMock) {
 }
 
 function statusOf(row: LabServiceMock) {
-  return row.active ? t('labServices.status.active') : t('labServices.status.inactive')
+  return row.active ? t('checkups.status.active') : t('checkups.status.inactive')
 }
 </script>
 
 <template>
   <PageHeader
-    :title="$t('nav.labServices')"
-    :description="$t('labServices.description')"
+    :title="$t('nav.checkups')"
+    :description="$t('checkups.description')"
     plain
   >
     <div class="mb-4 flex justify-end">
       <UButton
         icon="i-lucide-plus"
-        :to="localePath('/lab-services/new')"
+        :to="localePath('/checkups/new')"
       >
         {{ $t('actions.add') }}
       </UButton>
@@ -42,7 +42,7 @@ function statusOf(row: LabServiceMock) {
       v-if="!services.length"
       class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
     >
-      {{ $t('labServices.empty') }}
+      {{ $t('checkups.empty') }}
     </p>
     <div
       v-else
@@ -63,7 +63,7 @@ function statusOf(row: LabServiceMock) {
           <dl class="grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt class="text-muted">
-                {{ $t('labServices.fields.code') }}
+                {{ $t('checkups.fields.code') }}
               </dt>
               <dd class="mt-1 font-medium text-highlighted">
                 {{ row.code }}
@@ -71,7 +71,7 @@ function statusOf(row: LabServiceMock) {
             </div>
             <div class="text-right">
               <dt class="text-muted">
-                {{ $t('labServices.fields.base_price') }}
+                {{ $t('checkups.fields.base_price') }}
               </dt>
               <dd class="tabular-money mt-1 font-medium text-highlighted">
                 {{ money(basePriceOf(row)) }}
@@ -79,7 +79,7 @@ function statusOf(row: LabServiceMock) {
             </div>
             <div>
               <dt class="text-muted">
-                {{ $t('labServices.fields.items') }}
+                {{ $t('checkups.fields.items') }}
               </dt>
               <dd class="mt-1 font-medium text-highlighted">
                 {{ row.items.length }}
@@ -87,7 +87,7 @@ function statusOf(row: LabServiceMock) {
             </div>
             <div class="text-right">
               <dt class="text-muted">
-                {{ $t('labServices.fields.active') }}
+                {{ $t('checkups.fields.active') }}
               </dt>
               <dd class="mt-1 font-medium text-highlighted">
                 {{ statusOf(row) }}

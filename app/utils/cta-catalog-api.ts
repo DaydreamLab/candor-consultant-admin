@@ -27,11 +27,11 @@ import {
  * Assumed Admin API shape (pending candor-core CTA catalog PR).
  * Paths are centralized here so core merge only needs client path tweaks.
  *
- * - GET    /api/v1/admin/cta-catalog
- * - GET    /api/v1/admin/cta-catalog/{type}
- * - PATCH  /api/v1/admin/cta-catalog/{type}
- * - GET    /api/v1/admin/cta-catalog/situation-matrix
- * - PATCH  /api/v1/admin/cta-catalog/situation-matrix
+ * - GET    /api/v1/admin/guidance
+ * - GET    /api/v1/admin/guidance/{type}
+ * - PATCH  /api/v1/admin/guidance/{type}
+ * - GET    /api/v1/admin/guidance/situation-matrix
+ * - PATCH  /api/v1/admin/guidance/situation-matrix
  *
  * Paths aligned with candor-core #98. No create／delete endpoints (product rule).
  */
@@ -136,7 +136,7 @@ function parseMatrix(data: Record<string, unknown>): CtaScenarioMatrix | null {
   }
 }
 
-/** GET /admin/cta-catalog */
+/** GET /admin/guidance */
 export async function adminListCtaCatalog(apiBase: string, token: string): Promise<CtaCatalogItem[]> {
   if (isCtaCatalogMockEnabled()) {
     void apiBase
@@ -144,7 +144,7 @@ export async function adminListCtaCatalog(apiBase: string, token: string): Promi
     return mockListCtaCatalog()
   }
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/cta-catalog'), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/guidance'), {
       headers: { Authorization: `Bearer ${token}` }
     })
     if (body?.status !== 'success' || !isRecord(body.data) || !Array.isArray(body.data.items)) {
@@ -162,7 +162,7 @@ export async function adminListCtaCatalog(apiBase: string, token: string): Promi
   }
 }
 
-/** GET /admin/cta-catalog/{type} */
+/** GET /admin/guidance/{type} */
 export async function adminGetCtaCatalogItem(
   apiBase: string,
   token: string,
@@ -179,7 +179,7 @@ export async function adminGetCtaCatalogItem(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/cta-catalog/${encodeURIComponent(type)}`),
+      adminUrl(apiBase, `/guidance/${encodeURIComponent(type)}`),
       { headers: { Authorization: `Bearer ${token}` } }
     )
     if (body?.status !== 'success' || !isRecord(body.data)) {
@@ -198,7 +198,7 @@ export async function adminGetCtaCatalogItem(
   }
 }
 
-/** PATCH /admin/cta-catalog/{type} — admin write; no create／delete */
+/** PATCH /admin/guidance/{type} — admin write; no create／delete */
 export async function adminPatchCtaCatalogItem(
   apiBase: string,
   token: string,
@@ -216,7 +216,7 @@ export async function adminPatchCtaCatalogItem(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/cta-catalog/${encodeURIComponent(type)}`),
+      adminUrl(apiBase, `/guidance/${encodeURIComponent(type)}`),
       {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
@@ -239,7 +239,7 @@ export async function adminPatchCtaCatalogItem(
   }
 }
 
-/** GET /admin/cta-catalog/situation-matrix */
+/** GET /admin/guidance/situation-matrix */
 export async function adminGetCtaScenarioMatrix(
   apiBase: string,
   token: string
@@ -251,7 +251,7 @@ export async function adminGetCtaScenarioMatrix(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, '/cta-catalog/situation-matrix'),
+      adminUrl(apiBase, '/guidance/situation-matrix'),
       { headers: { Authorization: `Bearer ${token}` } }
     )
     if (body?.status !== 'success' || !isRecord(body.data)) {
@@ -270,7 +270,7 @@ export async function adminGetCtaScenarioMatrix(
   }
 }
 
-/** PATCH /admin/cta-catalog/situation-matrix — admin write; hard gates enforced client-side too */
+/** PATCH /admin/guidance/situation-matrix — admin write; hard gates enforced client-side too */
 export async function adminPatchCtaScenarioMatrix(
   apiBase: string,
   token: string,
@@ -290,7 +290,7 @@ export async function adminPatchCtaScenarioMatrix(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, '/cta-catalog/situation-matrix'),
+      adminUrl(apiBase, '/guidance/situation-matrix'),
       {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },

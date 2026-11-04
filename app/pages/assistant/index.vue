@@ -43,7 +43,7 @@ if (import.meta.client) {
 async function load() {
   const token = readOperatorToken()
   if (!token) {
-    error.value = t('aiAssistant.loadFailed')
+    error.value = t('assistant.loadFailed')
     pending.value = false
     return
   }
@@ -53,7 +53,7 @@ async function load() {
     items.value = await adminListConversationCopies(config.public.apiBase, token)
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('aiAssistant.loadFailed')
+    error.value = message || t('assistant.loadFailed')
   } finally {
     pending.value = false
   }
@@ -87,7 +87,7 @@ async function save() {
     saved.value = true
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    saveError.value = message || t('aiAssistant.saveFailed')
+    saveError.value = message || t('assistant.saveFailed')
   } finally {
     saving.value = false
   }
@@ -104,8 +104,8 @@ function preview(text: string) {
 
 <template>
   <PageHeader
-    :title="$t('nav.aiAssistant')"
-    :description="$t('aiAssistant.description')"
+    :title="$t('nav.assistant')"
+    :description="$t('assistant.description')"
   >
     <AiAssistantTabs />
     <p
@@ -119,7 +119,7 @@ function preview(text: string) {
       v-else-if="pending"
       class="mb-4 text-sm text-muted"
     >
-      {{ $t('aiAssistant.loading') }}
+      {{ $t('assistant.loading') }}
     </p>
     <div
       v-else-if="!items.length"
@@ -137,10 +137,10 @@ function preview(text: string) {
         class="rounded-xl border border-default bg-elevated p-4"
       >
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t(`aiAssistant.categories.${group.category}`) }}
+          {{ $t(`assistant.categories.${group.category}`) }}
         </h2>
         <p class="mt-1 text-xs text-dimmed">
-          {{ $t(`aiAssistant.categoryHints.${group.category}`) }}
+          {{ $t(`assistant.categoryHints.${group.category}`) }}
         </p>
         <ul class="mt-3 divide-y divide-default">
           <li
@@ -200,7 +200,7 @@ function preview(text: string) {
           </p>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.fields.textZh') }}
+              {{ $t('assistant.fields.textZh') }}
             </span>
             <textarea
               v-model="draftZh"
@@ -212,7 +212,7 @@ function preview(text: string) {
           </label>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.fields.textEn') }}
+              {{ $t('assistant.fields.textEn') }}
             </span>
             <textarea
               v-model="draftEn"
@@ -233,7 +233,7 @@ function preview(text: string) {
             @click="slideoverOpen = false"
           />
           <UButton
-            :label="saving ? $t('aiAssistant.saving') : $t('actions.save')"
+            :label="saving ? $t('assistant.saving') : $t('actions.save')"
             :disabled="!canEdit || saving"
             data-testid="ai-assistant-copy-save"
             @click="save"

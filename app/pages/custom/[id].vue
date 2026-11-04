@@ -357,7 +357,7 @@ const doseBlocksSubmit = computed(() => {
     }
   }
   return Object.values(inlineErrorByLine.value).some((msg) => {
-    return Boolean(msg) && msg === t('expertCaseReviews.doseInvalid')
+    return Boolean(msg) && msg === t('custom.doseInvalid')
   })
 })
 
@@ -374,10 +374,10 @@ const submitBlockHint = computed(() => {
     return ''
   }
   if (doseBlocksSubmit.value) {
-    return t('expertCaseReviews.submitDoseBlocked')
+    return t('custom.submitDoseBlocked')
   }
   if (!hasFinalizeCopy.value) {
-    return t('expertCaseReviews.submitNeedsCopy')
+    return t('custom.submitNeedsCopy')
   }
   return ''
 })
@@ -445,9 +445,9 @@ const comparisonPackages = computed((): Record<string, unknown>[] => {
 
 const comparisonTitle = computed(() => {
   if (revisedPackages.value.length) {
-    return t('expertCaseReviews.revised')
+    return t('custom.revised')
   }
-  return t('expertCaseReviews.workingPreview')
+  return t('custom.workingPreview')
 })
 
 const memberProfile = computed(() => {
@@ -575,7 +575,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (!normalizeAdminPath(route.path).startsWith('/expert-case-reviews/')) {
+  if (!normalizeAdminPath(route.path).startsWith('/custom/')) {
     crumbLabel.value = null
   }
 })
@@ -591,7 +591,7 @@ async function load() {
     detail.value = null
     memberData.value = null
     linkedOrder.value = null
-    errorMessage.value = t('expertCaseReviews.failed')
+    errorMessage.value = t('custom.failed')
     pending.value = false
     return
   }
@@ -612,7 +612,7 @@ async function load() {
     finalizeExpertOpinion.value = ''
     errorMessage.value = error instanceof AdminApiError && error.message
       ? error.message
-      : t('expertCaseReviews.failed')
+      : t('custom.failed')
   } finally {
     pending.value = false
   }
@@ -644,7 +644,7 @@ async function loadMemberData(token: string) {
     memberData.value = null
     memberError.value = error instanceof AdminApiError && error.message
       ? error.message
-      : t('expertCaseReviews.memberDataFailed')
+      : t('custom.memberDataFailed')
   } finally {
     memberPending.value = false
   }
@@ -654,7 +654,7 @@ async function loadCatalog() {
   const token = readOperatorToken()
   if (!token) {
     catalog.value = []
-    catalogError.value = t('expertCaseReviews.pickerLoadFailed')
+    catalogError.value = t('custom.pickerLoadFailed')
     return
   }
   catalogPending.value = true
@@ -668,7 +668,7 @@ async function loadCatalog() {
     catalog.value = []
     catalogError.value = error instanceof AdminApiError && error.message
       ? error.message
-      : t('expertCaseReviews.pickerLoadFailed')
+      : t('custom.pickerLoadFailed')
   } finally {
     catalogPending.value = false
   }
@@ -696,9 +696,9 @@ function ensureInlineReason(key: string): boolean {
     inlineErrorByLine.value[key] = ''
     return true
   }
-  inlineErrorByLine.value[key] = t('expertCaseReviews.reasonRequiredAdminOnly')
+  inlineErrorByLine.value[key] = t('custom.reasonRequiredAdminOnly')
   feedback.notify({
-    title: t('expertCaseReviews.reasonRequiredAdminOnly'),
+    title: t('custom.reasonRequiredAdminOnly'),
     color: 'error'
   })
   return false
@@ -722,7 +722,7 @@ async function decide(
 
   if (decision === 'adjust') {
     seedDoseIfEmpty(pkg, item)
-  } else if (inlineErrorByLine.value[key] === t('expertCaseReviews.doseInvalid')) {
+  } else if (inlineErrorByLine.value[key] === t('custom.doseInvalid')) {
     // Keep／remove: clear dose field errors (dose row is readonly or hidden).
     inlineErrorByLine.value[key] = ''
   }
@@ -747,7 +747,7 @@ async function decide(
     const doseCheck = validateCapsuleDose(fallback)
     if (!doseCheck.ok) {
       // Inline only — no top banner / toast for dose validation.
-      inlineErrorByLine.value[key] = t('expertCaseReviews.doseInvalid')
+      inlineErrorByLine.value[key] = t('custom.doseInvalid')
       doseByLine.value[key] = String(fallback)
       return
     }
@@ -766,14 +766,14 @@ async function decide(
       daily_dose: decision === 'adjust' ? dose : null,
       sellable_item_after: decision === 'adjust' ? sellableId : null
     })
-    if (inlineErrorByLine.value[key] !== t('expertCaseReviews.doseInvalid')) {
+    if (inlineErrorByLine.value[key] !== t('custom.doseInvalid')) {
       inlineErrorByLine.value[key] = ''
     }
   } catch (error) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.failed'),
+        : t('custom.failed'),
       color: 'error'
     })
   } finally {
@@ -922,7 +922,7 @@ async function onChangeConfirm(payload: {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.failed'),
+        : t('custom.failed'),
       color: 'error'
     })
   } finally {
@@ -946,7 +946,7 @@ async function resetAll() {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.failed'),
+        : t('custom.failed'),
       color: 'error'
     })
   } finally {
@@ -987,7 +987,7 @@ async function submit() {
     )
     syncFinalizeCopyFromDetail(detail.value)
     feedback.notify({
-      title: t('expertCaseReviews.submitOk'),
+      title: t('custom.submitOk'),
       color: 'success'
     })
   } catch (error) {
@@ -999,7 +999,7 @@ async function submit() {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.failed'),
+        : t('custom.failed'),
       color: 'error'
     })
   } finally {
@@ -1029,7 +1029,7 @@ async function exportExcel() {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.failed'),
+        : t('custom.failed'),
       color: 'error'
     })
   } finally {
@@ -1060,7 +1060,7 @@ function operatorDisplay(row: ExpertCaseAdjustment): { primary: string, role: La
   if (role) {
     return { primary: role.text, role }
   }
-  return { primary: t('expertCaseReviews.adjustmentNone'), role: null }
+  return { primary: t('custom.adjustmentNone'), role: null }
 }
 
 function knowledgeDecision(row: Record<string, unknown>): LabeledText | null {
@@ -1072,7 +1072,7 @@ function knowledgeClassification(row: Record<string, unknown>): LabeledText {
     return classificationLabel(row.classification, t)
   }
   return {
-    text: t('expertCaseReviews.pendingClassification'),
+    text: t('custom.pendingClassification'),
     title: null,
     known: true
   }
@@ -1126,9 +1126,9 @@ function suggestionLineText(item: Record<string, unknown>): string {
   const catalogItem = catalogById.value.get(itemId(item))
   const spec = itemSpecText(item, catalogItem ?? null)
   if (spec) {
-    return t('expertCaseReviews.doseSuggestionLineWithSpec', { n, spec })
+    return t('custom.doseSuggestionLineWithSpec', { n, spec })
   }
-  return t('expertCaseReviews.doseSuggestionLine', { n })
+  return t('custom.doseSuggestionLine', { n })
 }
 
 function doseDisplayText(item: Record<string, unknown>): string {
@@ -1141,9 +1141,9 @@ function doseDisplayText(item: Record<string, unknown>): string {
   const catalogItem = catalogById.value.get(itemId(item))
   const spec = itemSpecText(item, catalogItem ?? null)
   if (spec) {
-    return t('expertCaseReviews.doseDisplayWithSpec', { n, spec })
+    return t('custom.doseDisplayWithSpec', { n, spec })
   }
-  return t('expertCaseReviews.doseDisplay', { n })
+  return t('custom.doseDisplay', { n })
 }
 
 function adjustmentItemLabel(item: {
@@ -1151,14 +1151,14 @@ function adjustmentItemLabel(item: {
   daily_dose?: number | null
 } | null | undefined): string {
   if (!item) {
-    return t('expertCaseReviews.adjustmentNone')
+    return t('custom.adjustmentNone')
   }
   const name = productNameWithoutGluedDose(item.name || '') || (item.name || '')
   const n = formatCapsuleDoseDisplay(item.daily_dose)
   if (!n) {
     return name
   }
-  return `${name}（${t('expertCaseReviews.doseDisplay', { n })}）`
+  return `${name}（${t('custom.doseDisplay', { n })}）`
 }
 
 function tierText(tier: unknown): LabeledText {
@@ -1169,21 +1169,21 @@ function excludedReasonDisplay(reasonCode: string): LabeledText {
   const parts = excludedReasonParts(reasonCode)
   if (parts.kind === 'dose_above_ul') {
     return {
-      text: t('expertCaseReviews.excludedReason.dose_above_ul'),
+      text: t('custom.excludedReason.dose_above_ul'),
       title: null,
       known: true
     }
   }
   if (parts.kind === 'interaction_exclude') {
     return {
-      text: t('expertCaseReviews.excludedReason.interaction_exclude'),
+      text: t('custom.excludedReason.interaction_exclude'),
       title: null,
       known: true
     }
   }
   if (parts.kind === 'diet_incompatible') {
     return {
-      text: t('expertCaseReviews.excludedReason.diet_incompatible'),
+      text: t('custom.excludedReason.diet_incompatible'),
       title: null,
       known: true
     }
@@ -1192,7 +1192,7 @@ function excludedReasonDisplay(reasonCode: string): LabeledText {
     if (parts.conditionCode) {
       const condition = conditionLabel(parts.conditionCode, t)
       return {
-        text: t('expertCaseReviews.excludedReason.contraindicationWithCondition', {
+        text: t('custom.excludedReason.contraindicationWithCondition', {
           condition: condition.text
         }),
         title: condition.known ? null : condition.title,
@@ -1200,13 +1200,13 @@ function excludedReasonDisplay(reasonCode: string): LabeledText {
       }
     }
     return {
-      text: t('expertCaseReviews.excludedReason.contraindication'),
+      text: t('custom.excludedReason.contraindication'),
       title: null,
       known: true
     }
   }
   return {
-    text: t('expertCaseReviews.excludedReason.other'),
+    text: t('custom.excludedReason.other'),
     title: parts.raw || null,
     known: false
   }
@@ -1318,7 +1318,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
       class="px-5 py-5 text-sm text-muted sm:px-7 sm:py-7"
       data-testid="expert-case-detail-loading"
     >
-      {{ $t('expertCaseReviews.loading') }}
+      {{ $t('custom.loading') }}
     </p>
     <div
       v-else-if="errorMessage"
@@ -1339,7 +1339,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
         data-testid="expert-case-detail-retry"
         @click="load"
       >
-        {{ $t('expertCaseReviews.retry') }}
+        {{ $t('custom.retry') }}
       </UButton>
     </div>
 
@@ -1376,19 +1376,19 @@ function itemUnitPriceText(item: Record<string, unknown>) {
               v-if="missingGoals"
               color="warning"
               variant="subtle"
-              :title="$t('expertCaseReviews.missingSignalsHint')"
+              :title="$t('custom.missingSignalsHint')"
               data-testid="expert-case-missing-goals-chip"
             >
-              {{ $t('expertCaseReviews.missingGoalsChip') }}
+              {{ $t('custom.missingGoalsChip') }}
             </UBadge>
             <UBadge
               v-if="missingReport"
               color="warning"
               variant="subtle"
-              :title="$t('expertCaseReviews.missingSignalsHint')"
+              :title="$t('custom.missingSignalsHint')"
               data-testid="expert-case-missing-report-chip"
             >
-              {{ $t('expertCaseReviews.missingReportChip') }}
+              {{ $t('custom.missingReportChip') }}
             </UBadge>
           </div>
           <div class="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
@@ -1400,7 +1400,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
               data-testid="expert-case-export"
               @click="exportExcel"
             >
-              {{ $t('expertCaseReviews.export') }}
+              {{ $t('custom.export') }}
             </UButton>
             <UButton
               v-if="awaiting"
@@ -1411,7 +1411,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
               data-testid="expert-case-reset"
               @click="resetAll"
             >
-              {{ $t('expertCaseReviews.resetAll') }}
+              {{ $t('custom.resetAll') }}
             </UButton>
             <UTooltip
               v-if="awaiting"
@@ -1432,8 +1432,8 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   @click="askSubmit"
                 >
                   {{ finalizeGenerating
-                    ? $t('expertCaseReviews.finalizeCopyGenerating')
-                    : $t('expertCaseReviews.submit') }}
+                    ? $t('custom.finalizeCopyGenerating')
+                    : $t('custom.submit') }}
                 </UButton>
               </span>
             </UTooltip>
@@ -1446,7 +1446,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
         color="warning"
         variant="subtle"
         class="mx-5 mt-4 sm:mx-7"
-        :title="$t('expertCaseReviews.alreadyReviewed')"
+        :title="$t('custom.alreadyReviewed')"
         data-testid="expert-case-already-reviewed"
       />
 
@@ -1456,13 +1456,13 @@ function itemUnitPriceText(item: Record<string, unknown>) {
         data-testid="expert-case-opening-amount"
       >
         <p class="text-sm text-muted">
-          {{ $t('expertCaseReviews.openingAmountLabel') }}
+          {{ $t('custom.openingAmountLabel') }}
         </p>
         <p class="tabular-money mt-1 text-lg font-semibold text-highlighted">
           {{ openingAmountText }}
         </p>
         <p class="mt-1 text-xs text-muted">
-          {{ $t('expertCaseReviews.openingAmountHint') }}
+          {{ $t('custom.openingAmountHint') }}
         </p>
       </div>
 
@@ -1473,14 +1473,14 @@ function itemUnitPriceText(item: Record<string, unknown>) {
           data-testid="expert-case-member-data"
         >
           <h2 class="text-lg font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.memberDataTitle') }}
+            {{ $t('custom.memberDataTitle') }}
           </h2>
           <p
             v-if="memberPending"
             class="text-sm text-muted"
             data-testid="expert-case-member-loading"
           >
-            {{ $t('expertCaseReviews.memberDataLoading') }}
+            {{ $t('custom.memberDataLoading') }}
           </p>
           <p
             v-else-if="memberError"
@@ -1495,7 +1495,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 <div data-testid="expert-case-profile">
                   <div class="flex flex-wrap items-center gap-2">
                     <h3 class="font-medium text-highlighted">
-                      {{ $t('expertCaseReviews.profileTitle') }}
+                      {{ $t('custom.profileTitle') }}
                     </h3>
                     <UButton
                       v-if="hasProfileUpdates"
@@ -1503,8 +1503,8 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                       color="warning"
                       variant="ghost"
                       icon="i-lucide-info"
-                      :title="$t('expertCaseReviews.profileUpdateOpen')"
-                      :aria-label="$t('expertCaseReviews.profileUpdateOpen')"
+                      :title="$t('custom.profileUpdateOpen')"
+                      :aria-label="$t('custom.profileUpdateOpen')"
                       data-testid="expert-case-profile-updates-open"
                       @click="profileUpdateOpen = true"
                     />
@@ -1513,7 +1513,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                     v-if="profileMissingReason === 'legacy_case_without_snapshot'"
                     class="mt-2 text-sm text-muted"
                   >
-                    {{ $t('expertCaseReviews.memberDataLegacySnapshot') }}
+                    {{ $t('custom.memberDataLegacySnapshot') }}
                   </p>
                   <dl
                     v-else-if="profileSections.length"
@@ -1575,13 +1575,13 @@ function itemUnitPriceText(item: Record<string, unknown>) {
               >
                 <div class="flex max-h-[28rem] flex-col lg:absolute lg:inset-0 lg:max-h-none">
                   <h3 class="shrink-0 font-medium text-highlighted">
-                    {{ $t('expertCaseReviews.messagesTitle') }}
+                    {{ $t('custom.messagesTitle') }}
                   </h3>
                   <p
                     v-if="!chatMessages.length"
                     class="mt-2 text-sm text-muted"
                   >
-                    {{ $t('expertCaseReviews.messagesEmpty') }}
+                    {{ $t('custom.messagesEmpty') }}
                   </p>
                   <div
                     v-else
@@ -1607,7 +1607,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                     v-if="messagesHasMore"
                     class="mt-2 shrink-0 text-xs text-muted"
                   >
-                    {{ $t('expertCaseReviews.messagesHasMore') }}
+                    {{ $t('custom.messagesHasMore') }}
                   </p>
                 </div>
               </div>
@@ -1618,21 +1618,21 @@ function itemUnitPriceText(item: Record<string, unknown>) {
               data-testid="expert-case-report"
             >
               <h3 class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
-                <span>{{ $t('expertCaseReviews.reportTitle') }}</span>
+                <span>{{ $t('custom.reportTitle') }}</span>
                 <UBadge
                   v-if="missingReport"
                   color="warning"
                   variant="subtle"
                   data-testid="expert-case-report-missing-chip"
                 >
-                  {{ $t('expertCaseReviews.missingReportChip') }}
+                  {{ $t('custom.missingReportChip') }}
                 </UBadge>
               </h3>
               <p
                 v-if="!healthReport"
                 class="mt-2 text-sm text-muted"
               >
-                {{ $t('expertCaseReviews.reportEmpty') }}
+                {{ $t('custom.reportEmpty') }}
               </p>
               <template v-else>
                 <p
@@ -1640,7 +1640,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   :title="healthReportStatus.title || undefined"
                   data-testid="expert-case-report-status"
                 >
-                  {{ $t('expertCaseReviews.reportStatusLabel') }}：{{ healthReportStatus.text }}
+                  {{ $t('custom.reportStatusLabel') }}：{{ healthReportStatus.text }}
                 </p>
                 <div
                   v-if="healthReportResults.length"
@@ -1665,7 +1665,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
             v-if="!packages.length"
             class="rounded-xl border border-default bg-elevated p-4 text-sm text-muted"
           >
-            {{ $t('expertCaseReviews.noPackages') }}
+            {{ $t('custom.noPackages') }}
           </p>
 
           <div
@@ -1687,8 +1687,8 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   color="neutral"
                   variant="ghost"
                   icon="i-lucide-info"
-                  :title="$t('expertCaseReviews.weightBackgroundOpen')"
-                  :aria-label="$t('expertCaseReviews.weightBackgroundOpen')"
+                  :title="$t('custom.weightBackgroundOpen')"
+                  :aria-label="$t('custom.weightBackgroundOpen')"
                   data-testid="expert-case-weight-background-open"
                   @click="openWeightBackground(pkg)"
                 />
@@ -1702,26 +1702,26 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 data-testid="expert-case-add-item"
                 @click="openAdd(pkg)"
               >
-                {{ $t('expertCaseReviews.addItem') }}
+                {{ $t('custom.addItem') }}
               </UButton>
             </div>
 
             <div class="grid grid-cols-1 gap-0 lg:grid-cols-2">
               <div class="min-w-0 border-b border-default p-4 lg:border-b-0 lg:border-r">
                 <p class="text-xs font-medium text-muted">
-                  {{ $t('expertCaseReviews.original') }}
+                  {{ $t('custom.original') }}
                 </p>
                 <p
                   class="mt-0.5 text-xs text-muted"
                   :data-testid="pkgIndex === 0 ? 'expert-case-dose-capsule-hint' : undefined"
                 >
-                  {{ $t('expertCaseReviews.doseCapsuleHint') }}
+                  {{ $t('custom.doseCapsuleHint') }}
                 </p>
                 <p
                   v-if="!packageItems(pkg).length"
                   class="mt-3 text-sm text-muted"
                 >
-                  {{ $t('expertCaseReviews.noItems') }}
+                  {{ $t('custom.noItems') }}
                 </p>
                 <ul
                   v-else
@@ -1782,7 +1782,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                         class="mt-1 text-xs text-muted"
                         data-testid="expert-case-item-unit-price"
                       >
-                        {{ $t('expertCaseReviews.unitPriceReference') }}：
+                        {{ $t('custom.unitPriceReference') }}：
                         <span class="tabular-money font-medium text-highlighted">
                           {{ itemUnitPriceText(item) }}
                         </span>
@@ -1796,7 +1796,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                       data-testid="expert-case-edit-item"
                       @click="openEdit(pkg, item)"
                     >
-                      {{ $t('expertCaseReviews.editItem') }}
+                      {{ $t('custom.editItem') }}
                     </UButton>
                   </li>
                 </ul>
@@ -1813,7 +1813,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                     data-testid="expert-case-composition-hash"
                   >
                     <summary class="cursor-pointer">
-                      {{ $t('expertCaseReviews.techDetails') }}
+                      {{ $t('custom.techDetails') }}
                     </summary>
                     <p class="mt-1 font-mono break-all">
                       composition_hash：{{ comparisonPackageFor(planCode(pkg))!.composition_hash }}
@@ -1823,7 +1823,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                     v-if="!packageItems(comparisonPackageFor(planCode(pkg))!).length"
                     class="mt-3 text-sm text-muted"
                   >
-                    {{ $t('expertCaseReviews.noItems') }}
+                    {{ $t('custom.noItems') }}
                   </p>
                   <ul
                     v-else
@@ -1853,7 +1853,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                         class="text-xs text-muted"
                         data-testid="expert-case-cmp-item-unit-price"
                       >
-                        {{ $t('expertCaseReviews.unitPriceReference') }}：
+                        {{ $t('custom.unitPriceReference') }}：
                         <span class="tabular-money font-medium text-highlighted">
                           {{ itemUnitPriceText(item) }}
                         </span>
@@ -1863,7 +1863,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                           v-if="item.is_new"
                           class="text-primary"
                         >
-                          {{ $t('expertCaseReviews.addedBadge') }}
+                          {{ $t('custom.addedBadge') }}
                         </span>
                         <span
                           v-if="item.decision && !revisedPackages.length"
@@ -1884,7 +1884,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   v-else
                   class="mt-3 text-sm text-muted"
                 >
-                  {{ $t('expertCaseReviews.noItems') }}
+                  {{ $t('custom.noItems') }}
                 </p>
               </div>
             </div>
@@ -1912,7 +1912,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 name="i-lucide-chevron-right"
                 class="size-4 shrink-0 transition-transform group-open:rotate-90"
               />
-              {{ $t('expertCaseReviews.excludedTitle') }}
+              {{ $t('custom.excludedTitle') }}
             </span>
           </summary>
           <div class="border-t border-default px-4 py-3">
@@ -1920,7 +1920,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
               v-if="!excludedRows.length"
               class="text-sm text-muted"
             >
-              {{ $t('expertCaseReviews.excludedEmpty') }}
+              {{ $t('custom.excludedEmpty') }}
             </p>
             <ul
               v-else
@@ -1960,21 +1960,21 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 name="i-lucide-chevron-right"
                 class="size-4 shrink-0 transition-transform group-open:rotate-90"
               />
-              {{ $t('expertCaseReviews.adjustmentsTitle') }}
+              {{ $t('custom.adjustmentsTitle') }}
             </span>
           </summary>
           <div class="border-t border-default px-4 py-3">
             <p class="text-xs text-muted">
-              {{ $t('expertCaseReviews.adjustmentsMemberFacingHint') }}
+              {{ $t('custom.adjustmentsMemberFacingHint') }}
             </p>
             <p class="mt-1 text-xs text-muted">
-              {{ $t('expertCaseReviews.adjustmentsAdminOnlyHint') }}
+              {{ $t('custom.adjustmentsAdminOnlyHint') }}
             </p>
             <p
               v-if="!adjustments.length"
               class="mt-3 text-sm text-muted"
             >
-              {{ $t('expertCaseReviews.adjustmentsEmpty') }}
+              {{ $t('custom.adjustmentsEmpty') }}
             </p>
             <ul
               v-else
@@ -1996,11 +1996,11 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   </span>
                 </p>
                 <p class="mt-1 text-muted">
-                  {{ $t('expertCaseReviews.adjustmentOriginal') }}：
+                  {{ $t('custom.adjustmentOriginal') }}：
                   {{ adjustmentItemLabel(row.original_item) }}
                 </p>
                 <p class="mt-1 text-muted">
-                  {{ $t('expertCaseReviews.adjustmentNew') }}：
+                  {{ $t('custom.adjustmentNew') }}：
                   {{ adjustmentItemLabel(row.new_item) }}
                 </p>
                 <p
@@ -2010,13 +2010,13 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 >
                   <span class="text-xs text-muted">
                     {{ adjustmentReasonIsMemberFacing(row.type)
-                      ? $t('expertCaseReviews.adjustmentReasonMember')
-                      : $t('expertCaseReviews.adjustmentReasonAdmin') }}：
+                      ? $t('custom.adjustmentReasonMember')
+                      : $t('custom.adjustmentReasonAdmin') }}：
                   </span>
                   {{ row.reason }}
                 </p>
                 <p class="mt-2 text-xs text-muted">
-                  {{ $t('expertCaseReviews.adjustmentOperator') }}：
+                  {{ $t('custom.adjustmentOperator') }}：
                   <span
                     :title="!row.operator_display_name
                       ? (operatorDisplay(row).role?.title || undefined)
@@ -2034,7 +2034,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                     v-if="formatDateTime(row.adjusted_at)"
                     class="ms-2"
                   >
-                    · {{ $t('expertCaseReviews.adjustmentAt') }}：{{ formatDateTime(row.adjusted_at) }}
+                    · {{ $t('custom.adjustmentAt') }}：{{ formatDateTime(row.adjusted_at) }}
                   </span>
                 </p>
               </li>
@@ -2053,7 +2053,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 name="i-lucide-chevron-right"
                 class="size-4 shrink-0 transition-transform group-open:rotate-90"
               />
-              {{ $t('expertCaseReviews.knowledge') }}
+              {{ $t('custom.knowledge') }}
             </span>
           </summary>
           <div class="space-y-3 border-t border-default px-4 py-3">
@@ -2064,7 +2064,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
             >
               <p class="font-medium">
                 <span :title="knowledgeDecision(row)?.title || undefined">
-                  {{ knowledgeDecision(row)?.text || $t('expertCaseReviews.other') }}
+                  {{ knowledgeDecision(row)?.text || $t('custom.other') }}
                 </span>
                 ·
                 <span :title="knowledgePlan(row).title || undefined">
@@ -2085,7 +2085,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                 v-if="!row.classification_confirmed"
                 class="mt-2 text-xs text-muted"
               >
-                {{ $t('expertCaseReviews.classificationViaDailyLearning') }}
+                {{ $t('custom.classificationViaDailyLearning') }}
               </p>
             </div>
           </div>
@@ -2095,8 +2095,8 @@ function itemUnitPriceText(item: Record<string, unknown>) {
 
     <UModal
       v-model:open="submitConfirmOpen"
-      :title="$t('expertCaseReviews.submitConfirmTitle')"
-      :description="$t('expertCaseReviews.submitConfirmBody')"
+      :title="$t('custom.submitConfirmTitle')"
+      :description="$t('custom.submitConfirmBody')"
       :ui="{ footer: 'justify-end gap-2' }"
       data-testid="expert-case-submit-confirm"
     >
@@ -2115,14 +2115,14 @@ function itemUnitPriceText(item: Record<string, unknown>) {
           data-testid="expert-case-submit-confirm-btn"
           @click="submit"
         >
-          {{ $t('expertCaseReviews.submit') }}
+          {{ $t('custom.submit') }}
         </UButton>
       </template>
     </UModal>
 
     <UModal
       v-model:open="profileUpdateOpen"
-      :title="$t('expertCaseReviews.profileUpdateBanner')"
+      :title="$t('custom.profileUpdateBanner')"
       data-testid="expert-case-profile-updates"
     >
       <template #body>
@@ -2132,7 +2132,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
             class="text-muted"
             data-testid="expert-case-profile-updated-at"
           >
-            {{ $t('expertCaseReviews.profileUpdateAt', {
+            {{ $t('custom.profileUpdateAt', {
               time: formatDateTime(profileUpdate?.updated_at)
             }) }}
           </p>
@@ -2141,7 +2141,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
             class="text-muted"
             data-testid="expert-case-profile-changed-fields"
           >
-            {{ $t('expertCaseReviews.profileChangedFields', {
+            {{ $t('custom.profileChangedFields', {
               fields: changedFieldLabels.join('、')
             }) }}
           </p>
@@ -2151,7 +2151,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
 
     <UModal
       v-model:open="weightBackgroundOpen"
-      :title="$t('expertCaseReviews.weightBackgroundTitle')"
+      :title="$t('custom.weightBackgroundTitle')"
       :description="weightBackgroundPlanLabel.text"
       :ui="{ content: 'sm:max-w-3xl' }"
       data-testid="expert-case-weight-background"
@@ -2162,18 +2162,18 @@ function itemUnitPriceText(item: Record<string, unknown>) {
           data-testid="expert-case-weight-background-body"
         >
           <p class="text-xs text-muted">
-            {{ $t('expertCaseReviews.weightBackgroundHint') }}
+            {{ $t('custom.weightBackgroundHint') }}
           </p>
 
           <div data-testid="expert-case-weight-rationale">
             <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.weightRationaleTitle') }}
+              {{ $t('custom.weightRationaleTitle') }}
             </h3>
             <p
               v-if="!weightBackgroundRationales.length"
               class="mt-2 text-muted"
             >
-              {{ $t('expertCaseReviews.weightRationaleEmpty') }}
+              {{ $t('custom.weightRationaleEmpty') }}
             </p>
             <div
               v-for="block in weightBackgroundRationales"
@@ -2216,13 +2216,13 @@ function itemUnitPriceText(item: Record<string, unknown>) {
 
           <div data-testid="expert-case-weight-top-domains">
             <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.weightTopDomainsTitle') }}
+              {{ $t('custom.weightTopDomainsTitle') }}
             </h3>
             <p
               v-if="!weightTopDomains.length"
               class="mt-2 text-muted"
             >
-              {{ $t('expertCaseReviews.weightTopDomainsEmpty') }}
+              {{ $t('custom.weightTopDomainsEmpty') }}
             </p>
             <ul
               v-else
@@ -2241,7 +2241,7 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   class="font-mono text-xs"
                   data-testid="expert-case-weight-severity"
                 >
-                  {{ $t('expertCaseReviews.weightTopDomainsSeverity') }}
+                  {{ $t('custom.weightTopDomainsSeverity') }}
                   {{ row.severity }}
                 </span>
               </li>
@@ -2250,13 +2250,13 @@ function itemUnitPriceText(item: Record<string, unknown>) {
 
           <div data-testid="expert-case-weight-contributions">
             <h3 class="font-medium text-highlighted">
-              {{ $t('expertCaseReviews.weightContributionsTitle') }}
+              {{ $t('custom.weightContributionsTitle') }}
             </h3>
             <p
               v-if="!weightBackgroundContributions.length"
               class="mt-2 text-muted"
             >
-              {{ $t('expertCaseReviews.weightContributionsEmpty') }}
+              {{ $t('custom.weightContributionsEmpty') }}
             </p>
             <div
               v-for="block in weightBackgroundContributions"
@@ -2278,10 +2278,10 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                   <thead>
                     <tr class="border-b border-default text-left text-muted">
                       <th class="py-1 pe-3 font-medium">
-                        {{ $t('expertCaseReviews.weightContributionKey') }}
+                        {{ $t('custom.weightContributionKey') }}
                       </th>
                       <th class="py-1 font-medium">
-                        {{ $t('expertCaseReviews.weightContributionValue') }}
+                        {{ $t('custom.weightContributionValue') }}
                       </th>
                     </tr>
                   </thead>

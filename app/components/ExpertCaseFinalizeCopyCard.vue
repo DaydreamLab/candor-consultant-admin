@@ -58,15 +58,15 @@ const dirty = computed(() => {
 
 const ledeKey = computed(() => {
   if (props.locked) {
-    return 'expertCaseReviews.finalizeCopyLedeLocked'
+    return 'custom.finalizeCopyLedeLocked'
   }
   if (generating.value) {
-    return 'expertCaseReviews.finalizeCopyLedeGenerating'
+    return 'custom.finalizeCopyLedeGenerating'
   }
   if (hasDraft.value) {
-    return 'expertCaseReviews.finalizeCopyLedeDraft'
+    return 'custom.finalizeCopyLedeDraft'
   }
-  return 'expertCaseReviews.finalizeCopyLedeEmpty'
+  return 'custom.finalizeCopyLedeEmpty'
 })
 
 watch(generating, (value) => {
@@ -111,7 +111,7 @@ async function runGenerate(force: boolean) {
     feedback.notify({
       title: error instanceof AdminApiError && error.message
         ? error.message
-        : t('expertCaseReviews.finalizeCopyGenerateFailed'),
+        : t('custom.finalizeCopyGenerateFailed'),
       color: 'error'
     })
   } finally {
@@ -173,14 +173,14 @@ watch(
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="min-w-0 flex-1">
         <h2 class="flex flex-wrap items-center gap-2 text-lg font-semibold text-highlighted">
-          <span>{{ $t('expertCaseReviews.finalizeCopyTitle') }}</span>
+          <span>{{ $t('custom.finalizeCopyTitle') }}</span>
           <UBadge
             v-if="locked"
             color="success"
             variant="subtle"
             data-testid="expert-case-finalize-copy-locked-chip"
           >
-            {{ $t('expertCaseReviews.finalizeCopyLockedChip') }}
+            {{ $t('custom.finalizeCopyLockedChip') }}
           </UBadge>
           <UBadge
             v-else-if="cacheHitChip && hasDraft && !generating"
@@ -188,7 +188,7 @@ watch(
             variant="subtle"
             data-testid="expert-case-finalize-copy-cache-chip"
           >
-            {{ $t('expertCaseReviews.finalizeCopyCacheChip') }}
+            {{ $t('custom.finalizeCopyCacheChip') }}
           </UBadge>
           <UBadge
             v-if="missingGoals"
@@ -196,7 +196,7 @@ watch(
             variant="subtle"
             data-testid="expert-case-finalize-copy-missing-goals-chip"
           >
-            {{ $t('expertCaseReviews.missingGoalsChip') }}
+            {{ $t('custom.missingGoalsChip') }}
           </UBadge>
           <UBadge
             v-if="missingReport"
@@ -204,7 +204,7 @@ watch(
             variant="subtle"
             data-testid="expert-case-finalize-copy-missing-report-chip"
           >
-            {{ $t('expertCaseReviews.missingReportChip') }}
+            {{ $t('custom.missingReportChip') }}
           </UBadge>
           <UIcon
             v-if="locked"
@@ -221,7 +221,7 @@ watch(
           class="mt-1 max-w-3xl text-xs text-muted"
           data-testid="expert-case-finalize-copy-missing-hint"
         >
-          {{ $t('expertCaseReviews.missingSignalsHint') }}
+          {{ $t('custom.missingSignalsHint') }}
         </p>
       </div>
       <div
@@ -237,8 +237,8 @@ watch(
           @click="onGenerateClick"
         >
           {{ generating
-            ? $t('expertCaseReviews.finalizeCopyGenerating')
-            : $t('expertCaseReviews.finalizeCopyGenerate') }}
+            ? $t('custom.finalizeCopyGenerating')
+            : $t('custom.finalizeCopyGenerate') }}
         </UButton>
         <UButton
           v-else
@@ -248,7 +248,7 @@ watch(
           data-testid="expert-case-finalize-copy-regenerate"
           @click="onRegenerateClick"
         >
-          {{ $t('expertCaseReviews.finalizeCopyRegenerate') }}
+          {{ $t('custom.finalizeCopyRegenerate') }}
         </UButton>
       </div>
     </div>
@@ -260,7 +260,7 @@ watch(
         data-testid="expert-case-finalize-copy-skel-report"
       >
         <h3 class="text-sm font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.finalizeCopyReportTitle') }}
+          {{ $t('custom.finalizeCopyReportTitle') }}
         </h3>
         <div class="mt-3 space-y-2">
           <div class="h-3 w-[90%] animate-pulse rounded bg-default" />
@@ -273,7 +273,7 @@ watch(
         data-testid="expert-case-finalize-copy-skel-opinion"
       >
         <h3 class="text-sm font-semibold text-highlighted">
-          {{ $t('expertCaseReviews.finalizeCopyOpinionTitle') }}
+          {{ $t('custom.finalizeCopyOpinionTitle') }}
         </h3>
         <div class="mt-3 space-y-2">
           <div class="h-3 w-[90%] animate-pulse rounded bg-default" />
@@ -293,10 +293,10 @@ watch(
       >
         <div class="mb-2 flex flex-wrap items-center gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.finalizeCopyReportTitle') }}
+            {{ $t('custom.finalizeCopyReportTitle') }}
           </h3>
           <span class="text-[11px] text-muted">
-            {{ $t('expertCaseReviews.finalizeCopyReadonly') }}
+            {{ $t('custom.finalizeCopyReadonly') }}
           </span>
         </div>
         <MarkdownPreview
@@ -307,7 +307,7 @@ watch(
           v-else
           class="text-sm text-muted"
         >
-          {{ $t('expertCaseReviews.finalizeCopyLockedEmpty') }}
+          {{ $t('custom.finalizeCopyLockedEmpty') }}
         </p>
       </div>
       <div
@@ -316,10 +316,10 @@ watch(
       >
         <div class="mb-2 flex flex-wrap items-center gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.finalizeCopyOpinionTitle') }}
+            {{ $t('custom.finalizeCopyOpinionTitle') }}
           </h3>
           <span class="text-[11px] text-muted">
-            {{ $t('expertCaseReviews.finalizeCopyReadonly') }}
+            {{ $t('custom.finalizeCopyReadonly') }}
           </span>
         </div>
         <MarkdownPreview
@@ -330,7 +330,7 @@ watch(
           v-else
           class="text-sm text-muted"
         >
-          {{ $t('expertCaseReviews.finalizeCopyLockedEmpty') }}
+          {{ $t('custom.finalizeCopyLockedEmpty') }}
         </p>
       </div>
     </template>
@@ -343,16 +343,16 @@ watch(
       >
         <div class="mb-2 flex flex-wrap items-baseline gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.finalizeCopyReportTitle') }}
+            {{ $t('custom.finalizeCopyReportTitle') }}
           </h3>
           <span class="text-[11px] text-muted">
-            {{ $t('expertCaseReviews.finalizeCopyReportHint') }}
+            {{ $t('custom.finalizeCopyReportHint') }}
           </span>
         </div>
         <div
           class="min-h-[120px] rounded-lg border border-dashed border-muted bg-default/40 px-4 py-4 text-xs text-muted"
         >
-          {{ $t('expertCaseReviews.finalizeCopyReportPlaceholder') }}
+          {{ $t('custom.finalizeCopyReportPlaceholder') }}
         </div>
       </div>
       <div
@@ -361,16 +361,16 @@ watch(
       >
         <div class="mb-2 flex flex-wrap items-baseline gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.finalizeCopyOpinionTitle') }}
+            {{ $t('custom.finalizeCopyOpinionTitle') }}
           </h3>
           <span class="text-[11px] text-muted">
-            {{ $t('expertCaseReviews.finalizeCopyOpinionHint') }}
+            {{ $t('custom.finalizeCopyOpinionHint') }}
           </span>
         </div>
         <div
           class="min-h-[220px] rounded-lg border border-dashed border-muted bg-default/40 px-4 py-4 text-xs text-muted"
         >
-          {{ $t('expertCaseReviews.finalizeCopyOpinionPlaceholder') }}
+          {{ $t('custom.finalizeCopyOpinionPlaceholder') }}
         </div>
       </div>
     </template>
@@ -383,16 +383,16 @@ watch(
       >
         <div class="mb-2 flex flex-wrap items-baseline gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.finalizeCopyReportTitle') }}
+            {{ $t('custom.finalizeCopyReportTitle') }}
           </h3>
           <span class="text-[11px] text-muted">
-            {{ $t('expertCaseReviews.finalizeCopySplitHint') }}
+            {{ $t('custom.finalizeCopySplitHint') }}
           </span>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="flex min-w-0 flex-col overflow-hidden rounded-lg border border-default">
             <div class="border-b border-default bg-default/40 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-muted uppercase">
-              {{ $t('expertCaseReviews.finalizeCopyEditPane') }}
+              {{ $t('custom.finalizeCopyEditPane') }}
             </div>
             <textarea
               class="min-h-[120px] flex-1 resize-y bg-elevated px-3 py-2 font-mono text-xs leading-relaxed text-highlighted outline-none"
@@ -403,7 +403,7 @@ watch(
           </div>
           <div class="flex min-w-0 flex-col overflow-hidden rounded-lg border border-default">
             <div class="border-b border-default bg-default/40 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-muted uppercase">
-              {{ $t('expertCaseReviews.finalizeCopyPreviewPane') }}
+              {{ $t('custom.finalizeCopyPreviewPane') }}
             </div>
             <div class="min-h-[120px] flex-1 bg-elevated px-3 py-2">
               <MarkdownPreview :source="reportHighlights" />
@@ -417,16 +417,16 @@ watch(
       >
         <div class="mb-2 flex flex-wrap items-baseline gap-2">
           <h3 class="text-sm font-semibold text-highlighted">
-            {{ $t('expertCaseReviews.finalizeCopyOpinionTitle') }}
+            {{ $t('custom.finalizeCopyOpinionTitle') }}
           </h3>
           <span class="text-[11px] text-muted">
-            {{ $t('expertCaseReviews.finalizeCopyOpinionEditHint') }}
+            {{ $t('custom.finalizeCopyOpinionEditHint') }}
           </span>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="flex min-w-0 flex-col overflow-hidden rounded-lg border border-default">
             <div class="border-b border-default bg-default/40 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-muted uppercase">
-              {{ $t('expertCaseReviews.finalizeCopyEditPane') }}
+              {{ $t('custom.finalizeCopyEditPane') }}
             </div>
             <textarea
               class="min-h-[220px] flex-1 resize-y bg-elevated px-3 py-2 font-mono text-xs leading-relaxed text-highlighted outline-none"
@@ -437,7 +437,7 @@ watch(
           </div>
           <div class="flex min-w-0 flex-col overflow-hidden rounded-lg border border-default">
             <div class="border-b border-default bg-default/40 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-muted uppercase">
-              {{ $t('expertCaseReviews.finalizeCopyPreviewPane') }}
+              {{ $t('custom.finalizeCopyPreviewPane') }}
             </div>
             <div class="min-h-[220px] flex-1 bg-elevated px-3 py-2">
               <MarkdownPreview :source="expertOpinion" />
@@ -449,8 +449,8 @@ watch(
 
     <UModal
       v-model:open="overwriteOpen"
-      :title="$t('expertCaseReviews.finalizeCopyOverwriteTitle')"
-      :description="$t('expertCaseReviews.finalizeCopyOverwriteBody')"
+      :title="$t('custom.finalizeCopyOverwriteTitle')"
+      :description="$t('custom.finalizeCopyOverwriteBody')"
       :ui="{ footer: 'justify-end gap-2' }"
     >
       <template #footer="{ close }">
@@ -467,7 +467,7 @@ watch(
           data-testid="expert-case-finalize-copy-overwrite-confirm"
           @click="confirmOverwrite"
         >
-          {{ $t('expertCaseReviews.finalizeCopyOverwriteConfirm') }}
+          {{ $t('custom.finalizeCopyOverwriteConfirm') }}
         </UButton>
       </template>
     </UModal>

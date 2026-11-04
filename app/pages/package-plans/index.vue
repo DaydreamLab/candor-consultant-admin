@@ -25,7 +25,7 @@ async function load() {
   const token = readOperatorToken()
   if (!token) {
     packagePlans.value = []
-    errorMessage.value = t('packagePlans.failed')
+    errorMessage.value = t('plans.failed')
     pending.value = false
     return
   }
@@ -37,7 +37,7 @@ async function load() {
   } catch (error) {
     packagePlans.value = []
     const message = error instanceof AdminApiError ? error.message.trim() : ''
-    errorMessage.value = message || t('packagePlans.failed')
+    errorMessage.value = message || t('plans.failed')
   } finally {
     pending.value = false
   }
@@ -171,8 +171,8 @@ function amountOf(value: unknown) {
 
 <template>
   <PageHeader
-    :title="$t('nav.packagePlans')"
-    :description="$t('packagePlans.description')"
+    :title="$t('nav.plans')"
+    :description="$t('plans.description')"
     plain
   >
     <p
@@ -185,13 +185,13 @@ function amountOf(value: unknown) {
       v-else-if="pending"
       class="text-sm text-muted"
     >
-      {{ $t('packagePlans.loading') }}
+      {{ $t('plans.loading') }}
     </p>
     <p
       v-else-if="!packagePlans.length"
       class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
     >
-      {{ $t('packagePlans.empty') }}
+      {{ $t('plans.empty') }}
     </p>
     <div
       v-else
@@ -242,7 +242,7 @@ function amountOf(value: unknown) {
           <dl class="grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt class="text-muted">
-                {{ $t('packagePlans.fields.period_days') }}
+                {{ $t('plans.fields.period_days') }}
               </dt>
               <dd class="mt-1 font-medium text-highlighted">
                 {{ periodDaysOf(row) }}
@@ -250,7 +250,7 @@ function amountOf(value: unknown) {
             </div>
             <div class="text-right">
               <dt class="text-muted">
-                {{ $t('packagePlans.fields.price') }}
+                {{ $t('plans.fields.price') }}
               </dt>
               <dd class="tabular-money mt-1 font-medium text-highlighted">
                 <span
@@ -264,7 +264,7 @@ function amountOf(value: unknown) {
             </div>
             <div>
               <dt class="text-muted">
-                {{ $t('packagePlans.fields.pack_capacity') }}
+                {{ $t('plans.fields.pack_capacity') }}
               </dt>
               <dd class="mt-1 font-medium text-highlighted">
                 {{ packCapacityOf(row) }}
@@ -272,7 +272,7 @@ function amountOf(value: unknown) {
             </div>
             <div class="text-right">
               <dt class="text-muted">
-                {{ $t('packagePlans.fields.core_count') }}
+                {{ $t('plans.fields.core_count') }}
               </dt>
               <dd class="mt-1 font-medium text-highlighted">
                 {{ coreCountOf(row) }}
@@ -281,7 +281,7 @@ function amountOf(value: unknown) {
             <template v-if="budgetTexts(row)">
               <div>
                 <dt class="text-muted">
-                  {{ $t('packagePlans.dailyBudget') }}
+                  {{ $t('plans.dailyBudget') }}
                 </dt>
                 <dd class="tabular-money mt-1 font-medium text-highlighted">
                   {{ budgetTexts(row)?.dailyBudget }}
@@ -289,7 +289,7 @@ function amountOf(value: unknown) {
               </div>
               <div class="text-right">
                 <dt class="text-muted">
-                  {{ $t('packagePlans.remainder') }}
+                  {{ $t('plans.remainder') }}
                 </dt>
                 <dd class="tabular-money mt-1 font-medium text-highlighted">
                   {{ budgetTexts(row)?.remainder }}

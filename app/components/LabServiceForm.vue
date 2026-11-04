@@ -70,13 +70,13 @@ const fieldsLocked = computed(() => props.disabled || props.saving)
 const codeLocked = computed(() => props.mode === 'edit' || fieldsLocked.value)
 
 const weekdayOptions = computed(() => ([
-  { label: t('labServices.weekdays.1'), value: 1 as Weekday },
-  { label: t('labServices.weekdays.2'), value: 2 as Weekday },
-  { label: t('labServices.weekdays.3'), value: 3 as Weekday },
-  { label: t('labServices.weekdays.4'), value: 4 as Weekday },
-  { label: t('labServices.weekdays.5'), value: 5 as Weekday },
-  { label: t('labServices.weekdays.6'), value: 6 as Weekday },
-  { label: t('labServices.weekdays.7'), value: 7 as Weekday }
+  { label: t('checkups.weekdays.1'), value: 1 as Weekday },
+  { label: t('checkups.weekdays.2'), value: 2 as Weekday },
+  { label: t('checkups.weekdays.3'), value: 3 as Weekday },
+  { label: t('checkups.weekdays.4'), value: 4 as Weekday },
+  { label: t('checkups.weekdays.5'), value: 5 as Weekday },
+  { label: t('checkups.weekdays.6'), value: 6 as Weekday },
+  { label: t('checkups.weekdays.7'), value: 7 as Weekday }
 ]))
 
 const basePrice = computed(() => {
@@ -112,13 +112,13 @@ function onSubmit() {
   const nameZh = state.name_zh.trim()
   const partnerName = state.partner_name.trim()
   if (!code || !nameZh || !partnerName) {
-    localError.value = t('labServices.validation.required')
+    localError.value = t('checkups.validation.required')
     return
   }
 
   const sortOrder = state.sort_order.trim() === '' ? 0 : Number(state.sort_order)
   if (!Number.isInteger(sortOrder)) {
-    localError.value = t('labServices.validation.sortOrder')
+    localError.value = t('checkups.validation.sortOrder')
     return
   }
 
@@ -127,11 +127,11 @@ function onSubmit() {
     const name = draft.name_zh.trim()
     const price = Number(draft.unit_price)
     if (!name) {
-      localError.value = t('labServices.validation.itemName')
+      localError.value = t('checkups.validation.itemName')
       return
     }
     if (!Number.isInteger(price) || price <= 0) {
-      localError.value = t('labServices.validation.itemPrice')
+      localError.value = t('checkups.validation.itemPrice')
       return
     }
     items.push({
@@ -143,11 +143,11 @@ function onSubmit() {
     })
   }
   if (!items.length) {
-    localError.value = t('labServices.validation.itemsRequired')
+    localError.value = t('checkups.validation.itemsRequired')
     return
   }
   if (!items.some(item => item.required)) {
-    localError.value = t('labServices.validation.requiredItem')
+    localError.value = t('checkups.validation.requiredItem')
     return
   }
 
@@ -155,7 +155,7 @@ function onSubmit() {
   for (const draft of state.schedule_rules) {
     const weekdays = [...new Set(draft.weekdays)].sort((a, b) => a - b) as Weekday[]
     if (!weekdays.length) {
-      localError.value = t('labServices.validation.weekdays')
+      localError.value = t('checkups.validation.weekdays')
       return
     }
     const windows: LabServiceWindowMock[] = []
@@ -164,11 +164,11 @@ function onSubmit() {
       const end = normalizeTime(window.end)
       const capacity = Number(window.capacity)
       if (!isTime(start) || !isTime(end) || start >= end) {
-        localError.value = t('labServices.validation.window')
+        localError.value = t('checkups.validation.window')
         return
       }
       if (!Number.isInteger(capacity) || capacity <= 0) {
-        localError.value = t('labServices.validation.capacity')
+        localError.value = t('checkups.validation.capacity')
         return
       }
       windows.push({
@@ -179,7 +179,7 @@ function onSubmit() {
       })
     }
     if (!windows.length) {
-      localError.value = t('labServices.validation.windowsRequired')
+      localError.value = t('checkups.validation.windowsRequired')
       return
     }
     scheduleRules.push({
@@ -189,7 +189,7 @@ function onSubmit() {
     })
   }
   if (!scheduleRules.length) {
-    localError.value = t('labServices.validation.rulesRequired')
+    localError.value = t('checkups.validation.rulesRequired')
     return
   }
 
@@ -346,36 +346,36 @@ function isTime(value: string) {
 
     <section class="grid gap-4 rounded-xl border border-default bg-elevated p-4 md:grid-cols-2">
       <h2 class="md:col-span-2 text-sm font-semibold text-highlighted">
-        {{ $t('labServices.sections.identity') }}
+        {{ $t('checkups.sections.identity') }}
       </h2>
-      <UFormField :label="$t('labServices.fields.code')">
+      <UFormField :label="$t('checkups.fields.code')">
         <UInput
           v-model="state.code"
           :disabled="codeLocked"
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('labServices.fields.active')">
+      <UFormField :label="$t('checkups.fields.active')">
         <USwitch
           v-model="state.active"
           :disabled="fieldsLocked"
         />
       </UFormField>
-      <UFormField :label="$t('labServices.fields.name_zh')">
+      <UFormField :label="$t('checkups.fields.name_zh')">
         <UInput
           v-model="state.name_zh"
           :disabled="fieldsLocked"
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('labServices.fields.name_en')">
+      <UFormField :label="$t('checkups.fields.name_en')">
         <UInput
           v-model="state.name_en"
           :disabled="fieldsLocked"
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('labServices.fields.sort_order')">
+      <UFormField :label="$t('checkups.fields.sort_order')">
         <UInput
           v-model="state.sort_order"
           type="number"
@@ -386,7 +386,7 @@ function isTime(value: string) {
       </UFormField>
       <UFormField
         class="md:col-span-2"
-        :label="$t('labServices.fields.description')"
+        :label="$t('checkups.fields.description')"
       >
         <UTextarea
           v-model="state.description"
@@ -399,16 +399,16 @@ function isTime(value: string) {
 
     <section class="grid gap-4 rounded-xl border border-default bg-elevated p-4 md:grid-cols-2">
       <h2 class="md:col-span-2 text-sm font-semibold text-highlighted">
-        {{ $t('labServices.sections.partner') }}
+        {{ $t('checkups.sections.partner') }}
       </h2>
-      <UFormField :label="$t('labServices.fields.partner_name')">
+      <UFormField :label="$t('checkups.fields.partner_name')">
         <UInput
           v-model="state.partner_name"
           :disabled="fieldsLocked"
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('labServices.fields.partner_phone')">
+      <UFormField :label="$t('checkups.fields.partner_phone')">
         <UInput
           v-model="state.partner_phone"
           :disabled="fieldsLocked"
@@ -417,7 +417,7 @@ function isTime(value: string) {
       </UFormField>
       <UFormField
         class="md:col-span-2"
-        :label="$t('labServices.fields.partner_address')"
+        :label="$t('checkups.fields.partner_address')"
       >
         <UInput
           v-model="state.partner_address"
@@ -431,15 +431,15 @@ function isTime(value: string) {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-sm font-semibold text-highlighted">
-            {{ $t('labServices.sections.items') }}
+            {{ $t('checkups.sections.items') }}
           </h2>
           <p class="mt-1 text-xs text-muted">
-            {{ $t('labServices.basePriceHint') }}
+            {{ $t('checkups.basePriceHint') }}
           </p>
         </div>
         <div class="flex items-center gap-3">
           <p class="text-sm text-muted">
-            {{ $t('labServices.fields.base_price') }}
+            {{ $t('checkups.fields.base_price') }}
             <span class="tabular-money ml-1 font-medium text-highlighted">{{ money(basePrice) }}</span>
           </p>
           <UButton
@@ -450,7 +450,7 @@ function isTime(value: string) {
             :disabled="fieldsLocked"
             @click="addItem"
           >
-            {{ $t('labServices.actions.addItem') }}
+            {{ $t('checkups.actions.addItem') }}
           </UButton>
         </div>
       </div>
@@ -462,7 +462,7 @@ function isTime(value: string) {
       >
         <UFormField
           class="md:col-span-4"
-          :label="$t('labServices.fields.item_name_zh')"
+          :label="$t('checkups.fields.item_name_zh')"
         >
           <UInput
             v-model="item.name_zh"
@@ -472,7 +472,7 @@ function isTime(value: string) {
         </UFormField>
         <UFormField
           class="md:col-span-3"
-          :label="$t('labServices.fields.item_name_en')"
+          :label="$t('checkups.fields.item_name_en')"
         >
           <UInput
             v-model="item.name_en"
@@ -482,7 +482,7 @@ function isTime(value: string) {
         </UFormField>
         <UFormField
           class="md:col-span-2"
-          :label="$t('labServices.fields.unit_price')"
+          :label="$t('checkups.fields.unit_price')"
         >
           <UInput
             v-model="item.unit_price"
@@ -495,7 +495,7 @@ function isTime(value: string) {
         </UFormField>
         <UFormField
           class="md:col-span-2"
-          :label="$t('labServices.fields.required')"
+          :label="$t('checkups.fields.required')"
         >
           <USwitch
             v-model="item.required"
@@ -509,7 +509,7 @@ function isTime(value: string) {
             variant="ghost"
             icon="i-lucide-trash-2"
             :disabled="fieldsLocked || state.items.length <= 1"
-            :aria-label="$t('labServices.actions.removeItem')"
+            :aria-label="$t('checkups.actions.removeItem')"
             @click="removeItem(index)"
           />
         </div>
@@ -520,10 +520,10 @@ function isTime(value: string) {
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-sm font-semibold text-highlighted">
-            {{ $t('labServices.sections.schedule') }}
+            {{ $t('checkups.sections.schedule') }}
           </h2>
           <p class="mt-1 text-xs text-muted">
-            {{ $t('labServices.scheduleHint') }}
+            {{ $t('checkups.scheduleHint') }}
           </p>
         </div>
         <UButton
@@ -534,7 +534,7 @@ function isTime(value: string) {
           :disabled="fieldsLocked"
           @click="addRule"
         >
-          {{ $t('labServices.actions.addRule') }}
+          {{ $t('checkups.actions.addRule') }}
         </UButton>
       </div>
 
@@ -546,7 +546,7 @@ function isTime(value: string) {
         <div class="flex flex-wrap items-start justify-between gap-2">
           <UFormField
             class="min-w-64 flex-1"
-            :label="$t('labServices.fields.weekdays')"
+            :label="$t('checkups.fields.weekdays')"
           >
             <USelect
               v-model="rule.weekdays"
@@ -564,7 +564,7 @@ function isTime(value: string) {
             icon="i-lucide-trash-2"
             class="mt-6"
             :disabled="fieldsLocked || state.schedule_rules.length <= 1"
-            :aria-label="$t('labServices.actions.removeRule')"
+            :aria-label="$t('checkups.actions.removeRule')"
             @click="removeRule(ruleIndex)"
           />
         </div>
@@ -576,7 +576,7 @@ function isTime(value: string) {
         >
           <UFormField
             class="md:col-span-3"
-            :label="$t('labServices.fields.window_start')"
+            :label="$t('checkups.fields.window_start')"
           >
             <UInput
               v-model="window.start"
@@ -587,7 +587,7 @@ function isTime(value: string) {
           </UFormField>
           <UFormField
             class="md:col-span-3"
-            :label="$t('labServices.fields.window_end')"
+            :label="$t('checkups.fields.window_end')"
           >
             <UInput
               v-model="window.end"
@@ -598,7 +598,7 @@ function isTime(value: string) {
           </UFormField>
           <UFormField
             class="md:col-span-3"
-            :label="$t('labServices.fields.capacity')"
+            :label="$t('checkups.fields.capacity')"
           >
             <UInput
               v-model="window.capacity"
@@ -618,7 +618,7 @@ function isTime(value: string) {
               :disabled="fieldsLocked"
               @click="addWindow(rule)"
             >
-              {{ $t('labServices.actions.addWindow') }}
+              {{ $t('checkups.actions.addWindow') }}
             </UButton>
             <UButton
               type="button"
@@ -626,7 +626,7 @@ function isTime(value: string) {
               variant="ghost"
               icon="i-lucide-trash-2"
               :disabled="fieldsLocked || rule.windows.length <= 1"
-              :aria-label="$t('labServices.actions.removeWindow')"
+              :aria-label="$t('checkups.actions.removeWindow')"
               @click="removeWindow(rule, windowIndex)"
             />
           </div>

@@ -13,27 +13,27 @@
     "workbench": "總覽",
     "orders": "訂單",
     "cases": "案件",
-    "labs": "採檢",
-    "labAppointments": "預約記錄",
-    "progress": "履約進度",
-    "products": "保健品",
-    "packagePlans": "銷售方案",
+    "scheduling": "採檢",
+    "appointments": "預約記錄",
+    "fulfillment": "履約進度",
+    "supplements": "保健品",
+    "plans": "銷售方案",
     "expertPlans": "專家方案",
     "refundRequests": "退款申請",
-    "labServices": "採檢服務",
-    "expertTuning": "專家訓練",
-    "aiAssistant": "AI 助理",
+    "checkups": "採檢服務",
+    "weights": "專家訓練",
+    "assistant": "AI 助理",
     "knowledge": "知識管理",
     "selections": "案件選品",
     "shipping": "物流進度",
     "invoices": "請款作業",
     "reports": "營運報表",
-    "reviews": "專家案件",
+    "custom": "專家案件",
     "orgs": "顧問公司",
     "users": "會員",
     "settings": "設定",
     "privacy": "隱私權",
-    "ctaCatalog": "CTA 目錄",
+    "guidance": "CTA 目錄",
     "account": "目前帳號",
     "developing": "開發中",
     "comingSoon": "即將上線",
@@ -278,7 +278,7 @@
       "issued": "已核發"
     }
   },
-  "packagePlans": {
+  "plans": {
     "description": "價格帶可改名稱、價格、天數、包裝總容量、固定核心數量、說明、排序與上下架；不含產品組成。",
     "loading": "讀取中…",
     "failed": "無法讀取銷售方案。",
@@ -412,7 +412,7 @@
       "reject": "拒絕"
     }
   },
-  "labServices": {
+  "checkups": {
     "description": "配合檢驗所／醫院的採檢服務（本地 mock，尚未接 API）。金額由項目加總，無套餐價。",
     "createTitle": "新增採檢服務",
     "loading": "讀取中…",
@@ -484,7 +484,7 @@
       "rulesRequired": "至少要有一條可預約規則。"
     }
   },
-  "labAppointments": {
+  "appointments": {
     "description": "血檢／健檢預約記錄（本地 mock）。可列表、詳情與取消；不可新建或改期。",
     "detailDescription": "已選項目與金額為下單／預約當下快照。",
     "loading": "讀取中…",
@@ -530,7 +530,7 @@
       "cancelled": "已取消"
     }
   },
-  "expertTuning": {
+  "weights": {
     "description": "權重版本與條目（示範資料，尚未接 API）。",
     "tabs": {
       "weights": "權重",
@@ -732,7 +732,7 @@
       "priority": "優先序"
     }
   },
-  "aiAssistant": {
+  "assistant": {
     "description": "編輯對話固定文案、採檢建議連結與合規詞庫。",
     "loading": "載入中…",
     "saving": "儲存中…",
@@ -933,7 +933,7 @@
     "filterAll": "全部",
     "pendingCount": "{n} 待簽核"
   },
-  "expertCaseReviews": {
+  "custom": {
     "title": "專家案件",
     "subtitle": "審核會員案件的引擎建議，定稿後會員才看得到方案。",
     "loading": "載入中…",
@@ -1408,10 +1408,77 @@
       "invoice": "發票",
       "biomarker": "報告判讀",
       "privacy": "隱私權政策",
-      "ctaCatalog": "CTA 目錄",
-      "other": "其他"
+      "other": "其他",
+      "guidance": "CTA 目錄"
     },
-    "ctaCatalog": {
+    "version": {
+      "title": "系統版本"
+    },
+    "payment": {
+      "title": "金流設定",
+      "hint": "選擇現用金流後按儲存。測試／正式主機由伺服器環境變數決定，不在此切換。",
+      "loading": "讀取金流設定…",
+      "loadFailed": "無法讀取金流設定。",
+      "saveFailed": "無法儲存金流設定。",
+      "methods": "可用付款方式",
+      "optionSandbox": "模擬金流 (sandbox)",
+      "optionNewebpay": "藍新金流 (newebpay)",
+      "method": {
+        "card": "信用卡",
+        "linepay": "LINE Pay",
+        "atm": "ATM"
+      }
+    },
+    "invoice": {
+      "title": "電子發票設定",
+      "hint": "選擇現用開票方式後按儲存。測試／正式主機由伺服器環境變數決定，不在此切換。",
+      "loading": "讀取電子發票設定…",
+      "loadFailed": "無法讀取電子發票設定。",
+      "saveFailed": "無法儲存電子發票設定。",
+      "optionSandbox": "模擬發票 (sandbox)",
+      "optionEzpay": "ezPay (ezpay)",
+      "credentialsMissing": "伺服器尚未設定 ezPay 金鑰；選此項後開票會失敗，可於訂單詳情重試。"
+    },
+    "biomarkerInterpretation": {
+      "title": "報告判讀 LLM 上限",
+      "hint": "限制每次讀取會員報告判讀時，可觸發的 LLM 補齊次數。留空代表不限制（產品預設）。",
+      "loading": "讀取判讀設定…",
+      "loadFailed": "無法讀取報告判讀設定。",
+      "saveFailed": "無法儲存報告判讀設定。",
+      "fieldLabel": "每次讀取最多 LLM 次數",
+      "fieldHelp": "正整數會限制單次讀取內的 LLM backfill；清空即不限制。",
+      "unlimitedPlaceholder": "不限制",
+      "unlimitedNote": "預設為不限制。輸入 1 以上的整數可為每次讀取設定上限。",
+      "clearUnlimited": "改為不限制",
+      "invalid": "請輸入 1 以上的整數，或清空以表示不限制。"
+    },
+    "privacy": {
+      "title": "隱私權政策",
+      "hint": "以 Markdown 編輯公開隱私權政策。儲存後會提高版本號並寫入歷史；僅 ops／admin 可儲存。",
+      "loading": "讀取隱私權政策…",
+      "loadFailed": "無法讀取隱私權政策。",
+      "saveFailed": "無法儲存隱私權政策。",
+      "saveForbidden": "目前角色無法儲存隱私權政策（需 ops 或 admin）。",
+      "publicLink": "開啟公開頁",
+      "meta": "目前版本 v{version} · 更新於 {at} · 更新者 {by}",
+      "fieldTitle": "標題",
+      "fieldBody": "內文（Markdown）",
+      "fieldBodyHelp": "支援標題、清單、粗體／斜體與連結。右側為即時預覽。",
+      "previewLabel": "即時預覽",
+      "previewHint": "依目前草稿渲染（無需先儲存）。",
+      "diffTitle": "版本比對（左右並排）",
+      "diffHint": "左側為較舊版本、右側為較新版本（可自行選擇）。Core 無伺服器端 diff；前端分別拉取兩個版本全文後比對。",
+      "diffLeft": "左側（較舊）",
+      "diffRight": "右側（較新）",
+      "diffPaneLabel": "v{version} — {title}",
+      "diffLoading": "載入比對內容…",
+      "diffLoadFailed": "無法載入版本全文以比對。",
+      "versionsLoading": "讀取版本列表…",
+      "versionsLoadFailed": "無法讀取版本列表。",
+      "versionsEmpty": "尚無歷史版本。",
+      "versionOption": "v{version} · {at}"
+    },
+    "guidance": {
       "title": "CTA 目錄",
       "hint": "語意決策用的 CTA seed（systemone）。只能編輯既有列；新增／刪除由工程 seed 入庫。",
       "loading": "載入中…",
@@ -1486,73 +1553,6 @@
         "lab_post_answer": "lab 答後",
         "question_rule": "出題當則"
       }
-    },
-    "version": {
-      "title": "系統版本"
-    },
-    "payment": {
-      "title": "金流設定",
-      "hint": "選擇現用金流後按儲存。測試／正式主機由伺服器環境變數決定，不在此切換。",
-      "loading": "讀取金流設定…",
-      "loadFailed": "無法讀取金流設定。",
-      "saveFailed": "無法儲存金流設定。",
-      "methods": "可用付款方式",
-      "optionSandbox": "模擬金流 (sandbox)",
-      "optionNewebpay": "藍新金流 (newebpay)",
-      "method": {
-        "card": "信用卡",
-        "linepay": "LINE Pay",
-        "atm": "ATM"
-      }
-    },
-    "invoice": {
-      "title": "電子發票設定",
-      "hint": "選擇現用開票方式後按儲存。測試／正式主機由伺服器環境變數決定，不在此切換。",
-      "loading": "讀取電子發票設定…",
-      "loadFailed": "無法讀取電子發票設定。",
-      "saveFailed": "無法儲存電子發票設定。",
-      "optionSandbox": "模擬發票 (sandbox)",
-      "optionEzpay": "ezPay (ezpay)",
-      "credentialsMissing": "伺服器尚未設定 ezPay 金鑰；選此項後開票會失敗，可於訂單詳情重試。"
-    },
-    "biomarkerInterpretation": {
-      "title": "報告判讀 LLM 上限",
-      "hint": "限制每次讀取會員報告判讀時，可觸發的 LLM 補齊次數。留空代表不限制（產品預設）。",
-      "loading": "讀取判讀設定…",
-      "loadFailed": "無法讀取報告判讀設定。",
-      "saveFailed": "無法儲存報告判讀設定。",
-      "fieldLabel": "每次讀取最多 LLM 次數",
-      "fieldHelp": "正整數會限制單次讀取內的 LLM backfill；清空即不限制。",
-      "unlimitedPlaceholder": "不限制",
-      "unlimitedNote": "預設為不限制。輸入 1 以上的整數可為每次讀取設定上限。",
-      "clearUnlimited": "改為不限制",
-      "invalid": "請輸入 1 以上的整數，或清空以表示不限制。"
-    },
-    "privacy": {
-      "title": "隱私權政策",
-      "hint": "以 Markdown 編輯公開隱私權政策。儲存後會提高版本號並寫入歷史；僅 ops／admin 可儲存。",
-      "loading": "讀取隱私權政策…",
-      "loadFailed": "無法讀取隱私權政策。",
-      "saveFailed": "無法儲存隱私權政策。",
-      "saveForbidden": "目前角色無法儲存隱私權政策（需 ops 或 admin）。",
-      "publicLink": "開啟公開頁",
-      "meta": "目前版本 v{version} · 更新於 {at} · 更新者 {by}",
-      "fieldTitle": "標題",
-      "fieldBody": "內文（Markdown）",
-      "fieldBodyHelp": "支援標題、清單、粗體／斜體與連結。右側為即時預覽。",
-      "previewLabel": "即時預覽",
-      "previewHint": "依目前草稿渲染（無需先儲存）。",
-      "diffTitle": "版本比對（左右並排）",
-      "diffHint": "左側為較舊版本、右側為較新版本（可自行選擇）。Core 無伺服器端 diff；前端分別拉取兩個版本全文後比對。",
-      "diffLeft": "左側（較舊）",
-      "diffRight": "右側（較新）",
-      "diffPaneLabel": "v{version} — {title}",
-      "diffLoading": "載入比對內容…",
-      "diffLoadFailed": "無法載入版本全文以比對。",
-      "versionsLoading": "讀取版本列表…",
-      "versionsLoadFailed": "無法讀取版本列表。",
-      "versionsEmpty": "尚無歷史版本。",
-      "versionOption": "v{version} · {at}"
     }
   },
   "privacyPolicy": {
@@ -1568,7 +1568,6 @@
     "privacyLink": "隱私權政策",
     "accept": "我知道了"
   },
-
   "actions": {
     "add": "新增",
     "edit": "編輯",
@@ -1690,7 +1689,7 @@
     },
     "openDetail": "詳細"
   },
-  "products": {
+  "supplements": {
     "listTitle": "保健品",
     "createTitle": "新增保健品",
     "imageDrop": "拖放圖片到這裡",

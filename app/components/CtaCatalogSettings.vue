@@ -62,7 +62,7 @@ const filteredItems = computed(() =>
 
 const formatItems = computed(() =>
   CTA_DECISION_FORMATS.map(value => ({
-    label: t(`settings.ctaCatalog.format.${value}`),
+    label: t(`settings.guidance.format.${value}`),
     value
   }))
 )
@@ -75,9 +75,9 @@ const replyTypeItems = computed(() =>
 )
 
 const filterChips = computed(() => [
-  { value: 'all' as const, label: t('settings.ctaCatalog.filterAll') },
-  { value: 'upload_checkup' as const, label: t('settings.ctaCatalog.filterUploadCheckup') },
-  { value: 'vitals_options' as const, label: t('settings.ctaCatalog.filterVitalsOptions') }
+  { value: 'all' as const, label: t('settings.guidance.filterAll') },
+  { value: 'upload_checkup' as const, label: t('settings.guidance.filterUploadCheckup') },
+  { value: 'vitals_options' as const, label: t('settings.guidance.filterVitalsOptions') }
 ])
 
 const jsonPreview = computed(() => {
@@ -122,7 +122,7 @@ if (import.meta.client) {
 async function loadList() {
   const token = readOperatorToken()
   if (!token) {
-    error.value = t('settings.ctaCatalog.loadFailed')
+    error.value = t('settings.guidance.loadFailed')
     pending.value = false
     return
   }
@@ -134,7 +134,7 @@ async function loadList() {
     items.value = await adminListCtaCatalog(config.public.apiBase, token)
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('settings.ctaCatalog.loadFailed')
+    error.value = message || t('settings.guidance.loadFailed')
     items.value = []
   } finally {
     pending.value = false
@@ -144,7 +144,7 @@ async function loadList() {
 async function loadMatrix() {
   const token = readOperatorToken()
   if (!token) {
-    error.value = t('settings.ctaCatalog.loadFailed')
+    error.value = t('settings.guidance.loadFailed')
     return
   }
   pending.value = true
@@ -155,7 +155,7 @@ async function loadMatrix() {
     view.value = 'matrix'
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('settings.ctaCatalog.loadFailed')
+    error.value = message || t('settings.guidance.loadFailed')
   } finally {
     pending.value = false
   }
@@ -227,9 +227,9 @@ async function saveEdit() {
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
     if (err instanceof AdminApiError && err.statusCode === 403) {
-      saveError.value = t('settings.ctaCatalog.saveForbidden')
+      saveError.value = t('settings.guidance.saveForbidden')
     } else {
-      saveError.value = message || t('settings.ctaCatalog.saveFailed')
+      saveError.value = message || t('settings.guidance.saveFailed')
     }
   } finally {
     saving.value = false
@@ -255,9 +255,9 @@ async function saveMatrix() {
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
     if (err instanceof AdminApiError && err.statusCode === 403) {
-      saveError.value = t('settings.ctaCatalog.saveForbidden')
+      saveError.value = t('settings.guidance.saveForbidden')
     } else {
-      saveError.value = message || t('settings.ctaCatalog.saveFailed')
+      saveError.value = message || t('settings.guidance.saveFailed')
     }
   } finally {
     saving.value = false
@@ -335,11 +335,11 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
       class="mb-4 flex flex-wrap items-center justify-between gap-3"
     >
       <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.ctaCatalog.title') }}
+        {{ $t('settings.guidance.title') }}
       </h2>
       <div class="flex flex-wrap items-center gap-2">
         <span class="inline-flex rounded-full bg-forest-100 px-2.5 py-0.5 text-xs font-semibold text-forest-700">
-          {{ $t('settings.ctaCatalog.seeded') }}
+          {{ $t('settings.guidance.seeded') }}
         </span>
         <UButton
           color="neutral"
@@ -368,7 +368,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
       class="mb-4 flex flex-wrap items-center justify-between gap-3"
     >
       <h2 class="text-base font-semibold text-highlighted">
-        {{ $t('settings.ctaCatalog.matrixTitle') }}
+        {{ $t('settings.guidance.matrixTitle') }}
       </h2>
       <div class="flex flex-wrap items-center gap-2">
         <UButton
@@ -377,7 +377,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
           size="sm"
           @click="backToList"
         >
-          {{ $t('settings.ctaCatalog.backToList') }}
+          {{ $t('settings.guidance.backToList') }}
         </UButton>
         <UButton
           v-if="canEdit"
@@ -388,14 +388,14 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
           data-testid="cta-catalog-matrix-save"
           @click="saveMatrix"
         >
-          {{ $t('settings.ctaCatalog.saveMatrix') }}
+          {{ $t('settings.guidance.saveMatrix') }}
         </UButton>
       </div>
     </div>
 
     <template v-else>
       <p class="mb-4 max-w-3xl text-sm text-muted">
-        {{ $t('settings.ctaCatalog.hint') }}
+        {{ $t('settings.guidance.hint') }}
       </p>
     </template>
 
@@ -404,7 +404,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
       class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-warning"
       data-testid="cta-catalog-readonly-banner"
     >
-      <span>{{ $t('settings.ctaCatalog.readonlyBanner') }}</span>
+      <span>{{ $t('settings.guidance.readonlyBanner') }}</span>
     </div>
 
     <div
@@ -426,7 +426,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
         data-testid="cta-catalog-retry"
         @click="view === 'matrix' ? loadMatrix() : loadList()"
       >
-        {{ $t('settings.ctaCatalog.retry') }}
+        {{ $t('settings.guidance.retry') }}
       </UButton>
     </div>
 
@@ -458,7 +458,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
         :class="n % 2 === 0 ? 'w-4/5' : 'w-full'"
       />
       <p class="mt-2 text-sm text-brand-600">
-        {{ $t('settings.ctaCatalog.loading') }}
+        {{ $t('settings.guidance.loading') }}
       </p>
     </div>
 
@@ -466,8 +466,8 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
     <EmptyPanel
       v-else-if="error && view === 'list'"
       dashed
-      :title="$t('settings.ctaCatalog.errorTitle')"
-      :description="$t('settings.ctaCatalog.errorBody')"
+      :title="$t('settings.guidance.errorTitle')"
+      :description="$t('settings.guidance.errorBody')"
       data-testid="cta-catalog-error-empty"
     />
 
@@ -475,8 +475,8 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
     <EmptyPanel
       v-else-if="view === 'list' && !pending && !items.length"
       dashed
-      :title="$t('settings.ctaCatalog.emptyTitle')"
-      :description="$t('settings.ctaCatalog.emptyBody')"
+      :title="$t('settings.guidance.emptyTitle')"
+      :description="$t('settings.guidance.emptyBody')"
       data-testid="cta-catalog-empty"
     >
       <UButton
@@ -485,7 +485,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
         icon="i-lucide-refresh-cw"
         @click="loadList"
       >
-        {{ $t('settings.ctaCatalog.refresh') }}
+        {{ $t('settings.guidance.refresh') }}
       </UButton>
     </EmptyPanel>
 
@@ -495,7 +495,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
         <div
           class="inline-flex overflow-hidden rounded-full border border-default bg-elevated"
           role="group"
-          :aria-label="$t('settings.ctaCatalog.filterGroup')"
+          :aria-label="$t('settings.guidance.filterGroup')"
         >
           <button
             v-for="chip in filterChips"
@@ -517,7 +517,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
           data-testid="cta-catalog-open-matrix"
           @click="loadMatrix"
         >
-          {{ $t('settings.ctaCatalog.scenarioSubset') }}
+          {{ $t('settings.guidance.scenarioSubset') }}
         </UButton>
       </div>
 
@@ -526,12 +526,12 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
           <table class="app-table w-full min-w-[48rem] text-left text-sm">
             <thead class="border-b border-default bg-muted/40 text-xs text-muted">
               <tr>
-                <th>{{ $t('settings.ctaCatalog.colIdentity') }}</th>
-                <th>{{ $t('settings.ctaCatalog.colQuestion') }}</th>
-                <th>{{ $t('settings.ctaCatalog.colFormat') }}</th>
-                <th>{{ $t('settings.ctaCatalog.colHitUi') }}</th>
-                <th>{{ $t('settings.ctaCatalog.colScenarios') }}</th>
-                <th>{{ $t('settings.ctaCatalog.colActions') }}</th>
+                <th>{{ $t('settings.guidance.colIdentity') }}</th>
+                <th>{{ $t('settings.guidance.colQuestion') }}</th>
+                <th>{{ $t('settings.guidance.colFormat') }}</th>
+                <th>{{ $t('settings.guidance.colHitUi') }}</th>
+                <th>{{ $t('settings.guidance.colScenarios') }}</th>
+                <th>{{ $t('settings.guidance.colActions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -548,7 +548,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                     <span
                       v-if="row.is_sample"
                       class="ms-1 inline-flex rounded-full bg-sand-100 px-2 py-0.5 text-[11px] font-bold text-sand-700"
-                    >{{ $t('settings.ctaCatalog.sample') }}</span>
+                    >{{ $t('settings.guidance.sample') }}</span>
                   </div>
                   <div class="font-mono text-[11px] text-muted">
                     {{ row.type }}
@@ -564,12 +564,12 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                       ? 'bg-brand-100 text-brand-700'
                       : 'bg-lagoon-100 text-lagoon-700'"
                   >
-                    {{ $t(`settings.ctaCatalog.format.${row.decision_format}`) }}
+                    {{ $t(`settings.guidance.format.${row.decision_format}`) }}
                   </span>
                 </td>
                 <td>
                   <span class="inline-flex rounded-full bg-forest-100 px-2 py-0.5 text-[11px] font-bold text-forest-700">
-                    {{ $t(`settings.ctaCatalog.hitUi.${row.type}`) }}
+                    {{ $t(`settings.guidance.hitUi.${row.type}`) }}
                   </span>
                 </td>
                 <td>
@@ -578,7 +578,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                     :key="sid"
                     class="me-1 mb-1 inline-flex rounded-full bg-mist-100 px-2 py-0.5 text-[11px] font-bold text-mist-600"
                   >
-                    {{ $t(`settings.ctaCatalog.scenario.${sid}`) }}
+                    {{ $t(`settings.guidance.scenario.${sid}`) }}
                   </span>
                 </td>
                 <td @click.stop>
@@ -588,7 +588,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                     size="sm"
                     @click="openEdit(row)"
                   >
-                    {{ canEdit ? $t('actions.edit') : $t('settings.ctaCatalog.view') }}
+                    {{ canEdit ? $t('actions.edit') : $t('settings.guidance.view') }}
                   </UButton>
                 </td>
               </tr>
@@ -597,26 +597,26 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
         </div>
       </div>
       <p class="mt-3 text-xs text-muted">
-        {{ $t('settings.ctaCatalog.listFooter') }}
+        {{ $t('settings.guidance.listFooter') }}
       </p>
     </template>
 
     <!-- EDIT -->
     <template v-else-if="view === 'edit' && editing">
       <div class="mb-4 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-700">
-        {{ $t('settings.ctaCatalog.editBanner') }}
+        {{ $t('settings.guidance.editBanner') }}
       </div>
 
       <div class="max-w-3xl space-y-4">
         <section class="rounded-xl border border-default bg-elevated p-4">
           <h3 class="mb-3 text-sm font-semibold text-highlighted">
-            {{ $t('settings.ctaCatalog.sectionIdentity') }}
+            {{ $t('settings.guidance.sectionIdentity') }}
             <span class="ms-2 inline-flex rounded-full bg-sand-100 px-2 py-0.5 text-[11px] font-bold text-sand-700">
-              {{ $t('settings.ctaCatalog.sample') }} · {{ editing.type }}
+              {{ $t('settings.guidance.sample') }} · {{ editing.type }}
             </span>
           </h3>
           <UFormField
-            :label="$t('settings.ctaCatalog.fieldType')"
+            :label="$t('settings.guidance.fieldType')"
             class="mb-3"
           >
             <UInput
@@ -625,7 +625,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
               class="font-mono"
             />
           </UFormField>
-          <UFormField :label="$t('settings.ctaCatalog.fieldDisplayName')">
+          <UFormField :label="$t('settings.guidance.fieldDisplayName')">
             <UInput
               v-model="draftDisplayName"
               :disabled="!canEdit || saving"
@@ -636,10 +636,10 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
 
         <section class="rounded-xl border border-default bg-elevated p-4">
           <h3 class="mb-3 text-sm font-semibold text-highlighted">
-            {{ $t('settings.ctaCatalog.sectionDecision') }}
+            {{ $t('settings.guidance.sectionDecision') }}
           </h3>
           <UFormField
-            :label="$t('settings.ctaCatalog.fieldQuestion')"
+            :label="$t('settings.guidance.fieldQuestion')"
             class="mb-3"
           >
             <UTextarea
@@ -650,7 +650,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
             />
           </UFormField>
           <UFormField
-            :label="$t('settings.ctaCatalog.fieldFormat')"
+            :label="$t('settings.guidance.fieldFormat')"
             class="mb-3"
           >
             <USelect
@@ -663,8 +663,8 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
           <UFormField
             v-if="draftFormat === 'choice' || draftFormat === 'score'"
             :label="draftFormat === 'choice'
-              ? $t('settings.ctaCatalog.fieldChoiceCriteria')
-              : $t('settings.ctaCatalog.fieldScoreLevels')"
+              ? $t('settings.guidance.fieldChoiceCriteria')
+              : $t('settings.guidance.fieldScoreLevels')"
             class="mb-3"
           >
             <UInput
@@ -677,11 +677,11 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
             class="mb-3 rounded-xl border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning"
             data-testid="cta-ask-vitals-info"
           >
-            {{ $t('settings.ctaCatalog.askVitalsInfo') }}
+            {{ $t('settings.guidance.askVitalsInfo') }}
           </div>
           <details class="text-xs text-muted">
             <summary class="cursor-pointer font-semibold">
-              {{ $t('settings.ctaCatalog.jsonPreview') }}
+              {{ $t('settings.guidance.jsonPreview') }}
             </summary>
             <pre class="mt-2 overflow-auto rounded-lg border border-default bg-muted/30 p-3 font-mono text-[11px]">{{ jsonPreview }}</pre>
           </details>
@@ -689,10 +689,10 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
 
         <section class="rounded-xl border border-default bg-elevated p-4">
           <h3 class="mb-3 text-sm font-semibold text-highlighted">
-            {{ $t('settings.ctaCatalog.sectionHitUi') }}
+            {{ $t('settings.guidance.sectionHitUi') }}
           </h3>
           <UFormField
-            :label="$t('settings.ctaCatalog.fieldReplyType')"
+            :label="$t('settings.guidance.fieldReplyType')"
             class="mb-3"
           >
             <USelect
@@ -702,7 +702,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
               :disabled="!canEdit || saving"
             />
           </UFormField>
-          <UFormField :label="$t('settings.ctaCatalog.fieldReplyHint')">
+          <UFormField :label="$t('settings.guidance.fieldReplyHint')">
             <UInput
               v-model="draftReplyHint"
               :disabled="!canEdit || saving"
@@ -712,7 +712,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
 
         <section class="rounded-xl border border-default bg-elevated p-4">
           <h3 class="mb-3 text-sm font-semibold text-highlighted">
-            {{ $t('settings.ctaCatalog.sectionScenarios') }}
+            {{ $t('settings.guidance.sectionScenarios') }}
           </h3>
           <div class="grid gap-2">
             <label
@@ -727,18 +727,18 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                 :disabled="!canEdit || saving || (editing.type === 'offer_checkup' && sid === 'question_rule')"
                 @change="toggleScenario(sid, ($event.target as HTMLInputElement).checked)"
               >
-              {{ $t(`settings.ctaCatalog.scenario.${sid}`) }}
+              {{ $t(`settings.guidance.scenario.${sid}`) }}
             </label>
           </div>
           <p class="mt-3 text-xs text-muted">
-            {{ $t('settings.ctaCatalog.scenariosHint') }}
+            {{ $t('settings.guidance.scenariosHint') }}
           </p>
           <div
             v-if="editing.type === 'ask_report' || editing.type === 'offer_checkup'"
             class="mt-3 rounded-xl border border-default bg-muted/30 px-3 py-2 text-sm text-muted"
             data-testid="cta-lab-merge-note"
           >
-            {{ $t('settings.ctaCatalog.labMergeNote') }}
+            {{ $t('settings.guidance.labMergeNote') }}
           </div>
         </section>
       </div>
@@ -747,7 +747,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
     <!-- MATRIX -->
     <template v-else-if="view === 'matrix' && matrixDraft">
       <p class="mb-4 max-w-3xl text-sm text-muted">
-        {{ $t('settings.ctaCatalog.matrixHint') }}
+        {{ $t('settings.guidance.matrixHint') }}
       </p>
       <div class="overflow-hidden rounded-xl border border-default bg-elevated">
         <div class="overflow-x-auto p-2">
@@ -755,7 +755,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
             <thead class="border-b border-default bg-muted/40 text-muted">
               <tr>
                 <th class="px-2 py-2 text-left">
-                  {{ $t('settings.ctaCatalog.colScenario') }}
+                  {{ $t('settings.guidance.colScenario') }}
                 </th>
                 <th
                   v-for="type in CTA_CATALOG_TYPES"
@@ -773,11 +773,11 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                 class="border-b border-default last:border-0"
               >
                 <td class="px-2 py-3 text-left font-semibold text-highlighted">
-                  {{ $t(`settings.ctaCatalog.scenario.${row.scenario}`) }}
+                  {{ $t(`settings.guidance.scenario.${row.scenario}`) }}
                   <span
                     v-if="row.scenario === 'open_dialog'"
                     class="ms-1 inline-flex rounded-full bg-sand-100 px-2 py-0.5 text-[11px] font-bold text-sand-700"
-                  >{{ $t('settings.ctaCatalog.openAll') }}</span>
+                  >{{ $t('settings.guidance.openAll') }}</span>
                 </td>
                 <td
                   v-for="type in CTA_CATALOG_TYPES"
@@ -787,10 +787,10 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
                   <template v-if="isHardGateForbidden(row.scenario, type)">
                     <span
                       class="inline-flex cursor-not-allowed rounded-full bg-sand-100 px-2 py-0.5 text-[11px] font-bold text-sand-700"
-                      :title="$t('settings.ctaCatalog.hardGateTooltip')"
+                      :title="$t('settings.guidance.hardGateTooltip')"
                       data-testid="cta-matrix-hard-gate"
                     >
-                      {{ $t('settings.ctaCatalog.forbidden') }}
+                      {{ $t('settings.guidance.forbidden') }}
                     </span>
                   </template>
                   <template v-else>
@@ -817,7 +817,7 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
         </div>
       </div>
       <p class="mt-3 text-xs text-muted">
-        {{ $t('settings.ctaCatalog.matrixFooter') }}
+        {{ $t('settings.guidance.matrixFooter') }}
       </p>
     </template>
   </div>

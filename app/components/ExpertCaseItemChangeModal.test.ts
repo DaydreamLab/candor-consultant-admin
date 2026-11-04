@@ -63,12 +63,12 @@ describe('ExpertCaseItemChangeModal', () => {
 
     await flushPromises()
     expect(wrapper.find('[data-testid="expert-case-item-change-reason-hint"]').text())
-      .toContain('expertCaseReviews.reasonMemberFacingHint')
+      .toContain('custom.reasonMemberFacingHint')
 
     await wrapper.find('[data-testid="expert-case-item-change-confirm"]').trigger('click')
     await flushPromises()
     expect(wrapper.find('[data-testid="expert-case-item-change-error"]').text())
-      .toContain('expertCaseReviews.reasonRequiredMemberFacing')
+      .toContain('custom.reasonRequiredMemberFacing')
     expect(wrapper.emitted('confirm')).toBeFalsy()
   })
 
@@ -121,7 +121,7 @@ describe('ExpertCaseItemChangeModal', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="expert-case-item-change-dose-error"]').text())
-      .toContain('expertCaseReviews.doseInvalid')
+      .toContain('custom.doseInvalid')
     expect(wrapper.emitted('confirm')).toBeFalsy()
   })
 })

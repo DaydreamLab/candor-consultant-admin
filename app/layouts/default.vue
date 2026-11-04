@@ -57,7 +57,7 @@ const navbarActions = computed(() => navbarStore.value.current)
 /** Expert case detail sticky toolbar needs flush panel body (no top/side padding). */
 const panelBodyClass = computed(() => {
   const path = normalizeAdminPath(route.path)
-  if (/^\/expert-case-reviews\/[^/]+$/.test(path)) {
+  if (/^\/custom\/[^/]+$/.test(path)) {
     // sm:p-0 required: theme body keeps `sm:p-6` which would otherwise win over bare `p-0`.
     return 'flex flex-col flex-1 overflow-y-auto p-0 sm:p-0'
   }

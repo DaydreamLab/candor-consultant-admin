@@ -40,7 +40,7 @@ if (import.meta.client) {
 async function load() {
   const token = readOperatorToken()
   if (!token) {
-    error.value = t('aiAssistant.claimTerms.loadFailed')
+    error.value = t('assistant.claimTerms.loadFailed')
     pending.value = false
     return
   }
@@ -50,7 +50,7 @@ async function load() {
     items.value = await adminListClaimGuardTerms(config.public.apiBase, token)
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('aiAssistant.claimTerms.loadFailed')
+    error.value = message || t('assistant.claimTerms.loadFailed')
   } finally {
     pending.value = false
   }
@@ -118,7 +118,7 @@ async function save() {
     saved.value = true
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    saveError.value = message || t('aiAssistant.claimTerms.saveFailed')
+    saveError.value = message || t('assistant.claimTerms.saveFailed')
   } finally {
     saving.value = false
   }
@@ -143,7 +143,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
     items.value = items.value.map(item => (item.id === updated.id ? updated : item))
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('aiAssistant.claimTerms.saveFailed')
+    error.value = message || t('assistant.claimTerms.saveFailed')
   } finally {
     const nextSet = new Set(togglingIds.value)
     nextSet.delete(row.id)
@@ -154,13 +154,13 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
 
 <template>
   <PageHeader
-    :title="$t('nav.aiAssistant')"
-    :description="$t('aiAssistant.description')"
+    :title="$t('nav.assistant')"
+    :description="$t('assistant.description')"
   >
     <AiAssistantTabs />
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
       <p class="text-sm text-muted">
-        {{ $t('aiAssistant.claimTerms.hint') }}
+        {{ $t('assistant.claimTerms.hint') }}
       </p>
       <UButton
         v-if="canEdit"
@@ -181,7 +181,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
       v-else-if="pending"
       class="mb-4 text-sm text-muted"
     >
-      {{ $t('aiAssistant.loading') }}
+      {{ $t('assistant.loading') }}
     </p>
     <AdminTable
       v-else
@@ -191,10 +191,10 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
       <template #head>
         <tr>
           <th class="w-16">
-            {{ $t('aiAssistant.claimTerms.columns.active') }}
+            {{ $t('assistant.claimTerms.columns.active') }}
           </th>
-          <th>{{ $t('aiAssistant.claimTerms.columns.term') }}</th>
-          <th>{{ $t('aiAssistant.claimTerms.columns.severity') }}</th>
+          <th>{{ $t('assistant.claimTerms.columns.term') }}</th>
+          <th>{{ $t('assistant.claimTerms.columns.severity') }}</th>
           <th />
         </tr>
       </template>
@@ -207,7 +207,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
           <USwitch
             :model-value="row.active"
             :disabled="!canEdit || isToggling(row.id)"
-            :aria-label="$t('aiAssistant.claimTerms.columns.active')"
+            :aria-label="$t('assistant.claimTerms.columns.active')"
             data-testid="ai-assistant-claim-active"
             @update:model-value="toggleActive(row, $event)"
           />
@@ -231,7 +231,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
 
     <USlideover
       v-model:open="slideoverOpen"
-      :title="mode === 'create' ? $t('aiAssistant.claimTerms.createTitle') : $t('aiAssistant.claimTerms.editTitle')"
+      :title="mode === 'create' ? $t('assistant.claimTerms.createTitle') : $t('assistant.claimTerms.editTitle')"
     >
       <template #body>
         <div class="flex flex-col gap-4 p-1">
@@ -255,7 +255,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
           </p>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.claimTerms.columns.term') }}
+              {{ $t('assistant.claimTerms.columns.term') }}
             </span>
             <input
               v-model="draftTerm"
@@ -266,7 +266,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
           </label>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.claimTerms.columns.severity') }}
+              {{ $t('assistant.claimTerms.columns.severity') }}
             </span>
             <select
               v-model="draftSeverity"
@@ -283,7 +283,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
           </label>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.claimTerms.fields.pattern') }}
+              {{ $t('assistant.claimTerms.fields.pattern') }}
             </span>
             <input
               v-model="draftPattern"
@@ -294,7 +294,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
           </label>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.claimTerms.fields.replacement') }}
+              {{ $t('assistant.claimTerms.fields.replacement') }}
             </span>
             <input
               v-model="draftReplacement"
@@ -305,7 +305,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
           </label>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.claimTerms.fields.note') }}
+              {{ $t('assistant.claimTerms.fields.note') }}
             </span>
             <input
               v-model="draftNote"
@@ -320,7 +320,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
               type="checkbox"
               :disabled="!canEdit || saving"
             >
-            {{ $t('aiAssistant.claimTerms.columns.active') }}
+            {{ $t('assistant.claimTerms.columns.active') }}
           </label>
         </div>
       </template>
@@ -333,7 +333,7 @@ async function toggleActive(row: AdminClaimGuardTerm, next: boolean) {
             @click="slideoverOpen = false"
           />
           <UButton
-            :label="saving ? $t('aiAssistant.saving') : $t('actions.save')"
+            :label="saving ? $t('assistant.saving') : $t('actions.save')"
             :disabled="!canEdit || saving"
             data-testid="ai-assistant-claim-save"
             @click="save"

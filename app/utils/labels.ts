@@ -40,9 +40,9 @@ export function nextAction(status: CaseStatus) {
     case 'lab_pending':
     case 'lab_scheduled':
     case 'awaiting_report':
-      return { to: '/labs', key: 'flow.lab' }
+      return { to: '/scheduling', key: 'flow.lab' }
     case 'progress_due':
-      return { to: '/progress', key: 'flow.progress' }
+      return { to: '/fulfillment', key: 'flow.progress' }
     case 'keyin_due':
       return { to: '/selections', key: 'flow.selection' }
     case 'ship_due':

@@ -50,7 +50,7 @@ function toggleCase(id: string, checked: boolean | 'indeterminate') {
 }
 
 function openBatch(row: TrainingBatchMock) {
-  void navigateTo(localePath(`/expert-tuning/training/${encodeURIComponent(row.id)}`))
+  void navigateTo(localePath(`/weights/training/${encodeURIComponent(row.id)}`))
 }
 
 function nameOf(row: TrainingBatchMock) {
@@ -59,23 +59,23 @@ function nameOf(row: TrainingBatchMock) {
 
 function progressOf(row: TrainingBatchMock) {
   const { done, total } = batchReviewProgress(row)
-  return t('expertTuning.training.progress', { done, total })
+  return t('weights.training.progress', { done, total })
 }
 
 function submitCreate() {
   formError.value = ''
   const name = formName.value.trim()
   if (!name) {
-    formError.value = t('expertTuning.training.errors.name')
+    formError.value = t('weights.training.errors.name')
     return
   }
   if (!selectedCases.value.length) {
-    formError.value = t('expertTuning.training.errors.cases')
+    formError.value = t('weights.training.errors.cases')
     return
   }
   const weight = weightSets.value.find(row => row.id === formWeightId.value)
   if (!weight) {
-    formError.value = t('expertTuning.training.errors.weight')
+    formError.value = t('weights.training.errors.weight')
     return
   }
   const count = Math.max(1, Math.min(50, Number(formCount.value) || 50))
@@ -90,14 +90,14 @@ function submitCreate() {
   })
   creating.value = false
   formName.value = ''
-  void navigateTo(localePath(`/expert-tuning/training/${encodeURIComponent(batch.id)}`))
+  void navigateTo(localePath(`/weights/training/${encodeURIComponent(batch.id)}`))
 }
 </script>
 
 <template>
   <PageHeader
-    :title="$t('nav.expertTuning')"
-    :description="$t('expertTuning.training.description')"
+    :title="$t('nav.weights')"
+    :description="$t('weights.training.description')"
   >
     <ExpertTuningTabs />
     <div class="mb-4 flex justify-end">
@@ -105,7 +105,7 @@ function submitCreate() {
         icon="i-lucide-plus"
         @click="creating = !creating"
       >
-        {{ $t('expertTuning.training.create') }}
+        {{ $t('weights.training.create') }}
       </UButton>
     </div>
 
@@ -114,12 +114,12 @@ function submitCreate() {
       class="mb-6 rounded-xl border border-default bg-elevated p-4"
     >
       <p class="mb-3 text-sm font-semibold text-highlighted">
-        {{ $t('expertTuning.training.createTitle') }}
+        {{ $t('weights.training.createTitle') }}
       </p>
       <div class="flex flex-col gap-3">
         <div>
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('expertTuning.training.fields.name') }}
+            {{ $t('weights.training.fields.name') }}
           </label>
           <UInput
             v-model="formName"
@@ -128,7 +128,7 @@ function submitCreate() {
         </div>
         <div class="max-w-md">
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('expertTuning.training.fields.weight') }}
+            {{ $t('weights.training.fields.weight') }}
           </label>
           <USelect
             v-model="formWeightId"
@@ -139,7 +139,7 @@ function submitCreate() {
         </div>
         <div class="max-w-xs">
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('expertTuning.training.fields.count') }}
+            {{ $t('weights.training.fields.count') }}
           </label>
           <UInput
             v-model.number="formCount"
@@ -149,12 +149,12 @@ function submitCreate() {
             class="w-full"
           />
           <p class="mt-1 text-xs text-muted">
-            {{ $t('expertTuning.training.fields.countHint') }}
+            {{ $t('weights.training.fields.countHint') }}
           </p>
         </div>
         <div>
           <label class="mb-2 block text-xs text-muted">
-            {{ $t('expertTuning.training.fields.cases') }}
+            {{ $t('weights.training.fields.cases') }}
           </label>
           <div class="flex flex-col gap-2">
             <label
@@ -186,7 +186,7 @@ function submitCreate() {
         </p>
         <div class="flex gap-2">
           <UButton @click="submitCreate">
-            {{ $t('expertTuning.training.generate') }}
+            {{ $t('weights.training.generate') }}
           </UButton>
           <UButton
             color="neutral"
@@ -203,7 +203,7 @@ function submitCreate() {
       v-if="!batches.length"
       class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
     >
-      {{ $t('expertTuning.training.empty') }}
+      {{ $t('weights.training.empty') }}
     </p>
     <AdminTable
       v-else
@@ -211,11 +211,11 @@ function submitCreate() {
     >
       <template #head>
         <tr>
-          <th>{{ $t('expertTuning.training.columns.name') }}</th>
-          <th>{{ $t('expertTuning.training.columns.weight') }}</th>
-          <th>{{ $t('expertTuning.training.columns.count') }}</th>
-          <th>{{ $t('expertTuning.training.columns.progress') }}</th>
-          <th>{{ $t('expertTuning.training.columns.status') }}</th>
+          <th>{{ $t('weights.training.columns.name') }}</th>
+          <th>{{ $t('weights.training.columns.weight') }}</th>
+          <th>{{ $t('weights.training.columns.count') }}</th>
+          <th>{{ $t('weights.training.columns.progress') }}</th>
+          <th>{{ $t('weights.training.columns.status') }}</th>
         </tr>
       </template>
       <tr
@@ -238,14 +238,14 @@ function submitCreate() {
         </td>
         <td>
           <StatusBadge
-            :label="$t(`expertTuning.training.status.${row.status}`)"
+            :label="$t(`weights.training.status.${row.status}`)"
             :color="TRAINING_BATCH_STATUS_COLOR[row.status]"
           />
         </td>
       </tr>
     </AdminTable>
     <p class="mt-3 text-xs text-muted">
-      {{ $t('expertTuning.mockHint') }}
+      {{ $t('weights.mockHint') }}
     </p>
   </PageHeader>
 </template>

@@ -104,7 +104,7 @@ const showErrorBorder = computed(() => {
       class="text-sm text-muted"
       :data-testid="`${testId}-unit`"
     >
-      {{ $t('expertCaseReviews.doseUnit') }}
+      {{ $t('custom.doseUnit') }}
     </span>
   </div>
 </template>

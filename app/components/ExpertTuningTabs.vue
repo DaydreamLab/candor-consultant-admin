@@ -5,16 +5,18 @@ const localePath = useLocalePath()
 const route = useRoute()
 
 const tabs = [
-  { key: 'weights', to: '/expert-tuning' },
-  { key: 'dailyLearning', to: '/expert-tuning/daily-learning' },
-  { key: 'training', to: '/expert-tuning/training' }
+  { key: 'weights', to: '/weights' },
+  { key: 'dailyLearning', to: '/weights/daily-learning' },
+  { key: 'training', to: '/weights/training' }
 ] as const
 
 function active(to: string) {
   const current = normalizeAdminPath(route.path)
-  if (to === '/expert-tuning') {
-    return current === '/expert-tuning'
-      || current.startsWith('/expert-tuning/weights/')
+  if (to === '/weights') {
+    return current === '/weights'
+      || (current.startsWith('/weights/')
+        && !current.startsWith('/weights/daily-learning')
+        && !current.startsWith('/weights/training'))
   }
   return current === to || current.startsWith(`${to}/`)
 }
@@ -30,7 +32,7 @@ function active(to: string) {
       :variant="active(tab.to) ? 'soft' : 'ghost'"
       size="sm"
     >
-      {{ $t(`expertTuning.tabs.${tab.key}`) }}
+      {{ $t(`weights.tabs.${tab.key}`) }}
     </UButton>
   </div>
 </template>

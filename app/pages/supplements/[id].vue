@@ -48,7 +48,7 @@ if (import.meta.client) {
 }
 
 onUnmounted(() => {
-  if (!normalizeAdminPath(route.path).startsWith('/products/')) {
+  if (!normalizeAdminPath(route.path).startsWith('/supplements/')) {
     crumbLabel.value = null
   }
 })
@@ -62,7 +62,7 @@ async function load(id: string) {
   const token = readOperatorToken()
   if (!token || !id) {
     pending.value = false
-    loadError.value = t('products.failed')
+    loadError.value = t('supplements.failed')
     return
   }
 
@@ -80,7 +80,7 @@ async function load(id: string) {
       return
     }
     sellableItem.value = null
-    loadError.value = failText(error, t('products.failed'))
+    loadError.value = failText(error, t('supplements.failed'))
   } finally {
     if (sellableItemId.value === id) {
       pending.value = false
@@ -92,7 +92,7 @@ async function onSave(payload: SellableItemWrite) {
   const token = readOperatorToken()
   const id = sellableItemId.value
   if (!token || !id || !canEdit.value) {
-    notifySaveError(t('products.saveFailed'))
+    notifySaveError(t('supplements.saveFailed'))
     return
   }
 
@@ -115,7 +115,7 @@ async function onSave(payload: SellableItemWrite) {
     if (sellableItemId.value !== id) {
       return
     }
-    const message = failText(error, t('products.saveFailed'))
+    const message = failText(error, t('supplements.saveFailed'))
     if (fieldOfSaveError(message)) {
       saveError.value = message
       return
@@ -173,7 +173,7 @@ function notifySaveError(message: string) {
       v-if="pending"
       class="text-sm text-muted"
     >
-      {{ $t('products.loading') }}
+      {{ $t('supplements.loading') }}
     </p>
     <SellableItemForm
       v-else-if="sellableItem"

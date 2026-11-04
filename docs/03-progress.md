@@ -61,7 +61,7 @@
 |------|------------|------|------|--------|
 | Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 已接 | M2 |
 | 總覽 | `/`（側欄最上；stats-first 待辦／狀態；舊履約 `<details>` 收合） | 可用 | 已接（Wave-1：既有 list 長度累加；無新 overview／count API） | M3 |
-| 商品與庫存 | `/products`、`/products/new`、`/products/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
+| 商品與庫存 | `/supplements`、`/supplements/new`、`/supplements/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
 | 出貨推進 | `/shipping`、`/shipping/{id}`（列表直連 `GET /admin/shipments`；內頁讀出貨列＋訂單方案組成／撿包份數，無對話；建立／推進仍 Mock） | 可用 | 接線中 | M3 |
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
 | 訂單 | `/orders` | 可用 | 已接 | M3 |
@@ -70,30 +70,30 @@
 | 電子發票設定 | `/settings`（radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 報告判讀 LLM 上限 | `/settings`（每次讀取最多 LLM 次數；留空＝不限制；按儲存） | 可用 | 接線中（待 [candor-core #81](https://github.com/DaydreamLab/candor-core/pull/81) 合併部署） | M4 |
 | 隱私權政策 CMS | `/settings/privacy`（Markdown 編輯／儲存；左右版本 diff；自設定總頁錨點拆出）；公開頁 `/privacy-policy`；Cookie 同意依 version | 可用 | 接線中（待 [candor-core #87](https://github.com/DaydreamLab/candor-core/pull/87) 合併部署） | M2 Beta |
-| CTA 目錄 | `/settings/cta-catalog`（列表／編輯／情境矩陣；自設定總頁錨點拆出；無新增／刪除；admin 可編、ops 只讀、expert 隱藏側欄項） | 可用 | Mock（client 已備；待 candor-core CTA catalog Admin API；預設 `NUXT_PUBLIC_CTA_CATALOG_MOCK` 開） | M3 |
+| CTA 目錄 | `/settings/guidance`（列表／編輯／情境矩陣；自設定總頁錨點拆出；無新增／刪除；admin 可編、ops 只讀、expert 隱藏側欄項） | 可用 | Mock（client 已備；待 candor-core CTA catalog Admin API；預設 `NUXT_PUBLIC_CTA_CATALOG_MOCK` 開） | M3 |
 | 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
 | 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
 | PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
 | 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表表格＋排序／上架下架；編輯名稱／英文名／售價／排序；**無新增**；ops/admin PATCH 全欄、expert 可改 `active`＋`sort_order`，`name_zh`／`name_en`／`price` → 403；對齊設計稿 v4 B-01～B-07／core #143 `b7c5ed0`／Irice 11/4 第二輪） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
-| 專家案件待處理／定稿 | `/expert-case-reviews`（預設 `awaiting_review&source=expert_plan`；排序由後端 `paid_at` ASC，不送 sort／order）、定稿確認；同時定稿 409 `expert_case_already_finalized`（B-08～B-11）；**定稿不自動理貨** | 可用 | 接線中（待 core #143） | M2 Beta |
+| 專家案件待處理／定稿 | `/custom`（預設 `awaiting_review&source=expert_plan`；排序由後端 `paid_at` ASC，不送 sort／order）、定稿確認；同時定稿 409 `expert_case_already_finalized`（B-08～B-11）；**定稿不自動理貨** | 可用 | 接線中（待 core #143） | M2 Beta |
 | 退款申請列表 | `/refund-requests?status`、`POST …/confirm`（無 body）、`POST …/reject` `{reason}` 1–200；對齊 B-12～B-16／core #143 | 可用 | 接線中（待 core #143） | M2 Beta |
 | 物流進度擋理貨 | `/shipping/{id}`：退款中 disabled＋原因；`POST /admin/order/{id}/shipment` 遇 `refund_request_pending`；判斷用 order `refund_status`（B-17／C19） | 可用 | 接線中（讀取已接；開始理貨寫入對齊 #143） | M2 Beta |
-| 採檢服務（LabService） | `/lab-services`、`/lab-services/new`、`/lab-services/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
+| 採檢服務（LabService） | `/checkups`、`/checkups/new`、`/checkups/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
-| 專家訓練／權重 | `/expert-tuning`、`/expert-tuning/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
-| 專家訓練／每日學習確認 | `/expert-tuning/daily-learning`（載入待確認草案／clone→confirm→confirm-safety→dry-run→publish；對齊 core #76 `79ed13b`；ops 可確認） | 可用 | 接線中（待 core #76 合併部署） | M4 |
-| 專家訓練／訓練批次 | `/expert-tuning/training`、`/expert-tuning/training/{id}` | 殼 | Mock | M4 |
+| 專家訓練／權重 | `/weights`、`/weights/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
+| 專家訓練／每日學習確認 | `/weights/daily-learning`（載入待確認草案／clone→confirm→confirm-safety→dry-run→publish；對齊 core #76 `79ed13b`；ops 可確認） | 可用 | 接線中（待 core #76 合併部署） | M4 |
+| 專家訓練／訓練批次 | `/weights/training`、`/weights/training/{id}` | 殼 | Mock | M4 |
 | Weight sets | —（權重分頁仍 mock；每日學習 HTTP 已接畫面；見 core #75） | 殼／接線中 | Mock／接線中 | M4 |
 | Operator CRUD／重設密碼 | —（可掛設定） | 無 | Mock | M4 |
 | 代操去識別化 | —（可掛使用者／設定） | 無 | Mock | M4 |
 | 設定頁 | `/settings`（錨點：支付｜發票｜報告判讀｜其他；隱私／CTA 已拆獨立頁） | 殼 | 殼 | 完成 |
-| AI 助理／對話文案 | `/ai-assistant` | 可用 | 已接（conversation-copies） | 完成 |
-| AI 助理／採檢建議連結 | `/ai-assistant/site` | 可用 | 已接（client-config） | 完成 |
-| AI 助理／合規詞庫 | `/ai-assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
-| 專家檢視／定稿對話文案 | `/expert-case-reviews/{id}` 方案／權重下方獨立卡（產生兩段 MD、左右並排編輯、cache soft chip、dirty 覆蓋確認、定稿鎖定；空文案不可送出定稿） | 可用 | 接線中（待 [candor-core #103](https://github.com/DaydreamLab/candor-core/pull/103)；本機可 `NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK=1`） | M3 |
-| 專家檢視／選品調劑量 UIUX | `/expert-case-reviews/{id}` 決策保留／移除／調劑量；劑量＝**顆數**正整數 ≥1（單位「顆」；舊小數顯示 ceil；保留態唯讀須切調劑量；錯＝欄位 inline＋disable 送出、無 top banner） | 可用 | 已接（前端閘；core 是否強制整數顆數另追） | M3 |
-| 專家檢視／缺報告・缺目標 chip | `/expert-case-reviews/{id}` 頂欄＋會員資料區＋定稿卡 soft chip（白話「缺報告」「缺目標」；**不挡**產生／定案；由 member-data `goals`／`health_report` 推導） | 可用 | 已接（消費既有 member-data；無獨立 API 旗標） | M3 |
+| AI 助理／對話文案 | `/assistant` | 可用 | 已接（conversation-copies） | 完成 |
+| AI 助理／採檢建議連結 | `/assistant/site` | 可用 | 已接（client-config） | 完成 |
+| AI 助理／合規詞庫 | `/assistant/claim-terms` | 可用 | 已接（claim-guard-terms） | 完成 |
+| 專家檢視／定稿對話文案 | `/custom/{id}` 方案／權重下方獨立卡（產生兩段 MD、左右並排編輯、cache soft chip、dirty 覆蓋確認、定稿鎖定；空文案不可送出定稿） | 可用 | 接線中（待 [candor-core #103](https://github.com/DaydreamLab/candor-core/pull/103)；本機可 `NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK=1`） | M3 |
+| 專家檢視／選品調劑量 UIUX | `/custom/{id}` 決策保留／移除／調劑量；劑量＝**顆數**正整數 ≥1（單位「顆」；舊小數顯示 ceil；保留態唯讀須切調劑量；錯＝欄位 inline＋disable 送出、無 top banner） | 可用 | 已接（前端閘；core 是否強制整數顆數另追） | M3 |
+| 專家檢視／缺報告・缺目標 chip | `/custom/{id}` 頂欄＋會員資料區＋定稿卡 soft chip（白話「缺報告」「缺目標」；**不挡**產生／定案；由 member-data `goals`／`health_report` 推導） | 可用 | 已接（消費既有 member-data；無獨立 API 旗標） | M3 |
 | 知識管理／資料集 | `/knowledge/datasets`、`/knowledge/datasets/{id}` | 可用 | 接線中 | KM1 |
 | 知識管理／片段審核 | `/knowledge/chunks` | 可用 | 接線中 | KM1 |
 | 知識管理／檢索預覽 | `/knowledge/retrieval-preview` | 可用 | 接線中 | KM2 |
@@ -107,8 +107,8 @@
 | 功能 | 路由 | 畫面 | 接線 |
 |------|------|------|------|
 | 履約單 cases | `/cases` | 殼 | 不做 |
-| 檢驗排程 labs | `/labs` | 殼 | 不做 |
-| 履約看板 progress | `/progress` | 殼 | 不做 |
+| 檢驗排程 labs | `/scheduling` | 殼 | 不做 |
+| 履約看板 progress | `/fulfillment` | 殼 | 不做 |
 | 簽核 reviews | `/reviews` | 殼 | 不做 |
 | selections／keyin | `/selections` | 殼 | 不做 |
 | 顧問請款 invoices | `/invoices` | 殼 | 不做 |
@@ -145,17 +145,17 @@
 | PackagePlan 列表 | `GET /admin/package-plans` | 已接（列表顯示包裝總容量／固定核心數量） |
 | PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/package-plan/{id}` | 已接（畫面 `/package-plans/{id}`；`period_days`／包裝總容量／固定核心數量可改；天數 UI 選項 30／60／90） |
 | PackagePlan 建立 | `POST /admin/package-plans` | Mock（畫面未做；無刪除端點） |
-| LabService CRUD | `/admin/lab-services`、`/admin/lab-service/{id}` | Mock（畫面 `/lab-services` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
-| LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/labs`） |
-| Client config | `GET`／`PATCH /admin/client-config` | 已接（`/ai-assistant/site`；設定頁不再編） |
-| Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/ai-assistant`） |
-| Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/ai-assistant/claim-terms`） |
+| LabService CRUD | `/admin/checkups`、`/admin/lab-service/{id}` | Mock（畫面 `/checkups` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
+| LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/scheduling`） |
+| Client config | `GET`／`PATCH /admin/client-config` | 已接（`/assistant/site`；設定頁不再編） |
+| Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/assistant`） |
+| Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/assistant/claim-terms`） |
 
 ### Expert case reviews
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 列表／詳情／品項決定／送出／匯出 | `GET /expert-case-reviews`、`GET`／`PATCH`／`POST …/expert-case-review/{id}/**` | 已接（列表支援 `source=expert_plan\|legacy`；定稿畫面顯示單價參考＋開案金額） |
+| 列表／詳情／品項決定／送出／匯出 | `GET /custom`、`GET`／`PATCH`／`POST …/expert-case-review/{id}/**` | 已接（列表支援 `source=expert_plan\|legacy`；定稿畫面顯示單價參考＋開案金額） |
 | 定稿對話文案產生 | `POST /expert-case-review/{id}/finalize-copy/generate`（`force`；回 `report_highlights`／`expert_opinion`／`content_hash`／`cache_hit`） | 接線中（待 core #103；本機 mock 旗標可開） |
 | 送出定稿帶兩段文案 | `POST …/submit` 可選 `report_highlights`／`expert_opinion` | 接線中（待 core #103） |
 
@@ -215,9 +215,9 @@
 |------|------|------|
 | 列表／建立／詳情／entries／dry-run／publish | `/admin/weight-sets/**` | Mock |
 | 每日學習草案／確認／安全確認 | `POST …/daily-learning-*`；`GET /weight-sets`／`{id}`（#76：`daily_learning_pending`／`is_daily_learning_draft`／頂層 `daily_learning`） | 接線中（待 core #76 合併部署） |
-| 後台「專家訓練」權重分頁 | `/expert-tuning`（本地 mock，未呼叫 weight-set API） | Mock |
-| 後台「專家訓練」每日學習確認 | `/expert-tuning/daily-learning`（載入草案＋確認；ops 停用 clone／dry-run／publish） | 接線中（待 core #76 合併部署） |
-| 後台「專家訓練」訓練批次 | `/expert-tuning/training`（本地 mock；案例庫／模擬案例／review；無 HTTP） | Mock |
+| 後台「專家訓練」權重分頁 | `/weights`（本地 mock，未呼叫 weight-set API） | Mock |
+| 後台「專家訓練」每日學習確認 | `/weights/daily-learning`（載入草案＋確認；ops 停用 clone／dry-run／publish） | 接線中（待 core #76 合併部署） |
+| 後台「專家訓練」訓練批次 | `/weights/training`（本地 mock；案例庫／模擬案例／review；無 HTTP） | Mock |
 
 ### 明確不做（示範頁可暫留）
 
@@ -245,7 +245,7 @@
 
 - 2026-10-28：專家案件詳情缺報告／缺目標 soft chip（頂欄＋goals／report 標題＋定稿卡；不挡 generate／submit；由 member-data 推導）。core 若日後提供顯式旗標可改消費；`docs/04` 請雙寫
 - 2026-10-28：專家案件詳情「定稿對話文案」獨立卡（四態；generate／submit 帶兩段 MD；cache_hit soft chip；dirty 覆蓋確認）。接線待 core #103；`docs/04` 請雙寫
-- 2026-10-28：設定組側欄＝設定｜隱私權｜CTA 目錄｜AI 助理；路由 `/settings`｜`/settings/privacy`｜`/settings/cta-catalog`；總頁錨點僅支付｜發票｜報告判讀｜其他；空 hash 不強制 replace；expert 隱藏 CTA 側欄項。core `docs/04` 路徑敘述請雙寫
+- 2026-10-28：設定組側欄＝設定｜隱私權｜CTA 目錄｜AI 助理；路由 `/settings`｜`/settings/privacy`｜`/settings/guidance`；總頁錨點僅支付｜發票｜報告判讀｜其他；空 hash 不強制 replace；expert 隱藏 CTA 側欄項。core `docs/04` 路徑敘述請雙寫
 - 2026-10-27：CTA client 路徑對齊 core #98（`situation-matrix`）；設定 left anchors＋列表／編輯／矩陣 UI；仍 Mock 至 core 部署；`docs/04` 待雙寫
 - 2026-10-27：設定頁 left anchors（支付｜發票｜報告判讀｜隱私｜**CTA 目錄**｜其他）；CTA 列表／編輯／情境矩陣 UI；mock client；core Admin API 與 `docs/04` 待雙寫
 - 2026-10-27：總覽移出開發中→側欄最上（無 badge）；`/` Wave-1 接專家檢視／訂單／會員／知識片段 list count；舊履約示範收合；勿新 overview API。core `docs/04` 對應「總覽」列請同步為已接（沿用既有 list 端點）

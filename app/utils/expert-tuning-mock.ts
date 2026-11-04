@@ -73,7 +73,7 @@ export interface TrainingBatchMock {
   cases: SimulatedCaseMock[]
 }
 
-/** Local mock only — not wired to `/admin/weight-sets` or training HTTP. */
+/** Local mock only — not wired to `/admin/weights` or training HTTP. */
 export const EXPERT_TUNING_MOCK: WeightSetMock[] = [
   {
     id: 'ws-published-010',

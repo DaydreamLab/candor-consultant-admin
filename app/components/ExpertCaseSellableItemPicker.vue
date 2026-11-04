@@ -55,7 +55,7 @@ function optionMeta(row: SellablePickRow) {
   >
     <UInput
       v-model="query"
-      :placeholder="$t('expertCaseReviews.pickerSearch')"
+      :placeholder="$t('custom.pickerSearch')"
       icon="i-lucide-search"
       size="sm"
       :disabled="disabled || pending"
@@ -67,7 +67,7 @@ function optionMeta(row: SellablePickRow) {
       class="text-sm text-muted"
       data-testid="expert-case-sellable-picker-loading"
     >
-      {{ $t('expertCaseReviews.pickerLoading') }}
+      {{ $t('custom.pickerLoading') }}
     </p>
     <p
       v-else-if="errorMessage"
@@ -81,7 +81,7 @@ function optionMeta(row: SellablePickRow) {
       class="text-sm text-muted"
       data-testid="expert-case-sellable-picker-empty"
     >
-      {{ query.trim() ? $t('expertCaseReviews.pickerEmptySearch') : $t('expertCaseReviews.pickerEmpty') }}
+      {{ query.trim() ? $t('custom.pickerEmptySearch') : $t('custom.pickerEmpty') }}
     </p>
     <ul
       v-else

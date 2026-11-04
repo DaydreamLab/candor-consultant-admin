@@ -20,15 +20,15 @@ export function matchesCtaUiFilter(type: CtaCatalogType, filter: CtaUiFilter): b
 }
 
 export function formatDecisionChipKey(format: CtaDecisionFormat): string {
-  return `settings.ctaCatalog.format.${format}`
+  return `settings.guidance.format.${format}`
 }
 
 export function hitUiChipKey(type: CtaCatalogType): string {
-  return `settings.ctaCatalog.hitUi.${type}`
+  return `settings.guidance.hitUi.${type}`
 }
 
 export function scenarioChipKey(id: CtaScenarioId): string {
-  return `settings.ctaCatalog.scenario.${id}`
+  return `settings.guidance.scenario.${id}`
 }
 
 /** Build a compact systemone-ish JSON preview for the advanced details block. */

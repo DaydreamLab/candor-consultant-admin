@@ -10,10 +10,10 @@ export const SETTINGS_ANCHOR_IDS = [
 
 export type SettingsAnchorId = (typeof SETTINGS_ANCHOR_IDS)[number]
 
-/** Legacy hashes that redirect off the hub onto dedicated settings-group pages. */
+/** Hashes that redirect off the hub onto dedicated settings-group pages. */
 export const SETTINGS_SPLIT_HASH_REDIRECTS = {
   'privacy': '/settings/privacy',
-  'cta-catalog': '/settings/cta-catalog'
+  'guidance': '/settings/guidance'
 } as const
 
 export type SettingsSplitHash = keyof typeof SETTINGS_SPLIT_HASH_REDIRECTS
@@ -34,7 +34,7 @@ export function parseSettingsAnchorHash(hash: string | null | undefined): Settin
 
 export function parseSettingsSplitHash(hash: string | null | undefined): SettingsSplitHash | null {
   const raw = (hash || '').replace(/^#/, '').trim()
-  if (raw === 'privacy' || raw === 'cta-catalog') {
+  if (raw === 'privacy' || raw === 'guidance') {
     return raw
   }
   return null
@@ -57,7 +57,7 @@ export function resolveSettingsAnchor(
  * Empty hash must NOT replace — with SPA / GH Pages trailing-slash, immediate
  * `#payment` replace from `/settings` can re-enter and freeze the main thread.
  * UI still falls back via resolveSettingsAnchor; only normalize non-empty invalid hashes.
- * Split hashes (privacy／cta-catalog) are handled by navigateTo, not replace.
+ * Split hashes (privacy／guidance) are handled by navigateTo, not replace.
  */
 export function settingsHashReplaceTarget(
   hash: string | null | undefined,

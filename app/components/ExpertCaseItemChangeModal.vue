@@ -44,8 +44,8 @@ const doseError = ref('')
 
 const title = computed(() => {
   return props.mode === 'add'
-    ? t('expertCaseReviews.addItemTitle')
-    : t('expertCaseReviews.swapItemTitle')
+    ? t('custom.addItemTitle')
+    : t('custom.swapItemTitle')
 })
 
 function resetForm() {
@@ -87,7 +87,7 @@ watch(dose, () => {
   }
   doseError.value = validateCapsuleDose(dose.value).ok
     ? ''
-    : t('expertCaseReviews.doseInvalid')
+    : t('custom.doseInvalid')
 })
 
 function onOpen(value: boolean) {
@@ -98,16 +98,16 @@ function submit() {
   localError.value = ''
   doseError.value = ''
   if (!selectedId.value) {
-    localError.value = t('expertCaseReviews.pickerSelectRequired')
+    localError.value = t('custom.pickerSelectRequired')
     return
   }
   if (!reasonIsFilled(reason.value)) {
-    localError.value = t('expertCaseReviews.reasonRequiredMemberFacing')
+    localError.value = t('custom.reasonRequiredMemberFacing')
     return
   }
   const doseCheck = validateCapsuleDose(dose.value)
   if (!doseCheck.ok) {
-    doseError.value = t('expertCaseReviews.doseInvalid')
+    doseError.value = t('custom.doseInvalid')
     return
   }
   emit('confirm', {
@@ -130,13 +130,13 @@ function submit() {
       <div class="space-y-4">
         <p class="text-sm text-muted">
           {{ mode === 'add'
-            ? $t('expertCaseReviews.addItemHint')
-            : $t('expertCaseReviews.swapItemHint') }}
+            ? $t('custom.addItemHint')
+            : $t('custom.swapItemHint') }}
         </p>
 
         <div>
           <p class="mb-2 text-sm font-medium text-highlighted">
-            {{ $t('expertCaseReviews.pickerLabel') }}
+            {{ $t('custom.pickerLabel') }}
           </p>
           <ExpertCaseSellableItemPicker
             v-model="selectedId"
@@ -148,7 +148,7 @@ function submit() {
         </div>
 
         <UFormField
-          :label="$t('expertCaseReviews.dose')"
+          :label="$t('custom.dose')"
           required
         >
           <CapsuleDoseStepper
@@ -159,7 +159,7 @@ function submit() {
           />
           <template #hint>
             <span class="text-muted">
-              {{ $t('expertCaseReviews.doseCapsuleHint') }}
+              {{ $t('custom.doseCapsuleHint') }}
             </span>
           </template>
         </UFormField>
@@ -172,7 +172,7 @@ function submit() {
         </p>
 
         <UFormField
-          :label="$t('expertCaseReviews.reasonMemberFacing')"
+          :label="$t('custom.reasonMemberFacing')"
           required
         >
           <UTextarea
@@ -183,7 +183,7 @@ function submit() {
           />
           <template #hint>
             <span data-testid="expert-case-item-change-reason-hint">
-              {{ $t('expertCaseReviews.reasonMemberFacingHint') }}
+              {{ $t('custom.reasonMemberFacingHint') }}
             </span>
           </template>
         </UFormField>
@@ -216,8 +216,8 @@ function submit() {
         @click="submit"
       >
         {{ mode === 'add'
-          ? $t('expertCaseReviews.addItemConfirm')
-          : $t('expertCaseReviews.swapItemConfirm') }}
+          ? $t('custom.addItemConfirm')
+          : $t('custom.swapItemConfirm') }}
       </UButton>
     </template>
   </UModal>

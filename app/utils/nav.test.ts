@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isDevelopingPath, NAV_GROUPS, visibleNavGroups } from './nav'
 
-describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
+describe('sidebar IA (short object names 2026-11-04)', () => {
   it('groups in order: workbench → ops → learning → catalog → system → developing', () => {
     expect(NAV_GROUPS.map(g => g.key)).toEqual([
       'workbench',
@@ -28,65 +28,80 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
     expect(NAV_GROUPS.find(g => g.key === 'developing')!.items.map(i => i.key)).not.toContain('workbench')
   })
 
-  it('places shipping in cases group without badge; progress in developing', () => {
+  it('places shipping in ops group without badge; fulfillment in developing', () => {
     const ops = NAV_GROUPS.find(g => g.key === 'ops')!
     const developing = NAV_GROUPS.find(g => g.key === 'developing')!
     expect(ops.items.map(i => i.key)).toEqual([
-      'reviews',
+      'custom',
       'orders',
       'refundRequests',
       'shipping',
       'users'
     ])
+    expect(ops.items.map(i => i.to)).toEqual([
+      '/custom',
+      '/orders',
+      '/refund-requests',
+      '/shipping',
+      '/users'
+    ])
     expect(ops.items.find(i => i.key === 'shipping')?.developing).toBe(false)
     expect(ops.items.find(i => i.key === 'refundRequests')?.developing).toBe(false)
-    expect(developing.items.map(i => i.key)).toContain('progress')
+    expect(developing.items.map(i => i.key)).toContain('fulfillment')
+    expect(developing.items.find(i => i.key === 'fulfillment')?.to).toBe('/fulfillment')
     expect(developing.items.map(i => i.key)).not.toContain('shipping')
   })
 
-  it('places labServices in catalog with coming-soon badge; labs stay in developing', () => {
+  it('places checkups in catalog with coming-soon badge; scheduling stays in developing', () => {
     const catalog = NAV_GROUPS.find(g => g.key === 'catalog')!
     const developing = NAV_GROUPS.find(g => g.key === 'developing')!
     expect(catalog.items.map(i => i.key)).toEqual([
-      'packagePlans',
+      'plans',
       'expertPlans',
-      'products',
-      'labServices'
+      'supplements',
+      'checkups'
+    ])
+    expect(catalog.items.map(i => i.to)).toEqual([
+      '/package-plans',
+      '/expert-plans',
+      '/supplements',
+      '/checkups'
     ])
     expect(catalog.items.find(i => i.key === 'expertPlans')?.developing).toBe(false)
-    expect(catalog.items.find(i => i.key === 'labServices')?.developing).not.toBe(false)
+    expect(catalog.items.find(i => i.key === 'checkups')?.developing).not.toBe(false)
     expect(developing.items.map(i => i.key)).toEqual([
       'cases',
-      'labs',
-      'labAppointments',
-      'progress',
+      'scheduling',
+      'appointments',
+      'fulfillment',
       'selections',
       'invoices',
       'reports',
       'orgs'
     ])
-    expect(developing.items.map(i => i.key)).not.toContain('labServices')
+    expect(developing.items.find(i => i.key === 'scheduling')?.to).toBe('/scheduling')
+    expect(developing.items.map(i => i.key)).not.toContain('checkups')
   })
 
-  it('settings group order: settings → privacy → CTA → AI', () => {
+  it('settings group order: settings → privacy → guidance → assistant', () => {
     const system = NAV_GROUPS.find(g => g.key === 'system')!
     expect(system.items.map(i => i.key)).toEqual([
       'settings',
       'privacy',
-      'ctaCatalog',
-      'aiAssistant'
+      'guidance',
+      'assistant'
     ])
     expect(system.items.map(i => i.to)).toEqual([
       '/settings#payment',
       '/settings/privacy',
-      '/settings/cta-catalog',
-      '/ai-assistant'
+      '/settings/guidance',
+      '/assistant'
     ])
     expect(system.items.find(i => i.key === 'settings')?.exact).toBe(true)
-    expect(system.items.find(i => i.key === 'ctaCatalog')?.ctaCatalogOnly).toBe(true)
+    expect(system.items.find(i => i.key === 'guidance')?.guidanceOnly).toBe(true)
   })
 
-  it('hides CTA catalog nav for expert; keeps privacy/settings/AI', () => {
+  it('hides guidance nav for expert; keeps privacy/settings/assistant', () => {
     const adminKeys = visibleNavGroups('consultant_admin', 'admin')
       .find(g => g.key === 'system')!
       .items
@@ -95,8 +110,8 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
       .find(g => g.key === 'system')!
       .items
       .map(i => i.key)
-    expect(adminKeys).toEqual(['settings', 'privacy', 'ctaCatalog', 'aiAssistant'])
-    expect(expertKeys).toEqual(['settings', 'privacy', 'aiAssistant'])
+    expect(adminKeys).toEqual(['settings', 'privacy', 'guidance', 'assistant'])
+    expect(expertKeys).toEqual(['settings', 'privacy', 'assistant'])
   })
 
   it('hides refundRequests nav for expert; keeps it for ops／admin', () => {
@@ -112,18 +127,20 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
   it('marks live official pages as not developing', () => {
     const live = [
       'workbench',
-      'reviews',
+      'custom',
       'orders',
+      'refundRequests',
       'shipping',
       'users',
       'knowledge',
-      'expertTuning',
-      'packagePlans',
-      'products',
+      'weights',
+      'plans',
+      'expertPlans',
+      'supplements',
       'settings',
       'privacy',
-      'ctaCatalog',
-      'aiAssistant'
+      'guidance',
+      'assistant'
     ]
     for (const key of live) {
       const item = NAV_GROUPS.flatMap(g => g.items).find(i => i.key === key)
@@ -131,20 +148,32 @@ describe('sidebar IA (Irice 2026-10-27 workbench top + settings split)', () => {
     }
   })
 
-  it('isDevelopingPath hides topbar badge on overview, settings split, expert-tuning, and shipping', () => {
+  it('isDevelopingPath hides topbar badge on overview, settings split, weights, and shipping', () => {
     expect(isDevelopingPath('/')).toBe(false)
     expect(isDevelopingPath('/settings')).toBe(false)
     expect(isDevelopingPath('/settings/privacy')).toBe(false)
-    expect(isDevelopingPath('/settings/cta-catalog')).toBe(false)
-    expect(isDevelopingPath('/expert-tuning')).toBe(false)
-    expect(isDevelopingPath('/expert-tuning/daily-learning')).toBe(false)
+    expect(isDevelopingPath('/settings/guidance')).toBe(false)
+    expect(isDevelopingPath('/weights')).toBe(false)
+    expect(isDevelopingPath('/weights/daily-learning')).toBe(false)
+    expect(isDevelopingPath('/custom')).toBe(false)
+    expect(isDevelopingPath('/supplements')).toBe(false)
+    expect(isDevelopingPath('/assistant')).toBe(false)
     expect(isDevelopingPath('/shipping')).toBe(false)
-    expect(isDevelopingPath('/lab-services')).toBe(true)
-    expect(isDevelopingPath('/progress')).toBe(true)
+    expect(isDevelopingPath('/expert-plans')).toBe(false)
+    expect(isDevelopingPath('/refund-requests')).toBe(false)
+    expect(isDevelopingPath('/checkups')).toBe(true)
+    expect(isDevelopingPath('/fulfillment')).toBe(true)
+    expect(isDevelopingPath('/scheduling')).toBe(true)
   })
 
   it('settings nav targets first payment hash to avoid empty-hash entry', () => {
     const settings = NAV_GROUPS.flatMap(g => g.items).find(i => i.key === 'settings')
     expect(settings?.to).toBe('/settings#payment')
+  })
+
+  it('places weights under learning at /weights', () => {
+    const learning = NAV_GROUPS.find(g => g.key === 'learning')!
+    expect(learning.items.map(i => i.to)).toEqual(['/knowledge/datasets', '/weights'])
+    expect(learning.items.map(i => i.key)).toEqual(['knowledge', 'weights'])
   })
 })

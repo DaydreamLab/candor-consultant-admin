@@ -69,7 +69,7 @@ watch(dose, () => {
   }
   doseError.value = validateCapsuleDose(dose.value).ok
     ? ''
-    : t('expertCaseReviews.doseInvalid')
+    : t('custom.doseInvalid')
 })
 
 function onOpen(value: boolean) {
@@ -92,12 +92,12 @@ function submit() {
   localError.value = ''
   doseError.value = ''
   if (!decision.value) {
-    localError.value = t('expertCaseReviews.editItemDecisionRequired')
+    localError.value = t('custom.editItemDecisionRequired')
     return
   }
   if (decision.value === 'reject' || decision.value === 'adjust') {
     if (!reasonIsFilled(reason.value)) {
-      localError.value = t('expertCaseReviews.reasonRequiredAdminOnly')
+      localError.value = t('custom.reasonRequiredAdminOnly')
       return
     }
   }
@@ -105,7 +105,7 @@ function submit() {
   if (decision.value === 'adjust') {
     const doseCheck = validateCapsuleDose(dose.value)
     if (!doseCheck.ok) {
-      doseError.value = t('expertCaseReviews.doseInvalid')
+      doseError.value = t('custom.doseInvalid')
       return
     }
     dailyDose = doseCheck.dose
@@ -121,7 +121,7 @@ function submit() {
 <template>
   <UModal
     :open="open"
-    :title="$t('expertCaseReviews.editItemTitle')"
+    :title="$t('custom.editItemTitle')"
     :ui="{ footer: 'justify-end gap-2' }"
     data-testid="expert-case-item-edit-modal"
     @update:open="onOpen"
@@ -147,7 +147,7 @@ function submit() {
 
         <div>
           <p class="mb-2 text-sm font-medium text-highlighted">
-            {{ $t('expertCaseReviews.editItemDecision') }}
+            {{ $t('custom.editItemDecision') }}
           </p>
           <div class="flex flex-wrap gap-2">
             <UButton
@@ -158,7 +158,7 @@ function submit() {
               data-testid="expert-case-edit-approve"
               @click="selectDecision('approve')"
             >
-              {{ $t('expertCaseReviews.approve') }}
+              {{ $t('custom.approve') }}
             </UButton>
             <UButton
               size="sm"
@@ -168,7 +168,7 @@ function submit() {
               data-testid="expert-case-edit-reject"
               @click="selectDecision('reject')"
             >
-              {{ $t('expertCaseReviews.reject') }}
+              {{ $t('custom.reject') }}
             </UButton>
             <UButton
               size="sm"
@@ -178,7 +178,7 @@ function submit() {
               data-testid="expert-case-edit-adjust"
               @click="selectDecision('adjust')"
             >
-              {{ $t('expertCaseReviews.adjust') }}
+              {{ $t('custom.adjust') }}
             </UButton>
             <UButton
               size="sm"
@@ -188,7 +188,7 @@ function submit() {
               data-testid="expert-case-edit-swap"
               @click="requestSwap"
             >
-              {{ $t('expertCaseReviews.swapItem') }}
+              {{ $t('custom.swapItem') }}
             </UButton>
           </div>
         </div>
@@ -198,7 +198,7 @@ function submit() {
           data-testid="expert-case-edit-dose-row"
         >
           <UFormField
-            :label="$t('expertCaseReviews.dose')"
+            :label="$t('custom.dose')"
             required
           >
             <CapsuleDoseStepper
@@ -209,7 +209,7 @@ function submit() {
             />
             <template #hint>
               <span class="text-muted">
-                {{ $t('expertCaseReviews.doseCapsuleHint') }}
+                {{ $t('custom.doseCapsuleHint') }}
               </span>
             </template>
           </UFormField>
@@ -224,8 +224,8 @@ function submit() {
 
         <UFormField
           :label="decision === 'approve'
-            ? $t('expertCaseReviews.reason')
-            : $t('expertCaseReviews.reasonAdminOnly')"
+            ? $t('custom.reason')
+            : $t('custom.reasonAdminOnly')"
           :required="decision === 'reject' || decision === 'adjust'"
         >
           <UTextarea
@@ -236,7 +236,7 @@ function submit() {
           />
           <template #hint>
             <span data-testid="expert-case-edit-reason-hint">
-              {{ $t('expertCaseReviews.reasonAdminOnlyHint') }}
+              {{ $t('custom.reasonAdminOnlyHint') }}
             </span>
           </template>
         </UFormField>
@@ -268,7 +268,7 @@ function submit() {
         data-testid="expert-case-edit-confirm"
         @click="submit"
       >
-        {{ $t('expertCaseReviews.editItemConfirm') }}
+        {{ $t('custom.editItemConfirm') }}
       </UButton>
     </template>
   </UModal>

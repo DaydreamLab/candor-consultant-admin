@@ -4,8 +4,8 @@ const { t } = useI18n()
 
 <template>
   <PageHeader
-    :title="t('nav.ctaCatalog')"
-    :description="t('settings.ctaCatalog.hint')"
+    :title="t('nav.guidance')"
+    :description="t('settings.guidance.hint')"
     plain
   >
     <CtaCatalogSettings />

@@ -125,7 +125,7 @@ watch(rows, (list) => {
 
 <template>
   <PageHeader
-    :title="$t('nav.labs')"
+    :title="$t('nav.scheduling')"
     :description="moduleDesc('labs')"
   >
     <template #actions>

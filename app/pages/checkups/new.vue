@@ -29,9 +29,9 @@ async function onSave(payload: LabServiceWrite) {
   errorMessage.value = ''
   try {
     const created = store.createService(payload)
-    await navigateTo(localePath(`/lab-services/${encodeURIComponent(created.id)}`))
+    await navigateTo(localePath(`/checkups/${encodeURIComponent(created.id)}`))
   } catch {
-    errorMessage.value = t('labServices.saveFailed')
+    errorMessage.value = t('checkups.saveFailed')
   } finally {
     saving.value = false
   }

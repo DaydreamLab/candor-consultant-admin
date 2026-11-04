@@ -44,7 +44,7 @@ describe('ExpertCaseItemEditModal', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="expert-case-edit-error"]').text())
-      .toContain('expertCaseReviews.editItemDecisionRequired')
+      .toContain('custom.editItemDecisionRequired')
     expect(wrapper.emitted('apply')).toBeFalsy()
   })
 
@@ -66,7 +66,7 @@ describe('ExpertCaseItemEditModal', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="expert-case-edit-error"]').text())
-      .toContain('expertCaseReviews.reasonRequiredAdminOnly')
+      .toContain('custom.reasonRequiredAdminOnly')
     expect(wrapper.emitted('apply')).toBeFalsy()
   })
 

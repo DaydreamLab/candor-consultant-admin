@@ -9,10 +9,10 @@ export interface NavItem {
   to: string
   icon: string
   platformOnly?: boolean
-  /** 僅 ops／admin 可見（知識管理）。 */
+  /** 僅 ops／admin 可見（知識）。 */
   knowledgeOnly?: boolean
-  /** 僅 admin／ops 可見（CTA 目錄）；expert 隱藏整項。 */
-  ctaCatalogOnly?: boolean
+  /** 僅 admin／ops 可見（引導）；expert 隱藏整項。 */
+  guidanceOnly?: boolean
   /** 僅 ops／admin 可見（退款申請；expert 隱藏，Irice 11/4）。 */
   opsAdminOnly?: boolean
   /** RouterLink exact：設定總頁勿與 /settings/privacy 等子路徑同時亮起。 */
@@ -29,9 +29,9 @@ export interface NavGroup {
 }
 
 /**
- * 側欄 IA（Irice 2026-10-27／設定組拆頁 2026-10-28）：
- * 總覽（最上、無組標）→ 案件 → 知識 → 商品 → 設定 → 開發中。
- * 每項只出現一次（24；expert 看不到 CTA／退款申請則更少）。組 key 與 item key 共用 `nav.*`。
+ * 側欄 IA（短物件名 2026-11-04）：
+ * 總覽（最上、無組標）→ 營運 → 學習 → 商品 → 系統 → 開發中。
+ * 每項只出現一次（24；expert 看不到引導／退款申請則更少）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -44,10 +44,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     key: 'ops',
     items: [
-      { key: 'reviews', to: '/expert-case-reviews', icon: 'i-lucide-badge-check', developing: false },
+      { key: 'custom', to: '/custom', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
       { key: 'refundRequests', to: '/refund-requests', icon: 'i-lucide-wallet', developing: false, opsAdminOnly: true },
-      // shipping：物流進度（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
+      // shipping：物流（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck', developing: false },
       { key: 'users', to: '/users', icon: 'i-lucide-users', developing: false }
     ]
@@ -56,18 +56,18 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'learning',
     items: [
       { key: 'knowledge', to: '/knowledge/datasets', icon: 'i-lucide-book-open', developing: false, knowledgeOnly: true },
-      { key: 'expertTuning', to: '/expert-tuning', icon: 'i-lucide-sliders-horizontal', developing: false }
+      { key: 'weights', to: '/weights', icon: 'i-lucide-sliders-horizontal', developing: false }
     ]
   },
   {
     key: 'catalog',
     items: [
-      { key: 'packagePlans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
+      { key: 'plans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
       { key: 'expertPlans', to: '/expert-plans', icon: 'i-lucide-sparkles', developing: false },
-      { key: 'products', to: '/products', icon: 'i-lucide-package', developing: false },
-      // labServices：採檢服務主檔（語意 in-scope；local mock、未接 API）→ badge 即將上線
-      // 勿與開發中「採檢」/labs 或「預約記錄」/lab-appointments 混淆
-      { key: 'labServices', to: '/lab-services', icon: 'i-lucide-droplet' }
+      { key: 'supplements', to: '/supplements', icon: 'i-lucide-package', developing: false },
+      // checkups：健檢主檔（語意 in-scope；local mock、未接 API）→ badge 即將上線
+      // 勿與開發中「排程」/scheduling 或「預約」/lab-appointments 混淆
+      { key: 'checkups', to: '/checkups', icon: 'i-lucide-droplet' }
     ]
   },
   {
@@ -76,18 +76,18 @@ export const NAV_GROUPS: NavGroup[] = [
       // Prefer first visible anchor hash so sidebar entry never hits empty-hash normalize.
       { key: 'settings', to: '/settings#payment', icon: 'i-lucide-settings', developing: false, exact: true },
       { key: 'privacy', to: '/settings/privacy', icon: 'i-lucide-shield', developing: false },
-      { key: 'ctaCatalog', to: '/settings/cta-catalog', icon: 'i-lucide-mouse-pointer-click', developing: false, ctaCatalogOnly: true },
-      { key: 'aiAssistant', to: '/ai-assistant', icon: 'i-lucide-bot', developing: false }
+      { key: 'guidance', to: '/settings/guidance', icon: 'i-lucide-mouse-pointer-click', developing: false, guidanceOnly: true },
+      { key: 'assistant', to: '/assistant', icon: 'i-lucide-bot', developing: false }
     ]
   },
   {
     key: 'developing',
     items: [
       { key: 'cases', to: '/cases', icon: 'i-lucide-folder-kanban' },
-      { key: 'labs', to: '/labs', icon: 'i-lucide-flask-conical' },
-      { key: 'labAppointments', to: '/lab-appointments', icon: 'i-lucide-calendar-clock' },
-      // progress：履約進度範例頁（勿與案件組「物流進度」混淆）
-      { key: 'progress', to: '/progress', icon: 'i-lucide-list-checks' },
+      { key: 'scheduling', to: '/scheduling', icon: 'i-lucide-flask-conical' },
+      { key: 'appointments', to: '/lab-appointments', icon: 'i-lucide-calendar-clock' },
+      // fulfillment：履約範例頁（勿與營運組「物流」混淆）
+      { key: 'fulfillment', to: '/fulfillment', icon: 'i-lucide-list-checks' },
       { key: 'selections', to: '/selections', icon: 'i-lucide-clipboard-list' },
       { key: 'invoices', to: '/invoices', icon: 'i-lucide-receipt' },
       { key: 'reports', to: '/reports', icon: 'i-lucide-chart-column' },
@@ -125,22 +125,22 @@ export function isDevelopingPath(path: string): boolean {
   if (current === '/shipping' || current.startsWith('/shipping/')) {
     return false
   }
-  if (current === '/products' || current.startsWith('/products/')) {
+  if (current === '/supplements' || current.startsWith('/supplements/')) {
     return false
   }
   if (current === '/users' || current.startsWith('/users/')) {
     return false
   }
-  if (current === '/ai-assistant' || current.startsWith('/ai-assistant/')) {
+  if (current === '/assistant' || current.startsWith('/assistant/')) {
     return false
   }
   if (current === '/settings' || current.startsWith('/settings/')) {
     return false
   }
-  if (current === '/expert-tuning' || current.startsWith('/expert-tuning/')) {
+  if (current === '/weights' || current.startsWith('/weights/')) {
     return false
   }
-  if (current === '/expert-case-reviews' || current.startsWith('/expert-case-reviews/')) {
+  if (current === '/custom' || current.startsWith('/custom/')) {
     return false
   }
   if (current === '/knowledge/datasets' || current.startsWith('/knowledge/datasets/')) {
@@ -188,7 +188,7 @@ export function visibleNavGroups(
         if (item.knowledgeOnly && !canAccessKnowledge(operatorRole)) {
           return false
         }
-        if (item.ctaCatalogOnly && !canViewCtaCatalog(operatorRole)) {
+        if (item.guidanceOnly && !canViewCtaCatalog(operatorRole)) {
           return false
         }
         if (item.opsAdminOnly && operatorRole === 'expert') {

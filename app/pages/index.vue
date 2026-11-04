@@ -48,7 +48,7 @@ const todoCards = computed(() => {
     {
       key: 'awaitingReview',
       labelKey: 'workbench.awaitingReview',
-      to: '/expert-case-reviews',
+      to: '/custom',
       query: { status: 'awaiting_review' }
     },
     {
@@ -84,7 +84,7 @@ const statusCards: {
   {
     key: 'reviewedCases',
     labelKey: 'workbench.reviewedCases',
-    to: '/expert-case-reviews',
+    to: '/custom',
     query: { status: 'reviewed' }
   },
   {
@@ -113,8 +113,8 @@ const demoCounts = computed(() => workbenchCounts(
 
 const demoSteps = computed(() => [
   { key: 'intake', to: '/cases', count: demoCounts.value.pendingCases, icon: 'i-lucide-folder-kanban' },
-  { key: 'lab', to: '/labs', count: demoCounts.value.pendingLabs, icon: 'i-lucide-flask-conical' },
-  { key: 'progress', to: '/progress', count: demoCounts.value.pendingProgress, icon: 'i-lucide-list-checks' },
+  { key: 'lab', to: '/scheduling', count: demoCounts.value.pendingLabs, icon: 'i-lucide-flask-conical' },
+  { key: 'progress', to: '/fulfillment', count: demoCounts.value.pendingProgress, icon: 'i-lucide-list-checks' },
   { key: 'selection', to: '/selections', count: demoCounts.value.pendingSelection, icon: 'i-lucide-clipboard-list' },
   { key: 'ship', to: '/shipping', count: demoCounts.value.pendingShip, icon: 'i-lucide-truck' },
   { key: 'invoice', to: '/invoices', count: demoCounts.value.pendingInvoice, icon: 'i-lucide-receipt' }
@@ -300,7 +300,7 @@ if (import.meta.client) {
     >
       <UButton
         color="primary"
-        :to="localePath('/expert-case-reviews')"
+        :to="localePath('/custom')"
       >
         {{ $t('workbench.openReviews') }}
       </UButton>

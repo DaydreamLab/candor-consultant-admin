@@ -105,7 +105,7 @@ function itemName(row: SimulatedItemMock) {
 }
 
 function reviewStatusLabel(row: SimulatedCaseMock) {
-  return t(`expertTuning.training.reviewStatus.${row.review.status}`)
+  return t(`weights.training.reviewStatus.${row.review.status}`)
 }
 
 function codesToItems(codes: string[]): SimulatedItemMock[] {
@@ -151,16 +151,16 @@ function applyReview(mode: 'approved' | 'adjusted', codes: string[]) {
   }
   const after = codesToItems(codes)
   if (!after.length) {
-    reviewError.value = t('expertTuning.training.errors.items')
+    reviewError.value = t('weights.training.errors.items')
     return
   }
   const changed = !itemsEqual(current.items_before, after)
   if (mode === 'adjusted' && changed && !draftReason.value.trim()) {
-    reviewError.value = t('expertTuning.training.errors.reason')
+    reviewError.value = t('weights.training.errors.reason')
     return
   }
   if (mode === 'approved' && changed) {
-    reviewError.value = t('expertTuning.training.errors.approveChanged')
+    reviewError.value = t('weights.training.errors.approveChanged')
     return
   }
   const expert = expertIdentity()
@@ -185,17 +185,17 @@ function onPromote() {
   promoteMessage.value = ''
   const result = promoteBatch(batchId.value)
   if (!result) {
-    promoteMessage.value = t('expertTuning.training.errors.promote')
+    promoteMessage.value = t('weights.training.errors.promote')
     return
   }
-  promoteMessage.value = t('expertTuning.training.promotedHint')
+  promoteMessage.value = t('weights.training.promotedHint')
 }
 </script>
 
 <template>
   <PageHeader
     :title="batchLabel || batchId"
-    :description="$t('expertTuning.training.detailDescription')"
+    :description="$t('weights.training.detailDescription')"
   >
     <ExpertTuningTabs />
 
@@ -203,26 +203,26 @@ function onPromote() {
       v-if="!batch"
       class="text-sm text-error"
     >
-      {{ $t('expertTuning.training.notFound') }}
+      {{ $t('weights.training.notFound') }}
     </p>
     <template v-else>
       <div class="mb-4 flex flex-wrap items-center gap-3">
         <StatusBadge
-          :label="$t(`expertTuning.training.status.${batch.status}`)"
+          :label="$t(`weights.training.status.${batch.status}`)"
           :color="TRAINING_BATCH_STATUS_COLOR[batch.status]"
         />
         <span class="text-sm text-muted">
-          {{ $t('expertTuning.training.fields.weight') }} · {{ batch.weight_version }}
+          {{ $t('weights.training.fields.weight') }} · {{ batch.weight_version }}
         </span>
         <span class="text-sm text-muted">
-          {{ $t('expertTuning.training.progress', { done: progress.done, total: progress.total }) }}
+          {{ $t('weights.training.progress', { done: progress.done, total: progress.total }) }}
         </span>
         <UButton
           class="ms-auto"
           :disabled="!canPromote"
           @click="onPromote"
         >
-          {{ $t('expertTuning.training.promote') }}
+          {{ $t('weights.training.promote') }}
         </UButton>
       </div>
       <p
@@ -235,13 +235,13 @@ function onPromote() {
         v-else-if="!canPromote && batch.status !== 'promoted'"
         class="mb-4 text-sm text-muted"
       >
-        {{ $t('expertTuning.training.promoteHint') }}
+        {{ $t('weights.training.promoteHint') }}
       </p>
 
       <div class="grid gap-4 lg:grid-cols-[minmax(0,16rem)_1fr]">
         <div class="rounded-xl border border-default bg-elevated">
           <p class="border-b border-default px-3 py-2 text-sm font-semibold text-highlighted">
-            {{ $t('expertTuning.training.casesTitle') }}
+            {{ $t('weights.training.casesTitle') }}
           </p>
           <ul class="max-h-[28rem] overflow-y-auto">
             <li
@@ -271,7 +271,7 @@ function onPromote() {
         >
           <section class="rounded-xl border border-default bg-elevated p-4">
             <h2 class="text-base font-semibold text-highlighted">
-              {{ $t('expertTuning.training.sections.context') }}
+              {{ $t('weights.training.sections.context') }}
             </h2>
             <p class="mt-2 text-sm text-muted">
               {{ caseSummary(selectedCase) }}
@@ -280,7 +280,7 @@ function onPromote() {
 
           <section class="rounded-xl border border-default bg-elevated p-4">
             <h2 class="mb-2 text-base font-semibold text-highlighted">
-              {{ $t('expertTuning.training.sections.simulated') }}
+              {{ $t('weights.training.sections.simulated') }}
             </h2>
             <ul class="flex flex-wrap gap-2">
               <li
@@ -298,10 +298,10 @@ function onPromote() {
 
           <section class="rounded-xl border border-default bg-elevated p-4">
             <h2 class="mb-3 text-base font-semibold text-highlighted">
-              {{ $t('expertTuning.training.sections.review') }}
+              {{ $t('weights.training.sections.review') }}
             </h2>
             <p class="mb-2 text-xs text-muted">
-              {{ $t('expertTuning.training.fields.items') }}
+              {{ $t('weights.training.fields.items') }}
             </p>
             <div class="mb-3 flex flex-col gap-2">
               <label
@@ -318,17 +318,17 @@ function onPromote() {
             </div>
             <div class="mb-3">
               <label class="mb-1 block text-xs text-muted">
-                {{ $t('expertTuning.training.fields.reason') }}
+                {{ $t('weights.training.fields.reason') }}
               </label>
               <UTextarea
                 v-model="draftReason"
-                :placeholder="$t('expertTuning.training.fields.reasonHint')"
+                :placeholder="$t('weights.training.fields.reasonHint')"
                 :rows="3"
                 class="w-full"
               />
             </div>
             <p class="mb-3 text-xs text-muted">
-              {{ $t('expertTuning.training.fields.expert') }}：
+              {{ $t('weights.training.fields.expert') }}：
               {{ expertIdentity().name }}
             </p>
             <p
@@ -344,13 +344,13 @@ function onPromote() {
                 :disabled="batch.status === 'promoted'"
                 @click="saveApprove"
               >
-                {{ $t('expertTuning.training.approve') }}
+                {{ $t('weights.training.approve') }}
               </UButton>
               <UButton
                 :disabled="batch.status === 'promoted'"
                 @click="saveAdjust"
               >
-                {{ $t('expertTuning.training.saveAdjust') }}
+                {{ $t('weights.training.saveAdjust') }}
               </UButton>
             </div>
             <p
@@ -369,13 +369,13 @@ function onPromote() {
         <UButton
           color="neutral"
           variant="ghost"
-          :to="localePath('/expert-tuning/training')"
+          :to="localePath('/weights/training')"
         >
-          {{ $t('expertTuning.training.back') }}
+          {{ $t('weights.training.back') }}
         </UButton>
       </div>
       <p class="mt-3 text-xs text-muted">
-        {{ $t('expertTuning.mockHint') }}
+        {{ $t('weights.mockHint') }}
       </p>
     </template>
   </PageHeader>

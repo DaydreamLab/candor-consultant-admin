@@ -81,7 +81,7 @@ const OPERATOR_ROLE_KEYS = new Set([
   'platform_viewer'
 ])
 
-/** Known intake / gap field keys with i18n under expertCaseReviews.intake.* */
+/** Known intake / gap field keys with i18n under custom.intake.* */
 const INTAKE_FIELD_KEYS = new Set([
   'meals_per_day',
   'water_liters',
@@ -151,7 +151,7 @@ export function looksLikeLocalizedText(value: string): boolean {
 
 function otherLabel(t: Translate, raw: string): LabeledText {
   return {
-    text: t('expertCaseReviews.other'),
+    text: t('custom.other'),
     title: raw || null,
     known: false
   }
@@ -171,7 +171,7 @@ export function decisionLabel(value: unknown, t: Translate): LabeledText | null 
   }
   const raw = value.trim()
   if (DECISION_KEYS.has(raw)) {
-    return knownLabel(t, `expertCaseReviews.decision.${raw}`, raw)
+    return knownLabel(t, `custom.decision.${raw}`, raw)
   }
   return otherLabel(t, raw)
 }
@@ -194,7 +194,7 @@ export function reportResultStatusLabel(value: unknown, t: Translate): LabeledTe
   }
   const raw = value.trim()
   if (REPORT_STATUS_KEYS.has(raw)) {
-    return knownLabel(t, `expertCaseReviews.reportResultStatus.${raw}`, raw)
+    return knownLabel(t, `custom.reportResultStatus.${raw}`, raw)
   }
   return otherLabel(t, raw)
 }
@@ -205,7 +205,7 @@ export function dietLabel(value: unknown, t: Translate): LabeledText {
   }
   const raw = String(value).trim()
   if (DIET_KEYS.has(raw)) {
-    return knownLabel(t, `expertCaseReviews.diet.${raw}`, raw)
+    return knownLabel(t, `custom.diet.${raw}`, raw)
   }
   if (looksLikeLocalizedText(raw)) {
     return { text: raw, title: null, known: true }
@@ -219,7 +219,7 @@ export function conditionLabel(value: unknown, t: Translate): LabeledText {
   }
   const raw = String(value).trim()
   if (CONDITION_KEYS.has(raw)) {
-    return knownLabel(t, `expertCaseReviews.condition.${raw}`, raw)
+    return knownLabel(t, `custom.condition.${raw}`, raw)
   }
   if (looksLikeLocalizedText(raw)) {
     return { text: raw, title: null, known: true }
@@ -233,7 +233,7 @@ export function goalLabel(value: unknown, t: Translate): LabeledText {
   }
   const raw = String(value).trim()
   if (GOAL_KEYS.has(raw)) {
-    return knownLabel(t, `expertCaseReviews.goal.${raw}`, raw)
+    return knownLabel(t, `custom.goal.${raw}`, raw)
   }
   if (looksLikeLocalizedText(raw)) {
     return { text: raw, title: null, known: true }
@@ -247,7 +247,7 @@ export function classificationLabel(value: unknown, t: Translate): LabeledText {
   }
   const raw = value.trim()
   if (CLASSIFICATION_KEYS.has(raw)) {
-    return knownLabel(t, `expertCaseReviews.classification.${raw}`, raw)
+    return knownLabel(t, `custom.classification.${raw}`, raw)
   }
   return otherLabel(t, raw)
 }
@@ -272,10 +272,10 @@ export function packagePlanCodeLabel(
 
 export function sexLabel(value: unknown, t: Translate): LabeledText {
   if (value === 'M' || value === 'm') {
-    return knownLabel(t, 'expertCaseReviews.sexMale', String(value))
+    return knownLabel(t, 'custom.sexMale', String(value))
   }
   if (value === 'F' || value === 'f') {
-    return knownLabel(t, 'expertCaseReviews.sexFemale', String(value))
+    return knownLabel(t, 'custom.sexFemale', String(value))
   }
   if (value == null || value === '') {
     return { text: '—', title: null, known: true }
@@ -289,10 +289,10 @@ export function sexLabel(value: unknown, t: Translate): LabeledText {
 
 export function caseStatusLabel(value: unknown, t: Translate): LabeledText {
   if (value === 'awaiting_review') {
-    return knownLabel(t, 'expertCaseReviews.statusAwaiting', 'awaiting_review')
+    return knownLabel(t, 'custom.statusAwaiting', 'awaiting_review')
   }
   if (value === 'reviewed') {
-    return knownLabel(t, 'expertCaseReviews.statusReviewed', 'reviewed')
+    return knownLabel(t, 'custom.statusReviewed', 'reviewed')
   }
   if (value == null || value === '') {
     return { text: '—', title: null, known: true }
@@ -302,10 +302,10 @@ export function caseStatusLabel(value: unknown, t: Translate): LabeledText {
 
 export function tierDisplayLabel(value: unknown, t: Translate): LabeledText {
   if (value === 'primary') {
-    return knownLabel(t, 'expertCaseReviews.tierPrimary', 'primary')
+    return knownLabel(t, 'custom.tierPrimary', 'primary')
   }
   if (value === 'secondary') {
-    return knownLabel(t, 'expertCaseReviews.tierSecondary', 'secondary')
+    return knownLabel(t, 'custom.tierSecondary', 'secondary')
   }
   if (value == null || value === '') {
     return { text: '—', title: null, known: true }
@@ -315,7 +315,7 @@ export function tierDisplayLabel(value: unknown, t: Translate): LabeledText {
 
 export function adjustmentTypeDisplayLabel(value: unknown, t: Translate): LabeledText {
   if (value === 'swap' || value === 'add' || value === 'remove' || value === 'dose_change') {
-    return knownLabel(t, `expertCaseReviews.adjustmentType.${value}`, String(value))
+    return knownLabel(t, `custom.adjustmentType.${value}`, String(value))
   }
   if (value == null || value === '') {
     return { text: '—', title: null, known: true }
@@ -335,7 +335,7 @@ export function profileFieldDisplayLabel(field: string, t: Translate): LabeledTe
     'intake'
   ]
   if (known.includes(field)) {
-    return knownLabel(t, `expertCaseReviews.profileField.${field}`, field)
+    return knownLabel(t, `custom.profileField.${field}`, field)
   }
   return otherLabel(t, field)
 }
@@ -350,7 +350,7 @@ export function displayNameOrUntitled(
   }
   const rawId = typeof id === 'string' && id.trim() ? id.trim() : null
   return {
-    text: t('expertCaseReviews.unnamed'),
+    text: t('custom.unnamed'),
     title: rawId,
     known: false
   }
@@ -373,28 +373,28 @@ export function itemDisplayName(item: {
 
 function intakeFieldLabel(key: string, t: Translate): { label: string, title: string | null } {
   if (INTAKE_FIELD_KEYS.has(key)) {
-    return { label: t(`expertCaseReviews.intake.${key}`), title: null }
+    return { label: t(`custom.intake.${key}`), title: null }
   }
   if (looksLikeLocalizedText(key)) {
     return { label: key, title: null }
   }
   // Prefer a single generic 「內容」over flooding the UI with 「其他」
   return {
-    label: t('expertCaseReviews.intake.detail'),
+    label: t('custom.intake.detail'),
     title: key
   }
 }
 
 function formatEmpty(t: Translate): string {
-  return t('expertCaseReviews.intakeEmpty')
+  return t('custom.intakeEmpty')
 }
 
 function formatNone(t: Translate): string {
-  return t('expertCaseReviews.intakeNone')
+  return t('custom.intakeNone')
 }
 
 function formatYesNo(value: boolean, t: Translate): string {
-  return value ? t('expertCaseReviews.yes') : t('expertCaseReviews.no')
+  return value ? t('custom.yes') : t('custom.no')
 }
 
 /** Human-readable scalar / nested intake values (no raw true/false / English walls). */
@@ -430,7 +430,7 @@ export function formatIntakeValue(value: unknown, t: Translate): string {
       return dietLabel(trimmed, t).text
     }
     if (INTAKE_FIELD_KEYS.has(trimmed)) {
-      return t(`expertCaseReviews.intake.${trimmed}`)
+      return t(`custom.intake.${trimmed}`)
     }
     // Value codes without a map: keep readable text (not true/false / key walls)
     return trimmed
@@ -537,7 +537,7 @@ export function formatIntakeRows(
   if (!isRecord(intake)) {
     return [{
       key: 'value',
-      label: t('expertCaseReviews.intake.value'),
+      label: t('custom.intake.value'),
       value: formatIntakeValue(intake, t),
       title: null
     }]

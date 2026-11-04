@@ -42,7 +42,7 @@ watch(serviceId, (id) => {
 }, { immediate: true })
 
 onUnmounted(() => {
-  if (!normalizeAdminPath(route.path).startsWith('/lab-services/')) {
+  if (!normalizeAdminPath(route.path).startsWith('/checkups/')) {
     crumbLabel.value = null
   }
 })
@@ -54,13 +54,13 @@ function load(id: string) {
   pending.value = true
   if (!id) {
     pending.value = false
-    errorMessage.value = t('labServices.failed')
+    errorMessage.value = t('checkups.failed')
     return
   }
   const row = store.getService(id)
   if (!row) {
     pending.value = false
-    errorMessage.value = t('labServices.notFound')
+    errorMessage.value = t('checkups.notFound')
     return
   }
   labService.value = row
@@ -71,14 +71,14 @@ function load(id: string) {
 function onSave(payload: LabServiceWrite) {
   const id = serviceId.value
   if (!id || !canEdit.value) {
-    errorMessage.value = t('labServices.saveFailed')
+    errorMessage.value = t('checkups.saveFailed')
     return
   }
   saving.value = true
   errorMessage.value = ''
   const row = store.updateService(id, payload)
   if (!row) {
-    errorMessage.value = t('labServices.saveFailed')
+    errorMessage.value = t('checkups.saveFailed')
     saving.value = false
     return
   }
@@ -109,7 +109,7 @@ function serviceName(row: LabServiceMock) {
       v-if="pending"
       class="text-sm text-muted"
     >
-      {{ $t('labServices.loading') }}
+      {{ $t('checkups.loading') }}
     </p>
     <LabServiceForm
       v-else-if="labService"

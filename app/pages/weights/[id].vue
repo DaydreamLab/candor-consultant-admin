@@ -40,7 +40,7 @@ function formatWeight(value: number) {
 <template>
   <PageHeader
     :title="weightLabel || weightId"
-    :description="$t('expertTuning.description')"
+    :description="$t('weights.description')"
   >
     <ExpertTuningTabs />
 
@@ -48,13 +48,13 @@ function formatWeight(value: number) {
       v-if="!selected"
       class="text-sm text-error"
     >
-      {{ $t('expertTuning.notFound') }}
+      {{ $t('weights.notFound') }}
     </p>
     <template v-else>
       <dl class="mb-4 grid gap-3 rounded-xl border border-default bg-elevated p-4 text-sm sm:grid-cols-2">
         <div>
           <dt class="text-muted">
-            {{ $t('expertTuning.columns.version') }}
+            {{ $t('weights.columns.version') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ selected.version }}
@@ -62,18 +62,18 @@ function formatWeight(value: number) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('expertTuning.columns.status') }}
+            {{ $t('weights.columns.status') }}
           </dt>
           <dd class="mt-1">
             <StatusBadge
-              :label="$t(`expertTuning.status.${selected.status}`)"
+              :label="$t(`weights.status.${selected.status}`)"
               :color="WEIGHT_SET_STATUS_COLOR[selected.status]"
             />
           </dd>
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('expertTuning.columns.baseline') }}
+            {{ $t('weights.columns.baseline') }}
           </dt>
           <dd class="mt-1 font-medium text-highlighted">
             {{ selected.baseline_version ?? $t('status.na') }}
@@ -81,7 +81,7 @@ function formatWeight(value: number) {
         </div>
         <div>
           <dt class="text-muted">
-            {{ $t('expertTuning.columns.updatedAt') }}
+            {{ $t('weights.columns.updatedAt') }}
           </dt>
           <dd class="mt-1 text-highlighted">
             {{ selected.updated_at }}
@@ -98,23 +98,23 @@ function formatWeight(value: number) {
 
       <section class="overflow-hidden rounded-xl border border-default bg-elevated">
         <h2 class="border-b border-default px-4 py-3 text-base font-semibold text-highlighted">
-          {{ $t('expertTuning.entriesTitle') }}
+          {{ $t('weights.entriesTitle') }}
         </h2>
         <div class="overflow-x-auto">
           <table class="w-full min-w-[20rem] border-collapse text-sm">
             <thead>
               <tr class="bg-muted text-left text-xs font-semibold text-muted">
                 <th class="px-4 py-2">
-                  {{ $t('expertTuning.entries.domain') }}
+                  {{ $t('weights.entries.domain') }}
                 </th>
                 <th class="px-4 py-2">
-                  {{ $t('expertTuning.entries.ingredient') }}
+                  {{ $t('weights.entries.ingredient') }}
                 </th>
                 <th class="px-4 py-2 text-right">
-                  {{ $t('expertTuning.entries.baseWeight') }}
+                  {{ $t('weights.entries.baseWeight') }}
                 </th>
                 <th class="px-4 py-2 text-right">
-                  {{ $t('expertTuning.entries.priority') }}
+                  {{ $t('weights.entries.priority') }}
                 </th>
               </tr>
             </thead>
@@ -146,13 +146,13 @@ function formatWeight(value: number) {
         <UButton
           color="neutral"
           variant="ghost"
-          :to="localePath('/expert-tuning')"
+          :to="localePath('/weights')"
         >
-          {{ $t('expertTuning.backToList') }}
+          {{ $t('weights.backToList') }}
         </UButton>
       </div>
       <p class="mt-3 text-xs text-muted">
-        {{ $t('expertTuning.mockHint') }}
+        {{ $t('weights.mockHint') }}
       </p>
     </template>
   </PageHeader>

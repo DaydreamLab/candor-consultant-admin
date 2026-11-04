@@ -62,8 +62,8 @@ const budget = computed(() => {
 })
 
 const originalPriceError = computed(() => originalPriceErrorMessage(state, {
-  emptyInvalid: t('packagePlans.validation.originalPriceInteger'),
-  belowPrice: price => t('packagePlans.validation.originalPriceMin', { price })
+  emptyInvalid: t('plans.validation.originalPriceInteger'),
+  belowPrice: price => t('plans.validation.originalPriceMin', { price })
 }) ?? undefined)
 
 watch(() => props.packagePlan, (plan) => {
@@ -102,10 +102,10 @@ function onSubmit() {
   const issue = validatePackagePlanForm(state)
   if (issue) {
     if (issue.field === 'original_price') {
-      localError.value = originalPriceError.value || t('packagePlans.saveFailed')
+      localError.value = originalPriceError.value || t('plans.saveFailed')
       return
     }
-    localError.value = t('packagePlans.saveFailed')
+    localError.value = t('plans.saveFailed')
     return
   }
   const patch = buildPackagePlanPatch(baseline.value, state)
@@ -162,34 +162,34 @@ function moneyText(value: number) {
     </p>
 
     <div class="grid gap-4 rounded-xl border border-default bg-elevated p-4 md:grid-cols-2">
-      <UFormField :label="$t('packagePlans.fields.code')">
+      <UFormField :label="$t('plans.fields.code')">
         <UInput
           v-model="state.code"
           disabled
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.active')">
+      <UFormField :label="$t('plans.fields.active')">
         <USwitch
           v-model="state.active"
           :disabled="fieldsLocked"
         />
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.name_zh')">
+      <UFormField :label="$t('plans.fields.name_zh')">
         <UInput
           v-model="state.name_zh"
           :disabled="fieldsLocked"
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.name_en')">
+      <UFormField :label="$t('plans.fields.name_en')">
         <UInput
           v-model="state.name_en"
           :disabled="fieldsLocked"
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.price')">
+      <UFormField :label="$t('plans.fields.price')">
         <UInput
           v-model="state.price"
           type="number"
@@ -200,7 +200,7 @@ function moneyText(value: number) {
         />
       </UFormField>
       <UFormField
-        :label="$t('packagePlans.fields.original_price')"
+        :label="$t('plans.fields.original_price')"
         :error="originalPriceError"
       >
         <UInput
@@ -212,10 +212,10 @@ function moneyText(value: number) {
           class="w-full"
         />
         <p class="mt-1 text-xs text-muted">
-          {{ $t('packagePlans.originalPriceHint') }}
+          {{ $t('plans.originalPriceHint') }}
         </p>
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.period_days')">
+      <UFormField :label="$t('plans.fields.period_days')">
         <USelect
           v-model="state.period_days"
           :items="periodOptions"
@@ -224,7 +224,7 @@ function moneyText(value: number) {
           class="w-full"
         />
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.pack_capacity')">
+      <UFormField :label="$t('plans.fields.pack_capacity')">
         <UInput
           v-model="state.pack_capacity"
           type="number"
@@ -234,10 +234,10 @@ function moneyText(value: number) {
           class="w-full"
         />
         <p class="mt-1 text-xs text-muted">
-          {{ $t('packagePlans.packCapacityHint') }}
+          {{ $t('plans.packCapacityHint') }}
         </p>
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.core_count')">
+      <UFormField :label="$t('plans.fields.core_count')">
         <UInput
           v-model="state.core_count"
           type="number"
@@ -247,10 +247,10 @@ function moneyText(value: number) {
           class="w-full"
         />
         <p class="mt-1 text-xs text-muted">
-          {{ $t('packagePlans.coreCountHint') }}
+          {{ $t('plans.coreCountHint') }}
         </p>
       </UFormField>
-      <UFormField :label="$t('packagePlans.fields.sort_order')">
+      <UFormField :label="$t('plans.fields.sort_order')">
         <UInput
           v-model="state.sort_order"
           type="number"
@@ -261,7 +261,7 @@ function moneyText(value: number) {
       </UFormField>
       <UFormField
         class="md:col-span-2"
-        :label="$t('packagePlans.fields.description')"
+        :label="$t('plans.fields.description')"
       >
         <UTextarea
           v-model="state.description"
@@ -272,7 +272,7 @@ function moneyText(value: number) {
       </UFormField>
       <UFormField
         class="md:col-span-2"
-        :label="$t('packagePlans.fields.description_en')"
+        :label="$t('plans.fields.description_en')"
       >
         <UTextarea
           v-model="state.description_en"
@@ -281,24 +281,24 @@ function moneyText(value: number) {
           class="w-full"
         />
         <p class="mt-1 text-xs text-muted">
-          {{ $t('packagePlans.descriptionEnHint') }}
+          {{ $t('plans.descriptionEnHint') }}
         </p>
       </UFormField>
     </div>
 
     <section class="flex flex-col gap-4 rounded-xl border border-default bg-elevated p-4">
       <h2 class="text-sm font-semibold text-highlighted">
-        {{ $t('packagePlans.sections.home') }}
+        {{ $t('plans.sections.home') }}
       </h2>
       <div class="grid gap-4 md:grid-cols-2">
-        <UFormField :label="$t('packagePlans.fields.home_badge_zh')">
+        <UFormField :label="$t('plans.fields.home_badge_zh')">
           <UInput
             v-model="state.home_badge_zh"
             :disabled="fieldsLocked"
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="$t('packagePlans.fields.home_badge_en')">
+        <UFormField :label="$t('plans.fields.home_badge_en')">
           <UInput
             v-model="state.home_badge_en"
             :disabled="fieldsLocked"
@@ -307,7 +307,7 @@ function moneyText(value: number) {
         </UFormField>
         <UFormField
           class="md:col-span-2"
-          :label="$t('packagePlans.fields.home_highlight')"
+          :label="$t('plans.fields.home_highlight')"
         >
           <USwitch
             v-model="state.home_highlight"
@@ -320,7 +320,7 @@ function moneyText(value: number) {
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-2">
             <h3 class="text-sm font-medium text-highlighted">
-              {{ $t('packagePlans.fields.home_features_zh') }}
+              {{ $t('plans.fields.home_features_zh') }}
             </h3>
             <UButton
               type="button"
@@ -330,11 +330,11 @@ function moneyText(value: number) {
               :disabled="fieldsLocked"
               @click="addFeature('home_features_zh')"
             >
-              {{ $t('packagePlans.actions.addFeature') }}
+              {{ $t('plans.actions.addFeature') }}
             </UButton>
           </div>
           <p class="text-xs text-muted">
-            {{ $t('packagePlans.homeFeaturesHint') }}
+            {{ $t('plans.homeFeaturesHint') }}
           </p>
           <div
             v-for="(_, index) in state.home_features_zh"
@@ -352,7 +352,7 @@ function moneyText(value: number) {
               variant="ghost"
               icon="i-lucide-arrow-up"
               :disabled="fieldsLocked || index === 0"
-              :aria-label="$t('packagePlans.actions.moveFeatureUp')"
+              :aria-label="$t('plans.actions.moveFeatureUp')"
               @click="shiftFeature('home_features_zh', index, -1)"
             />
             <UButton
@@ -361,7 +361,7 @@ function moneyText(value: number) {
               variant="ghost"
               icon="i-lucide-arrow-down"
               :disabled="fieldsLocked || index === state.home_features_zh.length - 1"
-              :aria-label="$t('packagePlans.actions.moveFeatureDown')"
+              :aria-label="$t('plans.actions.moveFeatureDown')"
               @click="shiftFeature('home_features_zh', index, 1)"
             />
             <UButton
@@ -371,7 +371,7 @@ function moneyText(value: number) {
               color="error"
               icon="i-lucide-trash-2"
               :disabled="fieldsLocked"
-              :aria-label="$t('packagePlans.actions.removeFeature')"
+              :aria-label="$t('plans.actions.removeFeature')"
               @click="removeFeature('home_features_zh', index)"
             />
           </div>
@@ -380,7 +380,7 @@ function moneyText(value: number) {
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-2">
             <h3 class="text-sm font-medium text-highlighted">
-              {{ $t('packagePlans.fields.home_features_en') }}
+              {{ $t('plans.fields.home_features_en') }}
             </h3>
             <UButton
               type="button"
@@ -390,11 +390,11 @@ function moneyText(value: number) {
               :disabled="fieldsLocked"
               @click="addFeature('home_features_en')"
             >
-              {{ $t('packagePlans.actions.addFeature') }}
+              {{ $t('plans.actions.addFeature') }}
             </UButton>
           </div>
           <p class="text-xs text-muted">
-            {{ $t('packagePlans.homeFeaturesHint') }}
+            {{ $t('plans.homeFeaturesHint') }}
           </p>
           <div
             v-for="(_, index) in state.home_features_en"
@@ -412,7 +412,7 @@ function moneyText(value: number) {
               variant="ghost"
               icon="i-lucide-arrow-up"
               :disabled="fieldsLocked || index === 0"
-              :aria-label="$t('packagePlans.actions.moveFeatureUp')"
+              :aria-label="$t('plans.actions.moveFeatureUp')"
               @click="shiftFeature('home_features_en', index, -1)"
             />
             <UButton
@@ -421,7 +421,7 @@ function moneyText(value: number) {
               variant="ghost"
               icon="i-lucide-arrow-down"
               :disabled="fieldsLocked || index === state.home_features_en.length - 1"
-              :aria-label="$t('packagePlans.actions.moveFeatureDown')"
+              :aria-label="$t('plans.actions.moveFeatureDown')"
               @click="shiftFeature('home_features_en', index, 1)"
             />
             <UButton
@@ -431,7 +431,7 @@ function moneyText(value: number) {
               color="error"
               icon="i-lucide-trash-2"
               :disabled="fieldsLocked"
-              :aria-label="$t('packagePlans.actions.removeFeature')"
+              :aria-label="$t('plans.actions.removeFeature')"
               @click="removeFeature('home_features_en', index)"
             />
           </div>
@@ -445,7 +445,7 @@ function moneyText(value: number) {
     >
       <div>
         <dt class="text-muted">
-          {{ $t('packagePlans.fields.price') }}
+          {{ $t('plans.fields.price') }}
         </dt>
         <dd class="tabular-money mt-1 font-medium text-highlighted">
           {{ moneyText(Number(state.price) || 0) }}
@@ -453,7 +453,7 @@ function moneyText(value: number) {
       </div>
       <div>
         <dt class="text-muted">
-          {{ $t('packagePlans.fields.period_days') }}
+          {{ $t('plans.fields.period_days') }}
         </dt>
         <dd class="mt-1 font-medium text-highlighted">
           {{ state.period_days }}
@@ -461,7 +461,7 @@ function moneyText(value: number) {
       </div>
       <div>
         <dt class="text-muted">
-          {{ $t('packagePlans.dailyBudget') }}
+          {{ $t('plans.dailyBudget') }}
         </dt>
         <dd class="tabular-money mt-1 font-medium text-highlighted">
           {{ moneyText(budget.dailyBudget) }}
@@ -469,13 +469,13 @@ function moneyText(value: number) {
       </div>
       <div>
         <dt class="text-muted">
-          {{ $t('packagePlans.remainder') }}
+          {{ $t('plans.remainder') }}
         </dt>
         <dd class="tabular-money mt-1 font-medium text-highlighted">
           {{ moneyText(budget.remainder) }}
         </dd>
         <p class="mt-1 text-xs text-muted">
-          {{ $t('packagePlans.remainderHint') }}
+          {{ $t('plans.remainderHint') }}
         </p>
       </div>
     </dl>

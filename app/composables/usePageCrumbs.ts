@@ -68,32 +68,32 @@ export function usePageCrumbs() {
       return [{ label: t('nav.knowledge') }]
     }
 
-    if (current === '/products/new') {
+    if (current === '/supplements/new') {
       return [
-        { label: t('nav.products'), to: localePath('/products') },
-        { label: t('products.createTitle') }
+        { label: t('nav.supplements'), to: localePath('/supplements') },
+        { label: t('supplements.createTitle') }
       ]
     }
 
-    if (current.startsWith('/products/')) {
+    if (current.startsWith('/supplements/')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.products'), to: localePath('/products') },
+        { label: t('nav.supplements'), to: localePath('/supplements') },
         { label: sellableItemLabel.value || id }
       ]
     }
 
-    if (current === '/lab-services/new') {
+    if (current === '/checkups/new') {
       return [
-        { label: t('nav.labServices'), to: localePath('/lab-services') },
-        { label: t('labServices.createTitle') }
+        { label: t('nav.checkups'), to: localePath('/checkups') },
+        { label: t('checkups.createTitle') }
       ]
     }
 
-    if (current.startsWith('/lab-services/')) {
+    if (current.startsWith('/checkups/')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.labServices'), to: localePath('/lab-services') },
+        { label: t('nav.checkups'), to: localePath('/checkups') },
         { label: labServiceLabel.value || id }
       ]
     }
@@ -101,7 +101,7 @@ export function usePageCrumbs() {
     if (current.startsWith('/lab-appointments/')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.labAppointments'), to: localePath('/lab-appointments') },
+        { label: t('nav.appointments'), to: localePath('/lab-appointments') },
         { label: labAppointmentLabel.value || id }
       ]
     }
@@ -109,7 +109,7 @@ export function usePageCrumbs() {
     if (current.startsWith('/package-plans/')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.packagePlans'), to: localePath('/package-plans') },
+        { label: t('nav.plans'), to: localePath('/package-plans') },
         { label: packagePlanLabel.value || id }
       ]
     }
@@ -130,49 +130,48 @@ export function usePageCrumbs() {
       ]
     }
 
-    if (current.startsWith('/expert-case-reviews/')) {
+    if (current.startsWith('/custom/')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.reviews'), to: localePath('/expert-case-reviews') },
+        { label: t('nav.custom'), to: localePath('/custom') },
         { label: expertCaseLabel.value || id }
       ]
     }
 
-    if (current.startsWith('/expert-tuning/weights/')) {
+    if (current.startsWith('/weights/') && current !== '/weights/daily-learning' && !current.startsWith('/weights/training')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },
-        { label: t('expertTuning.tabs.weights'), to: localePath('/expert-tuning') },
+        { label: t('nav.weights'), to: localePath('/weights') },
         { label: weightSetLabel.value || id }
       ]
     }
 
-    if (current === '/ai-assistant/site') {
+    if (current === '/assistant/site') {
       return [
-        { label: t('nav.aiAssistant'), to: localePath('/ai-assistant') },
-        { label: t('aiAssistant.tabs.site') }
+        { label: t('nav.assistant'), to: localePath('/assistant') },
+        { label: t('assistant.tabs.site') }
       ]
     }
 
-    if (current === '/ai-assistant/claim-terms') {
+    if (current === '/assistant/claim-terms') {
       return [
-        { label: t('nav.aiAssistant'), to: localePath('/ai-assistant') },
-        { label: t('aiAssistant.tabs.claimTerms') }
+        { label: t('nav.assistant'), to: localePath('/assistant') },
+        { label: t('assistant.tabs.claimTerms') }
       ]
     }
 
-    if (current === '/expert-tuning/training') {
+    if (current === '/weights/training') {
       return [
-        { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },
-        { label: t('expertTuning.tabs.training') }
+        { label: t('nav.weights'), to: localePath('/weights') },
+        { label: t('weights.tabs.training') }
       ]
     }
 
-    if (current.startsWith('/expert-tuning/training/')) {
+    if (current.startsWith('/weights/training/')) {
       const id = String(route.params.id ?? '')
       return [
-        { label: t('nav.expertTuning'), to: localePath('/expert-tuning') },
-        { label: t('expertTuning.tabs.training'), to: localePath('/expert-tuning/training') },
+        { label: t('nav.weights'), to: localePath('/weights') },
+        { label: t('weights.tabs.training'), to: localePath('/weights/training') },
         { label: trainingBatchLabel.value || id }
       ]
     }
@@ -189,8 +188,8 @@ export function usePageCrumbs() {
   })
 
   function pageLabel(current: string) {
-    if (current === '/products') {
-      return t('products.listTitle')
+    if (current === '/supplements') {
+      return t('supplements.listTitle')
     }
     if (current === '/account') {
       return t('nav.account')

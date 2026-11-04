@@ -93,11 +93,11 @@ const UNCATEGORIZED = '__uncategorized__'
 
 const categoryOptions = computed(() => {
   const options = [
-    { label: t('products.categories.detox'), value: '排毒' },
-    { label: t('products.categories.nutrients'), value: '營養素' },
-    { label: t('products.categories.gut'), value: '腸道支持' },
-    { label: t('products.categories.cardio'), value: '心血管' },
-    { label: t('products.categories.none'), value: UNCATEGORIZED }
+    { label: t('supplements.categories.detox'), value: '排毒' },
+    { label: t('supplements.categories.nutrients'), value: '營養素' },
+    { label: t('supplements.categories.gut'), value: '腸道支持' },
+    { label: t('supplements.categories.cardio'), value: '心血管' },
+    { label: t('supplements.categories.none'), value: UNCATEGORIZED }
   ]
   const current = state.category.trim()
   if (current && !CATEGORY_VALUES.has(current)) {
@@ -186,16 +186,16 @@ function validate() {
   let ok = true
 
   if (!state.name_zh.trim()) {
-    localErrors.name_zh = t('products.nameZhRequired')
+    localErrors.name_zh = t('supplements.nameZhRequired')
     ok = false
   }
   if (props.mode === 'create') {
     if (!state.code.trim()) {
-      localErrors.code = t('products.codeRequired')
+      localErrors.code = t('supplements.codeRequired')
       ok = false
     }
     if (!state.sku.trim()) {
-      localErrors.sku = t('products.skuRequired')
+      localErrors.sku = t('supplements.skuRequired')
       ok = false
     }
   }
@@ -206,26 +206,26 @@ function validate() {
 
   if ((state.sale_status.trim() || 'on_sale') === 'on_sale') {
     if (!positiveInteger(state.bottle_price)) {
-      localErrors.bottle_price = t('products.bottlePriceRequired')
+      localErrors.bottle_price = t('supplements.bottlePriceRequired')
       ok = false
     }
     if (!positiveInteger(state.unit_price)) {
-      localErrors.unit_price = t('products.unitPriceRequired')
+      localErrors.unit_price = t('supplements.unitPriceRequired')
       ok = false
     }
     if (!positiveInteger(state.servings_per_container)) {
-      localErrors.servings_per_container = t('products.servingsRequired')
+      localErrors.servings_per_container = t('supplements.servingsRequired')
       ok = false
     }
     const dose = decimalValue(state.daily_dose)
     const doseOk = dose != null && dose > 0
     if (!doseOk) {
-      localErrors.daily_dose = t('products.dailyDoseRequired')
+      localErrors.daily_dose = t('supplements.dailyDoseRequired')
       ok = false
     }
     const maxValue = decimalValue(state.daily_servings_max)
     if (maxValue == null || maxValue <= 0 || (doseOk && dose != null && maxValue < dose)) {
-      localErrors.daily_servings_max = t('products.dailyMaxRequired')
+      localErrors.daily_servings_max = t('supplements.dailyMaxRequired')
       ok = false
     }
   }
@@ -238,11 +238,11 @@ function validate() {
       return
     }
     if (!name) {
-      nextNutrition[index]!.name = t('products.nutritionNameRequired')
+      nextNutrition[index]!.name = t('supplements.nutritionNameRequired')
       ok = false
     }
     if (!amount) {
-      nextNutrition[index]!.amount = t('products.nutritionAmountRequired')
+      nextNutrition[index]!.amount = t('supplements.nutritionAmountRequired')
       ok = false
     }
   })
@@ -609,11 +609,11 @@ function scalarText(value: unknown) {
     >
       <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('products.sections.identity') }}
+          {{ $t('supplements.sections.identity') }}
         </h2>
         <div class="mt-4 flex flex-col gap-4 sm:flex-row">
           <div class="w-full shrink-0 space-y-3 sm:w-56">
-            <UFormField :label="$t('products.fields.image')">
+            <UFormField :label="$t('supplements.fields.image')">
               <img
                 v-if="savedImageSrc"
                 :src="savedImageSrc"
@@ -625,8 +625,8 @@ function scalarText(value: unknown) {
                 accept="image/png,image/jpeg,image/webp"
                 icon="i-lucide-image"
                 disabled
-                :label="$t('products.imageDrop')"
-                :description="$t('products.imageHint')"
+                :label="$t('supplements.imageDrop')"
+                :description="$t('supplements.imageHint')"
                 class="min-h-56 w-full sm:w-56"
               />
             </UFormField>
@@ -634,7 +634,7 @@ function scalarText(value: unknown) {
 
           <div class="min-w-0 flex-1 space-y-4">
             <UFormField
-              :label="$t('products.fields.nameZh')"
+              :label="$t('supplements.fields.nameZh')"
               required
               :ui="requiredMark"
               :error="fieldError('name_zh') || undefined"
@@ -646,7 +646,7 @@ function scalarText(value: unknown) {
               />
             </UFormField>
 
-            <UFormField :label="$t('products.fields.nameEn')">
+            <UFormField :label="$t('supplements.fields.nameEn')">
               <UInput
                 v-model="state.name_en"
                 class="w-full"
@@ -655,7 +655,7 @@ function scalarText(value: unknown) {
 
             <div class="grid gap-4 sm:grid-cols-2">
               <UFormField
-                :label="$t('products.fields.code')"
+                :label="$t('supplements.fields.code')"
                 required
                 :ui="requiredMark"
                 :error="fieldError('code') || undefined"
@@ -668,7 +668,7 @@ function scalarText(value: unknown) {
                 />
               </UFormField>
               <UFormField
-                :label="$t('products.fields.sku')"
+                :label="$t('supplements.fields.sku')"
                 required
                 :ui="requiredMark"
                 :error="fieldError('sku') || undefined"
@@ -683,7 +683,7 @@ function scalarText(value: unknown) {
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
-              <UFormField :label="$t('products.fields.category')">
+              <UFormField :label="$t('supplements.fields.category')">
                 <UInputMenu
                   v-model="categoryModel"
                   v-model:search-term="categorySearch"
@@ -692,7 +692,7 @@ function scalarText(value: unknown) {
                   class="w-full"
                 />
               </UFormField>
-              <UFormField :label="$t('products.fields.spec')">
+              <UFormField :label="$t('supplements.fields.spec')">
                 <UInput
                   v-model="state.spec_text"
                   class="w-full"
@@ -703,16 +703,16 @@ function scalarText(value: unknown) {
         </div>
 
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <UFormField :label="$t('products.fields.active')">
+          <UFormField :label="$t('supplements.fields.active')">
             <USwitch v-model="state.active" />
           </UFormField>
-          <UFormField :label="$t('products.fields.isCore')">
+          <UFormField :label="$t('supplements.fields.isCore')">
             <USwitch v-model="state.is_core" />
           </UFormField>
-          <UFormField :label="$t('products.fields.canCoPack')">
+          <UFormField :label="$t('supplements.fields.canCoPack')">
             <USwitch v-model="state.can_co_pack" />
           </UFormField>
-          <UFormField :label="$t('products.fields.saleStatus')">
+          <UFormField :label="$t('supplements.fields.saleStatus')">
             <USwitch v-model="onSale" />
           </UFormField>
         </div>
@@ -720,12 +720,12 @@ function scalarText(value: unknown) {
 
       <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('products.sections.dose') }}
+          {{ $t('supplements.sections.dose') }}
         </h2>
         <div class="mt-4 space-y-4">
           <div class="grid gap-4 sm:grid-cols-3">
             <UFormField
-              :label="$t('products.fields.servingsPerContainer')"
+              :label="$t('supplements.fields.servingsPerContainer')"
               :required="onSale"
               :ui="requiredMark"
               :error="fieldError('servings_per_container') || undefined"
@@ -737,13 +737,13 @@ function scalarText(value: unknown) {
                 @update:model-value="setDigits('servings_per_container', $event)"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.servingSize')">
+            <UFormField :label="$t('supplements.fields.servingSize')">
               <UInput
                 v-model="state.serving_size_text"
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.packCapacity')">
+            <UFormField :label="$t('supplements.fields.packCapacity')">
               <UInput
                 :model-value="state.pack_capacity"
                 inputmode="numeric"
@@ -752,13 +752,13 @@ function scalarText(value: unknown) {
                 @update:model-value="setDigits('pack_capacity', $event || '1')"
               />
               <p class="mt-1 text-xs text-muted">
-                {{ $t('products.fields.packCapacityHint') }}
+                {{ $t('supplements.fields.packCapacityHint') }}
               </p>
             </UFormField>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <UFormField
-              :label="$t('products.fields.dailyDose')"
+              :label="$t('supplements.fields.dailyDose')"
               :required="onSale"
               :ui="requiredMark"
               :error="fieldError('daily_dose') || undefined"
@@ -771,7 +771,7 @@ function scalarText(value: unknown) {
               />
             </UFormField>
             <UFormField
-              :label="$t('products.fields.dailyServingsMax')"
+              :label="$t('supplements.fields.dailyServingsMax')"
               :required="onSale"
               :ui="requiredMark"
               :error="fieldError('daily_servings_max') || undefined"
@@ -786,7 +786,7 @@ function scalarText(value: unknown) {
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <UFormField
-              :label="$t('products.fields.unitPrice')"
+              :label="$t('supplements.fields.unitPrice')"
               :required="onSale"
               :ui="requiredMark"
               :error="fieldError('unit_price') || undefined"
@@ -799,7 +799,7 @@ function scalarText(value: unknown) {
               />
             </UFormField>
             <UFormField
-              :label="$t('products.fields.bottlePrice')"
+              :label="$t('supplements.fields.bottlePrice')"
               :required="onSale"
               :ui="requiredMark"
               :error="fieldError('bottle_price') || undefined"
@@ -834,24 +834,24 @@ function scalarText(value: unknown) {
 
       <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('products.sections.copy') }}
+          {{ $t('supplements.sections.copy') }}
         </h2>
         <div class="mt-4 space-y-4">
-          <UFormField :label="$t('products.fields.audience')">
+          <UFormField :label="$t('supplements.fields.audience')">
             <UTextarea
               v-model="state.audience"
               :rows="2"
               class="w-full"
             />
           </UFormField>
-          <UFormField :label="$t('products.fields.summary')">
+          <UFormField :label="$t('supplements.fields.summary')">
             <UTextarea
               v-model="state.summary"
               :rows="4"
               class="w-full"
             />
           </UFormField>
-          <UFormField :label="$t('products.fields.highlights')">
+          <UFormField :label="$t('supplements.fields.highlights')">
             <UTextarea
               v-model="state.highlights"
               :rows="4"
@@ -860,14 +860,14 @@ function scalarText(value: unknown) {
           </UFormField>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('products.fields.usage')">
+            <UFormField :label="$t('supplements.fields.usage')">
               <UTextarea
                 v-model="state.usage_text"
                 :rows="3"
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.usageLimit')">
+            <UFormField :label="$t('supplements.fields.usageLimit')">
               <UTextarea
                 v-model="state.usage_limit"
                 :rows="3"
@@ -877,28 +877,28 @@ function scalarText(value: unknown) {
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField :label="$t('products.fields.ingredients')">
+            <UFormField :label="$t('supplements.fields.ingredients')">
               <UTextarea
                 v-model="state.ingredients_text"
                 :rows="3"
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.cautions')">
+            <UFormField :label="$t('supplements.fields.cautions')">
               <UTextarea
                 v-model="state.cautions"
                 :rows="3"
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.riskText')">
+            <UFormField :label="$t('supplements.fields.riskText')">
               <UTextarea
                 v-model="state.risk_text"
                 :rows="3"
                 class="w-full"
               />
             </UFormField>
-            <UFormField :label="$t('products.fields.contraindicationText')">
+            <UFormField :label="$t('supplements.fields.contraindicationText')">
               <UTextarea
                 v-model="state.contraindication_text"
                 :rows="3"
@@ -911,22 +911,22 @@ function scalarText(value: unknown) {
 
       <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('products.sections.supply') }}
+          {{ $t('supplements.sections.supply') }}
         </h2>
         <div class="mt-4 grid gap-4 sm:grid-cols-3">
-          <UFormField :label="$t('products.fields.shelfLife')">
+          <UFormField :label="$t('supplements.fields.shelfLife')">
             <UInput
               v-model="state.shelf_life_text"
               class="w-full"
             />
           </UFormField>
-          <UFormField :label="$t('products.fields.distributor')">
+          <UFormField :label="$t('supplements.fields.distributor')">
             <UInput
               v-model="state.distributor"
               class="w-full"
             />
           </UFormField>
-          <UFormField :label="$t('products.fields.origin')">
+          <UFormField :label="$t('supplements.fields.origin')">
             <UInput
               v-model="state.origin"
               class="w-full"
@@ -937,16 +937,16 @@ function scalarText(value: unknown) {
 
       <section class="rounded-xl border border-default bg-elevated p-5">
         <h2 class="text-base font-semibold text-highlighted">
-          {{ $t('products.fields.nutrition') }}
+          {{ $t('supplements.fields.nutrition') }}
         </h2>
         <div class="mt-4 space-y-3">
           <div
             v-if="state.nutrition.length"
             class="hidden gap-3 text-sm text-muted sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
           >
-            <p>{{ $t('products.fields.nutritionName') }}</p>
-            <p>{{ $t('products.fields.nutritionAmount') }}</p>
-            <p>{{ $t('products.fields.nutritionPct') }}</p>
+            <p>{{ $t('supplements.fields.nutritionName') }}</p>
+            <p>{{ $t('supplements.fields.nutritionAmount') }}</p>
+            <p>{{ $t('supplements.fields.nutritionPct') }}</p>
             <span class="size-8" />
           </div>
           <div
@@ -955,7 +955,7 @@ function scalarText(value: unknown) {
             class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start"
           >
             <UFormField
-              :label="$t('products.fields.nutritionName')"
+              :label="$t('supplements.fields.nutritionName')"
               :error="nutritionFieldError(index, 'name') || undefined"
               class="sm:[&_label]:sr-only"
             >
@@ -966,7 +966,7 @@ function scalarText(value: unknown) {
               />
             </UFormField>
             <UFormField
-              :label="$t('products.fields.nutritionAmount')"
+              :label="$t('supplements.fields.nutritionAmount')"
               :error="nutritionFieldError(index, 'amount') || undefined"
               class="sm:[&_label]:sr-only"
             >
@@ -977,7 +977,7 @@ function scalarText(value: unknown) {
               />
             </UFormField>
             <UFormField
-              :label="$t('products.fields.nutritionPct')"
+              :label="$t('supplements.fields.nutritionPct')"
               class="sm:[&_label]:sr-only"
             >
               <UInput
@@ -1001,7 +1001,7 @@ function scalarText(value: unknown) {
             icon="i-lucide-plus"
             @click="addNutrition"
           >
-            {{ $t('products.fields.addNutrition') }}
+            {{ $t('supplements.fields.addNutrition') }}
           </UButton>
         </div>
       </section>

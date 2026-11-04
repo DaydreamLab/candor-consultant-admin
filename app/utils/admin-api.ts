@@ -396,7 +396,7 @@ export async function adminListExpertCaseReviews(
   query: AdminExpertCaseReviewListQuery = {}
 ) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/expert-case-reviews'), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/customs'), {
       headers: {
         Authorization: `Bearer ${token}`
       },
@@ -417,7 +417,7 @@ export async function adminListExpertCaseReviews(
 export async function adminGetExpertCaseReview(apiBase: string, token: string, id: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}`),
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -441,7 +441,7 @@ export type AdminExpertCaseMemberDataQuery = {
 }
 
 /**
- * GET /expert-case-review/{id}/member-data payload (OpenAPI / spec 32).
+ * GET /custom/{id}/member-data payload (OpenAPI / spec 32).
  * Prefer `profile.display_profile` for expert UI when present.
  */
 export type AdminExpertCaseMemberData = {
@@ -466,7 +466,7 @@ export type AdminExpertCaseMemberData = {
   [key: string]: unknown
 }
 
-/** GET /expert-case-review/{id}/member-data — case-bound conversation／goals／report／profile snapshot. */
+/** GET /custom/{id}/member-data — case-bound conversation／goals／report／profile snapshot. */
 export async function adminGetExpertCaseMemberData(
   apiBase: string,
   token: string,
@@ -475,7 +475,7 @@ export async function adminGetExpertCaseMemberData(
 ): Promise<AdminExpertCaseMemberData> {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/member-data`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}/member-data`),
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -503,7 +503,7 @@ export async function adminPatchExpertCaseReviewItem(
 ) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/items`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}/items`),
       {
         method: 'PATCH',
         headers: {
@@ -532,7 +532,7 @@ export async function adminResetExpertCaseReviewItems(
 ) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/items/reset`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}/items/reset`),
       {
         method: 'POST',
         headers: {
@@ -576,7 +576,7 @@ export type AdminExpertCaseReviewSubmitBody = {
 }
 
 /**
- * POST /expert-case-review/{id}/finalize-copy/generate
+ * POST /custom/{id}/finalize-copy/generate
  * Only `awaiting_review`; already reviewed → 409.
  * `cache_hit=true` → UI soft chip only (no toast).
  */
@@ -588,7 +588,7 @@ export async function adminGenerateExpertCaseFinalizeCopy(
 ): Promise<AdminExpertCaseFinalizeCopyData> {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/finalize-copy/generate`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}/finalize-copy/generate`),
       {
         method: 'POST',
         headers: {
@@ -646,7 +646,7 @@ export async function adminSubmitExpertCaseReview(
   }
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/submit`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}/submit`),
       {
         method: 'POST',
         headers: {
@@ -670,7 +670,7 @@ export async function adminSubmitExpertCaseReview(
 export async function adminExportExpertCaseReview(apiBase: string, token: string, id: string) {
   try {
     const response = await $fetch.raw(
-      adminUrl(apiBase, `/expert-case-review/${encodeURIComponent(id)}/export`),
+      adminUrl(apiBase, `/custom/${encodeURIComponent(id)}/export`),
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -691,10 +691,10 @@ export async function adminExportExpertCaseReview(apiBase: string, token: string
   }
 }
 
-/** GET /weight-sets — list weight sets (read: expert｜ops｜admin). */
+/** GET /weights — list weight sets (read: expert｜ops｜admin). */
 export async function adminListWeightSets(apiBase: string, token: string) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/weight-sets'), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/weights'), {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -711,11 +711,11 @@ export async function adminListWeightSets(apiBase: string, token: string) {
   }
 }
 
-/** GET /weight-sets/{id} — detail (+ provisional `daily_learning` embed; H-core schema pending). */
+/** GET /weights/{id} — detail (+ provisional `daily_learning` embed; H-core schema pending). */
 export async function adminGetWeightSet(apiBase: string, token: string, weightSetId: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/weight-sets/${encodeURIComponent(weightSetId)}`),
+      adminUrl(apiBase, `/weights/${encodeURIComponent(weightSetId)}`),
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -734,7 +734,7 @@ export async function adminGetWeightSet(apiBase: string, token: string, weightSe
   }
 }
 
-/** POST /weight-sets/daily-learning-draft — clone published + proposals (core #75; not auto-publish). */
+/** POST /weights/daily-learning-draft — clone published + proposals (core #75; not auto-publish). */
 export async function adminDailyLearningDraft(
   apiBase: string,
   token: string,
@@ -742,7 +742,7 @@ export async function adminDailyLearningDraft(
 ) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, '/weight-sets/daily-learning-draft'),
+      adminUrl(apiBase, '/weights/daily-learning-draft'),
       {
         method: 'POST',
         headers: {
@@ -763,7 +763,7 @@ export async function adminDailyLearningDraft(
   }
 }
 
-/** POST /weight-sets/{id}/daily-learning-confirm — lock classification + apply general proposals. */
+/** POST /weights/{id}/daily-learning-confirm — lock classification + apply general proposals. */
 export async function adminDailyLearningConfirm(
   apiBase: string,
   token: string,
@@ -782,7 +782,7 @@ export async function adminDailyLearningConfirm(
     const body = await $fetch<AdminSuccess<unknown>>(
       adminUrl(
         apiBase,
-        `/weight-sets/${encodeURIComponent(weightSetId)}/daily-learning-confirm`
+        `/weights/${encodeURIComponent(weightSetId)}/daily-learning-confirm`
       ),
       {
         method: 'POST',
@@ -804,7 +804,7 @@ export async function adminDailyLearningConfirm(
   }
 }
 
-/** POST /weight-sets/{id}/daily-learning-confirm-safety — one safety proposal; confirm_safety must be true. */
+/** POST /weights/{id}/daily-learning-confirm-safety — one safety proposal; confirm_safety must be true. */
 export async function adminDailyLearningConfirmSafety(
   apiBase: string,
   token: string,
@@ -815,7 +815,7 @@ export async function adminDailyLearningConfirmSafety(
     const body = await $fetch<AdminSuccess<unknown>>(
       adminUrl(
         apiBase,
-        `/weight-sets/${encodeURIComponent(weightSetId)}/daily-learning-confirm-safety`
+        `/weights/${encodeURIComponent(weightSetId)}/daily-learning-confirm-safety`
       ),
       {
         method: 'POST',
@@ -840,7 +840,7 @@ export async function adminDailyLearningConfirmSafety(
   }
 }
 
-/** POST /weight-sets/{id}/dry-run */
+/** POST /weights/{id}/dry-run */
 export async function adminWeightSetDryRun(
   apiBase: string,
   token: string,
@@ -849,7 +849,7 @@ export async function adminWeightSetDryRun(
 ) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/weight-sets/${encodeURIComponent(weightSetId)}/dry-run`),
+      adminUrl(apiBase, `/weights/${encodeURIComponent(weightSetId)}/dry-run`),
       {
         method: 'POST',
         headers: {
@@ -870,7 +870,7 @@ export async function adminWeightSetDryRun(
   }
 }
 
-/** POST /weight-sets/{id}/publish */
+/** POST /weights/{id}/publish */
 export async function adminWeightSetPublish(
   apiBase: string,
   token: string,
@@ -879,7 +879,7 @@ export async function adminWeightSetPublish(
 ) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(
-      adminUrl(apiBase, `/weight-sets/${encodeURIComponent(weightSetId)}/publish`),
+      adminUrl(apiBase, `/weights/${encodeURIComponent(weightSetId)}/publish`),
       {
         method: 'POST',
         headers: {
@@ -1400,7 +1400,7 @@ export async function adminGetUserHealthReport(
 
 export async function adminListPackagePlans(apiBase: string, token: string) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/package-plans'), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/plans'), {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -1459,7 +1459,7 @@ export type PackagePlanWrite = {
 
 export async function adminGetPackagePlan(apiBase: string, token: string, id: string) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/package-plan/${encodeURIComponent(id)}`), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/plan/${encodeURIComponent(id)}`), {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -1483,7 +1483,7 @@ export async function adminUpdatePackagePlan(
   payload: PackagePlanWrite
 ) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/package-plan/${encodeURIComponent(id)}`), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/plan/${encodeURIComponent(id)}`), {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`
@@ -1756,7 +1756,7 @@ function compactRefundRequestQuery(query: AdminRefundRequestListQuery) {
 
 export async function adminListSellableItems(apiBase: string, token: string) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/sellable-items'), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/supplements'), {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -1779,7 +1779,7 @@ export type SellableItemWrite = {
 
 export async function adminCreateSellableItem(apiBase: string, token: string, payload: SellableItemWrite) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/sellable-items'), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/supplements'), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`
@@ -1800,7 +1800,7 @@ export async function adminCreateSellableItem(apiBase: string, token: string, pa
 
 export async function adminGetSellableItem(apiBase: string, token: string, id: string) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/supplement/${encodeURIComponent(id)}`), {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -1819,7 +1819,7 @@ export async function adminGetSellableItem(apiBase: string, token: string, id: s
 
 export async function adminUpdateSellableItem(apiBase: string, token: string, id: string, payload: SellableItemWrite) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/supplement/${encodeURIComponent(id)}`), {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`
@@ -1840,7 +1840,7 @@ export async function adminUpdateSellableItem(apiBase: string, token: string, id
 
 export async function adminDeleteSellableItem(apiBase: string, token: string, id: string) {
   try {
-    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/sellable-item/${encodeURIComponent(id)}`), {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/supplement/${encodeURIComponent(id)}`), {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`

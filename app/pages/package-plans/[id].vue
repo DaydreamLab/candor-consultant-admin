@@ -26,7 +26,7 @@ const saveNotice = ref<'success' | 'noChanges' | null>(null)
 
 const { confirmLeave, allowNavigationWithoutConfirm } = usePackagePlanLeaveGuard(
   formDirty,
-  () => t('packagePlans.leaveConfirm')
+  () => t('plans.leaveConfirm')
 )
 
 watch([saving, pending, packagePlan, locale, canEdit], () => {
@@ -69,7 +69,7 @@ async function load(id: string) {
   const token = readOperatorToken()
   if (!token || !id) {
     pending.value = false
-    errorMessage.value = t('packagePlans.failed')
+    errorMessage.value = t('plans.failed')
     return
   }
 
@@ -87,7 +87,7 @@ async function load(id: string) {
       return
     }
     packagePlan.value = null
-    errorMessage.value = failText(error, t('packagePlans.failed'))
+    errorMessage.value = failText(error, t('plans.failed'))
   } finally {
     if (packagePlanId.value === id) {
       pending.value = false
@@ -99,7 +99,7 @@ async function onSave(payload: PackagePlanWrite) {
   const token = readOperatorToken()
   const id = packagePlanId.value
   if (!token || !id || !canEdit.value) {
-    errorMessage.value = t('packagePlans.saveFailed')
+    errorMessage.value = t('plans.saveFailed')
     return
   }
 
@@ -119,7 +119,7 @@ async function onSave(payload: PackagePlanWrite) {
     if (packagePlanId.value !== id) {
       return
     }
-    errorMessage.value = failText(error, t('packagePlans.saveFailed'))
+    errorMessage.value = failText(error, t('plans.saveFailed'))
   } finally {
     if (packagePlanId.value === id) {
       saving.value = false
@@ -176,14 +176,14 @@ function failText(error: unknown, fallback: string) {
       color="success"
       variant="subtle"
       class="mb-4"
-      :title="$t('packagePlans.saveOk')"
+      :title="$t('plans.saveOk')"
     />
     <UAlert
       v-if="saveNotice === 'noChanges' && packagePlan"
       color="neutral"
       variant="subtle"
       class="mb-4"
-      :title="$t('packagePlans.noChanges')"
+      :title="$t('plans.noChanges')"
     />
     <p
       v-if="errorMessage && !packagePlan"
@@ -201,7 +201,7 @@ function failText(error: unknown, fallback: string) {
       v-if="pending"
       class="text-sm text-muted"
     >
-      {{ $t('packagePlans.loading') }}
+      {{ $t('plans.loading') }}
     </p>
     <PackagePlanForm
       v-else-if="packagePlan"

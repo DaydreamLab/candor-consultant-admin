@@ -42,12 +42,7 @@ export default defineNuxtConfig({
     }
   },
 
-  routeRules: {
-    '/inventory': { redirect: '/products' },
-    '/key-in': { redirect: '/selections' },
-    '/en/inventory': { redirect: '/en/products' },
-    '/en/key-in': { redirect: '/en/selections' }
-  },
+  routeRules: {},
 
   compatibilityDate: '2026-09-08',
 

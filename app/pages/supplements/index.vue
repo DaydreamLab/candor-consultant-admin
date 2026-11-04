@@ -37,21 +37,21 @@ const categoryOptions = computed(() => {
   }
   const sorted = [...names].sort((a, b) => a.localeCompare(b, String(locale.value)))
   return [
-    { label: t('products.categoryAll'), value: CATEGORY_ALL },
+    { label: t('supplements.categoryAll'), value: CATEGORY_ALL },
     ...sorted.map(value => ({ label: value, value }))
   ]
 })
 
 const saleOptions = computed(() => [
-  { label: t('products.filters.any'), value: SALE_ALL },
-  { label: t('products.onSale'), value: 'on_sale' },
-  { label: t('products.offSale'), value: 'off_sale' }
+  { label: t('supplements.filters.any'), value: SALE_ALL },
+  { label: t('supplements.onSale'), value: 'on_sale' },
+  { label: t('supplements.offSale'), value: 'off_sale' }
 ])
 
 const coreOptions = computed(() => [
-  { label: t('products.filters.any'), value: CORE_ALL },
-  { label: t('products.filters.coreYes'), value: 'core' },
-  { label: t('products.filters.coreNo'), value: 'not_core' }
+  { label: t('supplements.filters.any'), value: CORE_ALL },
+  { label: t('supplements.filters.coreYes'), value: 'core' },
+  { label: t('supplements.filters.coreNo'), value: 'not_core' }
 ])
 
 const selectedCategories = computed(() => {
@@ -61,7 +61,7 @@ const selectedCategories = computed(() => {
 const categoryTriggerLabel = computed(() => {
   const selected = selectedCategories.value
   if (!selected.length) {
-    return t('products.categoryAll')
+    return t('supplements.categoryAll')
   }
   const separator = String(locale.value).startsWith('en') ? ', ' : '、'
   return selected.join(separator)
@@ -146,7 +146,7 @@ async function load() {
   const token = readOperatorToken()
   if (!token) {
     sellableItems.value = []
-    errorMessage.value = t('products.failed')
+    errorMessage.value = t('supplements.failed')
     pending.value = false
     return
   }
@@ -168,7 +168,7 @@ function openItem(row: Record<string, unknown>) {
   if (!id) {
     return
   }
-  void navigateTo(localePath(`/products/${encodeURIComponent(id)}`))
+  void navigateTo(localePath(`/supplements/${encodeURIComponent(id)}`))
 }
 
 function onSaleOf(row: Record<string, unknown>) {
@@ -206,7 +206,7 @@ async function toggleSale(row: Record<string, unknown>, nextOnSale: boolean) {
     Object.assign(row, updated)
   } catch (error) {
     row.sale_status = previous
-    errorMessage.value = failText(error) || t('products.saleToggleFailed')
+    errorMessage.value = failText(error) || t('supplements.saleToggleFailed')
   } finally {
     const cleared = new Set(togglingIds.value)
     cleared.delete(id)
@@ -287,7 +287,7 @@ function servingCountOf(row: Record<string, unknown>) {
 function servingsOf(row: Record<string, unknown>) {
   const count = servingCountOf(row)
   if (count !== null) {
-    return t('products.servingsCount', { n: count })
+    return t('supplements.servingsCount', { n: count })
   }
   for (const key of SERVING_KEYS) {
     const text = localizedText(row[key])
@@ -358,31 +358,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function failText(error: unknown) {
   const message = error instanceof AdminApiError ? error.message.trim() : ''
-  return message || t('products.failed')
+  return message || t('supplements.failed')
 }
 </script>
 
 <template>
   <PageHeader
-    :title="$t('products.listTitle')"
+    :title="$t('supplements.listTitle')"
     plain
   >
     <div class="flex flex-col gap-4">
       <div class="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-elevated p-4">
         <div class="min-w-40 grow basis-40">
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('products.filters.q') }}
+            {{ $t('supplements.filters.q') }}
           </label>
           <UInput
             v-model="query"
             icon="i-lucide-search"
-            :placeholder="$t('products.filters.qPlaceholder')"
+            :placeholder="$t('supplements.filters.qPlaceholder')"
             class="w-full"
           />
         </div>
         <div class="min-w-36">
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('products.filters.category') }}
+            {{ $t('supplements.filters.category') }}
           </label>
           <USelect
             v-model="categoryFilter"
@@ -399,7 +399,7 @@ function failText(error: unknown) {
         </div>
         <div class="min-w-36">
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('products.filters.saleStatus') }}
+            {{ $t('supplements.filters.saleStatus') }}
           </label>
           <USelect
             v-model="saleFilter"
@@ -410,7 +410,7 @@ function failText(error: unknown) {
         </div>
         <div class="min-w-36">
           <label class="mb-1 block text-xs text-muted">
-            {{ $t('products.filters.core') }}
+            {{ $t('supplements.filters.core') }}
           </label>
           <USelect
             v-model="coreFilter"
@@ -425,7 +425,7 @@ function failText(error: unknown) {
         v-if="pending"
         class="text-sm text-muted"
       >
-        {{ $t('products.loading') }}
+        {{ $t('supplements.loading') }}
       </p>
       <template v-else>
         <div class="overflow-hidden rounded-xl border border-default bg-elevated">
@@ -436,7 +436,7 @@ function failText(error: unknown) {
                 square
                 :color="view === 'card' ? 'primary' : 'neutral'"
                 :variant="view === 'card' ? 'solid' : 'ghost'"
-                :aria-label="$t('products.view.card')"
+                :aria-label="$t('supplements.view.card')"
                 :aria-pressed="view === 'card'"
                 @click="setView('card')"
               />
@@ -445,14 +445,14 @@ function failText(error: unknown) {
                 square
                 :color="view === 'list' ? 'primary' : 'neutral'"
                 :variant="view === 'list' ? 'solid' : 'ghost'"
-                :aria-label="$t('products.view.list')"
+                :aria-label="$t('supplements.view.list')"
                 :aria-pressed="view === 'list'"
                 @click="setView('list')"
               />
             </div>
             <UButton
               icon="i-lucide-plus"
-              :to="localePath('/products/new')"
+              :to="localePath('/supplements/new')"
             >
               {{ $t('actions.add') }}
             </UButton>
@@ -467,7 +467,7 @@ function failText(error: unknown) {
             v-else-if="!filtered.length"
             class="p-10 text-center text-base text-muted"
           >
-            {{ $t('products.empty') }}
+            {{ $t('supplements.empty') }}
           </p>
           <UPageGrid
             v-else-if="view === 'card'"
@@ -513,7 +513,7 @@ function failText(error: unknown) {
                     <USwitch
                       :model-value="onSaleOf(row)"
                       :disabled="isToggling(row)"
-                      :aria-label="$t('products.saleToggle')"
+                      :aria-label="$t('supplements.saleToggle')"
                       @update:model-value="toggleSale(row, $event)"
                     />
                   </div>
@@ -536,7 +536,7 @@ function failText(error: unknown) {
                     variant="subtle"
                     size="sm"
                   >
-                    {{ $t('products.offSale') }}
+                    {{ $t('supplements.offSale') }}
                   </UBadge>
                 </div>
                 <p
@@ -609,7 +609,7 @@ function failText(error: unknown) {
                         variant="subtle"
                         size="sm"
                       >
-                        {{ $t('products.offSale') }}
+                        {{ $t('supplements.offSale') }}
                       </UBadge>
                     </div>
                     <div
@@ -619,7 +619,7 @@ function failText(error: unknown) {
                       <USwitch
                         :model-value="onSaleOf(row)"
                         :disabled="isToggling(row)"
-                        :aria-label="$t('products.saleToggle')"
+                        :aria-label="$t('supplements.saleToggle')"
                         @update:model-value="toggleSale(row, $event)"
                       />
                     </div>

@@ -33,7 +33,7 @@ if (import.meta.client) {
 async function load() {
   const token = readOperatorToken()
   if (!token) {
-    error.value = t('aiAssistant.site.loadFailed')
+    error.value = t('assistant.site.loadFailed')
     pending.value = false
     return
   }
@@ -45,7 +45,7 @@ async function load() {
     items.value = ensureYoungerTests(data.items)
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('aiAssistant.site.loadFailed')
+    error.value = message || t('assistant.site.loadFailed')
   } finally {
     pending.value = false
   }
@@ -91,7 +91,7 @@ async function save() {
     saved.value = true
   } catch (err) {
     const message = err instanceof AdminApiError ? err.message.trim() : ''
-    error.value = message || t('aiAssistant.site.saveFailed')
+    error.value = message || t('assistant.site.saveFailed')
   } finally {
     saving.value = false
   }
@@ -100,25 +100,25 @@ async function save() {
 
 <template>
   <PageHeader
-    :title="$t('nav.aiAssistant')"
-    :description="$t('aiAssistant.description')"
+    :title="$t('nav.assistant')"
+    :description="$t('assistant.description')"
   >
     <AiAssistantTabs />
     <section class="rounded-xl border border-default bg-elevated p-5">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 class="text-base font-semibold text-highlighted">
-            {{ $t('aiAssistant.site.title') }}
+            {{ $t('assistant.site.title') }}
           </h2>
           <p class="mt-2 text-sm text-muted">
-            {{ $t('aiAssistant.site.hint') }}
+            {{ $t('assistant.site.hint') }}
           </p>
         </div>
         <UButton
           v-if="canEdit"
           size="sm"
           variant="soft"
-          :label="$t('aiAssistant.site.addRow')"
+          :label="$t('assistant.site.addRow')"
           :disabled="pending || saving"
           data-testid="ai-assistant-site-add"
           @click="addRow"
@@ -153,7 +153,7 @@ async function save() {
         >
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.site.key') }}
+              {{ $t('assistant.site.key') }}
             </span>
             <input
               v-model="row.key"
@@ -165,13 +165,13 @@ async function save() {
           </label>
           <label class="text-sm">
             <span class="mb-1.5 block text-muted">
-              {{ $t('aiAssistant.site.url') }}
+              {{ $t('assistant.site.url') }}
             </span>
             <input
               v-model="row.url"
               type="url"
               class="w-full rounded-lg border border-default bg-default px-3 py-2 text-sm text-highlighted"
-              :placeholder="$t('aiAssistant.site.urlPlaceholder')"
+              :placeholder="$t('assistant.site.urlPlaceholder')"
               :disabled="pending || saving || !canEdit"
               data-testid="ai-assistant-link-url"
             >
@@ -196,11 +196,11 @@ async function save() {
           data-testid="ai-assistant-site-save"
           @click="save"
         >
-          {{ saving ? $t('aiAssistant.saving') : $t('actions.save') }}
+          {{ saving ? $t('assistant.saving') : $t('actions.save') }}
         </button>
       </div>
       <p class="mt-2 text-xs text-dimmed">
-        {{ $t('aiAssistant.site.help') }}
+        {{ $t('assistant.site.help') }}
       </p>
     </section>
   </PageHeader>

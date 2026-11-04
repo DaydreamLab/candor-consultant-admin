@@ -28,7 +28,7 @@ const todayText = computed(() => {
 const weekRangeLabel = computed(() => {
   const start = weekStart.value
   const end = addDaysToDateString(start, 6)
-  return t('labAppointments.calendar.weekRange', { start, end })
+  return t('appointments.calendar.weekRange', { start, end })
 })
 
 const calendarDays = computed(() => {
@@ -77,7 +77,7 @@ function serviceName(row: LabAppointmentMock) {
 }
 
 function statusLabel(row: LabAppointmentMock) {
-  return t(`labAppointments.status.${row.status}`)
+  return t(`appointments.status.${row.status}`)
 }
 
 function slotText(row: LabAppointmentMock) {
@@ -89,14 +89,14 @@ function dayLabel(date: string) {
 }
 
 function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
-  return t(`labServices.weekdays.${weekday}`)
+  return t(`checkups.weekdays.${weekday}`)
 }
 </script>
 
 <template>
   <PageHeader
-    :title="$t('nav.labAppointments')"
-    :description="$t('labAppointments.description')"
+    :title="$t('nav.appointments')"
+    :description="$t('appointments.description')"
     plain
   >
     <div class="mb-4 flex justify-end">
@@ -106,7 +106,7 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
         variant="subtle"
         @click="openCalendar"
       >
-        {{ $t('labAppointments.calendar.open') }}
+        {{ $t('appointments.calendar.open') }}
       </UButton>
     </div>
 
@@ -114,7 +114,7 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
       v-if="!appointments.length"
       class="rounded-xl border border-default bg-elevated p-10 text-center text-base text-muted"
     >
-      {{ $t('labAppointments.empty') }}
+      {{ $t('appointments.empty') }}
     </p>
     <div
       v-else
@@ -124,19 +124,19 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
         <thead class="border-b border-default bg-muted/40 text-muted">
           <tr>
             <th class="px-4 py-3 font-medium">
-              {{ $t('labAppointments.columns.member') }}
+              {{ $t('appointments.columns.member') }}
             </th>
             <th class="px-4 py-3 font-medium">
-              {{ $t('labAppointments.columns.service') }}
+              {{ $t('appointments.columns.service') }}
             </th>
             <th class="px-4 py-3 font-medium">
-              {{ $t('labAppointments.columns.slot') }}
+              {{ $t('appointments.columns.slot') }}
             </th>
             <th class="px-4 py-3 font-medium text-right">
-              {{ $t('labAppointments.columns.amount') }}
+              {{ $t('appointments.columns.amount') }}
             </th>
             <th class="px-4 py-3 font-medium">
-              {{ $t('labAppointments.columns.status') }}
+              {{ $t('appointments.columns.status') }}
             </th>
           </tr>
         </thead>
@@ -184,7 +184,7 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
 
     <UModal
       v-model:open="calendarOpen"
-      :title="$t('labAppointments.calendar.title')"
+      :title="$t('appointments.calendar.title')"
       :description="weekRangeLabel"
       :ui="{ content: 'sm:max-w-6xl' }"
     >
@@ -196,7 +196,7 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
               color="neutral"
               variant="ghost"
               size="sm"
-              :aria-label="$t('labAppointments.calendar.prevWeek')"
+              :aria-label="$t('appointments.calendar.prevWeek')"
               @click="shiftWeek(-1)"
             />
             <UButton
@@ -205,14 +205,14 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
               size="sm"
               @click="goThisWeek"
             >
-              {{ $t('labAppointments.calendar.thisWeek') }}
+              {{ $t('appointments.calendar.thisWeek') }}
             </UButton>
             <UButton
               icon="i-lucide-chevron-right"
               color="neutral"
               variant="ghost"
               size="sm"
-              :aria-label="$t('labAppointments.calendar.nextWeek')"
+              :aria-label="$t('appointments.calendar.nextWeek')"
               @click="shiftWeek(1)"
             />
           </div>
@@ -283,7 +283,7 @@ function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7) {
               v-else
               class="flex flex-1 items-center justify-center text-xs text-dimmed"
             >
-              {{ $t('labAppointments.calendar.dayEmpty') }}
+              {{ $t('appointments.calendar.dayEmpty') }}
             </p>
           </section>
         </div>
