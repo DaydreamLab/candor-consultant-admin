@@ -12,8 +12,8 @@ export type SettingsAnchorId = (typeof SETTINGS_ANCHOR_IDS)[number]
 
 /** Hashes that redirect off the hub onto dedicated settings-group pages. */
 export const SETTINGS_SPLIT_HASH_REDIRECTS = {
-  'privacy': '/settings/privacy',
-  'guidance': '/settings/guidance'
+  privacy: '/settings/privacy',
+  guidance: '/settings/guidance'
 } as const
 
 export type SettingsSplitHash = keyof typeof SETTINGS_SPLIT_HASH_REDIRECTS
