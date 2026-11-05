@@ -71,10 +71,10 @@
 | 報告判讀 LLM 上限 | `/settings`（每次讀取最多 LLM 次數；留空＝不限制；按儲存） | 可用 | 接線中（待 [candor-core #81](https://github.com/DaydreamLab/candor-core/pull/81) 合併部署） | M4 |
 | 隱私權政策 CMS | `/settings/privacy`（Markdown 編輯／儲存；左右版本 diff；自設定總頁錨點拆出）；公開頁 `/privacy-policy`；Cookie 同意依 version | 可用 | 接線中（待 [candor-core #87](https://github.com/DaydreamLab/candor-core/pull/87) 合併部署） | M2 Beta |
 | CTA 目錄 | `/settings/guidance`（列表／編輯／情境矩陣；自設定總頁錨點拆出；無新增／刪除；admin 可編、ops 只讀、expert 隱藏側欄項） | 可用 | Mock（client 已備；待 candor-core CTA catalog Admin API；預設 `NUXT_PUBLIC_CTA_CATALOG_MOCK` 開） | M3 |
-| 銷售方案列表 | `/package-plans` | 可用 | 已接 | M3 |
-| 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除端點） | 可用 | 已接 | M3 |
-| PackagePlan 建立 | —（core 有 `POST /admin/package-plans`，畫面未做） | 無 | Mock | M3 |
-| 專家方案列表／編輯 | `/expert-plans`、`/expert-plans/{id}`（列表表格＋排序／上架下架；編輯名稱／英文名／售價／排序；**無新增**；ops/admin PATCH 全欄、expert 可改 `active`＋`sort_order`，`name_zh`／`name_en`／`price` → 403；對齊設計稿 v4 B-01～B-07／core #143 `b7c5ed0`／Irice 11/4 第二輪） | 可用 | 接線中（待 core #143 合併部署） | M2 Beta |
+| 銷售方案列表 | `/package-plans`（ops／admin 右上「＋ 新增」；expert 無） | 可用 | 已接 | M3 |
+| 銷售方案詳情／更新 | `/package-plans/{id}`（`GET`／`PATCH` 已接；無刪除；天數 30 唯讀） | 可用 | 已接 | M3 |
+| PackagePlan 建立 | `/package-plans/new`（`POST /admin/plans`；不送 code；預設下架；一次帶齊可選欄；存檔→編輯頁無 toast） | 可用 | 接線中（待 core create 契約擴充合併） | M3 |
+| 專案列表／編輯／新增 | `/expert-plans`、`/expert-plans/new`、`/expert-plans/{id}`（列表「＋ 新增」僅 ops／admin；綁定方案可改；預設下架；存檔→編輯頁無 toast；ops/admin PATCH 全欄含 `package_plan_id`、expert 可改 `active`＋`sort_order`） | 可用 | 接線中（待 core create／一對多／可改綁定合併） | M2 Beta |
 | 專家案件待處理／定稿 | `/custom`（預設 `awaiting_review&source=expert_plan`；排序由後端 `paid_at` ASC，不送 sort／order）、定稿確認；同時定稿 409 `expert_case_already_finalized`（B-08～B-11）；**定稿不自動理貨** | 可用 | 接線中（待 core #143） | M2 Beta |
 | 退款申請列表 | `/refund-requests?status`、`POST …/confirm`（無 body）、`POST …/reject` `{reason}` 1–200；對齊 B-12～B-16／core #143 | 可用 | 接線中（待 core #143） | M2 Beta |
 | 物流進度擋理貨 | `/shipping/{id}`：退款中 disabled＋原因；`POST /admin/order/{id}/shipment` 遇 `refund_request_pending`；判斷用 order `refund_status`（B-17／C19） | 可用 | 接線中（讀取已接；開始理貨寫入對齊 #143） | M2 Beta |
@@ -142,9 +142,9 @@
 | SellableItem 列表／建立／詳情／更新 | `GET`／`POST /admin/sellable-items`、`GET`／`PATCH /admin/sellable-item/{id}` | 已接（含列表上下架 toggle、風險／禁忌／包裝佔用容量 (單顆)／可同封裝；`unit_size_text` 已刪；表單已對齊） |
 | SellableItem 刪除 | `DELETE /admin/sellable-item/{id}` | 不做（詳情頁不提供刪除；停售走 `PATCH` `sale_status`） |
 | Inventory 讀寫／alerts | `/admin/sellable-item/{id}/inventory`、`GET /admin/inventory/alerts` | Mock |
-| PackagePlan 列表 | `GET /admin/package-plans` | 已接（列表顯示包裝總容量／固定核心數量） |
-| PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/package-plan/{id}` | 已接（畫面 `/package-plans/{id}`；`period_days`／包裝總容量／固定核心數量可改；天數 UI 選項 30／60／90） |
-| PackagePlan 建立 | `POST /admin/package-plans` | Mock（畫面未做；無刪除端點） |
+| PackagePlan 列表 | `GET /admin/plans` | 已接（列表顯示包裝總容量／固定核心數量；ops／admin「＋ 新增」） |
+| PackagePlan 單筆詳情／更新 | `GET`／`PATCH /admin/plan/{id}` | 已接（畫面 `/package-plans/{id}`；天數 30 唯讀；無刪除） |
+| PackagePlan 建立 | `POST /admin/plans`（不送 code；預設下架；收 name_en／original_price／description*／home_*／sort_order） | 接線中（畫面 `/package-plans/new` 已做） |
 | LabService CRUD | `/admin/checkups`、`/admin/lab-service/{id}` | Mock（畫面 `/checkups` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/scheduling`） |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/assistant/site`；設定頁不再編） |
@@ -163,7 +163,7 @@
 
 | 能力 | 端點 | 狀態 |
 |------|------|------|
-| 專家方案列表／詳情／更新 | `GET /admin/expert-plans`、`GET`／`PATCH /admin/expert-plan/{id}`（expert：`active`＋`sort_order`；禁 `name_zh`／`name_en`／`price` → 403；core #143 `b7c5ed0`；**無** create） | 接線中（畫面已做；待 core #143 合併部署） |
+| 專案列表／詳情／更新／建立 | `GET`／`POST /admin/expert-plans`、`GET`／`PATCH /admin/expert-plan/{id}`（create：ops／admin、不送 code、預設下架；PATCH 可改 `package_plan_id`；expert：`active`＋`sort_order`；禁 `name_zh`／`name_en`／`price` → 403） | 接線中（畫面含 `/expert-plans/new`；待 core create／一對多合併） |
 | 退款申請列表／確認／拒絕 | `GET /admin/refund-requests`、`POST …/confirm`、`POST …/reject` | 接線中（待 core #143） |
 | 訂單詳情專家方案明細／退款申請狀態 | `GET /admin/order/{id}`（`lines.kind=expert_plan`、`refund_status`／`refund_request_display`；相容舊 `refund_request_status`） | 接線中（待 core #143） |
 | 整筆退款閘門（已寄出不可退） | `POST /admin/order/{id}/refund` → 409 `not_refundable` | 接線中（按鈕對齊 shipment null／picking；錯誤顯示 core message） |

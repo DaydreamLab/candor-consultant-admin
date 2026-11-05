@@ -106,11 +106,25 @@ export function usePageCrumbs() {
       ]
     }
 
+    if (current === '/package-plans/new') {
+      return [
+        { label: t('nav.plans'), to: localePath('/package-plans') },
+        { label: t('plans.createTitle') }
+      ]
+    }
+
     if (current.startsWith('/package-plans/')) {
       const id = String(route.params.id ?? '')
       return [
         { label: t('nav.plans'), to: localePath('/package-plans') },
         { label: packagePlanLabel.value || id }
+      ]
+    }
+
+    if (current === '/expert-plans/new') {
+      return [
+        { label: t('nav.expertPlans'), to: localePath('/expert-plans') },
+        { label: t('expertPlans.createTitle') }
       ]
     }
 

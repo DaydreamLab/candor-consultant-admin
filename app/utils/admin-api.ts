@@ -1457,6 +1457,51 @@ export type PackagePlanWrite = {
   highlight?: boolean | null
 }
 
+/** POST /admin/plans — 不送 code（系統產生）；預設下架；一次帶齊可選欄。 */
+export type PackagePlanCreate = {
+  name_zh: string
+  price: number
+  pack_capacity: number
+  core_count: number
+  period_days?: number
+  name_en?: string | null
+  description?: string | null
+  description_en?: string | null
+  sort_order?: number
+  active?: boolean
+  original_price?: number | null
+  features?: string[] | null
+  features_en?: string[] | null
+  badge?: string | null
+  badge_en?: string | null
+  highlight?: boolean | null
+}
+
+export async function adminCreatePackagePlan(
+  apiBase: string,
+  token: string,
+  payload: PackagePlanCreate
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/plans'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
+  }
+}
+
 export async function adminGetPackagePlan(apiBase: string, token: string, id: string) {
   try {
     const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, `/plan/${encodeURIComponent(id)}`), {
@@ -1502,7 +1547,7 @@ export async function adminUpdatePackagePlan(
   }
 }
 
-/** Spec 33 — expert_plans catalog (list／get／patch；無 create). */
+/** Spec 33 — expert_plans catalog（list／get／patch／create）. */
 export type AdminExpertPlan = {
   id: string
   code: string
@@ -1513,6 +1558,7 @@ export type AdminExpertPlan = {
   active: boolean
   sort_order: number
   package_plan_name_zh?: string | null
+  package_plan_name_en?: string | null
   package_plan_code?: string | null
 }
 
@@ -1520,13 +1566,25 @@ export type AdminExpertPlan = {
  * PATCH body（OpenAPI adminExpertPlanPatch）。
  * expert 僅應送 active／sort_order；name_zh／name_en／price → 403。
  * Irice 11/4 第二輪：畫面顯示 name_en；ops／admin 可改，expert 唯讀。
+ * 綁定方案可改（只影響之後新單）；code 仍不可改。
  */
 export type ExpertPlanWrite = {
+  package_plan_id?: string
   name_zh?: string
   name_en?: string | null
   price?: number
   active?: boolean
   sort_order?: number
+}
+
+/** POST /admin/expert-plans — 不送 code；預設下架。 */
+export type ExpertPlanCreate = {
+  package_plan_id: string
+  name_zh: string
+  price: number
+  name_en?: string | null
+  sort_order?: number
+  active?: boolean
 }
 
 export async function adminListExpertPlans(apiBase: string, token: string) {
@@ -1545,6 +1603,31 @@ export async function adminListExpertPlans(apiBase: string, token: string) {
       throw error
     }
     throw new AdminApiError(readStatus(error), readMessage(error))
+  }
+}
+
+export async function adminCreateExpertPlan(
+  apiBase: string,
+  token: string,
+  payload: ExpertPlanCreate
+) {
+  try {
+    const body = await $fetch<AdminSuccess<unknown>>(adminUrl(apiBase, '/expert-plans'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: payload
+    })
+    if (body?.status !== 'success' || !isRecord(body.data)) {
+      throw new AdminApiError(500, '')
+    }
+    return body.data
+  } catch (error) {
+    if (error instanceof AdminApiError) {
+      throw error
+    }
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 

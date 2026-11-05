@@ -32,6 +32,12 @@ const canEdit = computed(() => {
   return role === 'expert' || role === 'ops' || role === 'admin'
 })
 
+/** 只有 ops／admin 看到「＋ 新增」（規則 2／N-01／N-02）。 */
+const canCreate = computed(() => {
+  const role = session.operator?.role
+  return role === 'ops' || role === 'admin'
+})
+
 const sortedPlans = computed(() => {
   return [...expertPlans.value].sort((a, b) => {
     const sa = numberOf(a.sort_order) ?? 0
@@ -218,6 +224,18 @@ function numberOf(value: unknown) {
     :description="$t('expertPlans.description')"
     plain
   >
+    <div
+      v-if="canCreate"
+      class="mb-4 flex justify-end"
+    >
+      <UButton
+        icon="i-lucide-plus"
+        :to="localePath('/expert-plans/new')"
+        data-testid="expert-plans-add"
+      >
+        {{ $t('actions.add') }}
+      </UButton>
+    </div>
     <p
       v-if="errorMessage"
       class="text-sm text-error"

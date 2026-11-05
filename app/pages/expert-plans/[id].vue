@@ -2,6 +2,7 @@
 import {
   AdminApiError,
   adminGetExpertPlan,
+  adminListPackagePlans,
   adminUpdateExpertPlan,
   isExpertPlanFieldForbiddenError,
   type ExpertPlanWrite
@@ -28,10 +29,11 @@ const canAccess = computed(() => {
   return role === 'expert' || role === 'ops' || role === 'admin'
 })
 
-/** expert 鎖名稱／英文名／售價（後端禁 name_zh／name_en／price）；ops／admin 可改全欄。 */
+/** expert 鎖名稱／英文名／售價／綁定（後端禁 name_zh／name_en／price）；ops／admin 可改全欄。 */
 const namePriceLocked = computed(() => session.operator?.role === 'expert')
 
 const expertPlan = ref<Record<string, unknown> | null>(null)
+const packagePlanOptions = ref<{ id: string, label: string }[]>([])
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
@@ -74,6 +76,28 @@ if (import.meta.client) {
       void navigateTo(localePath('/expert-plans'))
     }
   }, { immediate: true })
+
+  void loadPackagePlans()
+}
+
+async function loadPackagePlans() {
+  const token = readOperatorToken()
+  if (!token) {
+    packagePlanOptions.value = []
+    return
+  }
+  try {
+    const rows = await adminListPackagePlans(config.public.apiBase, token)
+    packagePlanOptions.value = rows.map((row) => {
+      const id = scalarText(row.id).trim()
+      const zh = scalarText(row.name_zh).trim()
+      const en = scalarText(row.name_en).trim()
+      const label = zh || en || scalarText(row.code).trim() || id
+      return { id, label }
+    }).filter(row => row.id)
+  } catch {
+    packagePlanOptions.value = []
+  }
 }
 
 onUnmounted(() => {
@@ -229,9 +253,11 @@ function failText(error: unknown, fallback: string) {
     </p>
     <ExpertPlanForm
       v-else-if="expertPlan && canAccess"
+      mode="update"
       :disabled="!canAccess"
       :name-price-locked="namePriceLocked"
       :expert-plan="expertPlan"
+      :package-plan-options="packagePlanOptions"
       :saving="saving"
       :save-error="errorMessage"
       @dirty-change="formDirty = $event"

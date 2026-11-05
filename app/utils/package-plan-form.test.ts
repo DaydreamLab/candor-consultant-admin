@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildPackagePlanCreate,
   buildPackagePlanPatch,
+  emptyPackagePlanCreateState,
   moveFeatureRow,
   originalPriceErrorMessage,
   originalPriceIssue,
   packagePlanFormIsDirty,
   packagePlanFormStateFromPlan,
   snapshotFromPlan,
+  validatePackagePlanCreateFields,
   validatePackagePlanForm
 } from './package-plan-form'
 
@@ -192,5 +195,63 @@ describe('validatePackagePlanForm', () => {
     const state = packagePlanFormStateFromPlan(basePlan)
     state.name_zh = '   '
     expect(validatePackagePlanForm(state)).toEqual({ field: 'form' })
+  })
+})
+
+describe('package plan create', () => {
+  it('defaults to inactive with blank sort order', () => {
+    const state = emptyPackagePlanCreateState()
+    expect(state.active).toBe(false)
+    expect(state.sort_order).toBe('')
+    expect(state.pack_capacity).toBe('8')
+    expect(state.core_count).toBe('3')
+    expect(state.period_days).toBe(30)
+  })
+
+  it('lists all create validation errors without short-circuit', () => {
+    const state = emptyPackagePlanCreateState()
+    state.price = '100'
+    state.pack_capacity = '0'
+    state.core_count = '5'
+    state.original_price = '50'
+    expect(validatePackagePlanCreateFields(state)).toEqual({
+      name_zh: true,
+      pack_capacity: true,
+      core_count: true,
+      original_price: true
+    })
+    state.price = '0'
+    expect(validatePackagePlanCreateFields(state).price).toBe(true)
+  })
+
+  it('builds create payload without code and omits blank optional fields', () => {
+    const state = emptyPackagePlanCreateState()
+    state.name_zh = '基礎保養'
+    state.name_en = 'Basic care'
+    state.price = '3980'
+    state.original_price = '4500'
+    state.description = '日常基礎保養'
+    state.home_badge_zh = '熱門'
+    state.home_features_zh = ['每日基礎補給']
+    expect(buildPackagePlanCreate(state)).toEqual({
+      name_zh: '基礎保養',
+      name_en: 'Basic care',
+      price: 3980,
+      original_price: 4500,
+      pack_capacity: 8,
+      core_count: 3,
+      period_days: 30,
+      active: false,
+      description: '日常基礎保養',
+      features: ['每日基礎補給'],
+      badge: '熱門'
+    })
+  })
+
+  it('does not patch period_days on edit', () => {
+    const snapshot = snapshotFromPlan({ ...basePlan, period_days: 30 })
+    const state = packagePlanFormStateFromPlan({ ...basePlan, period_days: 30 })
+    state.period_days = 90
+    expect(buildPackagePlanPatch(snapshot, state)).toEqual({})
   })
 })
