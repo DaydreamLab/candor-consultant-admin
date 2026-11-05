@@ -9,7 +9,10 @@ import {
 import { canEditCtaCatalog } from '~/utils/cta-catalog-access'
 import {
   buildCtaQuestionJsonPreview,
+  ctaHasThresholdUrlFields,
   matchesCtaUiFilter,
+  resolveOfferFullTestThreshold,
+  resolveOfferFullTestUrl,
   type CtaUiFilter
 } from '~/utils/cta-catalog-labels'
 import type {
@@ -53,6 +56,8 @@ const draftFormatDetail = ref('')
 const draftReplyType = ref<CtaCatalogType>('ask_report')
 const draftReplyHint = ref('')
 const draftScenarios = ref<CtaScenarioId[]>([])
+const draftThreshold = ref(136)
+const draftUrl = ref('')
 
 const matrixDraft = ref<CtaScenarioMatrix | null>(null)
 
@@ -97,7 +102,7 @@ const editDirty = computed(() => {
     return false
   }
   const e = editing.value
-  return (
+  const baseDirty = (
     draftDisplayName.value !== e.display_name
     || draftQuestion.value !== e.decision_question
     || draftFormat.value !== e.decision_format
@@ -105,6 +110,14 @@ const editDirty = computed(() => {
     || draftReplyType.value !== e.reply_action_type
     || draftReplyHint.value !== e.reply_action_hint
     || !sameScenarioSet(draftScenarios.value, e.scenario_ids)
+  )
+  if (!ctaHasThresholdUrlFields(e.type)) {
+    return baseDirty
+  }
+  return (
+    baseDirty
+    || draftThreshold.value !== resolveOfferFullTestThreshold(e.threshold)
+    || draftUrl.value.trim() !== resolveOfferFullTestUrl(e.url)
   )
 })
 
@@ -170,6 +183,8 @@ function openEdit(row: CtaCatalogItem) {
   draftReplyType.value = row.reply_action_type
   draftReplyHint.value = row.reply_action_hint
   draftScenarios.value = [...row.scenario_ids]
+  draftThreshold.value = resolveOfferFullTestThreshold(row.threshold)
+  draftUrl.value = resolveOfferFullTestUrl(row.url)
   saveError.value = ''
   saved.value = false
   view.value = 'edit'
@@ -197,19 +212,28 @@ async function saveEdit() {
   saveError.value = ''
   saved.value = false
   try {
+    const patch = {
+      display_name: draftDisplayName.value.trim(),
+      decision_question: draftQuestion.value,
+      decision_format: draftFormat.value,
+      format_detail: draftFormatDetail.value.trim() || null,
+      reply_action_type: draftReplyType.value,
+      reply_action_hint: draftReplyHint.value,
+      scenario_ids: [...draftScenarios.value],
+      ...(ctaHasThresholdUrlFields(editing.value.type)
+        ? {
+            threshold: Number.isFinite(draftThreshold.value)
+              ? draftThreshold.value
+              : resolveOfferFullTestThreshold(editing.value.threshold),
+            url: draftUrl.value.trim() || resolveOfferFullTestUrl(editing.value.url)
+          }
+        : {})
+    }
     const updated = await adminPatchCtaCatalogItem(
       config.public.apiBase,
       token,
       editing.value.type,
-      {
-        display_name: draftDisplayName.value.trim(),
-        decision_question: draftQuestion.value,
-        decision_format: draftFormat.value,
-        format_detail: draftFormatDetail.value.trim() || null,
-        reply_action_type: draftReplyType.value,
-        reply_action_hint: draftReplyHint.value,
-        scenario_ids: [...draftScenarios.value]
-      }
+      patch
     )
     editing.value = updated
     draftDisplayName.value = updated.display_name
@@ -219,6 +243,8 @@ async function saveEdit() {
     draftReplyType.value = updated.reply_action_type
     draftReplyHint.value = updated.reply_action_hint
     draftScenarios.value = [...updated.scenario_ids]
+    draftThreshold.value = resolveOfferFullTestThreshold(updated.threshold)
+    draftUrl.value = resolveOfferFullTestUrl(updated.url)
     const idx = items.value.findIndex(r => r.type === updated.type)
     if (idx >= 0) {
       items.value[idx] = updated
@@ -702,12 +728,47 @@ function cloneMatrix(source: CtaScenarioMatrix): CtaScenarioMatrix {
               :disabled="!canEdit || saving"
             />
           </UFormField>
-          <UFormField :label="$t('settings.guidance.fieldReplyHint')">
+          <UFormField
+            :label="$t('settings.guidance.fieldReplyHint')"
+            class="mb-3"
+          >
             <UInput
               v-model="draftReplyHint"
               :disabled="!canEdit || saving"
             />
           </UFormField>
+          <template v-if="ctaHasThresholdUrlFields(editing.type)">
+            <div
+              class="mb-3 rounded-xl border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning"
+              data-testid="cta-offer-full-test-info"
+            >
+              {{ $t('settings.guidance.offerFullTestInfo') }}
+            </div>
+            <UFormField
+              :label="$t('settings.guidance.fieldThreshold')"
+              :help="$t('settings.guidance.fieldThresholdHelp')"
+              class="mb-3"
+            >
+              <UInput
+                v-model.number="draftThreshold"
+                type="number"
+                :min="0"
+                :disabled="!canEdit || saving"
+                data-testid="cta-edit-threshold"
+              />
+            </UFormField>
+            <UFormField
+              :label="$t('settings.guidance.fieldUrl')"
+              :help="$t('settings.guidance.fieldUrlHelp')"
+            >
+              <UInput
+                v-model="draftUrl"
+                type="url"
+                :disabled="!canEdit || saving"
+                data-testid="cta-edit-url"
+              />
+            </UFormField>
+          </template>
         </section>
 
         <section class="rounded-xl border border-default bg-elevated p-4">

@@ -1,3 +1,7 @@
+import {
+  OFFER_FULL_TEST_DEFAULT_THRESHOLD,
+  OFFER_FULL_TEST_DEFAULT_URL
+} from '~/utils/cta-catalog-labels'
 import type {
   CtaCatalogItem,
   CtaCatalogPatch,
@@ -32,6 +36,20 @@ export const CTA_CATALOG_FIXTURE_ITEMS: CtaCatalogItem[] = [
     scenario_ids: ['open_dialog', 'lab_post_answer'],
     is_sample: true,
     updated_at: '2026-10-27T12:00:00.000Z'
+  },
+  {
+    type: 'offer_full_test',
+    display_name: '報告指標不足時的完整檢測建議',
+    decision_question: '報告解析指標是否少於完整健康分析建議門檻？若是，是否引導完整檢測？',
+    decision_format: 'noul',
+    format_detail: null,
+    reply_action_type: 'offer_full_test',
+    reply_action_hint: '報告指標不足時的完整檢測建議（外連）',
+    scenario_ids: ['open_dialog', 'lab_post_answer'],
+    threshold: OFFER_FULL_TEST_DEFAULT_THRESHOLD,
+    url: OFFER_FULL_TEST_DEFAULT_URL,
+    is_sample: true,
+    updated_at: '2026-11-05T12:00:00.000Z'
   },
   {
     type: 'ask_vitals',
@@ -102,6 +120,7 @@ export const CTA_SCENARIO_MATRIX_FIXTURE: CtaScenarioMatrix = {
       types: [
         'ask_report',
         'offer_checkup',
+        'offer_full_test',
         'ask_goal',
         'offer_recommend',
         'ask_vitals',
@@ -116,7 +135,7 @@ export const CTA_SCENARIO_MATRIX_FIXTURE: CtaScenarioMatrix = {
     },
     {
       scenario: 'lab_post_answer',
-      types: ['ask_report', 'offer_checkup'],
+      types: ['ask_report', 'offer_checkup', 'offer_full_test'],
       notes: { choose_option: '合併呈現' }
     },
     {
@@ -164,6 +183,8 @@ export function mockPatchCtaCatalogItem(
     reply_action_type: patch.reply_action_type ?? current.reply_action_type,
     reply_action_hint: patch.reply_action_hint ?? current.reply_action_hint,
     scenario_ids: patch.scenario_ids ? [...patch.scenario_ids] : [...current.scenario_ids],
+    threshold: patch.threshold !== undefined ? patch.threshold : current.threshold,
+    url: patch.url !== undefined ? patch.url : current.url,
     updated_at: new Date().toISOString()
   }
   mockItems[index] = next

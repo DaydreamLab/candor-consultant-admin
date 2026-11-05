@@ -86,6 +86,18 @@ function parseCatalogItem(row: Record<string, unknown>): CtaCatalogItem | null {
     ? row.decision_format
     : 'noul'
   const replyAction = isCtaCatalogType(row.reply_action_type) ? row.reply_action_type : row.type
+  const thresholdRaw = row.threshold
+  const threshold = typeof thresholdRaw === 'number' && Number.isFinite(thresholdRaw)
+    ? thresholdRaw
+    : thresholdRaw === null
+      ? null
+      : undefined
+  const urlRaw = row.url
+  const url = typeof urlRaw === 'string'
+    ? urlRaw
+    : urlRaw === null
+      ? null
+      : undefined
   return {
     type: row.type,
     display_name: typeof row.display_name === 'string' ? row.display_name : row.type,
@@ -99,6 +111,8 @@ function parseCatalogItem(row: Record<string, unknown>): CtaCatalogItem | null {
     reply_action_type: replyAction,
     reply_action_hint: typeof row.reply_action_hint === 'string' ? row.reply_action_hint : '',
     scenario_ids: parseScenarioIds(row.scenario_ids),
+    ...(threshold !== undefined ? { threshold } : {}),
+    ...(url !== undefined ? { url } : {}),
     is_sample: row.is_sample === true,
     updated_at: typeof row.updated_at === 'string' ? row.updated_at : null
   }

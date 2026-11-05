@@ -1,9 +1,10 @@
 /** CTA catalog types — aligned with systemone／reply_actions seed set (no inventing new types). */
 
-/** Column／list order aligned with design matrix (CTA-CATALOG-DESIGN §7). */
+/** Column／list order aligned with design matrix (CTA-CATALOG-DESIGN §7) + offer_full_test. */
 export const CTA_CATALOG_TYPES = [
   'ask_report',
   'offer_checkup',
+  'offer_full_test',
   'ask_goal',
   'offer_recommend',
   'ask_vitals',
@@ -44,6 +45,16 @@ export type CtaCatalogItem = {
   reply_action_type: CtaCatalogType
   reply_action_hint: string
   scenario_ids: CtaScenarioId[]
+  /**
+   * offer_full_test：報告解析指標數參考門檻（core 欄位名 threshold）。
+   * 其他 CTA 為 null／省略。
+   */
+  threshold?: number | null
+  /**
+   * offer_full_test：完整檢測外連網址（core 欄位名 url）。
+   * 其他 CTA 為 null／省略。
+   */
+  url?: string | null
   is_sample?: boolean
   updated_at?: string | null
 }
@@ -56,6 +67,8 @@ export type CtaCatalogPatch = {
   reply_action_type?: CtaCatalogType
   reply_action_hint?: string
   scenario_ids?: CtaScenarioId[]
+  threshold?: number | null
+  url?: string | null
 }
 
 export type CtaScenarioMatrixRow = {
