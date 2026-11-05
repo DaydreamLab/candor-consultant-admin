@@ -1,32 +1,46 @@
 <script setup lang="ts">
-import type { ExpertPlanWrite } from '~/utils/admin-api'
+import type { ExpertPlanCreate, ExpertPlanWrite } from '~/utils/admin-api'
 import { EXPERT_PLAN_FORM_ID } from '~/composables/useNavbarActions'
 import {
+  applyPackagePlanNameAutofill,
+  buildExpertPlanCreate,
   buildExpertPlanPatch,
+  emptyExpertPlanCreateState,
   emptyExpertPlanFormState,
   expertPlanFormIsDirty,
   expertPlanFormStateFromPlan,
   snapshotFromExpertPlan,
+  validateExpertPlanCreateForm,
   validateExpertPlanForm,
+  type ExpertPlanFormField,
   type ExpertPlanFormState,
   type ExpertPlanSnapshot
 } from '~/utils/expert-plan-form'
 
+export type ExpertPlanOption = {
+  id: string
+  label: string
+}
+
 const props = withDefaults(defineProps<{
-  expertPlan: Record<string, unknown>
+  mode?: 'create' | 'update'
+  expertPlan: Record<string, unknown> | null
+  packagePlanOptions?: ExpertPlanOption[]
   saving: boolean
   saveError?: string
   disabled?: boolean
-  /** expert：鎖名稱／英文名／售價，僅可改排序與上下架（core #143 `b7c5ed0`）。 */
+  /** expert：鎖名稱／英文名／售價／綁定，僅可改排序與上下架（core #143 `b7c5ed0`）。 */
   namePriceLocked?: boolean
 }>(), {
+  mode: 'update',
   disabled: false,
   saveError: '',
-  namePriceLocked: false
+  namePriceLocked: false,
+  packagePlanOptions: () => []
 })
 
 const emit = defineEmits<{
-  'save': [payload: ExpertPlanWrite]
+  'save': [payload: ExpertPlanWrite | ExpertPlanCreate]
   'no-changes': []
   'dirty-change': [dirty: boolean]
   'cancel': []
@@ -34,27 +48,47 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const state = reactive<ExpertPlanFormState>(emptyExpertPlanFormState())
+const state = reactive<ExpertPlanFormState>(
+  props.mode === 'create' ? emptyExpertPlanCreateState() : emptyExpertPlanFormState()
+)
 const baseline = ref<ExpertPlanSnapshot | null>(null)
 const localError = ref('')
-const fieldError = ref<'price' | null>(null)
+const fieldErrors = ref<Partial<Record<ExpertPlanFormField, true>>>({})
+/** 上次自動帶入的中文名（換綁定時比對用）。 */
+const lastAutoNameZh = ref('')
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
 const namePriceDisabled = computed(() => fieldsLocked.value || props.namePriceLocked)
-const formOptions = computed(() => ({ allowNamePrice: !props.namePriceLocked }))
+const packagePlanDisabled = computed(() => namePriceDisabled.value)
+const isCreate = computed(() => props.mode === 'create')
+const formOptions = computed(() => ({
+  allowNamePrice: !props.namePriceLocked,
+  mode: props.mode
+}))
 const priceChanged = computed(() => {
-  if (!baseline.value || props.namePriceLocked) {
+  if (isCreate.value || !baseline.value || props.namePriceLocked) {
     return false
   }
   const next = Number(state.price)
   return Number.isFinite(next) && next !== baseline.value.price
 })
 
+const packagePlanSelectItems = computed(() => {
+  return props.packagePlanOptions.map(option => ({
+    label: option.label,
+    value: option.id
+  }))
+})
+
 watch(() => props.expertPlan, (plan) => {
+  if (isCreate.value || !plan) {
+    return
+  }
   Object.assign(state, expertPlanFormStateFromPlan(plan))
   baseline.value = snapshotFromExpertPlan(plan)
+  lastAutoNameZh.value = ''
   localError.value = ''
-  fieldError.value = null
+  fieldErrors.value = {}
 }, { immediate: true })
 
 watch(() => props.saveError, () => {
@@ -62,8 +96,31 @@ watch(() => props.saveError, () => {
 })
 
 watch(() => expertPlanFormIsDirty(baseline.value, state, formOptions.value), (dirty) => {
+  if (isCreate.value) {
+    emit('dirty-change', false)
+    return
+  }
   emit('dirty-change', dirty)
 }, { immediate: true })
+
+function onPackagePlanChange(nextId: string | undefined | null) {
+  const id = typeof nextId === 'string' ? nextId : ''
+  state.package_plan_id = id
+  const option = props.packagePlanOptions.find(item => item.id === id)
+  const label = option?.label ?? ''
+  state.package_plan_label = label
+  if (!id) {
+    return
+  }
+  const applied = applyPackagePlanNameAutofill(state.name_zh, lastAutoNameZh.value, label)
+  state.name_zh = applied.nameZh
+  lastAutoNameZh.value = applied.autoName
+  if (fieldErrors.value.package_plan_id) {
+    const next = { ...fieldErrors.value }
+    delete next.package_plan_id
+    fieldErrors.value = next
+  }
+}
 
 function onCancel() {
   if (fieldsLocked.value) {
@@ -73,14 +130,40 @@ function onCancel() {
 }
 
 function onSubmit() {
-  if (fieldsLocked.value || !baseline.value) {
+  if (fieldsLocked.value) {
     return
   }
   localError.value = ''
-  fieldError.value = null
+  fieldErrors.value = {}
+
+  if (isCreate.value) {
+    const issues = validateExpertPlanCreateForm(state)
+    if (issues.length) {
+      const next: Partial<Record<ExpertPlanFormField, true>> = {}
+      for (const issue of issues) {
+        next[issue] = true
+      }
+      fieldErrors.value = next
+      return
+    }
+    emit('save', buildExpertPlanCreate(state))
+    return
+  }
+
+  if (!baseline.value) {
+    return
+  }
   const issue = validateExpertPlanForm(state, formOptions.value)
   if (issue === 'price') {
-    fieldError.value = 'price'
+    fieldErrors.value = { price: true }
+    return
+  }
+  if (issue === 'name_zh') {
+    fieldErrors.value = { name_zh: true }
+    return
+  }
+  if (issue === 'package_plan_id') {
+    fieldErrors.value = { package_plan_id: true }
     return
   }
   if (issue) {
@@ -94,6 +177,22 @@ function onSubmit() {
   }
   emit('save', patch)
 }
+
+function fieldErrorText(field: ExpertPlanFormField) {
+  if (!fieldErrors.value[field]) {
+    return undefined
+  }
+  if (field === 'package_plan_id') {
+    return t('expertPlans.packagePlanRequired')
+  }
+  if (field === 'name_zh') {
+    return t('expertPlans.nameRequired')
+  }
+  if (field === 'price') {
+    return t('expertPlans.priceInvalid')
+  }
+  return t('expertPlans.saveFailed')
+}
 </script>
 
 <template>
@@ -103,26 +202,61 @@ function onSubmit() {
     data-testid="expert-plan-form"
     @submit.prevent="onSubmit"
   >
-    <UFormField :label="$t('expertPlans.fields.code')">
+    <UFormField
+      v-if="!isCreate"
+      :label="$t('expertPlans.fields.code')"
+    >
       <UInput
         :model-value="state.code"
         disabled
         data-testid="expert-plan-code"
       />
-    </UFormField>
-
-    <UFormField :label="$t('expertPlans.fields.package_plan')">
-      <UInput
-        :model-value="state.package_plan_label"
-        disabled
-        data-testid="expert-plan-package-plan"
-      />
       <template #hint>
-        {{ $t('expertPlans.packagePlanHint') }}
+        {{ $t('expertPlans.codeHint') }}
       </template>
     </UFormField>
 
-    <UFormField :label="$t('expertPlans.fields.name_zh')">
+    <UFormField
+      :label="$t('expertPlans.fields.package_plan')"
+      required
+      :error="fieldErrorText('package_plan_id')"
+    >
+      <USelect
+        v-if="!packagePlanDisabled && packagePlanSelectItems.length"
+        :model-value="state.package_plan_id || undefined"
+        :items="packagePlanSelectItems"
+        value-key="value"
+        :placeholder="$t('expertPlans.packagePlanPlaceholder')"
+        :disabled="packagePlanDisabled"
+        class="w-full"
+        data-testid="expert-plan-package-plan"
+        @update:model-value="onPackagePlanChange"
+      />
+      <UInput
+        v-else
+        :model-value="state.package_plan_label || state.package_plan_id"
+        disabled
+        data-testid="expert-plan-package-plan"
+      />
+      <template
+        v-if="isCreate && !fieldErrors.package_plan_id"
+        #hint
+      >
+        {{ $t('expertPlans.packagePlanCreateHint') }}
+      </template>
+      <template
+        v-else-if="!isCreate && !packagePlanDisabled"
+        #hint
+      >
+        <span data-testid="expert-plan-package-plan-hint">{{ $t('expertPlans.packagePlanHint') }}</span>
+      </template>
+    </UFormField>
+
+    <UFormField
+      :label="$t('expertPlans.fields.name_zh')"
+      required
+      :error="fieldErrorText('name_zh')"
+    >
       <UInput
         v-model="state.name_zh"
         :disabled="namePriceDisabled"
@@ -136,11 +270,15 @@ function onSubmit() {
         :disabled="namePriceDisabled"
         data-testid="expert-plan-name-en"
       />
+      <template #hint>
+        {{ $t('expertPlans.nameEnHint') }}
+      </template>
     </UFormField>
 
     <UFormField
       :label="$t('expertPlans.fields.price')"
-      :error="fieldError === 'price' ? $t('expertPlans.priceInvalid') : undefined"
+      required
+      :error="fieldErrorText('price')"
     >
       <UInput
         v-model="state.price"
@@ -148,9 +286,13 @@ function onSubmit() {
         inputmode="numeric"
         :disabled="namePriceDisabled"
         data-testid="expert-plan-price"
-      />
+      >
+        <template #leading>
+          <span class="text-sm text-muted">NT$</span>
+        </template>
+      </UInput>
       <template
-        v-if="priceChanged && fieldError !== 'price'"
+        v-if="priceChanged && !fieldErrors.price"
         #hint
       >
         <span data-testid="expert-plan-price-hint">{{ $t('expertPlans.priceHint') }}</span>
@@ -165,6 +307,9 @@ function onSubmit() {
         :disabled="fieldsLocked"
         data-testid="expert-plan-sort-order"
       />
+      <template #hint>
+        {{ $t('expertPlans.sortOrderHint') }}
+      </template>
     </UFormField>
 
     <UFormField :label="$t('expertPlans.fields.active')">
@@ -181,6 +326,12 @@ function onSubmit() {
           {{ state.active ? $t('expertPlans.status.active') : $t('expertPlans.status.inactive') }}
         </UBadge>
       </div>
+      <template
+        v-if="isCreate"
+        #hint
+      >
+        {{ $t('expertPlans.createActiveHint') }}
+      </template>
     </UFormField>
 
     <p

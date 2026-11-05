@@ -35,8 +35,8 @@
 
 | Nav key | 路徑 | 範圍 | 接線說明 |
 |---------|------|------|----------|
-| plans | `/package-plans` | **in-scope** | 列表已接 `GET /admin/package-plans`（只顯示）。建立、更新與單筆詳情仍 Mock（core 有 `GET /admin/package-plan/{id}`，畫面未呼叫；無刪除端點） |
-| expertPlans | `/expert-plans`、`/expert-plans/{id}` | **in-scope** | 專家方案列表＋編輯（名稱／英文名／售價／排序／上下架）；**無新增**（spec 33／Irice 11/03）。code 與綁定 package_plan 不可改。expert 可改 `active`＋`sort_order`；`name_zh`／`name_en`／`price` → 403（core #143 `b7c5ed0`／Irice 11/4；英文名欄位取代 C14 隱藏） |
+| plans | `/package-plans`、`/package-plans/new`、`/package-plans/{id}` | **in-scope** | 列表／詳情／更新已接；新增頁仿保健品目錄（`POST /admin/plans`，不送 code、預設下架、天數 30 唯讀；ops／admin 可新增；無刪除） |
+| expertPlans | `/expert-plans`、`/expert-plans/new`、`/expert-plans/{id}` | **in-scope** | 專案列表＋新增＋編輯（名稱／英文名／售價／排序／上下架／綁定方案）。新增僅 ops／admin；代碼系統產生；綁定可改。expert 可改 `active`＋`sort_order`；`name_zh`／`name_en`／`price` → 403（core #143） |
 | supplements | `/supplements`、`/supplements/new`、`/supplements/{id}` | **in-scope** | 列表／新增／更新已接 `sellable_item`。刪除打到 core 未提供的 `DELETE`。庫存讀寫與 alerts 仍 Mock。側欄標籤為「保健品」 |
 | checkups | `/checkups`、`/checkups/new`、`/checkups/{id}` | **in-scope（語意）** | 採檢服務主檔（項目／必選／時段名額）。本地 mock，不打 `/admin/checkups`；正式組內 **即將上線** badge。勿與開發中「採檢」`/scheduling` 混淆 |
 

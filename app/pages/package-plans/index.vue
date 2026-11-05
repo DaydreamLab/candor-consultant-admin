@@ -12,10 +12,17 @@ import { readOperatorToken } from '~/utils/operator-session'
 const config = useRuntimeConfig()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
+const session = useSessionStore()
 
 const packagePlans = ref<Record<string, unknown>[]>([])
 const pending = ref(true)
 const errorMessage = ref('')
+
+/** 只有 ops／admin 看到「＋ 新增」（規則 1／P-01／P-02）。 */
+const canCreate = computed(() => {
+  const role = session.operator?.role
+  return role === 'ops' || role === 'admin'
+})
 
 if (import.meta.client) {
   void load()
@@ -167,6 +174,10 @@ function amountOf(value: unknown) {
   }
   return textOf(value)
 }
+
+function isActive(row: Record<string, unknown>) {
+  return row.active !== false
+}
 </script>
 
 <template>
@@ -175,6 +186,18 @@ function amountOf(value: unknown) {
     :description="$t('plans.description')"
     plain
   >
+    <div
+      v-if="canCreate"
+      class="mb-4 flex justify-end"
+    >
+      <UButton
+        icon="i-lucide-plus"
+        :to="localePath('/package-plans/new')"
+        data-testid="package-plans-add"
+      >
+        {{ $t('actions.add') }}
+      </UButton>
+    </div>
     <p
       v-if="errorMessage"
       class="text-sm text-error"
@@ -297,6 +320,14 @@ function amountOf(value: unknown) {
               </div>
             </template>
           </dl>
+          <div class="mt-3">
+            <UBadge
+              :color="isActive(row) ? 'success' : 'neutral'"
+              variant="subtle"
+            >
+              {{ isActive(row) ? $t('plans.status.active') : $t('plans.status.inactive') }}
+            </UBadge>
+          </div>
         </UCard>
       </button>
     </div>

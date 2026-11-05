@@ -1,4 +1,4 @@
-import type { PackagePlanWrite } from '~/utils/admin-api'
+import type { PackagePlanCreate, PackagePlanWrite } from '~/utils/admin-api'
 
 export type PackagePlanFormState = {
   code: string
@@ -64,6 +64,26 @@ export function emptyPackagePlanFormState(): PackagePlanFormState {
     home_highlight: false
   }
 }
+
+/** 新增預設：下架、容量 8、核心 3、排序空白＝排最後、天數 30。 */
+export function emptyPackagePlanCreateState(): PackagePlanFormState {
+  return {
+    ...emptyPackagePlanFormState(),
+    active: false,
+    sort_order: '',
+    period_days: 30
+  }
+}
+
+export type PackagePlanCreateField
+  = 'name_zh'
+    | 'price'
+    | 'original_price'
+    | 'pack_capacity'
+    | 'core_count'
+    | 'sort_order'
+
+export type PackagePlanCreateFieldErrors = Partial<Record<PackagePlanCreateField, true>>
 
 export function packagePlanFormStateFromPlan(plan: Record<string, unknown>): PackagePlanFormState {
   return {
@@ -198,6 +218,98 @@ export function validatePackagePlanForm(state: PackagePlanFormState): PackagePla
   return originalPriceIssue(state)
 }
 
+/**
+ * 新增頁驗證：一次列出所有欄位錯誤（不短路）。
+ * original_price 有填才檢查。
+ */
+export function validatePackagePlanCreateFields(state: PackagePlanFormState): PackagePlanCreateFieldErrors {
+  const errors: PackagePlanCreateFieldErrors = {}
+  if (!state.name_zh.trim()) {
+    errors.name_zh = true
+  }
+  const price = Number(state.price)
+  if (!Number.isInteger(price) || price <= 0) {
+    errors.price = true
+  }
+  const packCapacity = Number(state.pack_capacity)
+  if (!Number.isInteger(packCapacity) || packCapacity < 1) {
+    errors.pack_capacity = true
+  }
+  const coreCount = Number(state.core_count)
+  if (
+    !Number.isInteger(coreCount)
+    || coreCount < 1
+    || !Number.isInteger(packCapacity)
+    || packCapacity < 1
+    || coreCount > packCapacity
+  ) {
+    errors.core_count = true
+  }
+  if (state.sort_order.trim()) {
+    const sortOrder = Number(state.sort_order)
+    if (!Number.isInteger(sortOrder)) {
+      errors.sort_order = true
+    }
+  }
+  if (originalPriceIssue(state)) {
+    errors.original_price = true
+  }
+  return errors
+}
+
+export function buildPackagePlanCreate(state: PackagePlanFormState): PackagePlanCreate {
+  const payload: PackagePlanCreate = {
+    name_zh: state.name_zh.trim(),
+    price: Number(state.price),
+    pack_capacity: Number(state.pack_capacity),
+    core_count: Number(state.core_count),
+    period_days: 30,
+    active: state.active
+  }
+  const nameEn = state.name_en.trim()
+  if (nameEn) {
+    payload.name_en = nameEn
+  }
+  const description = state.description.trim()
+  if (description) {
+    payload.description = description
+  }
+  const descriptionEn = state.description_en.trim()
+  if (descriptionEn) {
+    payload.description_en = descriptionEn
+  }
+  if (state.sort_order.trim()) {
+    const sortOrder = Number(state.sort_order)
+    if (Number.isInteger(sortOrder)) {
+      payload.sort_order = sortOrder
+    }
+  }
+  const originalPrice = parseOriginalPriceField(state.original_price)
+  if (originalPrice != null) {
+    payload.original_price = originalPrice
+  }
+  const featuresZh = normalizeFeatureList(state.home_features_zh)
+  if (featuresZh) {
+    payload.features = featuresZh
+  }
+  const featuresEn = normalizeFeatureList(state.home_features_en)
+  if (featuresEn) {
+    payload.features_en = featuresEn
+  }
+  const badgeZh = state.home_badge_zh.trim()
+  if (badgeZh) {
+    payload.badge = badgeZh
+  }
+  const badgeEn = state.home_badge_en.trim()
+  if (badgeEn) {
+    payload.badge_en = badgeEn
+  }
+  if (state.home_highlight) {
+    payload.highlight = true
+  }
+  return payload
+}
+
 export function buildPackagePlanPatch(
   snapshot: PackagePlanSnapshot,
   state: PackagePlanFormState
@@ -223,10 +335,7 @@ export function buildPackagePlanPatch(
   if (price !== snapshot.price) {
     patch.price = price
   }
-  const periodDays = Math.trunc(state.period_days)
-  if (periodDays !== snapshot.period_days) {
-    patch.period_days = periodDays
-  }
+  // 天數固定 30、唯讀：編輯不送 period_days（C2／DESIGN v1）。
   const packCapacity = Number(state.pack_capacity)
   if (packCapacity !== snapshot.pack_capacity) {
     patch.pack_capacity = packCapacity

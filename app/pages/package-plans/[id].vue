@@ -205,6 +205,7 @@ function failText(error: unknown, fallback: string) {
     </p>
     <PackagePlanForm
       v-else-if="packagePlan"
+      mode="update"
       :disabled="!canEdit"
       :package-plan="packagePlan"
       :saving="saving"
