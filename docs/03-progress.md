@@ -241,8 +241,9 @@
 
 ---
 
-**最後更新**：2026-10-28（專家檢視缺報告／缺目標 soft chip；不挡定稿產生／定案）
+**最後更新**：2026-11-05（CTA 目錄 mock 增 offer_full_test；門檻／外連可編）
 
+- 2026-11-05：引導設定 CTA 目錄 mock 新增 `offer_full_test`（報告指標不足時的完整檢測建議）；可編 core 欄位 `threshold`（預設 136）與 `url`（預設 Body Decode）。狀態仍 Mock；core seed／Admin API 合併後關 mock；`docs/04` 請雙寫
 - 2026-10-28：專家案件詳情缺報告／缺目標 soft chip（頂欄＋goals／report 標題＋定稿卡；不挡 generate／submit；由 member-data 推導）。core 若日後提供顯式旗標可改消費；`docs/04` 請雙寫
 - 2026-10-28：專家案件詳情「定稿對話文案」獨立卡（四態；generate／submit 帶兩段 MD；cache_hit soft chip；dirty 覆蓋確認）。接線待 core #103；`docs/04` 請雙寫
 - 2026-10-28：設定組側欄＝設定｜隱私權｜CTA 目錄｜AI 助理；路由 `/settings`｜`/settings/privacy`｜`/settings/guidance`；總頁錨點僅支付｜發票｜報告判讀｜其他；空 hash 不強制 replace；expert 隱藏 CTA 側欄項。core `docs/04` 路徑敘述請雙寫

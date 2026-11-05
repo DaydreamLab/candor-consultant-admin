@@ -6,7 +6,15 @@ import type {
 
 export type CtaUiFilter = 'all' | 'upload_checkup' | 'vitals_options'
 
-const UPLOAD_CHECKUP: ReadonlySet<CtaCatalogType> = new Set(['ask_report', 'offer_checkup'])
+/** Core-aligned defaults for offer_full_test (報告指標不足 → 完整檢測建議). */
+export const OFFER_FULL_TEST_DEFAULT_THRESHOLD = 136
+export const OFFER_FULL_TEST_DEFAULT_URL = 'https://www.younger.tw/products/body-decode'
+
+const UPLOAD_CHECKUP: ReadonlySet<CtaCatalogType> = new Set([
+  'ask_report',
+  'offer_checkup',
+  'offer_full_test'
+])
 const VITALS_OPTIONS: ReadonlySet<CtaCatalogType> = new Set(['ask_vitals', 'choose_option'])
 
 export function matchesCtaUiFilter(type: CtaCatalogType, filter: CtaUiFilter): boolean {
@@ -17,6 +25,20 @@ export function matchesCtaUiFilter(type: CtaCatalogType, filter: CtaUiFilter): b
     return UPLOAD_CHECKUP.has(type)
   }
   return VITALS_OPTIONS.has(type)
+}
+
+/** Whether this CTA exposes editable threshold + url (core fields). */
+export function ctaHasThresholdUrlFields(type: CtaCatalogType): boolean {
+  return type === 'offer_full_test'
+}
+
+export function resolveOfferFullTestThreshold(value: number | null | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : OFFER_FULL_TEST_DEFAULT_THRESHOLD
+}
+
+export function resolveOfferFullTestUrl(value: string | null | undefined): string {
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  return trimmed || OFFER_FULL_TEST_DEFAULT_URL
 }
 
 export function formatDecisionChipKey(format: CtaDecisionFormat): string {
