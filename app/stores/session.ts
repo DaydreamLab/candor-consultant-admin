@@ -1,6 +1,7 @@
 import type { Role, SessionUser } from '~/types/admin'
-import type { Operator, OperatorRole } from '~/types/operator'
+import type { Operator } from '~/types/operator'
 import { AdminApiError, adminLogin, adminRefresh } from '~/utils/admin-api'
+import { hasAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   OPERATOR_TOKEN_KEY,
   clearOperatorSession,
@@ -99,14 +100,14 @@ function toDemoSession(operator: Operator): SessionUser {
     id: operator.id,
     email: operator.email,
     name: operator.name,
-    role: demoRole(operator.role),
+    role: demoRoleFromRoles(operatorRoles(operator)),
     orgId: null,
     orgName: null
   }
 }
 
-function demoRole(role: OperatorRole): Role {
-  if (role === 'admin') {
+function demoRoleFromRoles(roles: ReturnType<typeof operatorRoles>): Role {
+  if (hasAdminRole(roles)) {
     return 'consultant_admin'
   }
   return 'consultant_ops'

@@ -10,6 +10,12 @@ import type {
   ExpertBookingSellableOption
 } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station-bookings-id-selections',
+  path: '/expert/bookings/:id/selections'
+})
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -75,7 +81,7 @@ async function onSave() {
         reason: row.reason
       }))
     )
-    await navigateTo(localePath(`/bookings/${encodeURIComponent(bookingId.value)}`))
+    await navigateTo(localePath(`/expert/bookings/${encodeURIComponent(bookingId.value)}`))
   } catch {
     errorMessage.value = t('expertBookings.selections.saveFailed')
   } finally {

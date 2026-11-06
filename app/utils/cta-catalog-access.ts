@@ -1,10 +1,11 @@
 import type { OperatorRole } from '~/types/operator'
+import { hasAdminRole, hasOpsAdminRole } from '~/utils/operator-roles'
 
-/** expert：錨點隱藏；ops：只讀可見；admin：可編 */
-export function canViewCtaCatalog(role: OperatorRole | null | undefined): boolean {
-  return role === 'admin' || role === 'ops'
+/** expert only：錨點隱藏；ops：只讀可見；admin：可編 */
+export function canViewCtaCatalog(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return hasOpsAdminRole(roles ?? [])
 }
 
-export function canEditCtaCatalog(role: OperatorRole | null | undefined): boolean {
-  return role === 'admin'
+export function canEditCtaCatalog(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return hasAdminRole(roles ?? [])
 }

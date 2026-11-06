@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminCreateKnowledgeDatasetGroup,
@@ -22,7 +23,7 @@ const draftName = ref('')
 const draftReason = ref('')
 const draftSort = ref<number | null>(null)
 
-const canCreate = computed(() => session.operator?.role === 'admin')
+const canCreate = computed(() => hasAdminRole(operatorRoles(session.operator)))
 
 if (import.meta.client) {
   void load()

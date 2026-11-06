@@ -36,6 +36,8 @@ jobs:
           NUXT_APP_BASE_URL: /
           NUXT_PUBLIC_API_BASE: https://api.my-candor.com/api/v1
           NUXT_PUBLIC_CTA_CATALOG_MOCK: '0'
+          NUXT_PUBLIC_EXPERT_BOOKING_MOCK: '0'
+          NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK: '0'
           NUXT_PUBLIC_FE_SHA: ${{ github.sha }}
           NUXT_PUBLIC_APP_VERSION: ${{ github.ref_name }}
 

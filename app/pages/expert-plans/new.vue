@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminCreateExpertPlan,
@@ -15,8 +16,8 @@ const session = useSessionStore()
 const { set } = bindNavbarActions()
 
 const canCreate = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 const saving = ref(false)

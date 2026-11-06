@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminDailyLearningConfirm,
@@ -46,12 +47,12 @@ const { t } = useI18n()
 const feedback = useOpsFeedback()
 const session = useSessionStore()
 
-const operatorRole = computed(() => session.operator?.role ?? null)
-const canGenerate = computed(() => canGenerateDailyLearningDraft(operatorRole.value))
-const canDryRun = computed(() => canDryRunWeightSet(operatorRole.value))
-const canPublish = computed(() => canPublishWeightSet(operatorRole.value))
-const canConfirm = computed(() => canConfirmDailyLearning(operatorRole.value))
-const canLoadDrafts = computed(() => canReadWeightSets(operatorRole.value))
+const operatorRoleList = computed(() => operatorRoles(session.operator))
+const canGenerate = computed(() => canGenerateDailyLearningDraft(operatorRoleList.value))
+const canDryRun = computed(() => canDryRunWeightSet(operatorRoleList.value))
+const canPublish = computed(() => canPublishWeightSet(operatorRoleList.value))
+const canConfirm = computed(() => canConfirmDailyLearning(operatorRoleList.value))
+const canLoadDrafts = computed(() => canReadWeightSets(operatorRoleList.value))
 
 function needRolesHint(roles: readonly string[]) {
   const labels = roles.map(role => t(`roles.${role}`)).join('、')

@@ -2,6 +2,12 @@
 import { putExpertStationConfirmTime, getExpertStationBooking } from '~/utils/expert-booking-api'
 import { readOperatorToken } from '~/utils/operator-session'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station-bookings-id-confirm',
+  path: '/expert/bookings/:id/confirm'
+})
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -83,7 +89,7 @@ async function onSave() {
           : null
       }
     )
-    await navigateTo(localePath(`/bookings/${encodeURIComponent(bookingId.value)}`))
+    await navigateTo(localePath(`/expert/bookings/${encodeURIComponent(bookingId.value)}`))
   } catch {
     errorMessage.value = t('expertBookings.failed')
   } finally {
@@ -144,7 +150,7 @@ async function onSave() {
         </UButton>
         <UButton
           variant="outline"
-          :to="localePath(`/bookings/${encodeURIComponent(bookingId)}`)"
+          :to="localePath(`/expert/bookings/${encodeURIComponent(bookingId)}`)"
         >
           {{ $t('expertStation.confirm.cancel') }}
         </UButton>

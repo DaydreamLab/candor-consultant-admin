@@ -1,6 +1,3 @@
-/** Independent expert-station build: `NUXT_APP_SURFACE=expert pnpm run build:expert` */
-const isExpertSurface = process.env.NUXT_APP_SURFACE === 'expert'
-
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
@@ -25,7 +22,7 @@ export default defineNuxtConfig({
     preference: 'system',
     fallback: 'light',
     classSuffix: '',
-    storageKey: isExpertSurface ? 'candor-expert-color-mode' : 'candor-admin-color-mode'
+    storageKey: 'candor-admin-color-mode'
   },
 
   runtimeConfig: {
@@ -34,8 +31,6 @@ export default defineNuxtConfig({
       feSha: process.env.NUXT_PUBLIC_FE_SHA || '',
       /** prod tag 部署寫入（如 `v1.2.3`）；本機／未設時畫面顯示 `dev` */
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '',
-      /** admin | expert — surface identity for UI copy／guards */
-      appSurface: isExpertSurface ? 'expert' : 'admin',
       /** 本機截圖／預覽用；正式環境勿開 */
       privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1',
       /**
@@ -53,16 +48,6 @@ export default defineNuxtConfig({
        */
       expertBookingProductMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK === '1'
     }
-  },
-
-  /**
-   * Expert station uses its own pages／layouts／middleware under
-   * `app/surfaces/expert/*` while sharing utils／stores／components.
-   */
-  dir: {
-    pages: isExpertSurface ? 'surfaces/expert/pages' : 'pages',
-    layouts: isExpertSurface ? 'surfaces/expert/layouts' : 'layouts',
-    middleware: isExpertSurface ? 'surfaces/expert/middleware' : 'middleware'
   },
 
   routeRules: {},

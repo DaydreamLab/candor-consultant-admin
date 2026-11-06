@@ -11,6 +11,10 @@ import type {
   ExpertBookingSellableOption
 } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  name: 'admin-expert-bookings-id-selections'
+})
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()

@@ -50,6 +50,7 @@
 |---------|------|------|----------|
 | settings | `/settings` | 部分 | 總頁；left anchors：**支付｜發票｜報告判讀｜其他**（**無**隱私／CTA 錨）。Operator 帳號可落此；勿做 org 設定。側欄直連 `/settings#payment` 避開空 hash 卡死。**無** badge |
 | privacy | `/settings/privacy` | **in-scope** | 自總頁錨點拆出；沿用隱私權政策 CMS（`/admin/legal/privacy-policy**`，對齊 core #87）；公開頁 `/privacy-policy` 免登入。權限沿用 ops／admin 可儲存。**無** badge |
+| operators | `/operators`、`/operators/new`、`/operators/{id}` | **in-scope** | 帳號管理（Operators CRUD）。僅 admin；直連 `/admin/operators/**`（配對 core #157）；`roles[]` 多選至少一項；無分頁。**無** badge |
 | guidance | `/settings/guidance` | **in-scope（語意）** | 自總頁錨點拆出；列表／編輯／情境矩陣；無 create／delete；admin 可編、ops 只讀、expert **隱藏整項**；Mock 至 core CTA catalog API。**無** badge |
 | assistant | `/assistant` | **in-scope** | 站台／client config 等；**無** badge |
 
@@ -87,7 +88,6 @@
 | LabAppointment | 無 HTTP（畫面 `/lab-appointments` 已 mock） |
 | 報告校正 | admin health-reports PATCH／retry |
 | Weight sets | `/admin/weight-sets/**` |
-| Operators | `/admin/operators/**` |
 | Knowledge（公開參考知識） | `/admin/knowledge/**`（見 [12-knowledge-management.md](12-knowledge-management.md)） |
 
 ## 相關
@@ -97,17 +97,18 @@
 - 進度：[../03-progress.md](../03-progress.md)
 
 
-## 專家站（獨立 surface build）
+## 專家站（同 build、`/expert/*`）
 
-同 repo、`NUXT_APP_SURFACE=expert` 另產物（`pnpm run build:expert`／`dev:expert`）。自己的 layout／middleware；頁面僅專家站路由；登入限 `operator.role === expert`。部署網域（暫定 expert.my-candor.com）不在本 PR 範圍。
+與營運後台同一產物；頁面在 `app/pages/expert/**`，layout `expert`（`data-surface="expert"`）。登入共用 `/login`，只看 `operator.roles[]`（無單一 `role`）：僅 `["expert"]` → `/expert/`；僅 `["ops"]` → `/`；有營運＋專家站能力（含 `["admin"]`、`["admin","expert"]`、`["ops","expert"]`）→ `/choose-panel`。`admin` 含 expert／ops 能力。進站後可互切。舊書籤 `/bookings*`、`/calendar*` 轉到 `/expert/...`。
 
 | 路徑 | 說明 |
 |------|------|
-| `/login` | E-01 專家站登入 |
-| `/` | K-01／K-02／K-05 共用行事曆週／日視圖（首頁；`/calendar` 轉至此） |
-| `/bookings` | E-02 已付款預約列表（pin、上次看到） |
-| `/bookings/{id}` | E-03／E-07 案件詳情／標記完成 |
-| `/bookings/{id}/confirm` | E-04 確認時間／改期 |
-| `/bookings/{id}/service-record` | E-05 服務紀錄（選填時長分鐘） |
-| `/bookings/{id}/selections` | E-06 選品與理由 |
-| `/calendar/availability` | K-03／K-04 可服務時段（每週重複、單日覆寫／還原、拖曳不跨日） |
+| `/login` | 共用登入（E-01） |
+| `/choose-panel` | 需選面板時選擇營運後台或專家站 |
+| `/expert/` | K-01／K-02／K-05 共用行事曆週／日視圖（首頁；`/expert/calendar` 轉至此） |
+| `/expert/bookings` | E-02 已付款預約列表（pin、上次看到） |
+| `/expert/bookings/{id}` | E-03／E-07 案件詳情／標記完成 |
+| `/expert/bookings/{id}/confirm` | E-04 確認時間／改期 |
+| `/expert/bookings/{id}/service-record` | E-05 服務紀錄（選填時長分鐘） |
+| `/expert/bookings/{id}/selections` | E-06 選品與理由 |
+| `/expert/calendar/availability` | K-03／K-04 可服務時段（每週重複、單日覆寫／還原、拖曳不跨日） |

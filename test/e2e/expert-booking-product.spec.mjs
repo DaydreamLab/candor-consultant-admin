@@ -16,7 +16,7 @@ function sessionFor(role) {
     profile: {
       operator: {
         id: `op-mock-${role}`,
-        role,
+        roles: [role],
         email: `${role}-mock@candor.local`,
         name: `Mock ${role}`,
         status: 'active',

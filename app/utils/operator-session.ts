@@ -1,4 +1,5 @@
 import type { Operator, OperatorLoginData, OperatorRole } from '~/types/operator'
+import { sortOperatorRoles } from '~/utils/operator-role-order'
 
 export const OPERATOR_TOKEN_KEY = 'candor.operator.token'
 
@@ -109,14 +110,29 @@ function parseProfile(raw: string | null): StoredOperator | null {
   }
 }
 
-function normalizeOperator(value: Partial<Operator>): Operator {
-  if (!value.id || !value.email || !value.name || !value.role || !ROLES.has(value.role)) {
+function normalizeOperatorRoles(value: Partial<Operator> & { role?: unknown }): OperatorRole[] {
+  // 舊契約只有 `role`、沒有 `roles[]` → 視為無效（需重登）。
+  if (!Array.isArray(value.roles)) {
+    return []
+  }
+  const unique: OperatorRole[] = []
+  for (const role of value.roles) {
+    if (typeof role === 'string' && ROLES.has(role as OperatorRole) && !unique.includes(role as OperatorRole)) {
+      unique.push(role as OperatorRole)
+    }
+  }
+  return sortOperatorRoles(unique)
+}
+
+function normalizeOperator(value: Partial<Operator> & { role?: unknown }): Operator {
+  const roles = normalizeOperatorRoles(value)
+  if (!value.id || !value.email || !value.name || roles.length === 0) {
     throw new Error('operator profile is incomplete')
   }
   const status = value.status === 'active' || value.status === 'suspended' ? value.status : null
   return {
     id: value.id,
-    role: value.role,
+    roles,
     email: value.email,
     name: value.name,
     status,

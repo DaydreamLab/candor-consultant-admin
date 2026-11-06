@@ -84,6 +84,16 @@ export function useOperatorMe(options?: { refresh?: boolean }) {
       if ((session.operator?.id ?? null) !== operatorId) {
         return
       }
+      // 舊 JWT 只有 role、或 token 失效 → core 401；清 session 並導回登入。
+      if (error instanceof AdminApiError && error.statusCode === 401) {
+        session.logout()
+        const localePath = useLocalePath()
+        await navigateTo({
+          path: localePath('/login'),
+          query: { reason: 'session_expired' }
+        })
+        return
+      }
       meOperatorId.value = operatorId
       apiError.value = error instanceof AdminApiError ? error.message : ''
       errorKind.value = apiError.value.trim() ? 'api' : 'failed'

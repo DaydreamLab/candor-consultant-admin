@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminConfirmRefundRequest,
@@ -42,8 +43,8 @@ let loadSeq = 0
 let nextOffset = 0
 
 const canOps = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 function queryString(name: string) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminGetOrder,
@@ -72,8 +73,8 @@ let loadSeq = 0
 
 const session = useSessionStore()
 const canOps = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 const reportSectionVisible = computed(() => Boolean(scalarId(order.value?.report_id)))

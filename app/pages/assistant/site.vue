@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminGetClientConfig,
@@ -22,8 +23,8 @@ const error = ref('')
 const saved = ref(false)
 
 const canEdit = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 if (import.meta.client) {

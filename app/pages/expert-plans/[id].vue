@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isExpertOnly, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminGetExpertPlan,
@@ -25,12 +26,12 @@ const title = computed(() => crumbLabel.value || expertPlanId.value)
 
 /** expert／ops／admin 皆可進編輯頁（core #143：expert 可改 sort_order＋active）。 */
 const canAccess = computed(() => {
-  const role = session.operator?.role
-  return role === 'expert' || role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return roles.length > 0
 })
 
 /** expert 鎖名稱／英文名／售價／綁定（後端禁 name_zh／name_en／price）；ops／admin 可改全欄。 */
-const namePriceLocked = computed(() => session.operator?.role === 'expert')
+const namePriceLocked = computed(() => isExpertOnly(operatorRoles(session.operator)))
 
 const expertPlan = ref<Record<string, unknown> | null>(null)
 const packagePlanOptions = ref<{ id: string, label: string }[]>([])

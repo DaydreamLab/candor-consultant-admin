@@ -14,7 +14,7 @@ export default defineNuxtPlugin(() => {
     expires_in: 60 * 60 * 24,
     operator: {
       id: 'op-mock-privacy',
-      role: 'ops',
+      roles: ['ops'],
       email: 'ops-mock@candor.local',
       name: 'Mock Ops',
       status: 'active',

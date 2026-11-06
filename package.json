@@ -4,18 +4,14 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "build:expert": "NUXT_APP_SURFACE=expert nuxt build",
     "dev": "nuxt dev",
-    "dev:expert": "NUXT_APP_SURFACE=expert nuxt dev --port 3001",
     "generate": "nuxt build --preset github_pages",
-    "generate:expert": "NUXT_APP_SURFACE=expert nuxt build --preset github_pages",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "typecheck:expert": "NUXT_APP_SURFACE=expert nuxt typecheck",
     "test": "vitest run",
-    "test:expert-booking": "vitest run app/utils/expert-booking-api.test.ts app/utils/expert-booking-calendar.test.ts app/utils/nav.test.ts app/utils/expert-booking-product-api.test.ts app/utils/expert-booking-product-form.test.ts app/utils/expert-booking-product-access.test.ts"
+    "test:expert-booking": "vitest run app/utils/expert-booking-api.test.ts app/utils/expert-booking-calendar.test.ts app/utils/nav.test.ts app/utils/expert-booking-product-api.test.ts app/utils/expert-booking-product-form.test.ts app/utils/expert-booking-product-access.test.ts app/utils/operator-roles.test.ts app/utils/operator-auth-failure.test.ts app/utils/operators-api.test.ts app/utils/cta-catalog-access.test.ts app/utils/knowledge-access.test.ts app/utils/daily-learning-access.test.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.127",

@@ -18,7 +18,9 @@ export const SETTINGS_SPLIT_HASH_REDIRECTS = {
 
 export type SettingsSplitHash = keyof typeof SETTINGS_SPLIT_HASH_REDIRECTS
 
-export function visibleSettingsAnchors(_role?: OperatorRole | null | undefined): SettingsAnchorId[] {
+export function visibleSettingsAnchors(
+  _roles?: readonly OperatorRole[] | null | undefined
+): SettingsAnchorId[] {
   return [...SETTINGS_ANCHOR_IDS]
 }
 
@@ -42,9 +44,9 @@ export function parseSettingsSplitHash(hash: string | null | undefined): Setting
 
 export function resolveSettingsAnchor(
   hash: string | null | undefined,
-  role?: OperatorRole | null | undefined
+  roles?: readonly OperatorRole[] | null | undefined
 ): SettingsAnchorId {
-  const visible = visibleSettingsAnchors(role)
+  const visible = visibleSettingsAnchors(roles)
   const fromHash = parseSettingsAnchorHash(hash)
   if (fromHash && visible.includes(fromHash)) {
     return fromHash
@@ -61,7 +63,7 @@ export function resolveSettingsAnchor(
  */
 export function settingsHashReplaceTarget(
   hash: string | null | undefined,
-  role?: OperatorRole | null | undefined
+  roles?: readonly OperatorRole[] | null | undefined
 ): SettingsAnchorId | null {
   if (parseSettingsSplitHash(hash)) {
     return null
@@ -70,6 +72,6 @@ export function settingsHashReplaceTarget(
   if (!raw) {
     return null
   }
-  const resolved = resolveSettingsAnchor(hash, role)
+  const resolved = resolveSettingsAnchor(hash, roles)
   return raw === resolved ? null : resolved
 }

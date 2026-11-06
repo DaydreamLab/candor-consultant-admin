@@ -15,7 +15,7 @@ const session = {
   profile: {
     operator: {
       id: 'op-mock-cta-admin',
-      role: 'admin',
+      roles: ['admin'],
       email: 'admin-mock@candor.local',
       name: 'Mock Admin',
       status: 'active',

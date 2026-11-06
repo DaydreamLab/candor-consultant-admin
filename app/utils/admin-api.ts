@@ -45,12 +45,16 @@ export async function adminGetMe(apiBase: string, token: string) {
     if (body?.status !== 'success' || !isRecord(body.data)) {
       throw new AdminApiError(500, '')
     }
+    // GET /admin/me：data = {id, email, name, roles[], status, last_login_at}；無 permissions。
+    if (!Array.isArray(body.data.roles) || body.data.roles.length === 0) {
+      throw new AdminApiError(401, 'roles required')
+    }
     return body.data
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error
     }
-    throw new AdminApiError(readStatus(error), readMessage(error))
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 
@@ -1951,12 +1955,16 @@ export async function adminRefresh(apiBase: string, token: string) {
     if (body?.status !== 'success' || !body.data?.token || !body.data.operator) {
       throw new AdminApiError(500, '')
     }
+    // JWT／operator 必須有 roles[]；舊只有 role 的 payload 視為失敗（需重登）。
+    if (!Array.isArray(body.data.operator.roles) || body.data.operator.roles.length === 0) {
+      throw new AdminApiError(401, 'roles required')
+    }
     return body.data
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error
     }
-    throw new AdminApiError(readStatus(error), readMessage(error))
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 
@@ -1978,14 +1986,15 @@ export async function adminLogin(
     if (body?.status !== 'success' || !body.data?.token || !body.data.operator) {
       throw new AdminApiError(500, '')
     }
+    if (!Array.isArray(body.data.operator.roles) || body.data.operator.roles.length === 0) {
+      throw new AdminApiError(401, 'roles required')
+    }
     return body.data
   } catch (error) {
     if (error instanceof AdminApiError) {
       throw error
     }
-    const statusCode = readStatus(error)
-    const message = readMessage(error)
-    throw new AdminApiError(statusCode, message)
+    throw new AdminApiError(readStatus(error), readMessage(error), readErrorCode(error))
   }
 }
 

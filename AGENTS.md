@@ -33,12 +33,12 @@ candor-consultant-admin/
 ├── app/
 │   ├── components/
 │   ├── composables/
-│   ├── layouts/          # auth、default
-│   ├── middleware/       # auth.global、platform.global
-│   ├── pages/            # 示範 nav 頁（含不做範圍的殼）
+│   ├── layouts/          # auth、default、expert（專家站）
+│   ├── middleware/       # auth.global（含角色導向／guard）、platform.global
+│   ├── pages/            # 示範 nav 頁；專家站在 pages/expert/**
 │   ├── stores/           # session、ops
 │   ├── types/admin.ts    # 示範型別（含舊詞；接線時改）
-│   └── utils/            # nav、demo、labels…
+│   └── utils/            # nav、demo、labels、operator-roles…
 ├── i18n/locales/
 └── nuxt.config.ts
 ```

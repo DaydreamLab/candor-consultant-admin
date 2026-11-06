@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminListConversationCopies,
@@ -23,8 +24,8 @@ const saveError = ref('')
 const saved = ref(false)
 
 const canEdit = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 const categories = ['greeting', 'option', 'prompt'] as const

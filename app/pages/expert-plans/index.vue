@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminListExpertPlans,
@@ -28,14 +29,14 @@ const deactivateTarget = ref<Record<string, unknown> | null>(null)
  * 列表上架／下架亦全角色可用；名稱／售價僅編輯頁 ops／admin 可改。
  */
 const canEdit = computed(() => {
-  const role = session.operator?.role
-  return role === 'expert' || role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return roles.length > 0
 })
 
 /** 只有 ops／admin 看到「＋ 新增」（規則 2／N-01／N-02）。 */
 const canCreate = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 const sortedPlans = computed(() => {

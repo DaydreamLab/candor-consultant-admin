@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AdminApiError } from '~/utils/admin-api'
+import { operatorRoles } from '~/utils/operator-roles'
 import {
   adminGetCtaScenarioMatrix,
   adminListCtaCatalog,
@@ -36,7 +37,7 @@ const { t } = useI18n()
 const config = useRuntimeConfig()
 const session = useSessionStore()
 
-const canEdit = computed(() => canEditCtaCatalog(session.operator?.role))
+const canEdit = computed(() => canEditCtaCatalog(operatorRoles(session.operator)))
 
 const view = ref<PanelView>('list')
 const filter = ref<CtaUiFilter>('all')

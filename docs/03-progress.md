@@ -82,7 +82,7 @@
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 專人預約 | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections`（列表／詳情／取消二次確認／選品理由） | 可用 | 已接 | M2 Beta |
 | 專人預約商品設定 | `/expert-booking-product`（唯一 code=personal；GET／PUT；無新增／刪除；admin 可編、ops 只讀、expert 隱藏） | 可用 | 已接 | M2 Beta |
-| 專家站（獨立 build） | `NUXT_APP_SURFACE=expert`：`/` 行事曆、`/bookings` 列表、`/bookings/{id}`、確認時間／服務紀錄／選品、`/calendar/availability` 可服務時段；僅 expert 可登入 | 可用 | 已接 | M2 Beta |
+| 專家站（同 build `/expert/*`） | `/expert/` 行事曆、`/expert/bookings` 列表／詳情／確認時間／服務紀錄／選品、`/expert/calendar/availability`；僅有 expert 角色可進；僅 expert 預設導向此處 | 可用 | 已接 | M2 Beta |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/weights`、`/weights/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
 | 專家訓練／每日學習確認 | `/weights/daily-learning`（載入待確認草案／clone→confirm→confirm-safety→dry-run→publish；對齊 core #76 `79ed13b`；ops 可確認） | 可用 | 接線中（待 core #76 合併部署） | M4 |
@@ -126,7 +126,7 @@
 |------|------|------|
 | 登入 | `POST /admin/auth/login` | 已接（`remember_me`；無示範帳號與略過登入） |
 | 目前身份 | `GET /admin/me` | 已接 |
-| Operator CRUD／重設密碼 | `/admin/operators/**` | Mock |
+| Operator CRUD／重設密碼 | `/admin/operators/**`（畫面 `/operators`；僅 admin；`roles[]` 多選） | 已接（配對 core #157） |
 
 ### Users（會員）
 
@@ -248,8 +248,12 @@
 
 ---
 
-**最後更新**：2026-11-06（專人預約／商品設定／專家站改打 core Admin API）
+**最後更新**：2026-11-06（Operators CRUD 接 core #157）
 
+- 2026-11-06：Operators CRUD 接線（`/operators`；僅 admin；`roles[]` 多選；409／422 中文）；JWT 舊 `role`→重登；配對 [candor-core #157](https://github.com/DaydreamLab/candor-core/pull/157)
+- 2026-11-06：operator 契約改只回 `roles[]`（刪單一 `role`）；admin 含 expert／ops 能力；登入／guard／權限判斷全改 roles；配對 candor-core 多角色 draft
+- 2026-11-06：多角色登入後進 `/choose-panel`；直打網址不強制選面板；前端不以 email 判斷
+- 2026-11-06：專家站併入單一 build（退役 `NUXT_APP_SURFACE=expert`）；路由 `/expert/*`；登入依角色導向；`data-app-surface` 改依路由判斷
 - 2026-11-06：專人預約、預約商品、專家站與行事曆預設改打 core（`NUXT_PUBLIC_EXPERT_BOOKING_MOCK`／`NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK` 改為 `=1` 才進 mock）。選品清單改 `GET /admin/supplements` 並濾 `on_sale`。`docs/04` 已雙寫
 - 2026-11-06：營運後台新增「預約商品」`/expert-booking-product`（唯一 `personal`；GET／PUT；admin 可編、ops 只讀、expert 隱藏）
 - 2026-11-05：引導設定 CTA 目錄 mock 新增 `offer_full_test`（報告指標不足時的完整檢測建議）；可編 core 欄位 `threshold`（預設 136）與 `url`（預設 Body Decode）。狀態仍 Mock；core seed／Admin API 合併後關 mock；`docs/04` 請雙寫

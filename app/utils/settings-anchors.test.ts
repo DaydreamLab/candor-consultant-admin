@@ -10,13 +10,13 @@ import {
 
 describe('settings-anchors', () => {
   it('orders hub anchors without privacy or guidance', () => {
-    expect(visibleSettingsAnchors('admin')).toEqual([
+    expect(visibleSettingsAnchors(['admin'])).toEqual([
       'payment',
       'invoice',
       'biomarker',
       'other'
     ])
-    expect(visibleSettingsAnchors('expert')).toEqual([
+    expect(visibleSettingsAnchors(['expert'])).toEqual([
       'payment',
       'invoice',
       'biomarker',
@@ -28,9 +28,9 @@ describe('settings-anchors', () => {
     expect(parseSettingsAnchorHash('#payment')).toBe('payment')
     expect(parseSettingsAnchorHash('#privacy')).toBeNull()
     expect(parseSettingsAnchorHash('#guidance')).toBeNull()
-    expect(resolveSettingsAnchor('#guidance', 'admin')).toBe('payment')
-    expect(resolveSettingsAnchor('#privacy', 'ops')).toBe('payment')
-    expect(resolveSettingsAnchor('', 'ops')).toBe('payment')
+    expect(resolveSettingsAnchor('#guidance', ['admin'])).toBe('payment')
+    expect(resolveSettingsAnchor('#privacy', ['ops'])).toBe('payment')
+    expect(resolveSettingsAnchor('', ['ops'])).toBe('payment')
   })
 
   it('maps split hashes to dedicated routes', () => {
@@ -42,11 +42,11 @@ describe('settings-anchors', () => {
   })
 
   it('does not force replace on empty hash; only normalizes invalid non-empty hub hashes', () => {
-    expect(settingsHashReplaceTarget('', 'admin')).toBeNull()
-    expect(settingsHashReplaceTarget('#', 'admin')).toBeNull()
-    expect(settingsHashReplaceTarget('#payment', 'admin')).toBeNull()
-    expect(settingsHashReplaceTarget('#privacy', 'admin')).toBeNull()
-    expect(settingsHashReplaceTarget('#guidance', 'expert')).toBeNull()
-    expect(settingsHashReplaceTarget('#not-a-real-anchor', 'ops')).toBe('payment')
+    expect(settingsHashReplaceTarget('', ['admin'])).toBeNull()
+    expect(settingsHashReplaceTarget('#', ['admin'])).toBeNull()
+    expect(settingsHashReplaceTarget('#payment', ['admin'])).toBeNull()
+    expect(settingsHashReplaceTarget('#privacy', ['admin'])).toBeNull()
+    expect(settingsHashReplaceTarget('#guidance', ['expert'])).toBeNull()
+    expect(settingsHashReplaceTarget('#not-a-real-anchor', ['ops'])).toBe('payment')
   })
 })

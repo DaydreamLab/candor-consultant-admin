@@ -34,6 +34,7 @@
     "settings": "設定",
     "privacy": "隱私",
     "guidance": "引導",
+    "operators": "帳號管理",
     "account": "目前帳號",
     "developing": "開發中",
     "comingSoon": "即將上線",
@@ -46,7 +47,8 @@
     "finance": "請款與報表",
     "platform": "平台",
     "expertBookings": "專人預約",
-    "expertBookingProduct": "預約商品"
+    "expertBookingProduct": "預約商品",
+    "expertStation": "專家站"
   },
   "colorMode": {
     "label": "外觀",
@@ -68,7 +70,59 @@
     "submit": "登入",
     "invalid": "帳號或密碼不正確。",
     "rateLimited": "嘗試次數過多，請稍後再試。",
-    "failed": "登入失敗，請稍後再試。"
+    "failed": "登入失敗，請稍後再試。",
+    "sessionExpired": "登入已失效（舊 token 或權限契約已更新），請重新登入。"
+  },
+  "operators": {
+    "description": "管理後台操作者帳號與角色（僅 admin）。",
+    "loading": "讀取中…",
+    "failed": "無法載入帳號列表。",
+    "empty": "尚無操作者帳號。",
+    "create": "新增帳號",
+    "createTitle": "新增操作者",
+    "editTitle": "編輯操作者",
+    "save": "儲存",
+    "saveOk": "已儲存。",
+    "saveFailed": "儲存失敗。",
+    "resetPasswordTitle": "重設密碼",
+    "resetPassword": "重設密碼",
+    "resetPasswordOk": "密碼已重設。",
+    "columns": {
+      "email": "Email",
+      "name": "名稱",
+      "roles": "角色",
+      "status": "狀態",
+      "lastLogin": "上次登入",
+      "actions": "操作"
+    },
+    "fields": {
+      "email": "Email",
+      "name": "名稱",
+      "roles": "角色",
+      "rolesHelp": "至少選一個；可複選 expert／ops／admin。",
+      "password": "密碼",
+      "newPassword": "新密碼",
+      "status": "狀態"
+    },
+    "status": {
+      "active": "使用中",
+      "suspended": "已停用"
+    },
+    "errors": {
+      "generic": "操作失敗，請稍後再試。",
+      "sessionExpired": "登入已失效，請重新登入。",
+      "forbidden": "沒有權限管理帳號（僅 admin）。",
+      "notFound": "找不到此帳號。",
+      "invalidRequest": "資料不正確（角色、密碼或欄位驗證失敗）。",
+      "emailConflict": "此 Email 已被使用。",
+      "conflict": "無法完成變更（與現有資料衝突）。",
+      "cannotModifySelf": "不能移除自己最後的 admin，或停用自己的帳號。",
+      "cannotRemoveLastAdmin": "系統必須至少保留一位 admin。",
+      "rolesRequired": "請至少選擇一個角色。",
+      "nameRequired": "請填寫名稱。",
+      "emailRequired": "請填寫 Email。",
+      "passwordRequired": "請填寫密碼。"
+    }
   },
   "operatorMe": {
     "loading": "讀取中…",
@@ -79,7 +133,8 @@
       "role": "角色",
       "status": "狀態",
       "last_login_at": "上次登入",
-      "id": "ID"
+      "id": "ID",
+      "roles": "角色"
     },
     "status": {
       "active": "使用中",
@@ -2381,7 +2436,8 @@
     "nav": {
       "home": "首頁",
       "bookings": "預約列表",
-      "logout": "登出"
+      "logout": "登出",
+      "toAdmin": "回營運後台"
     },
     "login": {
       "title": "坦見 專家站",
@@ -2577,6 +2633,18 @@
       "weeklyTemplate": "每週模板",
       "actualToday": "本日實際",
       "overrideStatus": "已單獨調整"
+    }
+  },
+  "choosePanel": {
+    "title": "選擇進入面板",
+    "description": "此帳號同時擁有營運與專家權限，請選擇要進入的介面。之後可從側欄或頂欄切換。",
+    "admin": {
+      "title": "營運後台",
+      "description": "訂單、商品、知識與系統設定"
+    },
+    "expert": {
+      "title": "專家站",
+      "description": "行事曆、預約案件與服務紀錄"
     }
   }
 }

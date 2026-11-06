@@ -2,6 +2,7 @@
 import { AdminApiError, adminListPackagePlans } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { packagePlanBudget } from '~/utils/package-plan-budget'
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   packagePlanBadge,
   packagePlanHighlight,
@@ -20,8 +21,8 @@ const errorMessage = ref('')
 
 /** 只有 ops／admin 看到「＋ 新增」（規則 1／P-01／P-02）。 */
 const canCreate = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 if (import.meta.client) {

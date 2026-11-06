@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AdminApiError } from '~/utils/admin-api'
 import { readOperatorToken } from '~/utils/operator-session'
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   adminGetPrivacyPolicy,
   adminGetPrivacyPolicyVersion,
@@ -16,8 +17,8 @@ const session = useSessionStore()
 const localePath = useLocalePath()
 
 const canEdit = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
 const policy = ref<PrivacyPolicy | null>(null)

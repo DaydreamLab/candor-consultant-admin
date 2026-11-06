@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminApproveKnowledgeChunk,
@@ -67,7 +68,7 @@ const statusOptions = computed(() => [
 ])
 
 /** 核可／退回僅 ops／admin（與 candor-core 知識管理權限對齊）。 */
-const canReview = computed(() => canReviewKnowledgeChunks(session.operator?.role))
+const canReview = computed(() => canReviewKnowledgeChunks(operatorRoles(session.operator)))
 
 const reviewRoleHint = computed(() => {
   if (canReview.value) {

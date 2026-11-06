@@ -1,6 +1,13 @@
 <script setup lang="ts">
+import { isExpertStationPath } from '~/utils/operator-roles'
+
 const { locale, t } = useI18n()
 const runtimeConfig = useRuntimeConfig()
+const route = useRoute()
+
+const appSurface = computed(() => (
+  isExpertStationPath(route.path) ? 'expert' : 'admin'
+))
 
 useHead({
   title: t('meta.title'),
@@ -9,7 +16,7 @@ useHead({
   ],
   htmlAttrs: {
     'lang': locale,
-    'data-app-surface': String(runtimeConfig.public.appSurface || 'admin')
+    'data-app-surface': appSurface
   },
   link: [
     { rel: 'icon', type: 'image/png', href: withAppBase(runtimeConfig.app.baseURL, '/favicon.png') },

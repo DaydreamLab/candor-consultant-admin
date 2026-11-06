@@ -2,9 +2,9 @@
 import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt({
-  files: ['app/surfaces/expert/pages/**/*.{vue,js,ts}', 'app/surfaces/expert/layouts/**/*.{vue,js,ts}'],
+  files: ['app/pages/expert/**/*.{vue,js,ts}', 'app/layouts/expert.vue'],
   rules: {
-    // Expert-station surface uses Nuxt file-based routes/layouts (same as app/pages).
+    // Expert-station pages／layout use Nuxt file-based routes (same as app/pages).
     'vue/multi-word-component-names': 'off'
   }
 })

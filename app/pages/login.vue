@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { AdminApiError } from '~/utils/admin-api'
+import { operatorRoles, postLoginHomePath } from '~/utils/operator-roles'
 import { loginSchema } from '~/utils/schemas'
 import type { LoginForm } from '~/utils/schemas'
 
@@ -13,13 +14,17 @@ const localePath = useLocalePath()
 const session = useSessionStore()
 const runtimeConfig = useRuntimeConfig()
 
+const route = useRoute()
+
 const state = reactive<LoginForm>({
   email: '',
   password: '',
   remember_me: false
 })
 const pending = ref(false)
-const errorMessage = ref('')
+const errorMessage = ref(
+  route.query.reason === 'session_expired' ? t('login.sessionExpired') : ''
+)
 
 /** Full browser path including app.baseURL (required on GitHub Pages project sites). */
 function appHref(path: string) {
@@ -29,9 +34,10 @@ function appHref(path: string) {
 }
 
 async function enterApp() {
+  const home = postLoginHomePath(operatorRoles(session.operator))
   await nextTick()
   await reloadNuxtApp({
-    path: appHref(localePath('/')),
+    path: appHref(localePath(home)),
     persistState: false
   })
 }

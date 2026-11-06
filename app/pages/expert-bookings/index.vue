@@ -5,6 +5,10 @@ import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 import type { ExpertBookingListItem } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  name: 'admin-expert-bookings'
+})
+
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
