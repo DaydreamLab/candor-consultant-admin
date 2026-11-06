@@ -571,19 +571,27 @@
       "member": "客人",
       "status": "狀態",
       "confirmedAt": "確認時間",
+      "contact": "聯絡",
       "expert": "標註專家"
     },
     "fields": {
       "preferredSlots": "希望時段",
       "need": "需求",
       "confirmedAt": "確認時間",
+      "contact": "聯絡資料",
+      "attachments": "附件",
+      "productPicks": "選品與理由",
+      "memberProfile": "會員 profile",
+      "serviceRecord": "服務紀錄",
+      "cancelReason": "取消原因",
+      "cancelReasonOptional": "取消原因（選填）",
       "expert": "標註專家",
       "payment": "付款",
       "notConfirmed": "尚未確認",
       "expertHint": "系統不指派；顯示專家站／行事曆標註者"
     },
     "status": {
-      "pending_schedule": "待安排",
+      "awaiting_schedule": "待安排",
       "scheduled": "已安排",
       "completed": "已完成",
       "cancelled": "已取消"
@@ -2384,23 +2392,28 @@
       "complete": "標記完成",
       "completedBanner": "已標記完成",
       "noCancel": "專家站不能取消預約；取消請由後台營運處理。",
-      "paidLine": "付款 {paid} · NT${amount}"
+      "paidLine": "付款 {paid} · NT${amount}",
+      "paidAt": "付款 {paid}",
+      "conditions": "狀況"
     },
     "confirm": {
       "title": "確認 / 改期",
       "field": "確認服務時間",
+      "fieldStart": "確認開始時間",
+      "fieldEnd": "確認結束時間（選填）",
       "hint": "改期只更新確認時間，狀態維持「已安排」。",
       "save": "儲存",
       "cancel": "取消"
     },
     "serviceRecord": {
       "title": "服務紀錄（不給客人看）",
+      "servedAt": "實際服務時間",
       "actualTime": "實際服務時間",
       "method": "服務方式",
       "methodHint": "電話、線上會議等；客人表單不填",
       "content": "服務內容",
       "salesContent": "銷售內容",
-      "salesContentPlaceholder": "建議產品；無則填「無」",
+      "salesContentPlaceholder": "建議產品；空則送「無」",
       "duration": "時長",
       "durationHint": "單位：分鐘",
       "salesResult": "銷售結果",
@@ -2408,9 +2421,12 @@
       "dealHint": "與 NT$6,000 服務費分開；回填不自動產新單",
       "followUp": "後續追蹤",
       "attachment": "附件",
+      "removeAttachment": "移除",
+      "uploadFailed": "附件上傳失敗",
+      "required": "請填實際服務時間、服務方式與服務內容",
       "optional": "選填",
       "save": "儲存服務紀錄",
-      "meta": "系統記錄回填人與時間",
+      "meta": "系統記錄 filled_by_operator_id／filled_at",
       "methods": {
         "phone": "電話",
         "online_meeting": "線上會議",

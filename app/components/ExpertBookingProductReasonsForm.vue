@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import type { ExpertBookingProductReason, ExpertBookingSellableOption } from '~/utils/expert-booking-types'
+import type {
+  ExpertBookingProductPickDraft,
+  ExpertBookingSellableOption
+} from '~/utils/expert-booking-types'
 
 const props = defineProps<{
   options: ExpertBookingSellableOption[]
-  modelValue: ExpertBookingProductReason[]
+  modelValue: ExpertBookingProductPickDraft[]
   pending?: boolean
   disabled?: boolean
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: ExpertBookingProductReason[]]
+  'update:modelValue': [value: ExpertBookingProductPickDraft[]]
   'save': []
 }>()
 

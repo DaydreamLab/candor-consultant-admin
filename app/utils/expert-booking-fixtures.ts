@@ -1,303 +1,448 @@
 import type {
+  ExpertBookingAttachment,
+  ExpertBookingConversation,
   ExpertBookingDetail,
   ExpertBookingListItem,
+  ExpertBookingProductPick,
   ExpertBookingSellableOption,
-  ExpertCalendarSnapshot
-} from '~/utils/expert-booking-types'
+  ExpertBookingServiceRecord,
+  ExpertCalendarDayOverride,
+  ExpertCalendarExpert,
+  ExpertCalendarScheduledBooking,
+  ExpertCalendarSnapshot,
+  ExpertCalendarWeeklySlot
+} from './expert-booking-types'
 
-export const EXPERT_BOOKING_MOCK_EXPERTS = [
-  { id: 'op-expert-wang', name: '王專家', color: '#3b82f6' },
-  { id: 'op-expert-li', name: '李專家', color: '#8b5cf6' },
-  { id: 'op-expert-chen', name: '陳專家', color: '#22c55e' }
-] as const
+export const EXPERT_BOOKING_FIXTURE_EXPERT_A = 'op-expert-wang'
+export const EXPERT_BOOKING_FIXTURE_EXPERT_B = 'op-expert-li'
+export const EXPERT_BOOKING_FIXTURE_OPS = 'op-ops-1'
+
+function baseList(
+  partial: Partial<ExpertBookingListItem> & Pick<ExpertBookingListItem, 'id' | 'status' | 'contact_name'>
+): ExpertBookingListItem {
+  return {
+    id: partial.id,
+    order_id: partial.order_id ?? `ord-${partial.id}`,
+    order_no: partial.order_no ?? `EB-${partial.id.slice(-4).toUpperCase()}`,
+    paid_at: partial.paid_at ?? '2026-04-01T02:00:00.000Z',
+    user_id: partial.user_id ?? `user-${partial.id}`,
+    member_email: partial.member_email ?? 'member@example.com',
+    status: partial.status,
+    contact_name: partial.contact_name,
+    contact_phone: partial.contact_phone ?? '0912000000',
+    contact_email: partial.contact_email ?? 'contact@example.com',
+    contact_line: partial.contact_line ?? null,
+    preferred_slots: partial.preferred_slots ?? ['平日晚上', '週六上午'],
+    confirmed_starts_at: partial.confirmed_starts_at ?? null,
+    confirmed_ends_at: partial.confirmed_ends_at ?? null,
+    pinned: partial.pinned,
+    created_at: partial.created_at ?? '2026-04-01T03:00:00.000Z',
+    updated_at: partial.updated_at ?? '2026-04-01T03:00:00.000Z'
+  }
+}
+
+export const EXPERT_BOOKING_FIXTURE_LIST: ExpertBookingListItem[] = [
+  baseList({
+    id: 'eb-await-1',
+    status: 'awaiting_schedule',
+    contact_name: '王小明',
+    contact_phone: '0912111111',
+    contact_email: 'wang@example.com',
+    contact_line: 'wang_line',
+    preferred_slots: ['週二 19:00–21:00', '週四 14:00–16:00'],
+    order_no: 'EB-A001'
+  }),
+  baseList({
+    id: 'eb-sched-1',
+    status: 'scheduled',
+    contact_name: '陳美麗',
+    contact_phone: '0912222222',
+    contact_email: 'chen@example.com',
+    contact_line: null,
+    preferred_slots: ['週末下午'],
+    confirmed_starts_at: '2026-04-10T10:00:00.000Z',
+    confirmed_ends_at: '2026-04-10T10:30:00.000Z',
+    order_no: 'EB-S001',
+    pinned: true
+  }),
+  baseList({
+    id: 'eb-done-1',
+    status: 'completed',
+    contact_name: '林大華',
+    contact_phone: '0912333333',
+    contact_email: 'lin@example.com',
+    preferred_slots: ['平日中午'],
+    confirmed_starts_at: '2026-03-20T04:00:00.000Z',
+    confirmed_ends_at: '2026-03-20T04:30:00.000Z',
+    order_no: 'EB-C001'
+  }),
+  baseList({
+    id: 'eb-cancel-1',
+    status: 'cancelled',
+    contact_name: '黃取消',
+    contact_phone: '0912444444',
+    contact_email: 'huang@example.com',
+    preferred_slots: ['任意'],
+    order_no: 'EB-X001'
+  })
+]
+
+const sampleAttachment: ExpertBookingAttachment = {
+  key: 'expert-booking/eb-await-1/req-1.pdf',
+  filename: '需求說明.pdf',
+  content_type: 'application/pdf',
+  size_bytes: 12000
+}
+
+const sampleServiceRecord = (bookingId: string): ExpertBookingServiceRecord => ({
+  booking_id: bookingId,
+  served_at: '2026-03-20T04:00:00.000Z',
+  service_method: '線上會議',
+  content: '已完成健康諮詢，建議複檢。',
+  sales_content: '無',
+  duration_minutes: 30,
+  sales_result: null,
+  deal_amount: null,
+  follow_up: '兩週後追蹤',
+  attachments: [],
+  filled_by_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_A,
+  filled_at: '2026-03-20T05:00:00.000Z',
+  updated_at: '2026-03-20T05:00:00.000Z'
+})
+
+function detailFrom(
+  list: ExpertBookingListItem,
+  extra: Omit<ExpertBookingDetail, keyof ExpertBookingListItem>
+): ExpertBookingDetail {
+  return { ...list, ...extra }
+}
+
+export const EXPERT_BOOKING_FIXTURE_DETAILS: Record<string, ExpertBookingDetail> = {
+  'eb-await-1': detailFrom(EXPERT_BOOKING_FIXTURE_LIST[0]!, {
+    requirement_note: '希望討論睡眠與壓力管理。',
+    attachments: [sampleAttachment],
+    cancelled_at: null,
+    cancel_reason: null,
+    completed_at: null,
+    product_picks: [],
+    member_profile: {
+      sex: 'male',
+      birth_year: 1988,
+      height_cm: 175,
+      weight_kg: 70,
+      goals: ['改善睡眠'],
+      conditions: ['高血壓家族史']
+    },
+    service_record: null
+  }),
+  'eb-sched-1': detailFrom(EXPERT_BOOKING_FIXTURE_LIST[1]!, {
+    requirement_note: '想了解健檢套餐差異。',
+    attachments: [],
+    cancelled_at: null,
+    cancel_reason: null,
+    completed_at: null,
+    product_picks: [
+      {
+        id: 'pp-1',
+        sellable_item_id: 'si-alpha',
+        sellable_item_code: 'PKG-A',
+        sellable_item_name: '基礎健檢',
+        reason: '適合初篩',
+        sort_order: 0
+      }
+    ],
+    member_profile: {
+      sex: 'female',
+      birth_year: 1992,
+      height_cm: 162,
+      weight_kg: 52,
+      goals: ['產前健檢'],
+      conditions: []
+    },
+    service_record: null
+  }),
+  'eb-done-1': detailFrom(EXPERT_BOOKING_FIXTURE_LIST[2]!, {
+    requirement_note: '追蹤去年報告。',
+    attachments: [],
+    cancelled_at: null,
+    cancel_reason: null,
+    completed_at: '2026-03-20T05:10:00.000Z',
+    product_picks: [],
+    member_profile: {
+      sex: 'male',
+      birth_year: 1975,
+      height_cm: 170,
+      weight_kg: 78,
+      goals: ['代謝追蹤'],
+      conditions: ['血脂偏高']
+    },
+    service_record: sampleServiceRecord('eb-done-1')
+  }),
+  'eb-cancel-1': detailFrom(EXPERT_BOOKING_FIXTURE_LIST[3]!, {
+    requirement_note: '行程衝突。',
+    attachments: [],
+    cancelled_at: '2026-04-02T01:00:00.000Z',
+    cancel_reason: '客戶行程衝突',
+    completed_at: null,
+    product_picks: [],
+    member_profile: null,
+    service_record: null
+  })
+}
 
 export const EXPERT_BOOKING_SELLABLE_OPTIONS: ExpertBookingSellableOption[] = [
+  { id: 'si-alpha', name_zh: '基礎健檢', name_en: 'Basic checkup', sku: 'PKG-A', code: 'PKG-A' },
+  { id: 'si-beta', name_zh: '進階代謝', name_en: 'Metabolic plus', sku: 'PKG-B', code: 'PKG-B' },
+  { id: 'si-gamma', name_zh: '睡眠評估', name_en: 'Sleep assess', sku: 'PKG-C', code: 'PKG-C' }
+]
+
+export const EXPERT_BOOKING_FIXTURE_CONVERSATIONS: ExpertBookingConversation[] = [
   {
-    id: 'si-magnesium',
-    name_zh: 'Magnesium 6 in 1 6合1鎂',
-    name_en: 'Magnesium 6 in 1',
-    sku: 'MG-6IN1'
-  },
-  {
-    id: 'si-active-b',
-    name_zh: 'Active B complex 綜合活性B群',
-    name_en: 'Active B complex',
-    sku: 'B-ACTIVE'
-  },
-  {
-    id: 'si-liquid-d3',
-    name_zh: 'Liquid D3+K2',
-    name_en: 'Liquid D3+K2',
-    sku: 'D3K2'
+    id: 'conv-1',
+    entry_path: '/chat',
+    goals: ['改善睡眠'],
+    created_at: '2026-03-28T08:00:00.000Z',
+    updated_at: '2026-03-28T09:00:00.000Z',
+    messages: [
+      {
+        id: 'msg-1',
+        role: 'user',
+        content: '最近很難入睡。',
+        created_at: '2026-03-28T08:00:00.000Z'
+      },
+      {
+        id: 'msg-2',
+        role: 'assistant',
+        content: '可以先記錄就寢時間與咖啡因攝取。',
+        created_at: '2026-03-28T08:01:00.000Z'
+      }
+    ]
   }
 ]
 
-function baseList(): ExpertBookingListItem[] {
-  return [
-    {
-      id: 'eb-0021',
-      order_id: 'ord-261106-000021',
-      order_code: 'ORD-261106-000021',
-      member_name: '王小明',
-      status: 'pending_schedule',
-      payment_status: 'paid',
-      preferred_slots: [
-        { date: '2026-11-12', start_hour: 14, end_hour: 16 },
-        { date: '2026-11-13', start_hour: 10, end_hour: 12 }
-      ],
-      confirmed_at: null,
-      annotated_expert_id: null,
-      annotated_expert_name: null,
-      pinned: true,
-      paid_at: '2026-11-06T14:22:00+08:00',
-      amount: 6000
-    },
-    {
-      id: 'eb-0019',
-      order_id: 'ord-261105-000019',
-      order_code: 'ORD-261105-000019',
-      member_name: '陳美玲',
-      status: 'scheduled',
-      payment_status: 'paid',
-      preferred_slots: [
-        { date: '2026-11-10', start_hour: 10, end_hour: 12 }
-      ],
-      confirmed_at: '2026-11-10T10:00:00+08:00',
-      annotated_expert_id: 'op-expert-wang',
-      annotated_expert_name: '王專家',
-      pinned: false,
-      paid_at: '2026-11-05T09:10:00+08:00',
-      amount: 6000
-    },
-    {
-      id: 'eb-0015',
-      order_id: 'ord-261104-000015',
-      order_code: 'ORD-261104-000015',
-      member_name: '林大同',
-      status: 'scheduled',
-      payment_status: 'paid',
-      preferred_slots: [
-        { date: '2026-11-12', start_hour: 14, end_hour: 15 }
-      ],
-      confirmed_at: '2026-11-12T14:00:00+08:00',
-      annotated_expert_id: 'op-expert-chen',
-      annotated_expert_name: '陳專家',
-      pinned: false,
-      paid_at: '2026-11-04T18:00:00+08:00',
-      amount: 6000
-    },
-    {
-      id: 'eb-0010',
-      order_id: 'ord-261101-000010',
-      order_code: 'ORD-261101-000010',
-      member_name: '張雅婷',
-      status: 'completed',
-      payment_status: 'paid',
-      preferred_slots: [
-        { date: '2026-11-03', start_hour: 15, end_hour: 17 }
-      ],
-      confirmed_at: '2026-11-03T15:00:00+08:00',
-      annotated_expert_id: 'op-expert-li',
-      annotated_expert_name: '李專家',
-      pinned: false,
-      paid_at: '2026-11-01T11:00:00+08:00',
-      amount: 6000
-    }
-  ]
-}
+export const EXPERT_BOOKING_FIXTURE_WEEKLY: ExpertCalendarWeeklySlot[] = [
+  { id: 'w-a-1', weekday: 2, slot_start_minute: 600, expert_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_A },
+  { id: 'w-a-2', weekday: 2, slot_start_minute: 630, expert_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_A },
+  { id: 'w-a-3', weekday: 4, slot_start_minute: 840, expert_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_A },
+  { id: 'w-b-1', weekday: 1, slot_start_minute: 540, expert_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_B },
+  { id: 'w-b-2', weekday: 3, slot_start_minute: 720, expert_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_B }
+]
+
+export const EXPERT_BOOKING_FIXTURE_DAY_OVERRIDES: ExpertCalendarDayOverride[] = [
+  {
+    expert_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_A,
+    override_date: '2026-04-10',
+    is_customized: true,
+    slots: [600, 630, 660]
+  }
+]
+
+export const EXPERT_BOOKING_FIXTURE_EXPERTS: ExpertCalendarExpert[] = [
+  { id: EXPERT_BOOKING_FIXTURE_EXPERT_A, name: '王專家', email: 'expert-wang@example.com', role: 'expert' },
+  { id: EXPERT_BOOKING_FIXTURE_EXPERT_B, name: '李專家', email: 'expert-li@example.com', role: 'expert' }
+]
 
 export function createExpertBookingFixtureStore() {
-  const list = baseList()
-  const details = new Map<string, ExpertBookingDetail>()
-  for (const row of list) {
-    details.set(row.id, detailFor(row))
+  const details = new Map<string, ExpertBookingDetail>(
+    Object.entries(EXPERT_BOOKING_FIXTURE_DETAILS).map(([id, d]) => [id, structuredClone(d)])
+  )
+  let weekly = EXPERT_BOOKING_FIXTURE_WEEKLY.map(s => ({ ...s }))
+  let dayOverrides = EXPERT_BOOKING_FIXTURE_DAY_OVERRIDES.map(d => ({
+    ...d,
+    slots: [...d.slots]
+  }))
+  const lastSeenByExpert: Record<string, string | null> = {
+    [EXPERT_BOOKING_FIXTURE_EXPERT_A]: 'eb-await-1'
+  }
+  const pinnedByExpert: Record<string, Set<string>> = {
+    [EXPERT_BOOKING_FIXTURE_EXPERT_A]: new Set(['eb-sched-1'])
+  }
+  let attachmentSeq = 0
+
+  function syncListFields(detail: ExpertBookingDetail) {
+    // list fields live on detail; callers read from details map
+    void detail
   }
 
-  const lastSeenByExpert: Record<string, { booking_id: string, seen_at: string }> = {
-    'op-expert-wang': { booking_id: 'eb-0021', seen_at: '2026-11-06T16:00:00+08:00' }
+  function allDetails(): ExpertBookingDetail[] {
+    return [...details.values()]
   }
 
-  const pinsByExpert: Record<string, Set<string>> = {
-    'op-expert-wang': new Set(['eb-0021'])
-  }
-
-  const calendar: ExpertCalendarSnapshot = {
-    experts: EXPERT_BOOKING_MOCK_EXPERTS.map(e => ({ ...e })),
-    weekly_rules: [
-      { expert_id: 'op-expert-wang', weekday: 4, start_time: '09:30', end_time: '12:00' },
-      { expert_id: 'op-expert-wang', weekday: 4, start_time: '13:00', end_time: '18:00' },
-      { expert_id: 'op-expert-wang', weekday: 5, start_time: '09:00', end_time: '12:00' },
-      { expert_id: 'op-expert-li', weekday: 1, start_time: '10:00', end_time: '12:00' },
-      { expert_id: 'op-expert-chen', weekday: 4, start_time: '13:00', end_time: '17:00' }
-    ],
-    day_overrides: [
-      {
-        expert_id: 'op-expert-wang',
-        date: '2026-11-13',
-        slots: [
-          { start_time: '10:00', end_time: '12:00' },
-          { start_time: '14:00', end_time: '16:00' }
-        ],
-        updated_by_operator_id: 'op-expert-wang',
-        updated_by_name: '王專家',
-        updated_at: '2026-11-08T15:40:00+08:00'
-      }
-    ],
-    appointments: [
-      {
-        booking_id: 'eb-0019',
-        expert_id: 'op-expert-li',
-        expert_name: '李專家',
-        member_name: '陳美玲',
-        date: '2026-11-10',
-        start_time: '10:00',
-        end_time: '11:00'
-      },
-      {
-        booking_id: 'eb-0015',
-        expert_id: 'op-expert-chen',
-        expert_name: '陳專家',
-        member_name: '林大同',
-        date: '2026-11-12',
-        start_time: '14:00',
-        end_time: '15:00'
-      },
-      {
-        booking_id: 'eb-0019b',
-        expert_id: 'op-expert-wang',
-        expert_name: '王專家',
-        member_name: '王小明',
-        date: '2026-11-12',
-        start_time: '15:00',
-        end_time: '16:00'
-      }
-    ],
-    last_modified_by_name: '王專家',
-    last_modified_at: '2026-11-08T15:40:00+08:00'
-  }
-
-  return {
-    list,
-    details,
-    lastSeenByExpert,
-    pinsByExpert,
-    calendar,
-    setLastSeen(expertId: string, bookingId: string) {
-      lastSeenByExpert[expertId] = {
-        booking_id: bookingId,
-        seen_at: new Date().toISOString()
-      }
-    },
-    togglePin(expertId: string, bookingId: string, pinned: boolean) {
-      if (!pinsByExpert[expertId]) {
-        pinsByExpert[expertId] = new Set()
-      }
-      if (pinned) {
-        pinsByExpert[expertId]!.add(bookingId)
-      } else {
-        pinsByExpert[expertId]!.delete(bookingId)
-      }
-    },
-    isPinned(expertId: string, bookingId: string) {
-      return pinsByExpert[expertId]?.has(bookingId) ?? false
+  function listItem(detail: ExpertBookingDetail, expertId: string | null): ExpertBookingListItem {
+    return {
+      id: detail.id,
+      order_id: detail.order_id,
+      order_no: detail.order_no,
+      paid_at: detail.paid_at,
+      user_id: detail.user_id,
+      member_email: detail.member_email,
+      status: detail.status,
+      contact_name: detail.contact_name,
+      contact_phone: detail.contact_phone,
+      contact_email: detail.contact_email,
+      contact_line: detail.contact_line,
+      preferred_slots: [...detail.preferred_slots],
+      confirmed_starts_at: detail.confirmed_starts_at,
+      confirmed_ends_at: detail.confirmed_ends_at,
+      pinned: expertId ? isPinned(expertId, detail.id) : detail.pinned,
+      created_at: detail.created_at,
+      updated_at: detail.updated_at
     }
   }
-}
 
-function detailFor(row: ExpertBookingListItem): ExpertBookingDetail {
-  return {
-    ...row,
-    need_description: row.id === 'eb-0021'
-      ? '想討論減重與作息'
-      : '希望調整營養補充節奏',
-    contact_email: 'member@example.com',
-    contact_phone: '0912-345-678',
-    contact_line: null,
-    profile: {
-      user_id: `user-${row.id}`,
-      display_name: row.member_name,
-      email: 'member@example.com',
-      phone: '0912-345-678',
-      goals: ['減重', '睡眠', '壓力'],
-      summary: '會員基本資料摘要（示意）'
-    },
-    product_reasons: row.id === 'eb-0010'
-      ? [
-          {
-            sellable_item_id: 'si-magnesium',
-            name_zh: 'Magnesium 6 in 1 6合1鎂',
-            name_en: 'Magnesium 6 in 1',
-            reason: '協助放鬆與睡眠品質'
-          }
-        ]
-      : [],
-    service_record: row.status === 'completed'
-      ? {
-          actual_service_time: '2026-11-03 15:00-15:45',
-          service_method: 'phone',
-          content: '討論減重與作息',
-          sales_content: '建議 Magnesium',
-          duration_minutes: 45,
-          sales_result: null,
-          deal_amount: null,
-          follow_up: null,
-          attachment_note: null,
-          updated_by_operator_id: 'op-expert-li',
-          updated_by_name: '李專家',
-          updated_at: '2026-11-03T16:00:00+08:00'
-        }
-      : null,
-    conversations: [
-      {
-        id: 'conv-3',
-        started_at: '2026-11-06T13:40:00+08:00',
-        messages: [
-          {
-            role: 'assistant',
-            content: '根據您的目標「減重」，我們可以先從作息與飲食節奏討論。',
-            created_at: '2026-11-06T13:40:00+08:00'
-          },
-          {
-            role: 'user',
-            content: '好，我想先跟專家聊聊',
-            created_at: '2026-11-06T13:41:00+08:00'
-          },
-          {
-            role: 'assistant',
-            content: '可以預約專家諮詢，專人會再與您確認時間。',
-            created_at: '2026-11-06T13:42:00+08:00'
-          }
-        ]
-      },
-      {
-        id: 'conv-2',
-        started_at: '2026-11-05T09:12:00+08:00',
-        messages: [
-          {
-            role: 'user',
-            content: '最近睡不好，壓力也大。',
-            created_at: '2026-11-05T09:12:00+08:00'
-          },
-          {
-            role: 'assistant',
-            content: '了解，我們可以先釐清作息與壓力來源。',
-            created_at: '2026-11-05T09:13:00+08:00'
-          }
-        ]
-      },
-      {
-        id: 'conv-1',
-        started_at: '2026-11-01T20:05:00+08:00',
-        messages: [
-          {
-            role: 'user',
-            content: '想了解減重方向。',
-            created_at: '2026-11-01T20:05:00+08:00'
-          }
-        ]
+  function isPinned(expertId: string, bookingId: string) {
+    return pinnedByExpert[expertId]?.has(bookingId) ?? false
+  }
+
+  function setPinned(expertId: string, bookingId: string, pinned: boolean) {
+    if (!pinnedByExpert[expertId]) {
+      pinnedByExpert[expertId] = new Set()
+    }
+    if (pinned) {
+      pinnedByExpert[expertId]!.add(bookingId)
+    } else {
+      pinnedByExpert[expertId]!.delete(bookingId)
+    }
+  }
+
+  function calendarSnapshot(params: {
+    from: string
+    to: string
+    expertOperatorId?: string | null
+  }): ExpertCalendarSnapshot {
+    const expertId = params.expertOperatorId || null
+    const weeklyFiltered = expertId
+      ? weekly.filter(s => s.expert_operator_id === expertId)
+      : [...weekly]
+    const overridesFiltered = expertId
+      ? dayOverrides.filter(d => d.expert_operator_id === expertId)
+      : [...dayOverrides]
+    const scheduled_bookings: ExpertCalendarScheduledBooking[] = allDetails()
+      .filter(b => b.status === 'scheduled' && b.confirmed_starts_at)
+      .map(b => ({
+        id: b.id,
+        status: b.status,
+        contact_name: b.contact_name,
+        confirmed_starts_at: b.confirmed_starts_at,
+        confirmed_ends_at: b.confirmed_ends_at,
+        confirmed_by_operator_id: EXPERT_BOOKING_FIXTURE_EXPERT_A
+      }))
+    return {
+      weekly: weeklyFiltered,
+      day_overrides: overridesFiltered,
+      scheduled_bookings,
+      experts: EXPERT_BOOKING_FIXTURE_EXPERTS.map(e => ({ ...e }))
+    }
+  }
+
+  function nextProductPickId() {
+    return `pp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  }
+
+  function applyProductPicks(
+    bookingId: string,
+    inputs: Array<{ sellable_item_id?: string, sellable_item_code?: string, reason: string }>
+  ): ExpertBookingProductPick[] {
+    const picks = inputs.map((input, index) => {
+      const option = EXPERT_BOOKING_SELLABLE_OPTIONS.find(
+        o => o.id === input.sellable_item_id || o.code === input.sellable_item_code
+      )
+      return {
+        id: nextProductPickId(),
+        sellable_item_id: input.sellable_item_id || option?.id || `si-unknown-${index}`,
+        sellable_item_code: input.sellable_item_code ?? option?.code ?? null,
+        sellable_item_name: option?.name_zh ?? null,
+        reason: input.reason,
+        sort_order: index
       }
-    ],
-    conversations_has_more: false
+    })
+    const row = details.get(bookingId)
+    if (row) {
+      row.product_picks = picks
+      syncListFields(row)
+    }
+    return picks
+  }
+
+  function uploadAttachment(bookingId: string, file: { name: string, type: string, size: number }): ExpertBookingAttachment {
+    if (!details.has(bookingId)) {
+      throw new Error('not_found')
+    }
+    attachmentSeq += 1
+    const contentType = (
+      file.type === 'application/pdf'
+      || file.type === 'image/jpeg'
+      || file.type === 'image/png'
+      || file.type === 'image/webp'
+    )
+      ? file.type
+      : 'application/pdf'
+    return {
+      key: `expert-booking/${bookingId}/svc-${attachmentSeq}-${file.name}`,
+      filename: file.name,
+      content_type: contentType,
+      size_bytes: Math.max(1, file.size || 1)
+    }
+  }
+
+  return {
+    details,
+    allDetails,
+    listItem,
+    isPinned,
+    setPinned,
+    getLastSeen: (expertId: string) => lastSeenByExpert[expertId] ?? null,
+    setLastSeen: (expertId: string, bookingId: string) => {
+      lastSeenByExpert[expertId] = bookingId
+    },
+    calendarSnapshot,
+    getWeekly: () => weekly,
+    replaceWeeklyForExpert: (expertOperatorId: string, slots: Array<{ weekday: number, slot_start_minute: number }>) => {
+      weekly = [
+        ...weekly.filter(s => s.expert_operator_id !== expertOperatorId),
+        ...slots.map((s, i) => ({
+          id: `w-${expertOperatorId}-${i}`,
+          weekday: s.weekday,
+          slot_start_minute: s.slot_start_minute,
+          expert_operator_id: expertOperatorId,
+          updated_by_operator_id: expertOperatorId,
+          updated_at: new Date().toISOString()
+        }))
+      ]
+      return weekly.filter(s => s.expert_operator_id === expertOperatorId)
+    },
+    getDayOverrides: () => dayOverrides,
+    putDayOverride: (input: {
+      expert_operator_id: string
+      override_date: string
+      slots: number[]
+    }) => {
+      dayOverrides = [
+        ...dayOverrides.filter(
+          d => !(d.expert_operator_id === input.expert_operator_id && d.override_date === input.override_date)
+        ),
+        {
+          expert_operator_id: input.expert_operator_id,
+          override_date: input.override_date,
+          is_customized: true,
+          slots: [...input.slots],
+          updated_by_operator_id: input.expert_operator_id,
+          updated_at: new Date().toISOString()
+        }
+      ]
+      return dayOverrides.find(
+        d => d.expert_operator_id === input.expert_operator_id && d.override_date === input.override_date
+      )!
+    },
+    deleteDayOverride: (expertOperatorId: string, overrideDate: string) => {
+      dayOverrides = dayOverrides.filter(
+        d => !(d.expert_operator_id === expertOperatorId && d.override_date === overrideDate)
+      )
+      return { cleared: true }
+    },
+    applyProductPicks,
+    uploadAttachment,
+    conversations: () => structuredClone(EXPERT_BOOKING_FIXTURE_CONVERSATIONS)
   }
 }
 

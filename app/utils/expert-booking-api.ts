@@ -6,46 +6,50 @@ import {
   type ExpertBookingFixtureStore
 } from '~/utils/expert-booking-fixtures'
 import type {
+  ExpertBookingAttachment,
+  ExpertBookingAttachmentContentType,
+  ExpertBookingConversationsResult,
   ExpertBookingDetail,
   ExpertBookingListResult,
-  ExpertBookingProductReason,
+  ExpertBookingProductPick,
+  ExpertBookingProductPickInput,
   ExpertBookingSellableOption,
   ExpertBookingServiceRecord,
+  ExpertBookingServiceRecordInput,
   ExpertBookingStatus,
+  ExpertCalendarDayOverride,
   ExpertCalendarSnapshot,
-  ExpertDayAvailabilityOverride,
-  ExpertServiceMethod,
-  ExpertWeeklyAvailabilityRule
+  ExpertCalendarWeeklySlot
 } from '~/utils/expert-booking-types'
 
 /**
  * Expert-booking Admin／Expert-station API client.
- * Paths aligned to candor-core PR #155 (branch cursor/expert-booking-station-fee2)
- * as listed by product; request／response **field names** still pending OpenAPI
- * verification (this environment cannot read DaydreamLab/candor-core — see PR gaps).
+ * Aligned to candor-core PR #155 OpenAPI admin @ 27901b4
+ * (docs/spec/34-expert-booking.md + public/api/docs/openapi-admin.yaml).
  *
  * Admin:
  * - GET    /api/v1/admin/expert-bookings
  * - GET    /api/v1/admin/expert-booking/{id}
- * - POST   /api/v1/admin/expert-booking/{id}/cancel（僅 ops／admin）
- * - PUT    /api/v1/admin/expert-booking/{id}/product-picks
+ * - POST   /api/v1/admin/expert-booking/{id}/cancel  body: { reason? }
+ * - PUT    /api/v1/admin/expert-booking/{id}/product-picks  body: { product_picks }
  *
  * Expert station:
  * - GET    /api/v1/admin/expert-station/bookings
  * - GET    /api/v1/admin/expert-station/bookings/{id}
- * - PUT    /api/v1/admin/expert-station/bookings/{id}/pin
- * - PUT    /api/v1/admin/expert-station/last-seen
+ * - PUT    /api/v1/admin/expert-station/bookings/{id}/pin  body: { pinned }
+ * - PUT    /api/v1/admin/expert-station/last-seen  body: { booking_id }
  * - GET    /api/v1/admin/expert-station/bookings/{id}/conversations
- * - PUT    /api/v1/admin/expert-station/bookings/{id}/confirm-time
+ * - PUT    /api/v1/admin/expert-station/bookings/{id}/confirm-time  body: { confirmed_starts_at, confirmed_ends_at? }
  * - PUT    /api/v1/admin/expert-station/bookings/{id}/service-record
+ * - POST   /api/v1/admin/expert-station/bookings/{id}/attachments  multipart
  * - POST   /api/v1/admin/expert-station/bookings/{id}/complete
  * - PUT    /api/v1/admin/expert-station/bookings/{id}/product-picks
  *
  * Calendar:
- * - GET    /api/v1/admin/expert-calendar
- * - PUT    /api/v1/admin/expert-calendar/weekly
- * - PUT    /api/v1/admin/expert-calendar/day-override
- * - DELETE /api/v1/admin/expert-calendar/day-override
+ * - GET    /api/v1/admin/expert-calendar?from&to&expert_operator_id?
+ * - PUT    /api/v1/admin/expert-calendar/weekly  body: { expert_operator_id, slots[] }
+ * - PUT    /api/v1/admin/expert-calendar/day-override  body: { expert_operator_id, override_date, slots[] }
+ * - DELETE /api/v1/admin/expert-calendar/day-override  body: { expert_operator_id, override_date }
  */
 
 /** Default ON locally until core expert-booking API merges. */
@@ -120,86 +124,79 @@ async function adminFetch<T>(
   }
 }
 
-function listItemFromDetail(detail: ExpertBookingDetail) {
-  const {
-    need_description: _n,
-    contact_email: _e,
-    contact_phone: _p,
-    contact_line: _l,
-    profile: _pr,
-    product_reasons: _pr2,
-    service_record: _sr,
-    conversations: _c,
-    conversations_has_more: _h,
-    ...item
-  } = detail
-  return item
-}
-
-function paginate<T>(items: T[], page: number, pageSize: number) {
-  const safePage = Math.max(1, page)
-  const safeSize = Math.min(100, Math.max(1, pageSize))
-  const start = (safePage - 1) * safeSize
-  return {
-    page: safePage,
-    page_size: safeSize,
-    total: items.length,
-    items: items.slice(start, start + safeSize)
+async function adminFetchMultipart<T>(
+  apiBase: string,
+  token: string,
+  path: string,
+  formData: FormData
+): Promise<T> {
+  try {
+    const res = await $fetch<AdminSuccess<T>>(adminUrl(apiBase, path), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    })
+    return res.data
+  } catch (error) {
+    throw new AdminApiError(readStatus(error) || 500, readMessage(error) || 'request_failed')
   }
 }
 
-function applyPins(
-  items: ExpertBookingDetail[],
-  expertId: string | null
-): ExpertBookingListResult['items'] {
-  const s = store()
-  return items.map((row) => {
-    const pinned = expertId ? s.isPinned(expertId, row.id) : row.pinned
-    return { ...listItemFromDetail(row), pinned }
-  }).sort((a, b) => {
-    if (a.pinned !== b.pinned) {
+function offsetLimit(opts: { limit?: number, offset?: number }) {
+  const limit = Math.min(100, Math.max(1, opts.limit ?? 50))
+  const offset = Math.max(0, opts.offset ?? 0)
+  return { limit, offset }
+}
+
+function sortStationItems(
+  items: ExpertBookingListResult['expert_bookings']
+) {
+  return [...items].sort((a, b) => {
+    if (Boolean(a.pinned) !== Boolean(b.pinned)) {
       return a.pinned ? -1 : 1
     }
-    return b.paid_at.localeCompare(a.paid_at)
+    const ap = a.paid_at || ''
+    const bp = b.paid_at || ''
+    return bp.localeCompare(ap)
   })
-}
-
-function lastSeenPayload(expertId: string | null) {
-  if (!expertId) {
-    return null
-  }
-  const s = store()
-  const seen = s.lastSeenByExpert[expertId]
-  if (!seen) {
-    return null
-  }
-  const detail = s.details.get(seen.booking_id)
-  if (!detail) {
-    return null
-  }
-  return {
-    booking_id: detail.id,
-    order_code: detail.order_code,
-    member_name: detail.member_name,
-    status: detail.status,
-    seen_at: seen.seen_at
-  }
 }
 
 export async function listAdminExpertBookings(
   apiBase: string,
   token: string,
-  opts: { page?: number, page_size?: number } = {}
+  opts: { status?: ExpertBookingStatus, q?: string, limit?: number, offset?: number } = {}
 ): Promise<ExpertBookingListResult> {
   if (isExpertBookingMockEnabled()) {
-    const s = store()
-    const paid = [...s.details.values()].filter(d => d.payment_status === 'paid')
-    const page = paginate(applyPins(paid, null), opts.page ?? 1, opts.page_size ?? 20)
-    return { ...page, last_seen: null }
+    const { limit, offset } = offsetLimit(opts)
+    let rows = store().allDetails().map(d => store().listItem(d, null))
+    if (opts.status) {
+      rows = rows.filter(r => r.status === opts.status)
+    }
+    if (opts.q) {
+      const q = opts.q.toLowerCase()
+      rows = rows.filter(r =>
+        r.contact_name.toLowerCase().includes(q)
+        || (r.order_no || '').toLowerCase().includes(q)
+        || (r.member_email || '').toLowerCase().includes(q)
+      )
+    }
+    return {
+      expert_bookings: rows.slice(offset, offset + limit),
+      total: rows.length,
+      last_seen_booking_id: null
+    }
   }
   const q = new URLSearchParams()
-  q.set('page', String(opts.page ?? 1))
-  q.set('page_size', String(opts.page_size ?? 20))
+  if (opts.status) {
+    q.set('status', opts.status)
+  }
+  if (opts.q) {
+    q.set('q', opts.q)
+  }
+  q.set('limit', String(opts.limit ?? 50))
+  q.set('offset', String(opts.offset ?? 0))
   return adminFetch(apiBase, token, `/expert-bookings?${q}`)
 }
 
@@ -221,7 +218,8 @@ export async function getAdminExpertBooking(
 export async function cancelAdminExpertBooking(
   apiBase: string,
   token: string,
-  id: string
+  id: string,
+  reason?: string
 ): Promise<ExpertBookingDetail> {
   if (isExpertBookingMockEnabled()) {
     const row = store().details.get(id)
@@ -235,11 +233,13 @@ export async function cancelAdminExpertBooking(
       throw new AdminApiError(409, 'already_completed')
     }
     row.status = 'cancelled'
+    row.cancelled_at = new Date().toISOString()
+    row.cancel_reason = reason?.trim() || null
     return structuredClone(row)
   }
   return adminFetch(apiBase, token, `/expert-booking/${encodeURIComponent(id)}/cancel`, {
     method: 'POST',
-    body: {}
+    body: reason?.trim() ? { reason: reason.trim() } : {}
   })
 }
 
@@ -247,44 +247,56 @@ export async function putAdminExpertBookingProductPicks(
   apiBase: string,
   token: string,
   id: string,
-  productReasons: ExpertBookingProductReason[]
-): Promise<ExpertBookingDetail> {
+  productPicks: ExpertBookingProductPickInput[]
+): Promise<ExpertBookingProductPick[]> {
   if (isExpertBookingMockEnabled()) {
-    const row = store().details.get(id)
-    if (!row) {
+    if (!store().details.has(id)) {
       throw new AdminApiError(404, 'not_found')
     }
-    row.product_reasons = productReasons.map(p => ({ ...p }))
-    return structuredClone(row)
+    return structuredClone(store().applyProductPicks(id, productPicks))
   }
-  // GAP: request body property names not verified against core OpenAPI.
-  return adminFetch(apiBase, token, `/expert-booking/${encodeURIComponent(id)}/product-picks`, {
-    method: 'PUT',
-    body: { product_reasons: productReasons }
-  })
+  const data = await adminFetch<{ product_picks: ExpertBookingProductPick[] }>(
+    apiBase,
+    token,
+    `/expert-booking/${encodeURIComponent(id)}/product-picks`,
+    { method: 'PUT', body: { product_picks: productPicks } }
+  )
+  return data.product_picks
 }
-
-/** @deprecated Use putAdminExpertBookingProductPicks */
-export const putAdminExpertBookingProductReasons = putAdminExpertBookingProductPicks
 
 export async function listExpertStationBookings(
   apiBase: string,
   token: string,
   expertId: string,
-  opts: { page?: number, page_size?: number } = {}
+  opts: { status?: ExpertBookingStatus, limit?: number, offset?: number } = {}
 ): Promise<ExpertBookingListResult> {
   if (isExpertBookingMockEnabled()) {
-    const s = store()
-    const paid = [...s.details.values()].filter(
-      d => d.payment_status === 'paid' && d.status !== 'cancelled'
-    )
-    const page = paginate(applyPins(paid, expertId), opts.page ?? 1, opts.page_size ?? 20)
-    return { ...page, last_seen: lastSeenPayload(expertId) }
+    const { limit, offset } = offsetLimit(opts)
+    let rows = store().allDetails()
+      .filter(d => d.status !== 'cancelled')
+      .map(d => store().listItem(d, expertId))
+    if (opts.status) {
+      rows = rows.filter(r => r.status === opts.status)
+    }
+    rows = sortStationItems(rows)
+    return {
+      expert_bookings: rows.slice(offset, offset + limit),
+      total: rows.length,
+      last_seen_booking_id: store().getLastSeen(expertId)
+    }
   }
   const q = new URLSearchParams()
-  q.set('page', String(opts.page ?? 1))
-  q.set('page_size', String(opts.page_size ?? 20))
-  return adminFetch(apiBase, token, `/expert-station/bookings?${q}`)
+  if (opts.status) {
+    q.set('status', opts.status)
+  }
+  if (opts.limit != null) {
+    q.set('limit', String(opts.limit))
+  }
+  if (opts.offset != null) {
+    q.set('offset', String(opts.offset))
+  }
+  const suffix = q.toString() ? `?${q}` : ''
+  return adminFetch(apiBase, token, `/expert-station/bookings${suffix}`)
 }
 
 export async function pinExpertStationBooking(
@@ -293,13 +305,15 @@ export async function pinExpertStationBooking(
   expertId: string,
   id: string,
   pinned: boolean
-): Promise<void> {
+): Promise<{ booking_id: string, pinned: boolean }> {
   if (isExpertBookingMockEnabled()) {
-    store().togglePin(expertId, id, pinned)
-    return
+    if (!store().details.has(id)) {
+      throw new AdminApiError(404, 'not_found')
+    }
+    store().setPinned(expertId, id, pinned)
+    return { booking_id: id, pinned }
   }
-  // GAP: pin body schema not verified (still sending { pinned }).
-  await adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/pin`, {
+  return adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/pin`, {
     method: 'PUT',
     body: { pinned }
   })
@@ -310,23 +324,19 @@ export async function putExpertStationLastSeen(
   token: string,
   expertId: string,
   id: string
-): Promise<void> {
+): Promise<{ booking_id: string }> {
   if (isExpertBookingMockEnabled()) {
     if (!store().details.has(id)) {
       throw new AdminApiError(404, 'not_found')
     }
     store().setLastSeen(expertId, id)
-    return
+    return { booking_id: id }
   }
-  // GAP: last-seen request body schema not verified (sending { booking_id } tentatively).
-  await adminFetch(apiBase, token, '/expert-station/last-seen', {
+  return adminFetch(apiBase, token, '/expert-station/last-seen', {
     method: 'PUT',
     body: { booking_id: id }
   })
 }
-
-/** @deprecated Use putExpertStationLastSeen */
-export const markExpertStationBookingSeen = putExpertStationLastSeen
 
 export async function getExpertStationBooking(
   apiBase: string,
@@ -350,11 +360,10 @@ export async function getExpertStationBooking(
     token,
     `/expert-station/bookings/${encodeURIComponent(id)}`
   )
-  // Opening a case updates per-expert last-seen (C9); body schema still GAP.
   try {
     await putExpertStationLastSeen(apiBase, token, expertId, id)
   } catch {
-    // non-fatal: detail still usable if last-seen write fails
+    // non-fatal
   }
   return detail
 }
@@ -362,111 +371,161 @@ export async function getExpertStationBooking(
 export async function listExpertStationBookingConversations(
   apiBase: string,
   token: string,
-  expertId: string,
+  _expertId: string,
   id: string,
-  _opts: { before?: string, limit?: number } = {}
-): Promise<ExpertBookingDetail['conversations']> {
+  opts: { limit?: number, offset?: number } = {}
+): Promise<ExpertBookingConversationsResult> {
   if (isExpertBookingMockEnabled()) {
-    const row = store().details.get(id)
-    if (!row) {
+    if (!store().details.has(id)) {
       throw new AdminApiError(404, 'not_found')
     }
-    store().setLastSeen(expertId, id)
-    return structuredClone(row.conversations)
+    const conversations = store().conversations()
+    return { conversations, total: conversations.length }
   }
-  // GAP: query／response envelope for conversations not verified.
+  const q = new URLSearchParams()
+  if (opts.limit != null) {
+    q.set('limit', String(opts.limit))
+  }
+  if (opts.offset != null) {
+    q.set('offset', String(opts.offset))
+  }
+  const suffix = q.toString() ? `?${q}` : ''
   return adminFetch(
     apiBase,
     token,
-    `/expert-station/bookings/${encodeURIComponent(id)}/conversations`
+    `/expert-station/bookings/${encodeURIComponent(id)}/conversations${suffix}`
   )
 }
 
 export async function putExpertStationConfirmTime(
   apiBase: string,
   token: string,
-  expertId: string,
+  _expertId: string,
   id: string,
-  confirmedAt: string
+  input: { confirmed_starts_at: string, confirmed_ends_at?: string | null }
 ): Promise<ExpertBookingDetail> {
   if (isExpertBookingMockEnabled()) {
     const row = store().details.get(id)
     if (!row) {
       throw new AdminApiError(404, 'not_found')
     }
-    row.confirmed_at = confirmedAt
-    if (row.status === 'pending_schedule') {
+    row.confirmed_starts_at = input.confirmed_starts_at
+    row.confirmed_ends_at = input.confirmed_ends_at ?? null
+    if (row.status === 'awaiting_schedule') {
       row.status = 'scheduled'
     }
-    const expert = store().calendar.experts.find(e => e.id === expertId)
-    row.annotated_expert_id = expertId
-    row.annotated_expert_name = expert?.name ?? row.annotated_expert_name
     return structuredClone(row)
   }
-  // GAP: confirm-time body field name not verified (still sending confirmed_at).
   return adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/confirm-time`, {
     method: 'PUT',
-    body: { confirmed_at: confirmedAt }
+    body: {
+      confirmed_starts_at: input.confirmed_starts_at,
+      ...(input.confirmed_ends_at !== undefined
+        ? { confirmed_ends_at: input.confirmed_ends_at }
+        : {})
+    }
   })
 }
 
-/** @deprecated Use putExpertStationConfirmTime */
-export const confirmExpertStationBooking = putExpertStationConfirmTime
+export async function uploadExpertStationAttachment(
+  apiBase: string,
+  token: string,
+  id: string,
+  file: File | Blob,
+  filename?: string
+): Promise<ExpertBookingAttachment> {
+  if (isExpertBookingMockEnabled()) {
+    if (!store().details.has(id)) {
+      throw new AdminApiError(404, 'not_found')
+    }
+    const name = filename
+      || (file instanceof File ? file.name : 'attachment.bin')
+    const type = file.type || 'application/pdf'
+    return store().uploadAttachment(id, { name, type, size: file.size })
+  }
+  const form = new FormData()
+  form.append('file', file, filename)
+  return adminFetchMultipart(
+    apiBase,
+    token,
+    `/expert-station/bookings/${encodeURIComponent(id)}/attachments`,
+    form
+  )
+}
 
 export async function putExpertStationServiceRecord(
   apiBase: string,
   token: string,
   expertId: string,
   id: string,
-  record: Omit<ExpertBookingServiceRecord, 'updated_by_operator_id' | 'updated_by_name' | 'updated_at'>
-): Promise<ExpertBookingDetail> {
+  record: ExpertBookingServiceRecordInput
+): Promise<ExpertBookingServiceRecord> {
+  const salesContent = record.sales_content?.trim() ? record.sales_content.trim() : '無'
+  const body: ExpertBookingServiceRecordInput = {
+    served_at: record.served_at,
+    service_method: record.service_method,
+    content: record.content,
+    sales_content: salesContent,
+    ...(record.duration_minutes !== undefined ? { duration_minutes: record.duration_minutes } : {}),
+    ...(record.sales_result !== undefined ? { sales_result: record.sales_result } : {}),
+    ...(record.deal_amount !== undefined ? { deal_amount: record.deal_amount } : {}),
+    ...(record.follow_up !== undefined ? { follow_up: record.follow_up } : {}),
+    ...(record.attachments !== undefined ? { attachments: record.attachments } : {})
+  }
+
   if (isExpertBookingMockEnabled()) {
     const row = store().details.get(id)
     if (!row) {
       throw new AdminApiError(404, 'not_found')
     }
-    const expert = store().calendar.experts.find(e => e.id === expertId)
-    row.service_record = {
-      ...record,
-      updated_by_operator_id: expertId,
-      updated_by_name: expert?.name ?? null,
-      updated_at: new Date().toISOString()
+    const now = new Date().toISOString()
+    const saved: ExpertBookingServiceRecord = {
+      booking_id: id,
+      served_at: body.served_at,
+      service_method: body.service_method,
+      content: body.content,
+      sales_content: salesContent,
+      duration_minutes: body.duration_minutes ?? null,
+      sales_result: body.sales_result ?? null,
+      deal_amount: body.deal_amount ?? null,
+      follow_up: body.follow_up ?? null,
+      attachments: body.attachments ? [...body.attachments] : [],
+      filled_by_operator_id: expertId,
+      filled_at: now,
+      updated_at: now
     }
-    return structuredClone(row)
+    row.service_record = saved
+    return structuredClone(saved)
   }
-  return adminFetch(
+  const data = await adminFetch<{ service_record: ExpertBookingServiceRecord }>(
     apiBase,
     token,
     `/expert-station/bookings/${encodeURIComponent(id)}/service-record`,
-    { method: 'PUT', body: record }
+    { method: 'PUT', body }
   )
+  return data.service_record
 }
 
 export async function putExpertStationProductPicks(
   apiBase: string,
   token: string,
   id: string,
-  productReasons: ExpertBookingProductReason[]
-): Promise<ExpertBookingDetail> {
+  productPicks: ExpertBookingProductPickInput[]
+): Promise<ExpertBookingProductPick[]> {
   if (isExpertBookingMockEnabled()) {
-    const row = store().details.get(id)
-    if (!row) {
+    if (!store().details.has(id)) {
       throw new AdminApiError(404, 'not_found')
     }
-    row.product_reasons = productReasons.map(p => ({ ...p }))
-    return structuredClone(row)
+    return structuredClone(store().applyProductPicks(id, productPicks))
   }
-  // GAP: product-picks request body property names not verified.
-  return adminFetch(
+  const data = await adminFetch<{ product_picks: ExpertBookingProductPick[] }>(
     apiBase,
     token,
     `/expert-station/bookings/${encodeURIComponent(id)}/product-picks`,
-    { method: 'PUT', body: { product_reasons: productReasons } }
+    { method: 'PUT', body: { product_picks: productPicks } }
   )
+  return data.product_picks
 }
-
-/** @deprecated Use putExpertStationProductPicks */
-export const putExpertStationProductReasons = putExpertStationProductPicks
 
 export async function completeExpertStationBooking(
   apiBase: string,
@@ -482,6 +541,7 @@ export async function completeExpertStationBooking(
       throw new AdminApiError(409, 'cancelled')
     }
     row.status = 'completed'
+    row.completed_at = new Date().toISOString()
     return structuredClone(row)
   }
   return adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/complete`, {
@@ -493,105 +553,77 @@ export async function completeExpertStationBooking(
 export async function getExpertCalendar(
   apiBase: string,
   token: string,
-  _range?: { from: string, to: string }
+  range: { from: string, to: string, expert_operator_id?: string | null }
 ): Promise<ExpertCalendarSnapshot> {
   if (isExpertBookingMockEnabled()) {
-    return structuredClone(store().calendar)
+    return store().calendarSnapshot({
+      from: range.from,
+      to: range.to,
+      expertOperatorId: range.expert_operator_id
+    })
   }
   const q = new URLSearchParams()
-  if (_range?.from) {
-    q.set('from', _range.from)
+  q.set('from', range.from)
+  q.set('to', range.to)
+  if (range.expert_operator_id) {
+    q.set('expert_operator_id', range.expert_operator_id)
   }
-  if (_range?.to) {
-    q.set('to', _range.to)
-  }
-  const suffix = q.toString() ? `?${q}` : ''
-  // GAP: calendar query／response schema not verified.
-  return adminFetch(apiBase, token, `/expert-calendar${suffix}`)
+  return adminFetch(apiBase, token, `/expert-calendar?${q}`)
 }
-
-/** @deprecated Use getExpertCalendar */
-export const getExpertStationCalendar = getExpertCalendar
 
 export async function putExpertCalendarWeekly(
   apiBase: string,
   token: string,
-  expertId: string,
-  operatorName: string,
-  rules: ExpertWeeklyAvailabilityRule[]
-): Promise<ExpertCalendarSnapshot> {
-  if (isExpertBookingMockEnabled()) {
-    const cal = store().calendar
-    cal.weekly_rules = [
-      ...cal.weekly_rules.filter(r => r.expert_id !== expertId),
-      ...rules.filter(r => r.expert_id === expertId)
-    ]
-    cal.last_modified_by_name = operatorName
-    cal.last_modified_at = new Date().toISOString()
-    return structuredClone(cal)
+  input: {
+    expert_operator_id: string
+    slots: Array<{ weekday: number, slot_start_minute: number }>
   }
-  // GAP: weekly PUT body schema not verified.
-  return adminFetch(apiBase, token, '/expert-calendar/weekly', {
-    method: 'PUT',
-    body: { expert_id: expertId, rules }
-  })
+): Promise<ExpertCalendarWeeklySlot[]> {
+  if (isExpertBookingMockEnabled()) {
+    return structuredClone(
+      store().replaceWeeklyForExpert(input.expert_operator_id, input.slots)
+    )
+  }
+  const data = await adminFetch<{ weekly: ExpertCalendarWeeklySlot[] }>(
+    apiBase,
+    token,
+    '/expert-calendar/weekly',
+    { method: 'PUT', body: input }
+  )
+  return data.weekly
 }
-
-/** @deprecated Use putExpertCalendarWeekly */
-export const putExpertStationWeeklyRules = putExpertCalendarWeekly
 
 export async function putExpertCalendarDayOverride(
   apiBase: string,
   token: string,
-  override: ExpertDayAvailabilityOverride
-): Promise<ExpertCalendarSnapshot> {
-  if (isExpertBookingMockEnabled()) {
-    const cal = store().calendar
-    cal.day_overrides = [
-      ...cal.day_overrides.filter(
-        o => !(o.expert_id === override.expert_id && o.date === override.date)
-      ),
-      { ...override }
-    ]
-    cal.last_modified_by_name = override.updated_by_name
-    cal.last_modified_at = override.updated_at
-    return structuredClone(cal)
+  input: {
+    expert_operator_id: string
+    override_date: string
+    slots: number[]
   }
-  // GAP: day-override body schema not verified.
+): Promise<ExpertCalendarDayOverride> {
+  if (isExpertBookingMockEnabled()) {
+    return structuredClone(store().putDayOverride(input))
+  }
   return adminFetch(apiBase, token, '/expert-calendar/day-override', {
     method: 'PUT',
-    body: override
+    body: input
   })
 }
-
-/** @deprecated Use putExpertCalendarDayOverride */
-export const putExpertStationDayOverride = putExpertCalendarDayOverride
 
 export async function deleteExpertCalendarDayOverride(
   apiBase: string,
   token: string,
-  expertId: string,
-  date: string,
-  operatorName: string
-): Promise<ExpertCalendarSnapshot> {
+  input: { expert_operator_id: string, override_date: string }
+): Promise<{ cleared: boolean }> {
   if (isExpertBookingMockEnabled()) {
-    const cal = store().calendar
-    cal.day_overrides = cal.day_overrides.filter(
-      o => !(o.expert_id === expertId && o.date === date)
-    )
-    cal.last_modified_by_name = operatorName
-    cal.last_modified_at = new Date().toISOString()
-    return structuredClone(cal)
+    return store().deleteDayOverride(input.expert_operator_id, input.override_date)
   }
-  // GAP: DELETE query params not verified (still expert_id + date).
-  const q = new URLSearchParams({ expert_id: expertId, date })
-  return adminFetch(apiBase, token, `/expert-calendar/day-override?${q}`, {
-    method: 'DELETE'
+  return adminFetch(apiBase, token, '/expert-calendar/day-override', {
+    method: 'DELETE',
+    body: input
   })
 }
-
-/** @deprecated Use deleteExpertCalendarDayOverride */
-export const deleteExpertStationDayOverride = deleteExpertCalendarDayOverride
 
 export async function listExpertBookingSellableOptions(
   apiBase: string,
@@ -600,7 +632,6 @@ export async function listExpertBookingSellableOptions(
   if (isExpertBookingMockEnabled()) {
     return EXPERT_BOOKING_SELLABLE_OPTIONS.map(o => ({ ...o }))
   }
-  // Reuse sellable-items list when live; keep shape narrow for picker.
   const data = await adminFetch<{ items?: unknown[] } | unknown[]>(
     apiBase,
     token,
@@ -615,14 +646,15 @@ export async function listExpertBookingSellableOptions(
       id: row.id,
       name_zh: typeof row.name_zh === 'string' ? row.name_zh : row.id,
       name_en: typeof row.name_en === 'string' ? row.name_en : '',
-      sku: typeof row.sku === 'string' ? row.sku : null
+      sku: typeof row.sku === 'string' ? row.sku : null,
+      code: typeof row.code === 'string' ? row.code : null
     }]
   })
 }
 
 export function statusBadgeColor(status: ExpertBookingStatus): 'warning' | 'info' | 'success' | 'neutral' {
   switch (status) {
-    case 'pending_schedule':
+    case 'awaiting_schedule':
       return 'warning'
     case 'scheduled':
       return 'info'
@@ -633,9 +665,11 @@ export function statusBadgeColor(status: ExpertBookingStatus): 'warning' | 'info
   }
 }
 
-export function parseServiceMethod(value: unknown): ExpertServiceMethod {
-  if (value === 'phone' || value === 'online_meeting' || value === 'in_person' || value === 'other') {
-    return value
-  }
-  return 'phone'
+export function isAllowedAttachmentContentType(
+  value: string
+): value is ExpertBookingAttachmentContentType {
+  return value === 'application/pdf'
+    || value === 'image/jpeg'
+    || value === 'image/png'
+    || value === 'image/webp'
 }

@@ -7,7 +7,7 @@ import {
 import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
 import type {
-  ExpertBookingProductReason,
+  ExpertBookingProductPickDraft,
   ExpertBookingSellableOption
 } from '~/utils/expert-booking-types'
 
@@ -21,7 +21,7 @@ const bookingId = computed(() => String(route.params.id ?? ''))
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
 const orderCode = ref('')
 const options = ref<ExpertBookingSellableOption[]>([])
-const selected = ref<ExpertBookingProductReason[]>([])
+const selected = ref<ExpertBookingProductPickDraft[]>([])
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
@@ -41,9 +41,14 @@ async function load(id: string) {
       getExpertStationBooking(config.public.apiBase, token, expertId.value, id),
       listExpertBookingSellableOptions(config.public.apiBase, token)
     ])
-    orderCode.value = shortOrderCode(booking.order_code)
+    orderCode.value = shortOrderCode(booking.order_no)
     options.value = sellables
-    selected.value = booking.product_reasons.map(row => ({ ...row }))
+    selected.value = booking.product_picks.map(row => ({
+      sellable_item_id: row.sellable_item_id,
+      name_zh: row.sellable_item_name || row.sellable_item_code || row.sellable_item_id,
+      name_en: row.sellable_item_name || '',
+      reason: row.reason
+    }))
   } catch {
     errorMessage.value = t('expertBookings.notFound')
   } finally {
@@ -66,7 +71,10 @@ async function onSave() {
       config.public.apiBase,
       token,
       bookingId.value,
-      selected.value
+      selected.value.map(row => ({
+        sellable_item_id: row.sellable_item_id,
+        reason: row.reason
+      }))
     )
     await navigateTo(localePath(`/bookings/${encodeURIComponent(bookingId.value)}`))
   } catch {

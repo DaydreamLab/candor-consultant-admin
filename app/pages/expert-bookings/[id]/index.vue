@@ -21,11 +21,12 @@ const booking = ref<ExpertBookingDetail | null>(null)
 const pending = ref(true)
 const cancelling = ref(false)
 const cancelOpen = ref(false)
+const cancelReason = ref('')
 const errorMessage = ref('')
 
 const canCancel = computed(() => {
   const status = booking.value?.status
-  return status === 'pending_schedule' || status === 'scheduled'
+  return status === 'awaiting_schedule' || status === 'scheduled'
 })
 
 const title = computed(() => {
@@ -33,7 +34,7 @@ const title = computed(() => {
     return crumbLabel.value || bookingId.value
   }
   return t('expertBookings.detailTitle', {
-    code: shortOrderCode(booking.value.order_code)
+    code: shortOrderCode(booking.value.order_no)
   })
 })
 
@@ -64,7 +65,7 @@ async function load(id: string) {
     }
     const row = await getAdminExpertBooking(config.public.apiBase, token, id)
     booking.value = row
-    crumbLabel.value = shortOrderCode(row.order_code)
+    crumbLabel.value = shortOrderCode(row.order_no)
   } catch {
     errorMessage.value = t('expertBookings.notFound')
   } finally {
@@ -86,9 +87,11 @@ async function confirmCancel() {
     booking.value = await cancelAdminExpertBooking(
       config.public.apiBase,
       token,
-      booking.value.id
+      booking.value.id,
+      cancelReason.value
     )
     cancelOpen.value = false
+    cancelReason.value = ''
   } catch {
     errorMessage.value = t('expertBookings.actions.cancelFailed')
   } finally {
@@ -128,12 +131,6 @@ async function confirmCancel() {
           >
             {{ $t(`expertBookings.status.${booking.status}`) }}
           </UBadge>
-          <UBadge
-            color="success"
-            variant="subtle"
-          >
-            {{ $t(`expertBookings.payment.${booking.payment_status}`) }}
-          </UBadge>
         </div>
 
         <dl class="grid gap-3 text-sm md:grid-cols-2">
@@ -150,7 +147,7 @@ async function confirmCancel() {
               {{ $t('expertBookings.fields.need') }}
             </dt>
             <dd class="mt-1 text-highlighted">
-              {{ booking.need_description }}
+              {{ booking.requirement_note }}
             </dd>
           </div>
           <div>
@@ -159,18 +156,104 @@ async function confirmCancel() {
             </dt>
             <dd class="mt-1 text-highlighted">
               {{
-                booking.confirmed_at
-                  ? formatLocalDateTime(booking.confirmed_at, { style: 'full' })
+                booking.confirmed_starts_at
+                  ? formatLocalDateTime(booking.confirmed_starts_at, { style: 'full' })
                   : $t('expertBookings.fields.notConfirmed')
               }}
+              <span
+                v-if="booking.confirmed_ends_at"
+                class="text-muted"
+              >
+                – {{ formatLocalDateTime(booking.confirmed_ends_at, { style: 'list' }) }}
+              </span>
             </dd>
           </div>
           <div>
             <dt class="text-muted">
-              {{ $t('expertBookings.fields.expert') }}
+              {{ $t('expertBookings.fields.contact') }}
             </dt>
             <dd class="mt-1 text-highlighted">
-              {{ booking.annotated_expert_name || $t('expertBookings.fields.expertHint') }}
+              <div>{{ booking.contact_name }}</div>
+              <div>{{ booking.contact_phone }} · {{ booking.contact_email }}</div>
+              <div v-if="booking.contact_line">
+                LINE: {{ booking.contact_line }}
+              </div>
+            </dd>
+          </div>
+          <div v-if="booking.attachments.length">
+            <dt class="text-muted">
+              {{ $t('expertBookings.fields.attachments') }}
+            </dt>
+            <dd class="mt-1 text-highlighted">
+              <ul class="list-inside list-disc">
+                <li
+                  v-for="file in booking.attachments"
+                  :key="file.key"
+                >
+                  {{ file.filename }}
+                </li>
+              </ul>
+            </dd>
+          </div>
+          <div v-if="booking.product_picks.length">
+            <dt class="text-muted">
+              {{ $t('expertBookings.fields.productPicks') }}
+            </dt>
+            <dd class="mt-1 text-highlighted">
+              <ul class="space-y-1">
+                <li
+                  v-for="pick in booking.product_picks"
+                  :key="pick.id"
+                >
+                  {{ pick.sellable_item_name || pick.sellable_item_code || pick.sellable_item_id }}
+                  — {{ pick.reason }}
+                </li>
+              </ul>
+            </dd>
+          </div>
+          <div v-if="booking.member_profile">
+            <dt class="text-muted">
+              {{ $t('expertBookings.fields.memberProfile') }}
+            </dt>
+            <dd class="mt-1 text-highlighted">
+              {{ booking.member_profile.sex || '—' }}
+              · {{ booking.member_profile.birth_year || '—' }}
+              · {{ booking.member_profile.height_cm || '—' }}cm
+              · {{ booking.member_profile.weight_kg || '—' }}kg
+              <div
+                v-if="booking.member_profile.goals.length"
+                class="text-xs text-muted"
+              >
+                goals: {{ booking.member_profile.goals.join('、') }}
+              </div>
+            </dd>
+          </div>
+          <div v-if="booking.service_record">
+            <dt class="text-muted">
+              {{ $t('expertBookings.fields.serviceRecord') }}
+            </dt>
+            <dd class="mt-1 text-highlighted">
+              <div>{{ booking.service_record.service_method }} · {{ formatLocalDateTime(booking.service_record.served_at, { style: 'full' }) }}</div>
+              <div class="text-xs text-muted">
+                {{ booking.service_record.content }}
+              </div>
+              <div
+                v-if="booking.service_record.filled_by_operator_id"
+                class="mt-1 text-xs text-muted"
+              >
+                filled_by={{ booking.service_record.filled_by_operator_id }}
+                · filled_at={{ booking.service_record.filled_at
+                  ? formatLocalDateTime(booking.service_record.filled_at, { style: 'list' })
+                  : '—' }}
+              </div>
+            </dd>
+          </div>
+          <div v-if="booking.cancel_reason">
+            <dt class="text-muted">
+              {{ $t('expertBookings.fields.cancelReason') }}
+            </dt>
+            <dd class="mt-1 text-highlighted">
+              {{ booking.cancel_reason }}
             </dd>
           </div>
         </dl>
@@ -225,6 +308,12 @@ async function confirmCancel() {
           <p class="text-sm text-muted">
             {{ $t('expertBookings.actions.confirmCancelBody') }}
           </p>
+          <UFormField :label="$t('expertBookings.fields.cancelReasonOptional')">
+            <UInput
+              v-model="cancelReason"
+              class="w-full"
+            />
+          </UFormField>
           <div class="flex justify-end gap-2">
             <UButton
               variant="ghost"

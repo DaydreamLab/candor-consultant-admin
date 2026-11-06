@@ -5,10 +5,9 @@ import {
   expertWeekDates,
   expertWeekStartMonday
 } from '~/utils/expert-booking-calendar'
-import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 import type {
-  ExpertCalendarAppointmentBlock,
+  ExpertCalendarScheduledBooking,
   ExpertCalendarSnapshot
 } from '~/utils/expert-booking-types'
 
@@ -17,12 +16,12 @@ const { t } = useI18n()
 const config = useRuntimeConfig()
 
 const view = ref<'week' | 'day'>('week')
-const anchor = ref(expertWeekStartMonday('2026-11-12'))
+const anchor = ref(expertWeekStartMonday('2026-04-10'))
 const pending = ref(true)
 const errorMessage = ref('')
 const snapshot = ref<ExpertCalendarSnapshot | null>(null)
 const selectedExpertIds = ref<string[]>([])
-const selectedAppointment = ref<ExpertCalendarAppointmentBlock | null>(null)
+const selectedBooking = ref<ExpertCalendarScheduledBooking | null>(null)
 
 const weekStart = computed(() => expertWeekStartMonday(anchor.value))
 const dates = computed(() => {
@@ -38,6 +37,19 @@ const rangeLabel = computed(() => {
   }
   const end = expertAddDaysToDateString(weekStart.value, 6)
   return `${weekStart.value.replaceAll('-', ' / ')} - ${end.slice(5).replace('-', ' / ')}`
+})
+
+const expertColorMap = computed(() => {
+  const palette = ['#0f766e', '#0369a1', '#a16207', '#be123c', '#7c3aed']
+  const map = new Map<string, string>()
+  ;(snapshot.value?.experts || []).forEach((expert, index) => {
+    map.set(expert.id, palette[index % palette.length]!)
+  })
+  return map
+})
+
+watch(dates, () => {
+  void load()
 })
 
 onMounted(() => {
@@ -73,7 +85,7 @@ function shift(delta: number) {
 }
 
 function goToday() {
-  anchor.value = '2026-11-12'
+  anchor.value = '2026-04-10'
 }
 
 function toggleExpert(id: string, checked: boolean | 'indeterminate') {
@@ -171,9 +183,9 @@ function toggleExpert(id: string, checked: boolean | 'indeterminate') {
         />
         <span
           class="inline-block size-2.5 rounded-sm"
-          :style="{ backgroundColor: expert.color }"
+          :style="{ backgroundColor: expertColorMap.get(expert.id) }"
         />
-        {{ expert.name }}
+        {{ expert.name || expert.email || expert.id }}
       </label>
       <span class="inline-flex items-center gap-2 text-muted">
         <span class="inline-block size-3 rounded-sm bg-success/30" />
@@ -204,50 +216,40 @@ function toggleExpert(id: string, checked: boolean | 'indeterminate') {
         :dates="dates"
         :experts="snapshot.experts"
         :selected-expert-ids="selectedExpertIds"
-        :weekly-rules="snapshot.weekly_rules"
+        :weekly="snapshot.weekly"
         :day-overrides="snapshot.day_overrides"
-        :appointments="snapshot.appointments"
-        @select-appointment="selectedAppointment = $event"
+        :scheduled-bookings="snapshot.scheduled_bookings"
+        highlight-overrides
+        @select-booking="selectedBooking = $event"
       />
     </div>
 
     <UModal
-      :open="Boolean(selectedAppointment)"
-      @update:open="(open) => { if (!open) selectedAppointment = null }"
+      :open="Boolean(selectedBooking)"
+      @update:open="(open) => { if (!open) selectedBooking = null }"
     >
       <template #content>
         <div
-          v-if="selectedAppointment"
+          v-if="selectedBooking"
           class="space-y-3 p-5"
         >
           <h2 class="text-lg font-semibold">
-            {{ selectedAppointment.member_name }}
+            {{ selectedBooking.contact_name || selectedBooking.id }}
           </h2>
           <p class="text-sm text-muted">
-            {{ selectedAppointment.date }}
-            {{ selectedAppointment.start_time }}-{{ selectedAppointment.end_time }}
-            · {{ selectedAppointment.expert_name }}
+            {{ selectedBooking.confirmed_starts_at }}
+            <span v-if="selectedBooking.confirmed_ends_at">
+              – {{ selectedBooking.confirmed_ends_at }}
+            </span>
           </p>
           <UButton
             color="primary"
-            :to="localePath(`/bookings/${encodeURIComponent(selectedAppointment.booking_id)}`)"
+            :to="localePath(`/bookings/${encodeURIComponent(selectedBooking.id)}`)"
           >
             {{ $t('expertBookings.details') }}
           </UButton>
         </div>
       </template>
     </UModal>
-
-    <p
-      v-if="snapshot?.last_modified_at"
-      class="mt-3 text-xs text-muted"
-    >
-      {{
-        $t('expertStation.calendar.lastModified', {
-          name: snapshot.last_modified_by_name || '—',
-          at: formatLocalDateTime(snapshot.last_modified_at, { style: 'list' })
-        })
-      }}
-    </p>
   </div>
 </template>

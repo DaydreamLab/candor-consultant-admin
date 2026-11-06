@@ -7,7 +7,7 @@ import {
 import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
 import type {
-  ExpertBookingProductReason,
+  ExpertBookingProductPickDraft,
   ExpertBookingSellableOption
 } from '~/utils/expert-booking-types'
 
@@ -19,7 +19,7 @@ const crumbLabel = useExpertBookingCrumbLabel()
 
 const bookingId = computed(() => String(route.params.id ?? ''))
 const options = ref<ExpertBookingSellableOption[]>([])
-const selected = ref<ExpertBookingProductReason[]>([])
+const selected = ref<ExpertBookingProductPickDraft[]>([])
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
@@ -47,9 +47,14 @@ async function load(id: string) {
       getAdminExpertBooking(config.public.apiBase, token, id),
       listExpertBookingSellableOptions(config.public.apiBase, token)
     ])
-    crumbLabel.value = shortOrderCode(booking.order_code)
+    crumbLabel.value = shortOrderCode(booking.order_no)
     options.value = sellables
-    selected.value = booking.product_reasons.map(row => ({ ...row }))
+    selected.value = booking.product_picks.map(row => ({
+      sellable_item_id: row.sellable_item_id,
+      name_zh: row.sellable_item_name || row.sellable_item_code || row.sellable_item_id,
+      name_en: row.sellable_item_name || '',
+      reason: row.reason
+    }))
   } catch {
     errorMessage.value = t('expertBookings.notFound')
   } finally {
@@ -69,13 +74,21 @@ async function onSave() {
     if (!token) {
       throw new Error('no_token')
     }
-    const row = await putAdminExpertBookingProductPicks(
+    const picks = await putAdminExpertBookingProductPicks(
       config.public.apiBase,
       token,
       bookingId.value,
-      selected.value
+      selected.value.map(row => ({
+        sellable_item_id: row.sellable_item_id,
+        reason: row.reason
+      }))
     )
-    selected.value = row.product_reasons.map(r => ({ ...r }))
+    selected.value = picks.map(row => ({
+      sellable_item_id: row.sellable_item_id,
+      name_zh: row.sellable_item_name || row.sellable_item_code || row.sellable_item_id,
+      name_en: row.sellable_item_name || '',
+      reason: row.reason
+    }))
     okMessage.value = t('expertBookings.selections.saved')
   } catch {
     errorMessage.value = t('expertBookings.selections.saveFailed')

@@ -571,19 +571,27 @@
       "member": "Member",
       "status": "Status",
       "confirmedAt": "Confirmed",
+      "contact": "Contact",
       "expert": "Expert"
     },
     "fields": {
       "preferredSlots": "Preferred slots",
       "need": "Needs",
       "confirmedAt": "Confirmed time",
+      "contact": "Contact",
+      "attachments": "Attachments",
+      "productPicks": "Product picks",
+      "memberProfile": "Member profile",
+      "serviceRecord": "Service record",
+      "cancelReason": "Cancel reason",
+      "cancelReasonOptional": "Cancel reason (optional)",
       "expert": "Annotated expert",
       "payment": "Payment",
       "notConfirmed": "Not confirmed",
       "expertHint": "No auto-assignment; shows expert-station / calendar annotation"
     },
     "status": {
-      "pending_schedule": "Pending",
+      "awaiting_schedule": "Awaiting schedule",
       "scheduled": "Scheduled",
       "completed": "Completed",
       "cancelled": "Cancelled"
@@ -2384,23 +2392,28 @@
       "complete": "Mark complete",
       "completedBanner": "Marked complete",
       "noCancel": "Experts cannot cancel; ops cancel in admin.",
-      "paidLine": "Paid {paid} · NT${amount}"
+      "paidLine": "Paid {paid} · NT${amount}",
+      "paidAt": "Paid {paid}",
+      "conditions": "Conditions"
     },
     "confirm": {
       "title": "Confirm / reschedule",
       "field": "Confirmed service time",
+      "fieldStart": "Confirmed start",
+      "fieldEnd": "Confirmed end (optional)",
       "hint": "Reschedule only updates confirmed time; status stays Scheduled.",
       "save": "Save",
       "cancel": "Cancel"
     },
     "serviceRecord": {
       "title": "Service record (hidden from member)",
+      "servedAt": "Actual service time",
       "actualTime": "Actual service time",
       "method": "Service method",
       "methodHint": "Phone, online meeting, etc.",
       "content": "Content",
       "salesContent": "Sales notes",
-      "salesContentPlaceholder": "Suggested products; or「無」",
+      "salesContentPlaceholder": "Suggested products; empty sends「無」",
       "duration": "Duration",
       "durationHint": "Minutes",
       "salesResult": "Sales result",
@@ -2408,9 +2421,12 @@
       "dealHint": "Separate from NT$6,000 fee; does not create an order",
       "followUp": "Follow-up",
       "attachment": "Attachment",
+      "removeAttachment": "Remove",
+      "uploadFailed": "Attachment upload failed",
+      "required": "served_at, service_method, and content are required",
       "optional": "Optional",
       "save": "Save service record",
-      "meta": "System records author and time",
+      "meta": "System records filled_by_operator_id / filled_at",
       "methods": {
         "phone": "Phone",
         "online_meeting": "Online meeting",

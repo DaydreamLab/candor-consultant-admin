@@ -26,10 +26,10 @@ async function load() {
       throw new Error('no_token')
     }
     const result = await listAdminExpertBookings(config.public.apiBase, token, {
-      page: 1,
-      page_size: 50
+      limit: 50,
+      offset: 0
     })
-    rows.value = result.items
+    rows.value = result.expert_bookings
   } catch {
     errorMessage.value = t('expertBookings.failed')
     rows.value = []
@@ -39,10 +39,10 @@ async function load() {
 }
 
 function confirmedLabel(row: ExpertBookingListItem) {
-  if (!row.confirmed_at) {
+  if (!row.confirmed_starts_at) {
     return '—'
   }
-  return formatLocalDateTime(row.confirmed_at, { style: 'list' })
+  return formatLocalDateTime(row.confirmed_starts_at, { style: 'list' })
 }
 </script>
 
@@ -91,7 +91,7 @@ function confirmedLabel(row: ExpertBookingListItem) {
               {{ $t('expertBookings.columns.confirmedAt') }}
             </th>
             <th class="px-4 py-3 font-medium">
-              {{ $t('expertBookings.columns.expert') }}
+              {{ $t('expertBookings.columns.contact') }}
             </th>
             <th class="px-4 py-3 font-medium" />
           </tr>
@@ -103,11 +103,11 @@ function confirmedLabel(row: ExpertBookingListItem) {
             class="border-t border-default"
           >
             <td class="px-4 py-3 font-mono text-xs">
-              {{ shortOrderCode(row.order_code) }}
+              {{ shortOrderCode(row.order_no) }}
             </td>
             <td class="px-4 py-3">
               <div class="font-medium text-highlighted">
-                {{ row.member_name }}
+                {{ row.contact_name }}
               </div>
               <div class="text-xs text-muted">
                 {{ preferredSlotsLabel(row.preferred_slots) }}
@@ -124,8 +124,12 @@ function confirmedLabel(row: ExpertBookingListItem) {
             <td class="px-4 py-3">
               {{ confirmedLabel(row) }}
             </td>
-            <td class="px-4 py-3">
-              {{ row.annotated_expert_name || '—' }}
+            <td class="px-4 py-3 text-xs text-muted">
+              <div>{{ row.contact_phone }}</div>
+              <div>{{ row.contact_email }}</div>
+              <div v-if="row.contact_line">
+                LINE: {{ row.contact_line }}
+              </div>
             </td>
             <td class="px-4 py-3 text-right">
               <UButton

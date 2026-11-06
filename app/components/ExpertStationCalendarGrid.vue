@@ -1,43 +1,49 @@
 <script setup lang="ts">
 import {
-  appointmentsForDate,
+  expertHhmmToMinute,
+  expertMinuteToHhmm,
   halfHourSlots,
-  isSlotAvailable
+  isSlotAvailable,
+  scheduledBookingsForDate
 } from '~/utils/expert-booking-calendar'
 import type {
-  ExpertCalendarAppointmentBlock,
+  ExpertCalendarDayOverride,
   ExpertCalendarExpert,
-  ExpertDayAvailabilityOverride,
-  ExpertWeeklyAvailabilityRule
+  ExpertCalendarScheduledBooking,
+  ExpertCalendarWeeklySlot
 } from '~/utils/expert-booking-types'
 
 const props = defineProps<{
   dates: string[]
   experts: ExpertCalendarExpert[]
   selectedExpertIds: string[]
-  weeklyRules: ExpertWeeklyAvailabilityRule[]
-  dayOverrides: ExpertDayAvailabilityOverride[]
-  appointments: ExpertCalendarAppointmentBlock[]
-  /** Highlight day columns that have overrides for any selected expert */
+  weekly: ExpertCalendarWeeklySlot[]
+  dayOverrides: ExpertCalendarDayOverride[]
+  scheduledBookings: ExpertCalendarScheduledBooking[]
   highlightOverrides?: boolean
 }>()
 
 const emit = defineEmits<{
-  selectAppointment: [block: ExpertCalendarAppointmentBlock]
+  selectBooking: [booking: ExpertCalendarScheduledBooking]
 }>()
 
 const slots = halfHourSlots(9, 18)
 
-function expertColor(expertId: string) {
-  return props.experts.find(e => e.id === expertId)?.color || '#64748b'
-}
+const expertColorMap = computed(() => {
+  const palette = ['#0f766e', '#0369a1', '#a16207', '#be123c', '#7c3aed']
+  const map = new Map<string, string>()
+  props.experts.forEach((expert, index) => {
+    map.set(expert.id, palette[index % palette.length]!)
+  })
+  return map
+})
 
 function dayHasOverride(date: string) {
   if (!props.highlightOverrides) {
     return false
   }
   return props.dayOverrides.some(
-    o => o.date === date && props.selectedExpertIds.includes(o.expert_id)
+    o => o.override_date === date && props.selectedExpertIds.includes(o.expert_operator_id)
   )
 }
 
@@ -46,27 +52,42 @@ function availableInAnySelected(date: string, slot: string) {
     id,
     date,
     slot,
-    props.weeklyRules,
+    props.weekly,
     props.dayOverrides
   ))
 }
 
 function blocksFor(date: string, slot: string) {
-  return appointmentsForDate(props.appointments, date, props.selectedExpertIds)
+  const minute = expertHhmmToMinute(slot)
+  return scheduledBookingsForDate(props.scheduledBookings, date)
     .filter((block) => {
-      const start = block.start_time
-      return start === slot
+      if (!block.confirmed_starts_at) {
+        return false
+      }
+      const startMinute = expertHhmmToMinute(block.confirmed_starts_at.slice(11, 16))
+      return startMinute === minute
     })
 }
 
-function blockStyle(block: ExpertCalendarAppointmentBlock) {
-  const start = Number(block.start_time.slice(0, 2)) * 60 + Number(block.start_time.slice(3, 5))
-  const end = Number(block.end_time.slice(0, 2)) * 60 + Number(block.end_time.slice(3, 5))
+function blockStyle(block: ExpertCalendarScheduledBooking) {
+  const start = block.confirmed_starts_at
+    ? expertHhmmToMinute(block.confirmed_starts_at.slice(11, 16))
+    : 0
+  const end = block.confirmed_ends_at
+    ? expertHhmmToMinute(block.confirmed_ends_at.slice(11, 16))
+    : start + 30
   const span = Math.max(1, Math.round((end - start) / 30))
+  const color = expertColorMap.value.get(block.confirmed_by_operator_id || '') || '#64748b'
   return {
-    backgroundColor: expertColor(block.expert_id),
+    backgroundColor: color,
     gridRow: `span ${span}`
   }
+}
+
+function blockTimeLabel(block: ExpertCalendarScheduledBooking) {
+  const start = block.confirmed_starts_at?.slice(11, 16) || '—'
+  const end = block.confirmed_ends_at?.slice(11, 16) || expertMinuteToHhmm(expertHhmmToMinute(start) + 30)
+  return `${start}-${end}`
 }
 
 function dayLabel(date: string) {
@@ -114,18 +135,15 @@ function dayLabel(date: string) {
         >
           <button
             v-for="block in blocksFor(date, slot)"
-            :key="`${block.booking_id}-${block.start_time}`"
+            :key="block.id"
             type="button"
             class="absolute inset-x-1 top-1 z-10 rounded px-1 py-1 text-left text-[11px] leading-tight text-white shadow-sm"
             :style="blockStyle(block)"
-            @click="emit('selectAppointment', block)"
+            @click="emit('selectBooking', block)"
           >
-            <div>{{ block.start_time }}-{{ block.end_time }}</div>
+            <div>{{ blockTimeLabel(block) }}</div>
             <div class="truncate font-medium">
-              {{ block.member_name }}
-            </div>
-            <div class="truncate opacity-90">
-              {{ block.expert_name }}
+              {{ block.contact_name || block.id }}
             </div>
           </button>
         </div>

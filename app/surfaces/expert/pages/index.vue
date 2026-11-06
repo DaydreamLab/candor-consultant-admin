@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  getAdminExpertBooking,
   listExpertStationBookings,
   pinExpertStationBooking,
   statusBadgeColor
@@ -7,7 +8,7 @@ import {
 import { preferredSlotsLabel, shortOrderCode } from '~/utils/expert-booking-calendar'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
-import type { ExpertBookingLastSeen, ExpertBookingListItem } from '~/utils/expert-booking-types'
+import type { ExpertBookingListItem } from '~/utils/expert-booking-types'
 
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -20,10 +21,10 @@ const pending = ref(true)
 const errorMessage = ref('')
 const rows = ref<ExpertBookingListItem[]>([])
 const total = ref(0)
-const lastSeen = ref<ExpertBookingLastSeen | null>(null)
+const lastSeenBookingId = ref<string | null>(null)
+const lastSeenLabel = ref('')
 
 const pages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
-
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
 
 watch(page, () => {
@@ -46,11 +47,25 @@ async function load() {
       config.public.apiBase,
       token,
       expertId.value,
-      { page: page.value, page_size: pageSize }
+      { limit: pageSize, offset: (page.value - 1) * pageSize }
     )
-    rows.value = result.items
+    rows.value = result.expert_bookings
     total.value = result.total
-    lastSeen.value = result.last_seen
+    lastSeenBookingId.value = result.last_seen_booking_id
+    if (result.last_seen_booking_id) {
+      try {
+        const seen = await getAdminExpertBooking(
+          config.public.apiBase,
+          token,
+          result.last_seen_booking_id
+        )
+        lastSeenLabel.value = `${shortOrderCode(seen.order_no)} · ${seen.contact_name} (${t(`expertBookings.status.${seen.status}`)})`
+      } catch {
+        lastSeenLabel.value = result.last_seen_booking_id
+      }
+    } else {
+      lastSeenLabel.value = ''
+    }
   } catch {
     errorMessage.value = t('expertBookings.failed')
   } finally {
@@ -73,21 +88,12 @@ async function togglePin(row: ExpertBookingListItem) {
   )
   row.pinned = next
   rows.value = [...rows.value].sort((a, b) => {
-    if (a.pinned !== b.pinned) {
+    if (Boolean(a.pinned) !== Boolean(b.pinned)) {
       return a.pinned ? -1 : 1
     }
-    return b.paid_at.localeCompare(a.paid_at)
+    return (b.paid_at || '').localeCompare(a.paid_at || '')
   })
 }
-
-const lastSeenLabel = computed(() => {
-  if (!lastSeen.value) {
-    return ''
-  }
-  const code = shortOrderCode(lastSeen.value.order_code)
-  const status = t(`expertBookings.status.${lastSeen.value.status}`)
-  return `${code} · ${lastSeen.value.member_name} (${status})`
-})
 </script>
 
 <template>
@@ -116,7 +122,7 @@ const lastSeenLabel = computed(() => {
     </div>
 
     <div
-      v-if="lastSeen"
+      v-if="lastSeenBookingId"
       class="mt-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm"
     >
       <i18n-t
@@ -126,7 +132,7 @@ const lastSeenLabel = computed(() => {
         <template #label>
           <NuxtLink
             class="font-medium text-primary underline"
-            :to="localePath(`/bookings/${encodeURIComponent(lastSeen.booking_id)}`)"
+            :to="localePath(`/bookings/${encodeURIComponent(lastSeenBookingId)}`)"
           >
             {{ lastSeenLabel }}
           </NuxtLink>
@@ -189,10 +195,10 @@ const lastSeenLabel = computed(() => {
               />
             </td>
             <td class="px-3 py-3 font-mono text-xs">
-              {{ shortOrderCode(row.order_code) }}
+              {{ shortOrderCode(row.order_no) }}
             </td>
             <td class="px-3 py-3 font-medium">
-              {{ row.member_name }}
+              {{ row.contact_name }}
             </td>
             <td class="px-3 py-3 text-muted">
               {{ preferredSlotsLabel(row.preferred_slots) }}
@@ -207,8 +213,8 @@ const lastSeenLabel = computed(() => {
             </td>
             <td class="px-3 py-3">
               {{
-                row.confirmed_at
-                  ? formatLocalDateTime(row.confirmed_at, { style: 'list' })
+                row.confirmed_starts_at
+                  ? formatLocalDateTime(row.confirmed_starts_at, { style: 'list' })
                   : '—'
               }}
             </td>

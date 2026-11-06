@@ -6,28 +6,24 @@ import {
   putExpertCalendarWeekly
 } from '~/utils/expert-booking-api'
 import {
-  dragSelectSlotsSameDay,
-  effectiveAvailabilityForDate,
+  dragSelectSlotMinutes,
+  effectiveSlotsForDate,
+  expertHhmmToMinute,
+  expertMinuteToHhmm,
   expertWeekDates,
   expertWeekStartMonday,
   halfHourSlots,
-  mergeHalfHourStarts,
-  slotCovered,
   weekdayOfDate
 } from '~/utils/expert-booking-calendar'
-import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
-import type {
-  ExpertCalendarSnapshot,
-  ExpertWeeklyAvailabilityRule
-} from '~/utils/expert-booking-types'
+import type { ExpertCalendarSnapshot } from '~/utils/expert-booking-types'
 
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
 const session = useSessionStore()
 
-const weekStart = ref(expertWeekStartMonday('2026-11-12'))
+const weekStart = ref(expertWeekStartMonday('2026-04-10'))
 const dates = computed(() => expertWeekDates(weekStart.value))
 const slots = halfHourSlots(9, 18)
 const snapshot = ref<ExpertCalendarSnapshot | null>(null)
@@ -36,16 +32,17 @@ const weeklyRepeat = ref(true)
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
-const selectedOverrideDate = ref<string | null>('2026-11-13')
+const selectedOverrideDate = ref<string | null>('2026-04-10')
 
 const dragDay = ref<string | null>(null)
-const dragSlots = ref<string[]>([])
+const dragMinutes = ref<number[]>([])
 const dragStart = ref<string | null>(null)
 
-const operatorName = computed(() => session.operator?.name || session.operator?.email || '專家')
-
 const expertItems = computed(() =>
-  (snapshot.value?.experts || []).map(e => ({ label: e.name, value: e.id }))
+  (snapshot.value?.experts || []).map(e => ({
+    label: e.name || e.email || e.id,
+    value: e.id
+  }))
 )
 
 const override = computed(() => {
@@ -53,7 +50,7 @@ const override = computed(() => {
     return null
   }
   return snapshot.value.day_overrides.find(
-    o => o.expert_id === expertId.value && o.date === selectedOverrideDate.value
+    o => o.expert_operator_id === expertId.value && o.override_date === selectedOverrideDate.value
   ) || null
 })
 
@@ -62,20 +59,21 @@ const weeklyTemplateLabel = computed(() => {
     return '—'
   }
   const weekday = weekdayOfDate(selectedOverrideDate.value)
-  const rules = snapshot.value.weekly_rules.filter(
-    r => r.expert_id === expertId.value && r.weekday === weekday
-  )
-  if (!rules.length) {
+  const minutes = snapshot.value.weekly
+    .filter(r => r.expert_operator_id === expertId.value && r.weekday === weekday)
+    .map(r => r.slot_start_minute)
+    .sort((a, b) => a - b)
+  if (!minutes.length) {
     return '—'
   }
-  return rules.map(r => `${r.start_time}-${r.end_time}`).join('；')
+  return minutes.map(expertMinuteToHhmm).join('；')
 })
 
 const actualTodayLabel = computed(() => {
   if (!override.value?.slots.length) {
     return '—'
   }
-  return override.value.slots.map(s => `${s.start_time}-${s.end_time}`).join('；')
+  return [...override.value.slots].sort((a, b) => a - b).map(expertMinuteToHhmm).join('；')
 })
 
 onMounted(() => {
@@ -90,7 +88,10 @@ async function load() {
     if (!token) {
       throw new Error('no_token')
     }
-    const data = await getExpertCalendar(config.public.apiBase, token)
+    const data = await getExpertCalendar(config.public.apiBase, token, {
+      from: dates.value[0]!,
+      to: dates.value[dates.value.length - 1]!
+    })
     snapshot.value = data
     if (!expertId.value) {
       expertId.value = session.operator?.id && data.experts.some(e => e.id === session.operator?.id)
@@ -108,22 +109,22 @@ function cellActive(date: string, slot: string) {
   if (!snapshot.value || !expertId.value) {
     return false
   }
-  if (dragDay.value === date && dragSlots.value.includes(slot)) {
+  const minute = expertHhmmToMinute(slot)
+  if (dragDay.value === date && dragMinutes.value.includes(minute)) {
     return true
   }
-  const { slots: ranges } = effectiveAvailabilityForDate(
+  return effectiveSlotsForDate(
     expertId.value,
     date,
-    snapshot.value.weekly_rules,
+    snapshot.value.weekly,
     snapshot.value.day_overrides
-  )
-  return ranges.some(r => slotCovered(r.start_time, r.end_time, slot))
+  ).slots.includes(minute)
 }
 
 function cellIsOverride(date: string) {
   return Boolean(
     snapshot.value?.day_overrides.some(
-      o => o.expert_id === expertId.value && o.date === date
+      o => o.expert_operator_id === expertId.value && o.override_date === date
     )
   )
 }
@@ -132,7 +133,7 @@ function onPointerDown(date: string, slot: string, event: PointerEvent) {
   event.preventDefault()
   dragDay.value = date
   dragStart.value = slot
-  dragSlots.value = [slot]
+  dragMinutes.value = [expertHhmmToMinute(slot)]
   selectedOverrideDate.value = date
 }
 
@@ -140,22 +141,32 @@ function onPointerEnter(date: string, slot: string) {
   if (!dragDay.value || !dragStart.value) {
     return
   }
-  // C: drag must not cross days
   if (date !== dragDay.value) {
     return
   }
-  dragSlots.value = dragSelectSlotsSameDay(date, dragStart.value, slot).slots
+  dragMinutes.value = dragSelectSlotMinutes(dragStart.value, slot)
+}
+
+async function refreshSnapshot() {
+  const token = readOperatorToken()
+  if (!token) {
+    return
+  }
+  snapshot.value = await getExpertCalendar(config.public.apiBase, token, {
+    from: dates.value[0]!,
+    to: dates.value[dates.value.length - 1]!,
+    expert_operator_id: expertId.value || null
+  })
 }
 
 async function onPointerUp() {
-  if (!dragDay.value || !dragSlots.value.length || !snapshot.value || !expertId.value) {
+  if (!dragDay.value || !dragMinutes.value.length || !snapshot.value || !expertId.value) {
     dragDay.value = null
     dragStart.value = null
-    dragSlots.value = []
+    dragMinutes.value = []
     return
   }
   const date = dragDay.value
-  const ranges = mergeHalfHourStarts(dragSlots.value)
   const token = readOperatorToken()
   if (!token) {
     return
@@ -164,42 +175,33 @@ async function onPointerUp() {
   try {
     if (weeklyRepeat.value) {
       const weekday = weekdayOfDate(date)
-      const kept = snapshot.value.weekly_rules.filter(
-        r => !(r.expert_id === expertId.value && r.weekday === weekday)
+      const kept = snapshot.value.weekly.filter(
+        r => !(r.expert_operator_id === expertId.value && r.weekday === weekday)
       )
-      const added: ExpertWeeklyAvailabilityRule[] = ranges.map(r => ({
-        expert_id: expertId.value,
-        weekday,
-        start_time: r.start_time,
-        end_time: r.end_time
-      }))
-      snapshot.value = await putExpertCalendarWeekly(
-        config.public.apiBase,
-        token,
-        expertId.value,
-        operatorName.value,
-        [...kept.filter(r => r.expert_id === expertId.value), ...added]
-      )
+      const nextSlots = [
+        ...kept
+          .filter(r => r.expert_operator_id === expertId.value)
+          .map(r => ({ weekday: r.weekday, slot_start_minute: r.slot_start_minute })),
+        ...dragMinutes.value.map(slot_start_minute => ({ weekday, slot_start_minute }))
+      ]
+      await putExpertCalendarWeekly(config.public.apiBase, token, {
+        expert_operator_id: expertId.value,
+        slots: nextSlots
+      })
     } else {
-      snapshot.value = await putExpertCalendarDayOverride(
-        config.public.apiBase,
-        token,
-        {
-          expert_id: expertId.value,
-          date,
-          slots: ranges,
-          updated_by_operator_id: session.operator?.id || expertId.value,
-          updated_by_name: operatorName.value,
-          updated_at: new Date().toISOString()
-        }
-      )
+      await putExpertCalendarDayOverride(config.public.apiBase, token, {
+        expert_operator_id: expertId.value,
+        override_date: date,
+        slots: [...dragMinutes.value]
+      })
     }
+    await refreshSnapshot()
   } catch {
     errorMessage.value = t('expertBookings.failed')
   } finally {
     dragDay.value = null
     dragStart.value = null
-    dragSlots.value = []
+    dragMinutes.value = []
   }
 }
 
@@ -213,13 +215,11 @@ async function restoreWeekly() {
   }
   saving.value = true
   try {
-    snapshot.value = await deleteExpertCalendarDayOverride(
-      config.public.apiBase,
-      token,
-      expertId.value,
-      selectedOverrideDate.value,
-      operatorName.value
-    )
+    await deleteExpertCalendarDayOverride(config.public.apiBase, token, {
+      expert_operator_id: expertId.value,
+      override_date: selectedOverrideDate.value
+    })
+    await refreshSnapshot()
   } catch {
     errorMessage.value = t('expertBookings.failed')
   } finally {
@@ -280,7 +280,7 @@ function dayLabel(date: string) {
       <span>
         {{
           $t('expertStation.calendar.overrideBanner', {
-            date: dayLabel(override.date)
+            date: dayLabel(override.override_date)
           })
         }}
       </span>
@@ -353,9 +353,9 @@ function dayLabel(date: string) {
               type="button"
               class="min-h-9 border-l border-t border-default"
               :class="{
-                'bg-primary/25': cellActive(date, slot) && !cellIsOverride(date) && !(dragDay === date && dragSlots.includes(slot)),
-                'bg-warning/30': cellActive(date, slot) && cellIsOverride(date) && !(dragDay === date && dragSlots.includes(slot)),
-                'bg-orange-200/50 outline outline-dashed outline-orange-400': dragDay === date && dragSlots.includes(slot)
+                'bg-primary/25': cellActive(date, slot) && !cellIsOverride(date) && !(dragDay === date && dragMinutes.includes(expertHhmmToMinute(slot))),
+                'bg-warning/30': cellActive(date, slot) && cellIsOverride(date) && !(dragDay === date && dragMinutes.includes(expertHhmmToMinute(slot))),
+                'bg-orange-200/50 outline outline-dashed outline-orange-400': dragDay === date && dragMinutes.includes(expertHhmmToMinute(slot))
               }"
               @pointerdown="onPointerDown(date, slot, $event)"
               @pointerenter="onPointerEnter(date, slot)"
@@ -410,17 +410,5 @@ function dayLabel(date: string) {
         </UButton>
       </aside>
     </div>
-
-    <p
-      v-if="snapshot?.last_modified_at"
-      class="mt-3 text-xs text-muted"
-    >
-      {{
-        $t('expertStation.calendar.lastModified', {
-          name: snapshot.last_modified_by_name || '—',
-          at: formatLocalDateTime(snapshot.last_modified_at, { style: 'list' })
-        })
-      }}
-    </p>
   </div>
 </template>

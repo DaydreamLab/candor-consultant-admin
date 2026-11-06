@@ -2,14 +2,17 @@
 import {
   completeExpertStationBooking,
   getExpertStationBooking,
+  listExpertStationBookingConversations,
   pinExpertStationBooking,
   statusBadgeColor
 } from '~/utils/expert-booking-api'
-import { preferredSlotsLabel, shortOrderCode } from '~/utils/expert-booking-calendar'
+import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
-import { money } from '~/utils/format'
 import { readOperatorToken } from '~/utils/operator-session'
-import type { ExpertBookingDetail } from '~/utils/expert-booking-types'
+import type {
+  ExpertBookingConversation,
+  ExpertBookingDetail
+} from '~/utils/expert-booking-types'
 
 const route = useRoute()
 const localePath = useLocalePath()
@@ -19,6 +22,7 @@ const session = useSessionStore()
 
 const bookingId = computed(() => String(route.params.id ?? ''))
 const booking = ref<ExpertBookingDetail | null>(null)
+const conversations = ref<ExpertBookingConversation[]>([])
 const pending = ref(true)
 const completing = ref(false)
 const errorMessage = ref('')
@@ -27,12 +31,9 @@ const visibleConversationCount = ref(2)
 
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
 
-const visibleConversations = computed(() => {
-  if (!booking.value) {
-    return []
-  }
-  return booking.value.conversations.slice(0, visibleConversationCount.value)
-})
+const visibleConversations = computed(() =>
+  conversations.value.slice(0, visibleConversationCount.value)
+)
 
 watch(bookingId, (id) => {
   void load(id)
@@ -42,6 +43,7 @@ async function load(id: string) {
   pending.value = true
   errorMessage.value = ''
   booking.value = null
+  conversations.value = []
   if (!id) {
     pending.value = false
     return
@@ -51,19 +53,23 @@ async function load(id: string) {
     if (!token) {
       throw new Error('no_token')
     }
-    const row = await getExpertStationBooking(
-      config.public.apiBase,
-      token,
-      expertId.value,
-      id
-    )
+    const [row, conv] = await Promise.all([
+      getExpertStationBooking(config.public.apiBase, token, expertId.value, id),
+      listExpertStationBookingConversations(
+        config.public.apiBase,
+        token,
+        expertId.value,
+        id
+      )
+    ])
     booking.value = row
+    conversations.value = conv.conversations
     const map: Record<string, boolean> = {}
-    row.conversations.forEach((c, index) => {
+    conv.conversations.forEach((c, index) => {
       map[c.id] = index === 0
     })
     expanded.value = map
-    visibleConversationCount.value = Math.min(2, row.conversations.length)
+    visibleConversationCount.value = Math.min(2, conv.conversations.length)
   } catch {
     errorMessage.value = t('expertBookings.notFound')
   } finally {
@@ -113,11 +119,8 @@ async function markComplete() {
 }
 
 function loadEarlier() {
-  if (!booking.value) {
-    return
-  }
   visibleConversationCount.value = Math.min(
-    booking.value.conversations.length,
+    conversations.value.length,
     visibleConversationCount.value + 2
   )
 }
@@ -140,11 +143,11 @@ function loadEarlier() {
     <template v-else-if="booking">
       <p class="text-sm text-muted">
         {{ $t('expertStation.nav.bookings') }} /
-        {{ shortOrderCode(booking.order_code) }}
+        {{ shortOrderCode(booking.order_no) }}
       </p>
       <div class="mt-2 flex flex-wrap items-center gap-3">
         <h1 class="text-2xl font-semibold text-highlighted">
-          {{ shortOrderCode(booking.order_code) }} · {{ booking.member_name }}
+          {{ shortOrderCode(booking.order_no) }} · {{ booking.contact_name }}
         </h1>
         <UBadge
           :color="statusBadgeColor(booking.status)"
@@ -164,10 +167,11 @@ function loadEarlier() {
       </div>
       <p class="mt-1 text-sm text-muted">
         {{
-          $t('expertStation.detail.paidLine', {
-            paid: formatLocalDateTime(booking.paid_at, { style: 'list' }),
-            amount: money(booking.amount).replace(/^NT\$/, '')
-          })
+          booking.paid_at
+            ? $t('expertStation.detail.paidAt', {
+              paid: formatLocalDateTime(booking.paid_at, { style: 'list' })
+            })
+            : booking.member_email
         }}
       </p>
 
@@ -191,9 +195,9 @@ function loadEarlier() {
               <dd class="mt-1 whitespace-pre-line">
                 <div
                   v-for="(slot, index) in booking.preferred_slots"
-                  :key="`${slot.date}-${slot.start_hour}`"
+                  :key="`${index}-${slot}`"
                 >
-                  {{ index + 1 }}) {{ preferredSlotsLabel([slot]) }}
+                  {{ index + 1 }}) {{ slot }}
                 </div>
               </dd>
             </div>
@@ -202,7 +206,7 @@ function loadEarlier() {
                 {{ $t('expertStation.detail.need') }}
               </dt>
               <dd class="mt-1">
-                {{ booking.need_description }}
+                {{ booking.requirement_note }}
               </dd>
             </div>
             <div>
@@ -211,6 +215,24 @@ function loadEarlier() {
               </dt>
               <dd class="mt-1">
                 {{ booking.contact_phone || '—' }} · {{ booking.contact_email }}
+                <span v-if="booking.contact_line">
+                  · LINE {{ booking.contact_line }}
+                </span>
+              </dd>
+            </div>
+            <div v-if="booking.attachments.length">
+              <dt class="text-muted">
+                {{ $t('expertBookings.fields.attachments') }}
+              </dt>
+              <dd class="mt-1">
+                <ul class="list-inside list-disc">
+                  <li
+                    v-for="file in booking.attachments"
+                    :key="file.key"
+                  >
+                    {{ file.filename }}
+                  </li>
+                </ul>
               </dd>
             </div>
           </dl>
@@ -220,12 +242,30 @@ function loadEarlier() {
           <h2 class="font-semibold text-highlighted">
             {{ $t('expertStation.detail.profileTitle') }}
           </h2>
-          <p class="mt-3 text-sm text-muted">
-            {{ booking.profile.summary }}
-          </p>
-          <p class="mt-2 text-sm">
-            <span class="text-muted">{{ $t('expertStation.detail.goals') }}：</span>
-            {{ booking.profile.goals.join('、') }}
+          <template v-if="booking.member_profile">
+            <p class="mt-3 text-sm">
+              {{ booking.member_profile.sex || '—' }}
+              · {{ booking.member_profile.birth_year || '—' }}
+              · {{ booking.member_profile.height_cm || '—' }}cm
+              · {{ booking.member_profile.weight_kg || '—' }}kg
+            </p>
+            <p class="mt-2 text-sm">
+              <span class="text-muted">{{ $t('expertStation.detail.goals') }}：</span>
+              {{ booking.member_profile.goals.join('、') || '—' }}
+            </p>
+            <p
+              v-if="booking.member_profile.conditions.length"
+              class="mt-1 text-sm"
+            >
+              <span class="text-muted">{{ $t('expertStation.detail.conditions') }}：</span>
+              {{ booking.member_profile.conditions.join('、') }}
+            </p>
+          </template>
+          <p
+            v-else
+            class="mt-3 text-sm text-muted"
+          >
+            —
           </p>
         </section>
       </div>
@@ -253,8 +293,12 @@ function loadEarlier() {
               @click="expanded[conversation.id] = !expanded[conversation.id]"
             >
               <span>
-                對話 #{{ booking.conversations.length - index }} ·
-                {{ formatLocalDateTime(conversation.started_at, { style: 'list' }) }}
+                對話 #{{ conversations.length - index }} ·
+                {{
+                  conversation.created_at
+                    ? formatLocalDateTime(conversation.created_at, { style: 'list' })
+                    : '—'
+                }}
               </span>
               <span class="text-xs text-muted">
                 {{
@@ -271,8 +315,8 @@ function loadEarlier() {
               class="space-y-2 border-t border-default px-3 py-3"
             >
               <div
-                v-for="(message, messageIndex) in conversation.messages"
-                :key="`${conversation.id}-${messageIndex}`"
+                v-for="message in conversation.messages"
+                :key="message.id"
                 class="rounded-lg px-3 py-2 text-sm"
                 :class="message.role === 'user' ? 'bg-primary/10' : 'bg-elevated'"
               >
@@ -282,13 +326,77 @@ function loadEarlier() {
           </div>
         </div>
         <button
-          v-if="booking.conversations.length > visibleConversationCount"
+          v-if="conversations.length > visibleConversationCount"
           type="button"
           class="mt-3 text-sm text-primary underline"
           @click="loadEarlier"
         >
           {{ $t('expertStation.detail.loadEarlier') }}
         </button>
+      </section>
+
+      <section
+        v-if="booking.product_picks.length"
+        class="mt-4 rounded-xl border border-default bg-default p-4"
+      >
+        <h2 class="font-semibold text-highlighted">
+          {{ $t('expertBookings.fields.productPicks') }}
+        </h2>
+        <ul class="mt-2 space-y-1 text-sm">
+          <li
+            v-for="pick in booking.product_picks"
+            :key="pick.id"
+          >
+            {{ pick.sellable_item_name || pick.sellable_item_code || pick.sellable_item_id }}
+            — {{ pick.reason }}
+          </li>
+        </ul>
+      </section>
+
+      <section
+        v-if="booking.service_record"
+        class="mt-4 rounded-xl border border-default bg-default p-4"
+      >
+        <h2 class="font-semibold text-highlighted">
+          {{ $t('expertStation.detail.serviceRecord') }}
+        </h2>
+        <dl class="mt-2 grid gap-2 text-sm md:grid-cols-2">
+          <div>
+            <dt class="text-muted">
+              served_at
+            </dt>
+            <dd>{{ formatLocalDateTime(booking.service_record.served_at, { style: 'full' }) }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted">
+              service_method
+            </dt>
+            <dd>{{ booking.service_record.service_method }}</dd>
+          </div>
+          <div class="md:col-span-2">
+            <dt class="text-muted">
+              content
+            </dt>
+            <dd>{{ booking.service_record.content }}</dd>
+          </div>
+          <div class="md:col-span-2">
+            <dt class="text-muted">
+              sales_content
+            </dt>
+            <dd>{{ booking.service_record.sales_content }}</dd>
+          </div>
+          <div
+            v-if="booking.service_record.filled_by_operator_id"
+            class="md:col-span-2 text-xs text-muted"
+          >
+            filled_by_operator_id={{ booking.service_record.filled_by_operator_id }}
+            · filled_at={{
+              booking.service_record.filled_at
+                ? formatLocalDateTime(booking.service_record.filled_at, { style: 'list' })
+                : '—'
+            }}
+          </div>
+        </dl>
       </section>
 
       <section class="mt-4 rounded-xl border border-default bg-default p-4">
@@ -298,10 +406,13 @@ function loadEarlier() {
         <p class="mt-2 text-sm text-muted">
           {{ $t('expertStation.detail.confirmCurrent') }}：
           {{
-            booking.confirmed_at
-              ? formatLocalDateTime(booking.confirmed_at, { style: 'full' })
+            booking.confirmed_starts_at
+              ? formatLocalDateTime(booking.confirmed_starts_at, { style: 'full' })
               : $t('expertBookings.fields.notConfirmed')
           }}
+          <span v-if="booking.confirmed_ends_at">
+            – {{ formatLocalDateTime(booking.confirmed_ends_at, { style: 'list' }) }}
+          </span>
         </p>
         <div class="mt-3 flex flex-wrap gap-2">
           <UButton

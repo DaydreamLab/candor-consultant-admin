@@ -11,7 +11,8 @@ const session = useSessionStore()
 
 const bookingId = computed(() => String(route.params.id ?? ''))
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
-const confirmedAt = ref('2026-11-12 15:00')
+const confirmedStartsAt = ref('2026-04-10 18:00')
+const confirmedEndsAt = ref('2026-04-10 18:30')
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
@@ -34,9 +35,12 @@ async function load(id: string) {
       expertId.value,
       id
     )
-    orderCode.value = shortOrderCode(row.order_code)
-    if (row.confirmed_at) {
-      confirmedAt.value = formatForInput(row.confirmed_at)
+    orderCode.value = shortOrderCode(row.order_no)
+    if (row.confirmed_starts_at) {
+      confirmedStartsAt.value = formatForInput(row.confirmed_starts_at)
+    }
+    if (row.confirmed_ends_at) {
+      confirmedEndsAt.value = formatForInput(row.confirmed_ends_at)
     }
   } catch {
     errorMessage.value = t('expertBookings.notFound')
@@ -73,7 +77,12 @@ async function onSave() {
       token,
       expertId.value,
       bookingId.value,
-      toIso(confirmedAt.value)
+      {
+        confirmed_starts_at: toIso(confirmedStartsAt.value),
+        confirmed_ends_at: confirmedEndsAt.value.trim()
+          ? toIso(confirmedEndsAt.value)
+          : null
+      }
     )
     await navigateTo(localePath(`/bookings/${encodeURIComponent(bookingId.value)}`))
   } catch {
@@ -103,11 +112,17 @@ async function onSave() {
       class="mt-4 max-w-lg space-y-4 rounded-xl border border-default bg-default p-4"
     >
       <UFormField
-        :label="$t('expertStation.confirm.field')"
+        :label="$t('expertStation.confirm.fieldStart')"
         required
       >
         <UInput
-          v-model="confirmedAt"
+          v-model="confirmedStartsAt"
+          class="w-full"
+        />
+      </UFormField>
+      <UFormField :label="$t('expertStation.confirm.fieldEnd')">
+        <UInput
+          v-model="confirmedEndsAt"
           class="w-full"
         />
       </UFormField>
