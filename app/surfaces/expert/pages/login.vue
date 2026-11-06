@@ -13,6 +13,7 @@ const localePath = useLocalePath()
 const session = useSessionStore()
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
+const markSrc = computed(() => withAppBase(runtimeConfig.app.baseURL, '/brand/candor-mark.png'))
 
 const state = reactive<LoginForm>({
   email: '',
@@ -74,13 +75,20 @@ function describeLoginError(error: unknown) {
 
 <template>
   <div class="w-full rounded-2xl border border-default bg-default p-6 shadow-sm">
-    <div class="mb-6">
-      <h1 class="text-xl font-semibold text-highlighted">
-        {{ $t('expertStation.login.title') }}
-      </h1>
-      <p class="mt-1 text-sm text-muted">
-        {{ $t('expertStation.host') }}
-      </p>
+    <div class="mb-6 flex items-center gap-3">
+      <img
+        :src="markSrc"
+        alt=""
+        class="size-10 shrink-0 object-contain"
+      >
+      <div class="min-w-0">
+        <h1 class="text-xl font-semibold text-highlighted">
+          {{ $t('expertStation.login.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-muted">
+          {{ $t('expertStation.host') }}
+        </p>
+      </div>
     </div>
 
     <UForm

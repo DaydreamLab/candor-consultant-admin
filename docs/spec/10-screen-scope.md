@@ -104,10 +104,10 @@
 | 路徑 | 說明 |
 |------|------|
 | `/login` | E-01 專家站登入 |
-| `/` | E-02 已付款預約列表（pin、上次看到） |
+| `/` | K-01／K-02／K-05 共用行事曆週／日視圖（首頁；`/calendar` 轉至此） |
+| `/bookings` | E-02 已付款預約列表（pin、上次看到） |
 | `/bookings/{id}` | E-03／E-07 案件詳情／標記完成 |
 | `/bookings/{id}/confirm` | E-04 確認時間／改期 |
 | `/bookings/{id}/service-record` | E-05 服務紀錄（選填時長分鐘） |
 | `/bookings/{id}/selections` | E-06 選品與理由 |
-| `/calendar` | K-01／K-02／K-05 共用行事曆週／日視圖 |
 | `/calendar/availability` | K-03／K-04 可服務時段（每週重複、單日覆寫／還原、拖曳不跨日） |

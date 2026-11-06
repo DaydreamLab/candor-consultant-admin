@@ -2,14 +2,25 @@
 const localePath = useLocalePath()
 const route = useRoute()
 const session = useSessionStore()
+const { t } = useI18n()
+const runtimeConfig = useRuntimeConfig()
+
+const markSrc = computed(() => withAppBase(runtimeConfig.app.baseURL, '/brand/candor-mark.png'))
+const appVersionLabel = computed(() => {
+  const version = String(runtimeConfig.public.appVersion || '').trim()
+  return version || 'dev'
+})
+const copyrightYear = new Date().getFullYear()
+
+useHead({
+  title: t('expertStation.brand')
+})
 
 const path = computed(() => route.path.replace(/^\/en(?=\/|$)/, '') || '/')
 
-const bookingsActive = computed(() => {
-  return path.value === '/' || path.value.startsWith('/bookings')
-})
+const bookingsActive = computed(() => path.value.startsWith('/bookings'))
 
-const calendarActive = computed(() => path.value.startsWith('/calendar'))
+const homeActive = computed(() => path.value === '/' || path.value.startsWith('/calendar'))
 
 const displayName = computed(() => {
   const name = session.operator?.name?.trim()
@@ -23,47 +34,71 @@ function logout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-muted/30 text-default">
-    <header class="border-b border-default bg-[#0f172a] text-white">
+  <div class="flex min-h-screen flex-col bg-muted/30 text-default">
+    <header class="border-b border-default bg-default text-default">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
-        <div class="min-w-0">
-          <div class="text-sm font-semibold">
-            {{ $t('expertStation.brand') }}
-          </div>
-          <div class="text-xs text-white/60">
-            {{ $t('expertStation.host') }}
-          </div>
-        </div>
+        <NuxtLink
+          :to="localePath('/')"
+          class="flex min-w-0 items-center gap-2.5 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          <img
+            :src="markSrc"
+            alt=""
+            class="size-8 shrink-0 object-contain"
+          >
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-semibold">
+              {{ $t('expertStation.brand') }}
+            </span>
+            <span class="block truncate text-xs text-muted">
+              {{ $t('expertStation.host') }}
+            </span>
+          </span>
+        </NuxtLink>
         <nav class="flex flex-1 flex-wrap items-center gap-2">
           <NuxtLink
             :to="localePath('/')"
             class="rounded-md px-3 py-1.5 text-sm"
-            :class="bookingsActive ? 'bg-white/15' : 'hover:bg-white/10'"
+            :class="homeActive ? 'bg-elevated' : 'hover:bg-elevated'"
+          >
+            {{ $t('expertStation.nav.home') }}
+          </NuxtLink>
+          <NuxtLink
+            :to="localePath('/bookings')"
+            class="rounded-md px-3 py-1.5 text-sm"
+            :class="bookingsActive ? 'bg-elevated' : 'hover:bg-elevated'"
           >
             {{ $t('expertStation.nav.bookings') }}
           </NuxtLink>
-          <NuxtLink
-            :to="localePath('/calendar')"
-            class="rounded-md px-3 py-1.5 text-sm"
-            :class="calendarActive ? 'bg-white/15' : 'hover:bg-white/10'"
-          >
-            {{ $t('expertStation.nav.calendar') }}
-          </NuxtLink>
-          <button
-            type="button"
-            class="rounded-md px-3 py-1.5 text-sm hover:bg-white/10"
+        </nav>
+        <div class="flex items-center gap-1">
+          <ColorModeSwitch />
+          <span class="px-2 text-sm text-muted">
+            {{ displayName }}
+          </span>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-log-out"
             @click="logout"
           >
             {{ $t('expertStation.nav.logout') }}
-          </button>
-        </nav>
-        <div class="text-sm text-white/80">
-          {{ displayName }}
+          </UButton>
         </div>
       </div>
     </header>
-    <main class="mx-auto max-w-6xl px-4 py-6">
+    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
       <slot />
     </main>
+    <footer class="border-t border-default bg-default">
+      <p class="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-3 text-center text-[11px] leading-none text-dimmed">
+        <span>{{ $t('expertStation.footer.copyright', { year: copyrightYear }) }}</span>
+        <span
+          class="font-mono"
+          data-testid="app-version"
+        >{{ appVersionLabel }}</span>
+      </p>
+    </footer>
   </div>
 </template>

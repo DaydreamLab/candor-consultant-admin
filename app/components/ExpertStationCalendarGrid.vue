@@ -3,7 +3,8 @@ import {
   expertHhmmToMinute,
   expertMinuteToHhmm,
   isSlotAvailable,
-  scheduledBookingsForDate
+  scheduledBookingsForDate,
+  weekdayOfDate
 } from '~/utils/expert-booking-calendar'
 import type {
   ExpertCalendarDayOverride,
@@ -95,7 +96,7 @@ function dayLabel(date: string) {
 
 <template>
   <div
-    class="overflow-x-auto rounded-xl border border-default bg-default"
+    class="overflow-x-auto bg-default"
     data-testid="expert-station-calendar-grid"
   >
     <div
@@ -106,10 +107,13 @@ function dayLabel(date: string) {
       <div
         v-for="date in dates"
         :key="`h-${date}`"
-        class="border-b border-l border-default p-2 text-center text-xs font-medium"
+        class="flex flex-col items-center border-b border-l border-default p-2 text-center text-xs font-medium"
         :class="dayHasOverride(date) ? 'bg-warning/10' : 'bg-elevated'"
       >
-        {{ dayLabel(date) }}
+        <span class="inline-flex items-center justify-center gap-1">
+          {{ $t(`expertStation.calendar.weekdays.${weekdayOfDate(date)}`) }}
+          {{ dayLabel(date) }}
+        </span>
         <div
           v-if="dayHasOverride(date)"
           class="mt-1 text-[10px] text-warning"
@@ -122,7 +126,7 @@ function dayLabel(date: string) {
         v-for="slot in timeSlots"
         :key="slot"
       >
-        <div class="border-t border-default px-2 py-3 text-xs text-muted">
+        <div class="border-t border-default px-2 py-3 text-center text-xs text-muted">
           {{ slot }}
         </div>
         <div

@@ -64,6 +64,6 @@ pnpm run test:expert-booking
 
 本機單獨開發：http://localhost:3000（顧問後台）；專家站：`pnpm run dev:expert` → http://localhost:3001
 
-與 candor-core 一起用 `docker compose` 時，後台是 `admin` 服務，開 http://localhost:3001（`NUXT_PUBLIC_API_BASE=http://localhost:8080/api/v1`）。埠避開前台的 3000；core 的 `CORS_ALLOWED_ORIGINS` 須包含 `http://localhost:3001`。
+與 candor-core 一起用 `docker compose` 時，後台是 `admin` 服務，開 http://localhost:3001；專家站是 `expert` 服務，開 http://localhost:3002（`NUXT_APP_SURFACE=expert`，`NUXT_PUBLIC_API_BASE=http://localhost:8080/api/v1`）。core 的 `CORS_ALLOWED_ORIGINS` 須包含這兩個 origin。本機單獨跑 `pnpm run dev:expert` 時仍是 http://localhost:3001。
 
 登入走 core `POST /admin/auth/login`（operator 帳號，見 [spec 24](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/24-identity-and-auth.md)）。

@@ -4,7 +4,6 @@ import {
   listExpertBookingSellableOptions,
   putExpertStationProductPicks
 } from '~/utils/expert-booking-api'
-import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
 import type {
   ExpertBookingProductPickDraft,
@@ -19,7 +18,7 @@ const session = useSessionStore()
 
 const bookingId = computed(() => String(route.params.id ?? ''))
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
-const orderCode = ref('')
+const contactName = ref('')
 const options = ref<ExpertBookingSellableOption[]>([])
 const selected = ref<ExpertBookingProductPickDraft[]>([])
 const pending = ref(true)
@@ -41,7 +40,7 @@ async function load(id: string) {
       getExpertStationBooking(config.public.apiBase, token, expertId.value, id),
       listExpertBookingSellableOptions(config.public.apiBase, token)
     ])
-    orderCode.value = shortOrderCode(booking.order_no)
+    contactName.value = booking.contact_name
     options.value = sellables
     selected.value = booking.product_picks.map(row => ({
       sellable_item_id: row.sellable_item_id,
@@ -88,7 +87,7 @@ async function onSave() {
 <template>
   <div>
     <p class="text-sm text-muted">
-      {{ orderCode || bookingId }} / {{ $t('expertStation.detail.selections') }}
+      {{ contactName || bookingId }} / {{ $t('expertStation.detail.selections') }}
     </p>
     <h1 class="mt-2 text-2xl font-semibold text-highlighted">
       {{ $t('expertStation.selections.title') }}

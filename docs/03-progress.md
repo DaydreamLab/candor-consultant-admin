@@ -82,7 +82,7 @@
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
 | 專人預約 | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections`（列表／詳情／取消二次確認／選品理由） | 可用 | 已接 | M2 Beta |
 | 專人預約商品設定 | `/expert-booking-product`（唯一 code=personal；GET／PUT；無新增／刪除；admin 可編、ops 只讀、expert 隱藏） | 可用 | 已接 | M2 Beta |
-| 專家站（獨立 build） | `NUXT_APP_SURFACE=expert`：`/` 列表、`/bookings/{id}`、確認時間／服務紀錄／選品、`/calendar` 週日視圖與可服務時段；僅 expert 可登入 | 可用 | 已接 | M2 Beta |
+| 專家站（獨立 build） | `NUXT_APP_SURFACE=expert`：`/` 行事曆、`/bookings` 列表、`/bookings/{id}`、確認時間／服務紀錄／選品、`/calendar/availability` 可服務時段；僅 expert 可登入 | 可用 | 已接 | M2 Beta |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/weights`、`/weights/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
 | 專家訓練／每日學習確認 | `/weights/daily-learning`（載入待確認草案／clone→confirm→confirm-safety→dry-run→publish；對齊 core #76 `79ed13b`；ops 可確認） | 可用 | 接線中（待 core #76 合併部署） | M4 |

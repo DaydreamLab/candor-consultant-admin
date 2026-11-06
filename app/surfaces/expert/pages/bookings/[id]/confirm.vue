@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { putExpertStationConfirmTime, getExpertStationBooking } from '~/utils/expert-booking-api'
-import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
 
 const route = useRoute()
@@ -16,7 +15,7 @@ const confirmedEndsAt = ref('2026-04-10 18:30')
 const pending = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
-const orderCode = ref('')
+const contactName = ref('')
 
 watch(bookingId, (id) => {
   void load(id)
@@ -35,7 +34,7 @@ async function load(id: string) {
       expertId.value,
       id
     )
-    orderCode.value = shortOrderCode(row.order_no)
+    contactName.value = row.contact_name
     if (row.confirmed_starts_at) {
       confirmedStartsAt.value = formatForInput(row.confirmed_starts_at)
     }
@@ -96,7 +95,7 @@ async function onSave() {
 <template>
   <div>
     <p class="text-sm text-muted">
-      {{ orderCode || bookingId }} / {{ $t('expertStation.detail.confirmTitle') }}
+      {{ contactName || bookingId }} / {{ $t('expertStation.detail.confirmTitle') }}
     </p>
     <h1 class="mt-2 text-2xl font-semibold text-highlighted">
       {{ $t('expertStation.confirm.title') }}

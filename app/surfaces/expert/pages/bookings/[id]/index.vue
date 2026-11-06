@@ -6,7 +6,6 @@ import {
   pinExpertStationBooking,
   statusBadgeColor
 } from '~/utils/expert-booking-api'
-import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 import type {
@@ -26,14 +25,61 @@ const conversations = ref<ExpertBookingConversation[]>([])
 const pending = ref(true)
 const completing = ref(false)
 const errorMessage = ref('')
-const expanded = ref<Record<string, boolean>>({})
-const visibleConversationCount = ref(2)
 
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
+const boundConversation = computed(() => conversations.value[0] ?? null)
+const chatMessages = computed(() => {
+  const messages = [...(boundConversation.value?.messages ?? [])]
+  messages.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+  return messages.map((message, index) => ({
+    id: message.id || `message-${index}`,
+    role: message.role === 'user' || message.role === 'customer' || message.role === 'client'
+      ? 'user' as const
+      : 'assistant' as const,
+    parts: [{ type: 'text' as const, text: message.content }],
+    metadata: {
+      time: message.created_at
+        ? formatLocalDateTime(message.created_at, { style: 'list' as const })
+        : ''
+    }
+  }))
+})
+const assistantMessage = {
+  side: 'left' as const,
+  variant: 'outline' as const,
+  avatar: { icon: 'i-lucide-bot' },
+  ui: { content: 'whitespace-pre-wrap' }
+}
+const userMessage = {
+  side: 'right' as const,
+  variant: 'soft' as const,
+  ui: { content: 'bg-accented whitespace-pre-wrap' }
+}
 
-const visibleConversations = computed(() =>
-  conversations.value.slice(0, visibleConversationCount.value)
-)
+function sexLabel(sex: string | null): string {
+  const raw = sex?.trim() ?? ''
+  const code = raw.toUpperCase()
+  if (code === 'M' || code === 'MALE' || raw === '男' || raw === '生理男') {
+    return t('expertStation.detail.sexMale')
+  }
+  if (code === 'F' || code === 'FEMALE' || raw === '女' || raw === '生理女') {
+    return t('expertStation.detail.sexFemale')
+  }
+  return raw || '—'
+}
+
+function codeLabel(code: string): string {
+  const key = `expertStation.detail.profileCodes.${code}`
+  const translated = t(key)
+  return translated === key ? code : translated
+}
+
+function codeList(codes: string[]): string {
+  if (codes.length === 0) {
+    return '—'
+  }
+  return codes.map(code => codeLabel(code)).join('、')
+}
 
 watch(bookingId, (id) => {
   void load(id)
@@ -64,12 +110,6 @@ async function load(id: string) {
     ])
     booking.value = row
     conversations.value = conv.conversations
-    const map: Record<string, boolean> = {}
-    conv.conversations.forEach((c, index) => {
-      map[c.id] = index === 0
-    })
-    expanded.value = map
-    visibleConversationCount.value = Math.min(2, conv.conversations.length)
   } catch {
     errorMessage.value = t('expertBookings.notFound')
   } finally {
@@ -118,12 +158,6 @@ async function markComplete() {
   }
 }
 
-function loadEarlier() {
-  visibleConversationCount.value = Math.min(
-    conversations.value.length,
-    visibleConversationCount.value + 2
-  )
-}
 </script>
 
 <template>
@@ -143,11 +177,11 @@ function loadEarlier() {
     <template v-else-if="booking">
       <p class="text-sm text-muted">
         {{ $t('expertStation.nav.bookings') }} /
-        {{ shortOrderCode(booking.order_no) }}
+        {{ booking.contact_name }}
       </p>
       <div class="mt-2 flex flex-wrap items-center gap-3">
         <h1 class="text-2xl font-semibold text-highlighted">
-          {{ shortOrderCode(booking.order_no) }} · {{ booking.contact_name }}
+          {{ booking.contact_name }}
         </h1>
         <UBadge
           :color="statusBadgeColor(booking.status)"
@@ -242,25 +276,67 @@ function loadEarlier() {
           <h2 class="font-semibold text-highlighted">
             {{ $t('expertStation.detail.profileTitle') }}
           </h2>
-          <template v-if="booking.member_profile">
-            <p class="mt-3 text-sm">
-              {{ booking.member_profile.sex || '—' }}
-              · {{ booking.member_profile.birth_year || '—' }}
-              · {{ booking.member_profile.height_cm || '—' }}cm
-              · {{ booking.member_profile.weight_kg || '—' }}kg
-            </p>
-            <p class="mt-2 text-sm">
-              <span class="text-muted">{{ $t('expertStation.detail.goals') }}：</span>
-              {{ booking.member_profile.goals.join('、') || '—' }}
-            </p>
-            <p
-              v-if="booking.member_profile.conditions.length"
-              class="mt-1 text-sm"
-            >
-              <span class="text-muted">{{ $t('expertStation.detail.conditions') }}：</span>
-              {{ booking.member_profile.conditions.join('、') }}
-            </p>
-          </template>
+          <dl
+            v-if="booking.member_profile"
+            class="mt-3 space-y-2 text-sm"
+          >
+            <div>
+              <dt class="text-muted">
+                {{ $t('expertStation.detail.sex') }}
+              </dt>
+              <dd class="mt-1">
+                {{ sexLabel(booking.member_profile.sex) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                {{ $t('expertStation.detail.birthYear') }}
+              </dt>
+              <dd class="mt-1">
+                {{ booking.member_profile.birth_year || '—' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                {{ $t('expertStation.detail.height') }}
+              </dt>
+              <dd class="mt-1">
+                {{
+                  booking.member_profile.height_cm
+                    ? $t('expertStation.detail.heightValue', { n: booking.member_profile.height_cm })
+                    : '—'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                {{ $t('expertStation.detail.weight') }}
+              </dt>
+              <dd class="mt-1">
+                {{
+                  booking.member_profile.weight_kg
+                    ? $t('expertStation.detail.weightValue', { n: booking.member_profile.weight_kg })
+                    : '—'
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                {{ $t('expertStation.detail.goals') }}
+              </dt>
+              <dd class="mt-1">
+                {{ codeList(booking.member_profile.goals) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">
+                {{ $t('expertStation.detail.conditions') }}
+              </dt>
+              <dd class="mt-1">
+                {{ codeList(booking.member_profile.conditions) }}
+              </dd>
+            </div>
+          </dl>
           <p
             v-else
             class="mt-3 text-sm text-muted"
@@ -270,69 +346,47 @@ function loadEarlier() {
         </section>
       </div>
 
-      <section class="mt-4 rounded-xl border border-default bg-default p-4">
-        <div class="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 class="font-semibold text-highlighted">
-              {{ $t('expertStation.detail.conversations') }}
-            </h2>
-            <p class="text-xs text-muted">
-              {{ $t('expertStation.detail.conversationsHint') }}
-            </p>
-          </div>
+      <section class="mt-4 flex max-h-[28rem] min-h-80 flex-col overflow-hidden rounded-xl border border-default bg-elevated">
+        <div class="shrink-0 space-y-1 border-b border-default px-4 py-3">
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ $t('expertStation.detail.conversations') }}
+          </h2>
+          <p class="text-xs text-muted">
+            {{ $t('expertStation.detail.conversationsHint') }}
+          </p>
         </div>
-        <div class="mt-3 space-y-3">
-          <div
-            v-for="(conversation, index) in visibleConversations"
-            :key="conversation.id"
-            class="rounded-lg border border-default"
+        <div class="min-h-0 flex-1 overflow-y-auto">
+          <p
+            v-if="!boundConversation"
+            class="px-4 py-10 text-center text-base text-muted"
           >
-            <button
-              type="button"
-              class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm"
-              @click="expanded[conversation.id] = !expanded[conversation.id]"
-            >
-              <span>
-                對話 #{{ conversations.length - index }} ·
-                {{
-                  conversation.created_at
-                    ? formatLocalDateTime(conversation.created_at, { style: 'list' })
-                    : '—'
-                }}
-              </span>
-              <span class="text-xs text-muted">
-                {{
-                  index === 0 && expanded[conversation.id]
-                    ? $t('expertStation.detail.latestExpanded')
-                    : expanded[conversation.id]
-                      ? $t('expertStation.detail.collapse')
-                      : $t('expertStation.detail.expand')
-                }}
-              </span>
-            </button>
-            <div
-              v-if="expanded[conversation.id]"
-              class="space-y-2 border-t border-default px-3 py-3"
-            >
-              <div
-                v-for="message in conversation.messages"
-                :key="message.id"
-                class="rounded-lg px-3 py-2 text-sm"
-                :class="message.role === 'user' ? 'bg-primary/10' : 'bg-elevated'"
+            {{ $t('expertStation.detail.conversationsEmpty') }}
+          </p>
+          <p
+            v-else-if="!chatMessages.length"
+            class="px-4 py-10 text-center text-base text-muted"
+          >
+            {{ $t('expertStation.detail.messagesEmpty') }}
+          </p>
+          <UChatMessages
+            v-else
+            :messages="chatMessages"
+            :assistant="assistantMessage"
+            :user="userMessage"
+            :auto-scroll="false"
+            :should-scroll-to-bottom="false"
+            class="py-4"
+          >
+            <template #header="{ metadata }">
+              <time
+                v-if="metadata?.time"
+                class="text-xs text-muted"
               >
-                {{ message.content }}
-              </div>
-            </div>
-          </div>
+                {{ metadata.time }}
+              </time>
+            </template>
+          </UChatMessages>
         </div>
-        <button
-          v-if="conversations.length > visibleConversationCount"
-          type="button"
-          class="mt-3 text-sm text-primary underline"
-          @click="loadEarlier"
-        >
-          {{ $t('expertStation.detail.loadEarlier') }}
-        </button>
       </section>
 
       <section

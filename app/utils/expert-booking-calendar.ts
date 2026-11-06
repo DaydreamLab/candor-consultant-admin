@@ -239,6 +239,30 @@ export function scheduledBookingsForDate(
   })
 }
 
+export interface ExpertCalendarOverview {
+  bookings: number
+}
+
+/** Counts scheduled bookings painted in the visible dates and time window. */
+export function expertCalendarOverview(input: {
+  dates: string[]
+  slots: string[]
+  scheduledBookings: ExpertCalendarScheduledBooking[]
+}): ExpertCalendarOverview {
+  const visibleSlots = new Set(input.slots)
+  let bookings = 0
+  for (const date of input.dates) {
+    for (const booking of scheduledBookingsForDate(input.scheduledBookings, date)) {
+      const start = booking.confirmed_starts_at?.slice(11, 16)
+      if (start && visibleSlots.has(start)) {
+        bookings += 1
+      }
+    }
+  }
+
+  return { bookings }
+}
+
 /** Drag-select contiguous half-hour slots on one day (returns minutes). */
 export function dragSelectSlotMinutes(
   startHhmm: string,

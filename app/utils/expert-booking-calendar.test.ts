@@ -4,6 +4,7 @@ import {
   effectiveAvailabilityForDate,
   paintSlotMinutes,
   expertAddDaysToDateString,
+  expertCalendarOverview,
   expertHhmmToMinute,
   expertMinuteToHhmm,
   expertWeekStartMonday,
@@ -125,6 +126,21 @@ describe('expert-booking-calendar', () => {
     })
     expect(halfHourSlotsBetween('06:00', '20:00')).toHaveLength(28)
     expect(halfHourSlotsBetween('06:00', '20:00').at(-1)).toBe('19:30')
+  })
+
+  it('counts scheduled bookings inside the visible window only', () => {
+    const bookings = [
+      { id: 'in-window', confirmed_starts_at: '2026-04-06T09:00:00', confirmed_ends_at: '2026-04-06T09:30:00', status: 'scheduled', confirmed_by_operator_id: 'e3' },
+      { id: 'outside-window', confirmed_starts_at: '2026-04-06T18:00:00', confirmed_ends_at: '2026-04-06T18:30:00', status: 'scheduled', confirmed_by_operator_id: 'e1' },
+      { id: 'other-day', confirmed_starts_at: '2026-04-08T09:00:00', confirmed_ends_at: null, status: 'scheduled', confirmed_by_operator_id: 'e1' }
+    ]
+    expect(expertCalendarOverview({
+      dates: ['2026-04-06', '2026-04-07'],
+      slots: ['09:00', '09:30'],
+      scheduledBookings: bookings
+    })).toEqual({
+      bookings: 1
+    })
   })
 
   it('formats preferred slots and short order code', () => {

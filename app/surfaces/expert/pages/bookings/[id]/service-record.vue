@@ -4,7 +4,6 @@ import {
   putExpertStationServiceRecord,
   uploadExpertStationAttachment
 } from '~/utils/expert-booking-api'
-import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 import type { ExpertBookingAttachment } from '~/utils/expert-booking-types'
@@ -17,7 +16,7 @@ const session = useSessionStore()
 
 const bookingId = computed(() => String(route.params.id ?? ''))
 const expertId = computed(() => session.operator?.id || 'op-expert-wang')
-const orderCode = ref('')
+const contactName = ref('')
 const pending = ref(true)
 const saving = ref(false)
 const uploading = ref(false)
@@ -62,7 +61,7 @@ async function load(id: string) {
       expertId.value,
       id
     )
-    orderCode.value = shortOrderCode(row.order_no)
+    contactName.value = row.contact_name
     if (row.service_record) {
       form.served_at = row.service_record.served_at.replace('Z', '').slice(0, 16)
       form.service_method = row.service_record.service_method
@@ -185,7 +184,7 @@ async function onSave() {
 <template>
   <div>
     <p class="text-sm text-muted">
-      {{ orderCode || bookingId }} / {{ $t('expertStation.detail.serviceRecord') }}
+      {{ contactName || bookingId }} / {{ $t('expertStation.detail.serviceRecord') }}
     </p>
     <h1 class="mt-2 text-2xl font-semibold text-highlighted">
       {{ $t('expertStation.serviceRecord.title') }}
