@@ -222,6 +222,21 @@ export function usePageCrumbs() {
       ]
     }
 
+    if (current === '/operators/new') {
+      return [
+        { label: t('nav.operators'), to: localePath('/operators') },
+        { label: t('operators.createTitle') }
+      ]
+    }
+
+    if (current.startsWith('/operators/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.operators'), to: localePath('/operators') },
+        { label: id }
+      ]
+    }
+
     return [{ label: pageLabel(current) }]
   })
 

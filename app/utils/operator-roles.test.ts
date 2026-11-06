@@ -17,11 +17,12 @@ import {
 } from './operator-roles'
 
 describe('operatorRoles', () => {
-  it('reads roles[] only', () => {
+  it('reads roles[] only and sorts admin→ops→expert', () => {
     expect(operatorRoles({ roles: ['expert'] })).toEqual(['expert'])
     expect(operatorRoles({ roles: ['admin'] })).toEqual(['admin'])
     expect(operatorRoles({ roles: ['admin', 'expert'] })).toEqual(['admin', 'expert'])
     expect(operatorRoles({ roles: ['ops', 'expert', 'ops'] })).toEqual(['ops', 'expert'])
+    expect(operatorRoles({ roles: ['expert', 'admin', 'ops'] })).toEqual(['admin', 'ops', 'expert'])
   })
 
   it('rejects empty or missing roles', () => {

@@ -1,4 +1,5 @@
 import type { Operator, OperatorLoginData, OperatorRole } from '~/types/operator'
+import { sortOperatorRoles } from '~/utils/operator-role-order'
 
 export const OPERATOR_TOKEN_KEY = 'candor.operator.token'
 
@@ -110,6 +111,7 @@ function parseProfile(raw: string | null): StoredOperator | null {
 }
 
 function normalizeOperatorRoles(value: Partial<Operator> & { role?: unknown }): OperatorRole[] {
+  // 舊契約只有 `role`、沒有 `roles[]` → 視為無效（需重登）。
   if (!Array.isArray(value.roles)) {
     return []
   }
@@ -119,7 +121,7 @@ function normalizeOperatorRoles(value: Partial<Operator> & { role?: unknown }): 
       unique.push(role as OperatorRole)
     }
   }
-  return unique
+  return sortOperatorRoles(unique)
 }
 
 function normalizeOperator(value: Partial<Operator> & { role?: unknown }): Operator {

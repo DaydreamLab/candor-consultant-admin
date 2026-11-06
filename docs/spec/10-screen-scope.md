@@ -50,6 +50,7 @@
 |---------|------|------|----------|
 | settings | `/settings` | 部分 | 總頁；left anchors：**支付｜發票｜報告判讀｜其他**（**無**隱私／CTA 錨）。Operator 帳號可落此；勿做 org 設定。側欄直連 `/settings#payment` 避開空 hash 卡死。**無** badge |
 | privacy | `/settings/privacy` | **in-scope** | 自總頁錨點拆出；沿用隱私權政策 CMS（`/admin/legal/privacy-policy**`，對齊 core #87）；公開頁 `/privacy-policy` 免登入。權限沿用 ops／admin 可儲存。**無** badge |
+| operators | `/operators`、`/operators/new`、`/operators/{id}` | **in-scope** | 帳號管理（Operators CRUD）。僅 admin；直連 `/admin/operators/**`（配對 core #157）；`roles[]` 多選至少一項；無分頁。**無** badge |
 | guidance | `/settings/guidance` | **in-scope（語意）** | 自總頁錨點拆出；列表／編輯／情境矩陣；無 create／delete；admin 可編、ops 只讀、expert **隱藏整項**；Mock 至 core CTA catalog API。**無** badge |
 | assistant | `/assistant` | **in-scope** | 站台／client config 等；**無** badge |
 
@@ -87,7 +88,6 @@
 | LabAppointment | 無 HTTP（畫面 `/lab-appointments` 已 mock） |
 | 報告校正 | admin health-reports PATCH／retry |
 | Weight sets | `/admin/weight-sets/**` |
-| Operators | `/admin/operators/**` |
 | Knowledge（公開參考知識） | `/admin/knowledge/**`（見 [12-knowledge-management.md](12-knowledge-management.md)） |
 
 ## 相關

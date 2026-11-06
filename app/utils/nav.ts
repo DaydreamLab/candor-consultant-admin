@@ -4,7 +4,7 @@ import type { OperatorRole } from '~/types/operator'
 import { canViewCtaCatalog } from '~/utils/cta-catalog-access'
 import { canViewExpertBookingProduct } from '~/utils/expert-booking-product-access'
 import { canAccessKnowledge } from '~/utils/knowledge-access'
-import { hasOpsAdminRole } from '~/utils/operator-roles'
+import { hasAdminRole, hasOpsAdminRole } from '~/utils/operator-roles'
 
 export interface NavItem {
   key: string
@@ -19,6 +19,8 @@ export interface NavItem {
   opsAdminOnly?: boolean
   /** 僅 ops／admin 可見（專人預約商品；admin 可編、ops 只讀）。 */
   expertBookingProductOnly?: boolean
+  /** 僅 admin 可見（帳號管理 Operators CRUD）。 */
+  adminOnly?: boolean
   /** RouterLink exact：設定總頁勿與 /settings/privacy 等子路徑同時亮起。 */
   exact?: boolean
   /** false：側欄不加「即將上線」。未設視為開發中／未上線。 */
@@ -35,7 +37,7 @@ export interface NavGroup {
 /**
  * 側欄 IA（短物件名 2026-11-04）：
  * 總覽（最上、無組標）→ 營運 → 學習 → 商品 → 系統 → 開發中。
- * 每項只出現一次（26；expert 看不到引導／退款申請／預約商品則更少）。組 key 與 item key 共用 `nav.*`。
+ * 每項只出現一次（27；expert 看不到引導／退款申請／預約商品／帳號管理則更少）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -89,6 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'settings', to: '/settings#payment', icon: 'i-lucide-settings', developing: false, exact: true },
       { key: 'privacy', to: '/settings/privacy', icon: 'i-lucide-shield', developing: false },
       { key: 'guidance', to: '/settings/guidance', icon: 'i-lucide-mouse-pointer-click', developing: false, guidanceOnly: true },
+      { key: 'operators', to: '/operators', icon: 'i-lucide-user-cog', developing: false, adminOnly: true },
       { key: 'assistant', to: '/assistant', icon: 'i-lucide-bot', developing: false }
     ]
   },
@@ -141,6 +144,9 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/users' || current.startsWith('/users/')) {
+    return false
+  }
+  if (current === '/operators' || current.startsWith('/operators/')) {
     return false
   }
   if (current === '/assistant' || current.startsWith('/assistant/')) {
@@ -214,6 +220,9 @@ export function visibleNavGroups(
           return false
         }
         if (item.expertBookingProductOnly && !canViewExpertBookingProduct(roles)) {
+          return false
+        }
+        if (item.adminOnly && !hasAdminRole(roles)) {
           return false
         }
         return true

@@ -126,7 +126,7 @@
 |------|------|------|
 | 登入 | `POST /admin/auth/login` | 已接（`remember_me`；無示範帳號與略過登入） |
 | 目前身份 | `GET /admin/me` | 已接 |
-| Operator CRUD／重設密碼 | `/admin/operators/**` | Mock |
+| Operator CRUD／重設密碼 | `/admin/operators/**`（畫面 `/operators`；僅 admin；`roles[]` 多選） | 已接（配對 core #157） |
 
 ### Users（會員）
 
@@ -248,8 +248,9 @@
 
 ---
 
-**最後更新**：2026-11-06（專家站併入單一 admin build）
+**最後更新**：2026-11-06（Operators CRUD 接 core #157）
 
+- 2026-11-06：Operators CRUD 接線（`/operators`；僅 admin；`roles[]` 多選；409／422 中文）；JWT 舊 `role`→重登；配對 [candor-core #157](https://github.com/DaydreamLab/candor-core/pull/157)
 - 2026-11-06：operator 契約改只回 `roles[]`（刪單一 `role`）；admin 含 expert／ops 能力；登入／guard／權限判斷全改 roles；配對 candor-core 多角色 draft
 - 2026-11-06：多角色登入後進 `/choose-panel`；直打網址不強制選面板；前端不以 email 判斷
 - 2026-11-06：專家站併入單一 build（退役 `NUXT_APP_SURFACE=expert`）；路由 `/expert/*`；登入依角色導向；`data-app-surface` 改依路由判斷

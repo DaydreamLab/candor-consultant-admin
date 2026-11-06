@@ -34,6 +34,7 @@
     "settings": "Settings",
     "privacy": "Privacy",
     "guidance": "Guidance",
+    "operators": "Operators",
     "account": "Account",
     "developing": "In development",
     "comingSoon": "Coming soon",
@@ -69,7 +70,59 @@
     "submit": "Sign in",
     "invalid": "Incorrect email or password.",
     "rateLimited": "Too many attempts. Try again later.",
-    "failed": "Sign-in failed. Try again later."
+    "failed": "Sign-in failed. Try again later.",
+    "sessionExpired": "Your session is no longer valid (legacy token or contract update). Please sign in again."
+  },
+  "operators": {
+    "description": "Manage operator accounts and roles (admin only).",
+    "loading": "Loading…",
+    "failed": "Could not load operators.",
+    "empty": "No operators yet.",
+    "create": "Add operator",
+    "createTitle": "Add operator",
+    "editTitle": "Edit operator",
+    "save": "Save",
+    "saveOk": "Saved.",
+    "saveFailed": "Could not save.",
+    "resetPasswordTitle": "Reset password",
+    "resetPassword": "Reset password",
+    "resetPasswordOk": "Password reset.",
+    "columns": {
+      "email": "Email",
+      "name": "Name",
+      "roles": "Roles",
+      "status": "Status",
+      "lastLogin": "Last login",
+      "actions": "Actions"
+    },
+    "fields": {
+      "email": "Email",
+      "name": "Name",
+      "roles": "Roles",
+      "rolesHelp": "Select at least one; multi-select expert / ops / admin.",
+      "password": "Password",
+      "newPassword": "New password",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "errors": {
+      "generic": "Something went wrong. Try again later.",
+      "sessionExpired": "Session expired. Please sign in again.",
+      "forbidden": "Only admins can manage operators.",
+      "notFound": "Operator not found.",
+      "invalidRequest": "Invalid request (roles, password, or field validation failed).",
+      "emailConflict": "This email is already in use.",
+      "conflict": "Could not apply the change (conflict).",
+      "cannotModifySelf": "You cannot remove your last admin role or suspend yourself.",
+      "cannotRemoveLastAdmin": "The system must keep at least one admin.",
+      "rolesRequired": "Select at least one role.",
+      "nameRequired": "Name is required.",
+      "emailRequired": "Email is required.",
+      "passwordRequired": "Password is required."
+    }
   },
   "operatorMe": {
     "loading": "Loading…",

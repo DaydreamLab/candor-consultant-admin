@@ -1,4 +1,5 @@
 import type { Operator, OperatorRole } from '~/types/operator'
+import { sortOperatorRoles } from '~/utils/operator-role-order'
 
 const ROLE_SET = new Set<OperatorRole>(['expert', 'ops', 'admin'])
 
@@ -14,8 +15,8 @@ export function normalizeAppPath(path: string): string {
 }
 
 /**
- * 只讀 `operator.roles[]`（core 已刪單一 `role`）。
- * 非法／空陣列 → `[]`。
+ * 只讀 `operator.roles[]`（core 已刪單一 `role`；不讀 permissions）。
+ * 非法／空陣列 → `[]`；合法值依 admin→ops→expert 排序。
  */
 export function operatorRoles(
   operator: Pick<Operator, 'roles'> | null | undefined
@@ -29,7 +30,7 @@ export function operatorRoles(
       unique.push(role)
     }
   }
-  return unique
+  return sortOperatorRoles(unique)
 }
 
 export function hasAdminRole(roles: readonly OperatorRole[]): boolean {

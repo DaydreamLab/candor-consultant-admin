@@ -14,13 +14,17 @@ const localePath = useLocalePath()
 const session = useSessionStore()
 const runtimeConfig = useRuntimeConfig()
 
+const route = useRoute()
+
 const state = reactive<LoginForm>({
   email: '',
   password: '',
   remember_me: false
 })
 const pending = ref(false)
-const errorMessage = ref('')
+const errorMessage = ref(
+  route.query.reason === 'session_expired' ? t('login.sessionExpired') : ''
+)
 
 /** Full browser path including app.baseURL (required on GitHub Pages project sites). */
 function appHref(path: string) {
