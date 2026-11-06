@@ -2580,5 +2580,17 @@
       "actualToday": "本日實際",
       "overrideStatus": "已單獨調整"
     }
+  },
+  "choosePanel": {
+    "title": "選擇進入面板",
+    "description": "此帳號同時擁有營運與專家權限，請選擇要進入的介面。之後可從側欄或頂欄切換。",
+    "admin": {
+      "title": "營運後台",
+      "description": "訂單、商品、知識與系統設定"
+    },
+    "expert": {
+      "title": "專家站",
+      "description": "行事曆、預約案件與服務紀錄"
+    }
   }
 }

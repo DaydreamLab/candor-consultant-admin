@@ -2,9 +2,11 @@ import {
   canAccessAdminConsole,
   canAccessExpertStation,
   isAdminConsolePath,
+  isChoosePanelPath,
   isExpertStationPath,
   isPublicAppPath,
   legacyExpertBookmarkRedirect,
+  needsSurfaceChooser,
   operatorRoles,
   postLoginHomePath
 } from '~/utils/operator-roles'
@@ -31,6 +33,13 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   if (!session.isLoggedIn) {
+    return
+  }
+
+  if (isChoosePanelPath(to.path)) {
+    if (!needsSurfaceChooser(roles)) {
+      return navigateTo(localePath(postLoginHomePath(roles)))
+    }
     return
   }
 

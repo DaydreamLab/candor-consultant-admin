@@ -2,6 +2,8 @@ import type { Operator, OperatorRole } from '~/types/operator'
 
 const ROLE_SET = new Set<OperatorRole>(['expert', 'ops', 'admin'])
 
+export type PostLoginHomePath = '/expert' | '/' | '/choose-panel'
+
 /** Normalize path without i18n prefix or trailing slash (except root). */
 export function normalizeAppPath(path: string): string {
   const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/'
@@ -13,7 +15,7 @@ export function normalizeAppPath(path: string): string {
 
 /**
  * Prefer optional `roles[]` when present (multi-role); else `[operator.role]`.
- * Core login 目前仍回單一 `role`；多角色可經 profile.roles 擴充。
+ * Core login／me 應回 `roles` 陣列；單一角色可省略，前端退回 `role`。
  */
 export function operatorRoles(
   operator: Pick<Operator, 'role'> & { roles?: OperatorRole[] | null } | null | undefined
@@ -48,6 +50,11 @@ export function isExpertOnly(roles: readonly OperatorRole[]): boolean {
   return hasExpertRole(roles) && !hasOpsAdminRole(roles)
 }
 
+/** 同時有 expert 與 admin／ops → 登入後需選面板。 */
+export function needsSurfaceChooser(roles: readonly OperatorRole[]): boolean {
+  return hasExpertRole(roles) && hasOpsAdminRole(roles)
+}
+
 export function canAccessExpertStation(roles: readonly OperatorRole[]): boolean {
   return hasExpertRole(roles)
 }
@@ -56,8 +63,18 @@ export function canAccessAdminConsole(roles: readonly OperatorRole[]): boolean {
   return hasOpsAdminRole(roles)
 }
 
-/** 登入後預設首頁：僅 expert → 專家站；其餘（含雙角色）→ 營運後台。 */
-export function postLoginHomePath(roles: readonly OperatorRole[]): '/expert' | '/' {
+/**
+ * 登入後預設路徑：
+ * - 多角色 → 選擇面板
+ * - 僅 expert → 專家站
+ * - 其餘 → 營運後台
+ *
+ * 已登入使用者直接打 `/` 或 `/expert/*` 不強制再經過選擇頁。
+ */
+export function postLoginHomePath(roles: readonly OperatorRole[]): PostLoginHomePath {
+  if (needsSurfaceChooser(roles)) {
+    return '/choose-panel'
+  }
   if (isExpertOnly(roles)) {
     return '/expert'
   }
@@ -69,14 +86,18 @@ export function isExpertStationPath(path: string): boolean {
   return current === '/expert' || current.startsWith('/expert/')
 }
 
+export function isChoosePanelPath(path: string): boolean {
+  return normalizeAppPath(path) === '/choose-panel'
+}
+
 export function isPublicAppPath(path: string): boolean {
   const current = normalizeAppPath(path)
   return current === '/login' || current === '/privacy-policy'
 }
 
-/** 營運後台頁（非公開、非專家站）。 */
+/** 營運後台頁（非公開、非專家站、非選擇面板）。 */
 export function isAdminConsolePath(path: string): boolean {
-  return !isPublicAppPath(path) && !isExpertStationPath(path)
+  return !isPublicAppPath(path) && !isExpertStationPath(path) && !isChoosePanelPath(path)
 }
 
 /**

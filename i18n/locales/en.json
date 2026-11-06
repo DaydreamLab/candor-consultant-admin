@@ -2580,5 +2580,17 @@
       "actualToday": "Actual today",
       "overrideStatus": "Overridden"
     }
+  },
+  "choosePanel": {
+    "title": "Choose a panel",
+    "description": "This account has both ops and expert access. Pick where to enter; you can switch later from the sidebar or header.",
+    "admin": {
+      "title": "Admin console",
+      "description": "Orders, catalog, knowledge, and settings"
+    },
+    "expert": {
+      "title": "Expert station",
+      "description": "Calendar, bookings, and service records"
+    }
   }
 }

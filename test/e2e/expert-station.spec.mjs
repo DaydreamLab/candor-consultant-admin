@@ -53,4 +53,58 @@ await page.goto(`${base}/expert/calendar/availability`, { waitUntil: 'networkidl
 await page.waitForSelector('main h1', { timeout: 30_000 })
 
 console.log('expert-station e2e ok')
+
+// Multi-role: login → choose-panel → admin + expert (roles[] driven, not email).
+const multiPage = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+await multiPage.route('**/api/v1/admin/auth/login', async (route) => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      status: 'success',
+      data: {
+        token: 'multi-role-mock-token',
+        expires_in: 86400,
+        operator: {
+          id: 'op-multi-role',
+          role: 'admin',
+          roles: ['admin', 'expert'],
+          email: 'multi-role-mock@candor.local',
+          name: '雙角色管理員',
+          status: 'active',
+          last_login_at: new Date().toISOString()
+        }
+      }
+    })
+  })
+})
+
+await multiPage.goto(`${base}/login`, { waitUntil: 'networkidle' })
+await multiPage.locator('input[type="email"]').fill('multi-role-mock@candor.local')
+await multiPage.locator('input[type="password"]').fill('mock-password')
+await multiPage.locator('button[type="submit"]').click()
+await multiPage.waitForSelector('[data-testid="choose-panel"]', { timeout: 30_000 })
+assert.ok(
+  /選擇進入面板|Choose a panel/i.test(await multiPage.locator('[data-testid="choose-panel"]').innerText()),
+  'missing choose panel title'
+)
+
+await multiPage.locator('[data-testid="choose-panel-admin"]').click()
+await multiPage.waitForSelector('[data-testid="admin-to-expert"]', { timeout: 30_000 })
+
+await multiPage.goto(`${base}/login`, { waitUntil: 'networkidle' })
+await multiPage.waitForSelector('[data-testid="choose-panel"]', { timeout: 30_000 })
+await multiPage.locator('[data-testid="choose-panel-expert"]').click()
+await multiPage.waitForSelector('[data-testid="expert-station-calendar-grid"]', { timeout: 30_000 })
+await multiPage.waitForSelector('[data-testid="expert-to-admin"]', { timeout: 30_000 })
+
+// Direct URL while already logged in must not bounce to choose-panel.
+await multiPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await multiPage.waitForSelector('[data-testid="admin-to-expert"]', { timeout: 30_000 })
+assert.equal(await multiPage.locator('[data-testid="choose-panel"]').count(), 0)
+await multiPage.goto(`${base}/expert/`, { waitUntil: 'networkidle' })
+await multiPage.waitForSelector('[data-testid="expert-station-calendar-grid"]', { timeout: 30_000 })
+assert.equal(await multiPage.locator('[data-testid="choose-panel"]').count(), 0)
+
+console.log('multi-role choose-panel e2e ok')
 await browser.close()

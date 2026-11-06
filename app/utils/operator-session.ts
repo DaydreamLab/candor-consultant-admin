@@ -134,6 +134,7 @@ function normalizeOperator(value: Partial<Operator>): Operator {
     throw new Error('operator profile is incomplete')
   }
   const status = value.status === 'active' || value.status === 'suspended' ? value.status : null
+  const mergedRoles = roles.includes(role) ? roles : [role, ...roles]
   const operator: Operator = {
     id: value.id,
     role,
@@ -142,8 +143,9 @@ function normalizeOperator(value: Partial<Operator>): Operator {
     status,
     last_login_at: typeof value.last_login_at === 'string' ? value.last_login_at : null
   }
-  if (roles.length > 1 || (roles.length === 1 && roles[0] !== role)) {
-    operator.roles = roles.includes(role) ? roles : [role, ...roles]
+  // Persist roles[] whenever multi-role or when it differs from primary `role`.
+  if (mergedRoles.length > 1 || mergedRoles[0] !== role) {
+    operator.roles = mergedRoles
   }
   return operator
 }

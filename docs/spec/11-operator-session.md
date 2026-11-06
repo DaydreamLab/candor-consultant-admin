@@ -52,10 +52,10 @@
 
 | 檔案 | 現況 | 接線後 |
 |------|------|--------|
-| `auth.global.ts` | 檢查 operator token；未登入導向 `/login`。登入後依 `operatorRoles` 導向（僅 expert → `/expert/`，其餘 → `/`）。`/expert/*` 需有 expert；營運後台頁需有 admin／ops。舊 `/bookings*`、`/calendar*` 轉 `/expert/...`。不在這裡打 `GET /admin/me` | 仍只檢查 token＋角色路徑。目前身份由 `/account` 與側欄讀取；失敗只顯示錯誤，不登出 |
+| `auth.global.ts` | 檢查 operator token；未登入導向 `/login`。登入後依 `operatorRoles` 導向（僅 expert → `/expert/`；admin／ops → `/`；同時有 admin／ops＋expert → `/choose-panel`）。`/expert/*` 需有 expert；營運後台頁需有 admin／ops。已登入多角色可直打 `/` 或 `/expert/*`，不強制再經選擇頁。舊 `/bookings*`、`/calendar*` 轉 `/expert/...`。不在這裡打 `GET /admin/me` | 仍只檢查 token＋角色路徑。目前身份由 `/account` 與側欄讀取；失敗只顯示錯誤，不登出 |
 | `platform.global.ts` | 限制 platformOnly nav | 改為 core 角色；`orgs` 等不做頁應移除或永遠隱藏 |
 
-多角色：profile 可帶 `roles[]`（同時有 admin／ops 與 expert 時預設進後台，並顯示互切入口）；否則退回單一 `role`。
+多角色：login／me 的 `operator.roles[]`（例如 `["admin","expert"]`）優先於單一 `role`。同時有 admin／ops 與 expert 時，登入後進 `/choose-panel` 選面板；進站後側欄／頂欄互切入口仍在。前端不以 email 判斷多角色。
 
 ## 相關
 
