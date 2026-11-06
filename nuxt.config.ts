@@ -1,3 +1,6 @@
+/** Independent expert-station build: `NUXT_APP_SURFACE=expert pnpm run build:expert` */
+const isExpertSurface = process.env.NUXT_APP_SURFACE === 'expert'
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
@@ -22,7 +25,7 @@ export default defineNuxtConfig({
     preference: 'system',
     fallback: 'light',
     classSuffix: '',
-    storageKey: 'candor-admin-color-mode'
+    storageKey: isExpertSurface ? 'candor-expert-color-mode' : 'candor-admin-color-mode'
   },
 
   runtimeConfig: {
@@ -31,6 +34,8 @@ export default defineNuxtConfig({
       feSha: process.env.NUXT_PUBLIC_FE_SHA || '',
       /** prod tag 部署寫入（如 `v1.2.3`）；本機／未設時畫面顯示 `dev` */
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '',
+      /** admin | expert — surface identity for UI copy／guards */
+      appSurface: isExpertSurface ? 'expert' : 'admin',
       /** 本機截圖／預覽用；正式環境勿開 */
       privacyPolicyMock: process.env.NUXT_PUBLIC_PRIVACY_POLICY_MOCK === '1',
       /**
@@ -38,8 +43,22 @@ export default defineNuxtConfig({
        */
       ctaCatalogMock: process.env.NUXT_PUBLIC_CTA_CATALOG_MOCK !== '0',
       /** 定稿對話文案本機 mock；正式／Pages 勿開。預設打 core finalize-copy/generate。 */
-      expertFinalizeCopyMock: process.env.NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK === '1'
+      expertFinalizeCopyMock: process.env.NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK === '1',
+      /**
+       * 專人預約 mock：本機／專家站預設開啟；core API 合併後可設 `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=0`。
+       */
+      expertBookingMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_MOCK !== '0'
     }
+  },
+
+  /**
+   * Expert station uses its own pages／layouts／middleware under
+   * `app/surfaces/expert/*` while sharing utils／stores／components.
+   */
+  dir: {
+    pages: isExpertSurface ? 'surfaces/expert/pages' : 'pages',
+    layouts: isExpertSurface ? 'surfaces/expert/layouts' : 'layouts',
+    middleware: isExpertSurface ? 'surfaces/expert/middleware' : 'middleware'
   },
 
   routeRules: {},

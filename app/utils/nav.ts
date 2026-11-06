@@ -31,7 +31,7 @@ export interface NavGroup {
 /**
  * 側欄 IA（短物件名 2026-11-04）：
  * 總覽（最上、無組標）→ 營運 → 學習 → 商品 → 系統 → 開發中。
- * 每項只出現一次（24；expert 看不到引導／退款申請則更少）。組 key 與 item key 共用 `nav.*`。
+ * 每項只出現一次（25；expert 看不到引導／退款申請則更少）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -46,6 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'custom', to: '/custom', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
+      { key: 'expertBookings', to: '/expert-bookings', icon: 'i-lucide-calendar-heart', developing: false },
       { key: 'refundRequests', to: '/refund-requests', icon: 'i-lucide-wallet', developing: false, opsAdminOnly: true },
       // shipping：物流（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck', developing: false },
@@ -141,6 +142,9 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/custom' || current.startsWith('/custom/')) {
+    return false
+  }
+  if (current === '/expert-bookings' || current.startsWith('/expert-bookings/')) {
     return false
   }
   if (current === '/knowledge/datasets' || current.startsWith('/knowledge/datasets/')) {

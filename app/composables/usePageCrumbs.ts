@@ -26,6 +26,10 @@ export function useExpertPlanCrumbLabel() {
   return useState<string | null>('candor-expert-plan-label', () => null)
 }
 
+export function useExpertBookingCrumbLabel() {
+  return useState<string | null>('candor-expert-booking-label', () => null)
+}
+
 export function usePageCrumbs() {
   const route = useRoute()
   const localePath = useLocalePath()
@@ -35,6 +39,7 @@ export function usePageCrumbs() {
   const sellableItemLabel = useSellableItemCrumbLabel()
   const packagePlanLabel = usePackagePlanCrumbLabel()
   const expertPlanLabel = useExpertPlanCrumbLabel()
+  const expertBookingLabel = useExpertBookingCrumbLabel()
   const labServiceLabel = useLabServiceCrumbLabel()
   const labAppointmentLabel = useLabAppointmentCrumbLabel()
   const expertCaseLabel = useExpertCaseCrumbLabel()
@@ -103,6 +108,25 @@ export function usePageCrumbs() {
       return [
         { label: t('nav.appointments'), to: localePath('/lab-appointments') },
         { label: labAppointmentLabel.value || id }
+      ]
+    }
+
+    if (current.endsWith('/selections') && current.includes('/expert-bookings/')) {
+      const id = String(route.params.id ?? '')
+      return [
+        { label: t('nav.expertBookings'), to: localePath('/expert-bookings') },
+        {
+          label: expertBookingLabel.value || id,
+          to: localePath(`/expert-bookings/${encodeURIComponent(id)}`)
+        },
+        { label: t('expertBookings.selections.crumb') }
+      ]
+    }
+
+    if (current.startsWith('/expert-bookings/')) {
+      return [
+        { label: t('nav.expertBookings'), to: localePath('/expert-bookings') },
+        { label: expertBookingLabel.value || t('expertBookings.details') }
       ]
     }
 

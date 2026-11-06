@@ -54,9 +54,15 @@ pnpm install
 pnpm dev
 pnpm run lint && pnpm run typecheck
 pnpm generate   # GitHub Pages
+
+# 專家站（同 repo 獨立 surface build；不改部署設定）
+pnpm run dev:expert      # http://localhost:3001
+pnpm run build:expert
+pnpm run typecheck:expert
+pnpm run test:expert-booking
 ```
 
-本機單獨開發：http://localhost:3000
+本機單獨開發：http://localhost:3000（顧問後台）；專家站：`pnpm run dev:expert` → http://localhost:3001
 
 與 candor-core 一起用 `docker compose` 時，後台是 `admin` 服務，開 http://localhost:3001（`NUXT_PUBLIC_API_BASE=http://localhost:8080/api/v1`）。埠避開前台的 3000；core 的 `CORS_ALLOWED_ORIGINS` 須包含 `http://localhost:3001`。
 
