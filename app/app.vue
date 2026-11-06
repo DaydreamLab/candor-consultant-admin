@@ -8,7 +8,8 @@ useHead({
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
   ],
   htmlAttrs: {
-    lang: locale
+    'lang': locale,
+    'data-app-surface': String(runtimeConfig.public.appSurface || 'admin')
   },
   link: [
     { rel: 'icon', type: 'image/png', href: withAppBase(runtimeConfig.app.baseURL, '/favicon.png') },

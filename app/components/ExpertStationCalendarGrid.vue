@@ -139,7 +139,7 @@ function dayLabel(date: string) {
             v-for="block in blocksFor(date, slot)"
             :key="block.id"
             type="button"
-            class="absolute inset-x-1 top-1 z-10 rounded px-1 py-1 text-left text-[11px] leading-tight text-white shadow-sm"
+            class="expert-cal-booking-chip absolute inset-x-1 top-1 z-10 rounded px-1 py-1 text-left text-xs font-semibold leading-tight tabular-nums text-white shadow-sm"
             :style="blockStyle(block)"
             @click="emit('selectBooking', block)"
           >

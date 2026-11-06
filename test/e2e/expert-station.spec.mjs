@@ -1,6 +1,6 @@
 /**
- * Related e2e for expert station list (mock).
- * Requires: `NUXT_APP_SURFACE=expert pnpm run dev:expert` and mock booking flag.
+ * Related e2e for expert station (mock).
+ * Requires: `NUXT_APP_SURFACE=expert` + `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=1` and `pnpm run dev:expert`.
  *
  * Usage:
  *   PLAYWRIGHT_CHROMIUM_PATH=... node test/e2e/expert-station.spec.mjs [baseUrl]
@@ -8,7 +8,7 @@
 import { chromium } from 'playwright-core'
 import assert from 'node:assert/strict'
 
-const base = process.argv[2] || 'http://127.0.0.1:3001'
+const base = process.argv[2] || 'http://localhost:3001'
 
 const session = {
   token: 'expert-station-mock-token',
@@ -39,13 +39,18 @@ await page.addInitScript((payload) => {
 }, session)
 
 await page.goto(`${base}/`, { waitUntil: 'networkidle' })
+await page.waitForSelector('[data-testid="expert-station-calendar-grid"]', { timeout: 30_000 })
+const home = await page.locator('[data-testid="expert-station-calendar"]').textContent()
+assert.ok(home && /共用行事曆|Shared calendar/i.test(home), 'missing calendar home title')
+
+await page.goto(`${base}/bookings`, { waitUntil: 'networkidle' })
 await page.waitForSelector('[data-testid="expert-station-bookings"]', { timeout: 30_000 })
 const body = await page.locator('[data-testid="expert-station-bookings"]').textContent()
 assert.ok(body && /已付款預約|Paid bookings/i.test(body), 'missing bookings title')
-assert.ok(/上次看到|Last seen/i.test(body || ''), 'missing last-seen banner')
+assert.ok(/最後查看|Last viewed/i.test(body || ''), 'missing last-seen banner')
 
-await page.goto(`${base}/calendar`, { waitUntil: 'networkidle' })
-await page.waitForSelector('[data-testid="expert-station-calendar-grid"]', { timeout: 30_000 })
+await page.goto(`${base}/calendar/availability`, { waitUntil: 'networkidle' })
+await page.waitForSelector('main h1', { timeout: 30_000 })
 
 console.log('expert-station e2e ok')
 await browser.close()

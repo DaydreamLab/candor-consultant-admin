@@ -1,0 +1,144 @@
+/**
+ * Expert-station typography — scoped to [data-app-surface="expert"] / [data-surface="expert"].
+ * Admin surface must not match these selectors (no global type overrides).
+ */
+
+[data-app-surface="expert"] main h1,
+[data-surface="expert"] main h1 {
+  letter-spacing: -0.025em; /* tracking-tight */
+  line-height: 1.25; /* leading-tight */
+}
+
+[data-app-surface="expert"] main h2,
+[data-surface="expert"] main h2 {
+  font-size: 1rem; /* text-base */
+  line-height: 1.5;
+  font-weight: 600; /* font-semibold */
+  letter-spacing: -0.025em; /* tracking-tight */
+}
+
+/* Field labels: dt + Nuxt UI form labels */
+[data-app-surface="expert"] main dt,
+[data-surface="expert"] main dt,
+[data-app-surface="expert"] main [data-slot="label"],
+[data-surface="expert"] main [data-slot="label"] {
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600; /* font-semibold */
+  color: var(--ui-text-muted);
+  line-height: 1.4;
+}
+
+/* Field values */
+[data-app-surface="expert"] main dd,
+[data-surface="expert"] main dd {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.625; /* leading-relaxed */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Long-form copy: service notes, preferred slots, whitespace-pre-line */
+[data-app-surface="expert"] main .whitespace-pre-line,
+[data-surface="expert"] main .whitespace-pre-line,
+[data-app-surface="expert"] main textarea,
+[data-surface="expert"] main textarea {
+  max-width: 65ch; /* max-w-prose */
+  line-height: 1.625; /* leading-relaxed */
+}
+
+/* Conversation / chat bubbles */
+[data-app-surface="expert"] main [data-slot="content"],
+[data-surface="expert"] main [data-slot="content"],
+[data-app-surface="expert"] main [data-slot="message"],
+[data-surface="expert"] main [data-slot="message"] {
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+
+[data-app-surface="expert"] main [data-slot="message"] time,
+[data-surface="expert"] main [data-slot="message"] time,
+[data-app-surface="expert"] main time.text-xs,
+[data-surface="expert"] main time.text-xs {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tables */
+[data-app-surface="expert"] main thead,
+[data-surface="expert"] main thead {
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600; /* font-semibold */
+}
+
+[data-app-surface="expert"] main table,
+[data-surface="expert"] main table,
+[data-app-surface="expert"] main tbody,
+[data-surface="expert"] main tbody {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Times / numbers: calendar axis, badges, pagination, overview counts */
+[data-app-surface="expert"] main .tabular-nums,
+[data-surface="expert"] main .tabular-nums,
+[data-app-surface="expert"] main [data-testid="expert-station-calendar-grid"],
+[data-surface="expert"] main [data-testid="expert-station-calendar-grid"],
+[data-app-surface="expert"] main .inline-flex.items-center,
+[data-surface="expert"] main .inline-flex.items-center {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Calendar booking chips: 11px → 12px + weight + tabular */
+[data-app-surface="expert"] main [data-testid="expert-station-calendar-grid"] button.text-\[11px\],
+[data-surface="expert"] main [data-testid="expert-station-calendar-grid"] button.text-\[11px\],
+[data-app-surface="expert"] main [data-testid="expert-station-calendar-grid"] .expert-cal-booking-chip,
+[data-surface="expert"] main [data-testid="expert-station-calendar-grid"] .expert-cal-booking-chip {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 600;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Day-column override sub-label */
+[data-app-surface="expert"] main [data-testid="expert-station-calendar-grid"] .text-\[10px\],
+[data-surface="expert"] main [data-testid="expert-station-calendar-grid"] .text-\[10px\] {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Helper / hint copy stays text-xs; times in axis use tabular-nums */
+[data-app-surface="expert"] main p.text-xs,
+[data-surface="expert"] main p.text-xs,
+[data-app-surface="expert"] main .text-xs.text-muted,
+[data-surface="expert"] main .text-xs.text-muted,
+[data-app-surface="expert"] main .text-xs.font-medium,
+[data-surface="expert"] main .text-xs.font-medium {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Form-adjacent muted labels (toolbar / availability) */
+[data-app-surface="expert"] main label.text-sm,
+[data-surface="expert"] main label.text-sm,
+[data-app-surface="expert"] main span.text-sm.text-muted,
+[data-surface="expert"] main span.text-sm.text-muted {
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Pending / last-seen card numbers */
+[data-app-surface="expert"] main p.truncate.text-2xl,
+[data-surface="expert"] main p.truncate.text-2xl,
+[data-app-surface="expert"] main p.text-3xl.font-semibold,
+[data-surface="expert"] main p.text-3xl.font-semibold {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+/* Native / UI inputs that show dates & times */
+[data-app-surface="expert"] main input,
+[data-surface="expert"] main input,
+[data-app-surface="expert"] main [data-slot="base"] input,
+[data-surface="expert"] main [data-slot="base"] input {
+  font-variant-numeric: tabular-nums;
+}
