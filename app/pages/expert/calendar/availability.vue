@@ -19,6 +19,11 @@ import {
 import { readOperatorToken } from '~/utils/operator-session'
 import type { ExpertCalendarSnapshot } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station-calendar-availability'
+})
+
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
@@ -330,7 +335,7 @@ function dayLabel(date: string) {
       <UButton
         size="sm"
         variant="outline"
-        :to="localePath('/')"
+        :to="localePath('/expert')"
       >
         {{ $t('expertStation.calendar.cancel') }}
       </UButton>

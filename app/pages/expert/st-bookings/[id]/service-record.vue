@@ -8,6 +8,12 @@ import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 import type { ExpertBookingAttachment } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station-bookings-id-service-record',
+  path: '/expert/bookings/:id/service-record'
+})
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -172,7 +178,7 @@ async function onSave() {
     )
     filledBy.value = saved.filled_by_operator_id
     filledAt.value = saved.filled_at
-    await navigateTo(localePath(`/bookings/${encodeURIComponent(bookingId.value)}`))
+    await navigateTo(localePath(`/expert/bookings/${encodeURIComponent(bookingId.value)}`))
   } catch {
     errorMessage.value = t('expertBookings.failed')
   } finally {

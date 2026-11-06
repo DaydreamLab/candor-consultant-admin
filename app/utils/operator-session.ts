@@ -109,17 +109,41 @@ function parseProfile(raw: string | null): StoredOperator | null {
   }
 }
 
+function normalizeOperatorRoles(value: Partial<Operator>): OperatorRole[] {
+  if (Array.isArray(value.roles)) {
+    const unique: OperatorRole[] = []
+    for (const role of value.roles) {
+      if (ROLES.has(role) && !unique.includes(role)) {
+        unique.push(role)
+      }
+    }
+    if (unique.length > 0) {
+      return unique
+    }
+  }
+  if (value.role && ROLES.has(value.role)) {
+    return [value.role]
+  }
+  return []
+}
+
 function normalizeOperator(value: Partial<Operator>): Operator {
-  if (!value.id || !value.email || !value.name || !value.role || !ROLES.has(value.role)) {
+  const roles = normalizeOperatorRoles(value)
+  const role = (value.role && ROLES.has(value.role) ? value.role : roles[0]) as OperatorRole | undefined
+  if (!value.id || !value.email || !value.name || !role) {
     throw new Error('operator profile is incomplete')
   }
   const status = value.status === 'active' || value.status === 'suspended' ? value.status : null
-  return {
+  const operator: Operator = {
     id: value.id,
-    role: value.role,
+    role,
     email: value.email,
     name: value.name,
     status,
     last_login_at: typeof value.last_login_at === 'string' ? value.last_login_at : null
   }
+  if (roles.length > 1 || (roles.length === 1 && roles[0] !== role)) {
+    operator.roles = roles.includes(role) ? roles : [role, ...roles]
+  }
+  return operator
 }

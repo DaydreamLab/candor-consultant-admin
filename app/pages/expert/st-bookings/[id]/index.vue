@@ -13,6 +13,12 @@ import type {
   ExpertBookingDetail
 } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station-bookings-id',
+  path: '/expert/bookings/:id'
+})
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
@@ -470,19 +476,19 @@ async function markComplete() {
         <div class="mt-3 flex flex-wrap gap-2">
           <UButton
             color="primary"
-            :to="localePath(`/bookings/${encodeURIComponent(booking.id)}/confirm`)"
+            :to="localePath(`/expert/bookings/${encodeURIComponent(booking.id)}/confirm`)"
           >
             {{ $t('expertStation.detail.confirmAction') }}
           </UButton>
           <UButton
             variant="outline"
-            :to="localePath(`/bookings/${encodeURIComponent(booking.id)}/service-record`)"
+            :to="localePath(`/expert/bookings/${encodeURIComponent(booking.id)}/service-record`)"
           >
             {{ $t('expertStation.detail.serviceRecord') }}
           </UButton>
           <UButton
             variant="outline"
-            :to="localePath(`/bookings/${encodeURIComponent(booking.id)}/selections`)"
+            :to="localePath(`/expert/bookings/${encodeURIComponent(booking.id)}/selections`)"
           >
             {{ $t('expertStation.detail.selections') }}
           </UButton>

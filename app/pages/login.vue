@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { AdminApiError } from '~/utils/admin-api'
+import { operatorRoles, postLoginHomePath } from '~/utils/operator-roles'
 import { loginSchema } from '~/utils/schemas'
 import type { LoginForm } from '~/utils/schemas'
 
@@ -29,9 +30,10 @@ function appHref(path: string) {
 }
 
 async function enterApp() {
+  const home = postLoginHomePath(operatorRoles(session.operator))
   await nextTick()
   await reloadNuxtApp({
-    path: appHref(localePath('/')),
+    path: appHref(localePath(home)),
     persistState: false
   })
 }

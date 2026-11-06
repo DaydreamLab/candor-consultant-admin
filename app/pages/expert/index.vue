@@ -13,6 +13,11 @@ import type {
   ExpertCalendarSnapshot
 } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station'
+})
+
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
@@ -273,7 +278,7 @@ function toggleAllExperts(checked: boolean | 'indeterminate') {
         <UButton
           size="sm"
           variant="outline"
-          :to="localePath('/calendar/availability')"
+          :to="localePath('/expert/calendar/availability')"
         >
           {{ $t('expertStation.calendar.setAvailability') }}
         </UButton>
@@ -366,7 +371,7 @@ function toggleAllExperts(checked: boolean | 'indeterminate') {
           </p>
           <UButton
             color="primary"
-            :to="localePath(`/bookings/${encodeURIComponent(selectedBooking.id)}`)"
+            :to="localePath(`/expert/bookings/${encodeURIComponent(selectedBooking.id)}`)"
           >
             {{ $t('expertBookings.details') }}
           </UButton>

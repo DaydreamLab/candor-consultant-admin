@@ -97,17 +97,17 @@
 - 進度：[../03-progress.md](../03-progress.md)
 
 
-## 專家站（獨立 surface build）
+## 專家站（同 build、`/expert/*`）
 
-同 repo、`NUXT_APP_SURFACE=expert` 另產物（`pnpm run build:expert`／`dev:expert`）。自己的 layout／middleware；頁面僅專家站路由；登入限 `operator.role === expert`。部署網域（暫定 expert.my-candor.com）不在本 PR 範圍。
+與營運後台同一產物；頁面在 `app/pages/expert/**`，layout `expert`（`data-surface="expert"`）。登入共用 `/login`，依角色導向：僅 `expert` → `/expert/`；`admin`／`ops`（含同時有 expert）→ 營運後台。僅 expert 不可進後台頁；無 expert 角色不可進 `/expert/*`。雙角色可在側欄／專家站頂欄互切。舊書籤 `/bookings*`、`/calendar*` 轉到 `/expert/...`。舊獨立網域退役方式見 PR 未決點。
 
 | 路徑 | 說明 |
 |------|------|
-| `/login` | E-01 專家站登入 |
-| `/` | K-01／K-02／K-05 共用行事曆週／日視圖（首頁；`/calendar` 轉至此） |
-| `/bookings` | E-02 已付款預約列表（pin、上次看到） |
-| `/bookings/{id}` | E-03／E-07 案件詳情／標記完成 |
-| `/bookings/{id}/confirm` | E-04 確認時間／改期 |
-| `/bookings/{id}/service-record` | E-05 服務紀錄（選填時長分鐘） |
-| `/bookings/{id}/selections` | E-06 選品與理由 |
-| `/calendar/availability` | K-03／K-04 可服務時段（每週重複、單日覆寫／還原、拖曳不跨日） |
+| `/login` | 共用登入（E-01） |
+| `/expert/` | K-01／K-02／K-05 共用行事曆週／日視圖（首頁；`/expert/calendar` 轉至此） |
+| `/expert/bookings` | E-02 已付款預約列表（pin、上次看到） |
+| `/expert/bookings/{id}` | E-03／E-07 案件詳情／標記完成 |
+| `/expert/bookings/{id}/confirm` | E-04 確認時間／改期 |
+| `/expert/bookings/{id}/service-record` | E-05 服務紀錄（選填時長分鐘） |
+| `/expert/bookings/{id}/selections` | E-06 選品與理由 |
+| `/expert/calendar/availability` | K-03／K-04 可服務時段（每週重複、單日覆寫／還原、拖曳不跨日） |

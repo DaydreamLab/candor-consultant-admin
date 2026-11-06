@@ -46,7 +46,8 @@
     "finance": "請款與報表",
     "platform": "平台",
     "expertBookings": "專人預約",
-    "expertBookingProduct": "預約商品"
+    "expertBookingProduct": "預約商品",
+    "expertStation": "專家站"
   },
   "colorMode": {
     "label": "外觀",
@@ -2381,7 +2382,8 @@
     "nav": {
       "home": "首頁",
       "bookings": "預約列表",
-      "logout": "登出"
+      "logout": "登出",
+      "toAdmin": "回營運後台"
     },
     "login": {
       "title": "坦見 專家站",

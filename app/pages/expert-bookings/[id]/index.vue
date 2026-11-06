@@ -10,6 +10,10 @@ import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
 import type { ExpertBookingDetail } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  name: 'admin-expert-bookings-id'
+})
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()

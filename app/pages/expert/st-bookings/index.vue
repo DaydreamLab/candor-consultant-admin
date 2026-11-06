@@ -10,6 +10,12 @@ import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
 import type { ExpertBookingListItem, ExpertBookingStatus } from '~/utils/expert-booking-types'
 
+definePageMeta({
+  layout: 'expert',
+  name: 'expert-station-bookings',
+  path: '/expert/bookings'
+})
+
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
@@ -155,7 +161,7 @@ async function togglePin(row: ExpertBookingListItem) {
     <NuxtLink
       v-if="lastSeen"
       class="mt-4 block max-w-sm rounded-xl border border-default bg-default px-4 py-4 hover:bg-elevated/60"
-      :to="localePath(`/bookings/${encodeURIComponent(lastSeen.id)}`)"
+      :to="localePath(`/expert/bookings/${encodeURIComponent(lastSeen.id)}`)"
     >
       <h2 class="text-sm text-muted">
         {{ $t('expertStation.bookings.lastSeen') }}
@@ -217,7 +223,7 @@ async function togglePin(row: ExpertBookingListItem) {
             v-for="row in rows"
             :key="row.id"
             class="cursor-pointer border-t border-default hover:bg-elevated/60"
-            @click="navigateTo(localePath(`/bookings/${encodeURIComponent(row.id)}`))"
+            @click="navigateTo(localePath(`/expert/bookings/${encodeURIComponent(row.id)}`))"
           >
             <td class="px-3 py-3">
               <UButton

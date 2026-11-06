@@ -46,7 +46,8 @@
     "finance": "Billing & reports",
     "platform": "Platform",
     "expertBookings": "Expert bookings",
-    "expertBookingProduct": "Booking product"
+    "expertBookingProduct": "Booking product",
+    "expertStation": "Expert station"
   },
   "colorMode": {
     "label": "Appearance",
@@ -2381,7 +2382,8 @@
     "nav": {
       "home": "Home",
       "bookings": "Bookings",
-      "logout": "Log out"
+      "logout": "Log out",
+      "toAdmin": "Back to admin"
     },
     "login": {
       "title": "Candor Expert",

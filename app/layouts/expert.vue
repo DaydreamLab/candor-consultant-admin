@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
+
 const localePath = useLocalePath()
 const route = useRoute()
 const session = useSessionStore()
@@ -11,6 +13,7 @@ const appVersionLabel = computed(() => {
   return version || 'dev'
 })
 const copyrightYear = new Date().getFullYear()
+const showAdminSwitch = computed(() => hasOpsAdminRole(operatorRoles(session.operator)))
 
 useHead({
   title: t('expertStation.brand')
@@ -18,9 +21,12 @@ useHead({
 
 const path = computed(() => route.path.replace(/^\/en(?=\/|$)/, '') || '/')
 
-const bookingsActive = computed(() => path.value.startsWith('/bookings'))
+const bookingsActive = computed(() => path.value.startsWith('/expert/bookings'))
 
-const homeActive = computed(() => path.value === '/' || path.value.startsWith('/calendar'))
+const homeActive = computed(() => (
+  path.value === '/expert'
+  || path.value.startsWith('/expert/calendar')
+))
 
 const displayName = computed(() => {
   const name = session.operator?.name?.trim()
@@ -41,7 +47,7 @@ function logout() {
     <header class="border-b border-default bg-default text-default">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
         <NuxtLink
-          :to="localePath('/')"
+          :to="localePath('/expert')"
           class="flex min-w-0 items-center gap-2.5 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <img
@@ -60,18 +66,26 @@ function logout() {
         </NuxtLink>
         <nav class="flex flex-1 flex-wrap items-center gap-2">
           <NuxtLink
-            :to="localePath('/')"
+            :to="localePath('/expert')"
             class="rounded-md px-3 py-1.5 text-sm"
             :class="homeActive ? 'bg-elevated' : 'hover:bg-elevated'"
           >
             {{ $t('expertStation.nav.home') }}
           </NuxtLink>
           <NuxtLink
-            :to="localePath('/bookings')"
+            :to="localePath('/expert/bookings')"
             class="rounded-md px-3 py-1.5 text-sm"
             :class="bookingsActive ? 'bg-elevated' : 'hover:bg-elevated'"
           >
             {{ $t('expertStation.nav.bookings') }}
+          </NuxtLink>
+          <NuxtLink
+            v-if="showAdminSwitch"
+            :to="localePath('/')"
+            class="rounded-md px-3 py-1.5 text-sm hover:bg-elevated"
+            data-testid="expert-to-admin"
+          >
+            {{ $t('expertStation.nav.toAdmin') }}
           </NuxtLink>
         </nav>
         <div class="flex items-center gap-1">

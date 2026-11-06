@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { isDevelopingPath, normalizeAdminPath } from '~/utils/nav'
+import { hasExpertRole, operatorRoles } from '~/utils/operator-roles'
 
 const localePath = useLocalePath()
 const route = useRoute()
@@ -11,6 +12,7 @@ const appVersionLabel = computed(() => {
   const version = String(runtimeConfig.public.appVersion || '').trim()
   return version || 'dev'
 })
+const showExpertSwitch = computed(() => hasExpertRole(operatorRoles(session.operator)))
 
 const open = ref(false)
 const developing = computed(() => isDevelopingPath(route.path))
@@ -233,6 +235,21 @@ onUnmounted(() => {
           class="flex w-full min-w-0 flex-col gap-2"
           :class="collapsed ? 'items-center' : ''"
         >
+          <UButton
+            v-if="showExpertSwitch"
+            :to="localePath('/expert')"
+            color="neutral"
+            variant="soft"
+            size="sm"
+            icon="i-lucide-calendar-heart"
+            :block="!collapsed"
+            :square="collapsed"
+            class="justify-start"
+            data-testid="admin-to-expert"
+            :aria-label="$t('nav.expertStation')"
+          >
+            <span v-if="!collapsed">{{ $t('nav.expertStation') }}</span>
+          </UButton>
           <div
             class="flex items-center gap-1"
             :class="collapsed ? 'flex-col' : ''"
