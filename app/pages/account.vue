@@ -2,14 +2,14 @@
 const { t } = useI18n()
 const { me, pending, errorMessage } = useOperatorMe({ refresh: true })
 
-const LEADING = ['name', 'email', 'role']
+const LEADING = ['name', 'email', 'roles']
 
 const fields = computed(() => {
   const data = me.value
   if (!data) {
     return []
   }
-  const keys = Object.keys(data).filter(key => key !== 'token')
+  const keys = Object.keys(data).filter(key => key !== 'token' && key !== 'role')
   const leading = LEADING.filter(key => Object.prototype.hasOwnProperty.call(data, key))
   const rest = keys.filter(key => !LEADING.includes(key))
   return [...leading, ...rest].map(key => ({
@@ -25,6 +25,8 @@ function fieldLabel(key: string) {
       return t('operatorMe.fields.name')
     case 'email':
       return t('operatorMe.fields.email')
+    case 'roles':
+      return t('operatorMe.fields.roles')
     case 'role':
       return t('operatorMe.fields.role')
     case 'status':
@@ -38,12 +40,25 @@ function fieldLabel(key: string) {
   }
 }
 
+function roleLabel(value: string) {
+  if (value === 'expert' || value === 'ops' || value === 'admin') {
+    return t(`roles.${value}`)
+  }
+  return value
+}
+
 function fieldValue(key: string, value: unknown) {
   if (value == null || value === '') {
     return t('status.na')
   }
+  if (key === 'roles' && Array.isArray(value)) {
+    const labels = value
+      .filter((item): item is string => typeof item === 'string')
+      .map(roleLabel)
+    return labels.length ? labels.join('、') : t('status.na')
+  }
   if (key === 'role' && (value === 'expert' || value === 'ops' || value === 'admin')) {
-    return t(`roles.${value}`)
+    return roleLabel(value)
   }
   if (key === 'status' && value === 'active') {
     return t('operatorMe.status.active')

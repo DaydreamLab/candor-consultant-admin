@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { isDevelopingPath, normalizeAdminPath } from '~/utils/nav'
-import { hasExpertRole, operatorRoles } from '~/utils/operator-roles'
+import { hasExpertCapability, operatorRoles } from '~/utils/operator-roles'
 
 const localePath = useLocalePath()
 const route = useRoute()
@@ -12,12 +12,13 @@ const appVersionLabel = computed(() => {
   const version = String(runtimeConfig.public.appVersion || '').trim()
   return version || 'dev'
 })
-const showExpertSwitch = computed(() => hasExpertRole(operatorRoles(session.operator)))
+const operatorRoleList = computed(() => operatorRoles(session.operator))
+const showExpertSwitch = computed(() => hasExpertCapability(operatorRoleList.value))
 
 const open = ref(false)
 const developing = computed(() => isDevelopingPath(route.path))
 
-const groups = computed(() => visibleNavGroups(session.role, session.operator?.role ?? null))
+const groups = computed(() => visibleNavGroups(session.role, operatorRoleList.value))
 
 const menuGroups = computed(() =>
   groups.value.map(group => ({

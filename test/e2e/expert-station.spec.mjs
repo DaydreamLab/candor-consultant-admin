@@ -15,7 +15,7 @@ const session = {
   profile: {
     operator: {
       id: 'op-expert-wang',
-      role: 'expert',
+      roles: ['expert'],
       email: 'expert-mock@candor.local',
       name: '王專家',
       status: 'active',
@@ -67,7 +67,6 @@ await multiPage.route('**/api/v1/admin/auth/login', async (route) => {
         expires_in: 86400,
         operator: {
           id: 'op-multi-role',
-          role: 'admin',
           roles: ['admin', 'expert'],
           email: 'multi-role-mock@candor.local',
           name: '雙角色管理員',

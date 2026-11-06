@@ -80,7 +80,8 @@
       "role": "Role",
       "status": "Status",
       "last_login_at": "Last login",
-      "id": "ID"
+      "id": "ID",
+      "roles": "Roles"
     },
     "status": {
       "active": "Active",

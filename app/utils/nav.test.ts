@@ -109,11 +109,11 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
   })
 
   it('hides guidance nav for expert; keeps privacy/settings/assistant', () => {
-    const adminKeys = visibleNavGroups('consultant_admin', 'admin')
+    const adminKeys = visibleNavGroups('consultant_admin', ['admin'])
       .find(g => g.key === 'system')!
       .items
       .map(i => i.key)
-    const expertKeys = visibleNavGroups('consultant_ops', 'expert')
+    const expertKeys = visibleNavGroups('consultant_ops', ['expert'])
       .find(g => g.key === 'system')!
       .items
       .map(i => i.key)
@@ -123,18 +123,18 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
 
   it('hides refundRequests nav for expert; keeps it for ops／admin', () => {
     expect(NAV_GROUPS.flatMap(g => g.items).find(i => i.key === 'refundRequests')?.opsAdminOnly).toBe(true)
-    const adminOps = visibleNavGroups('consultant_admin', 'admin').find(g => g.key === 'ops')!.items.map(i => i.key)
-    const opsOps = visibleNavGroups('consultant_ops', 'ops').find(g => g.key === 'ops')!.items.map(i => i.key)
-    const expertOps = visibleNavGroups('consultant_ops', 'expert').find(g => g.key === 'ops')!.items.map(i => i.key)
+    const adminOps = visibleNavGroups('consultant_admin', ['admin']).find(g => g.key === 'ops')!.items.map(i => i.key)
+    const opsOps = visibleNavGroups('consultant_ops', ['ops']).find(g => g.key === 'ops')!.items.map(i => i.key)
+    const expertOps = visibleNavGroups('consultant_ops', ['expert']).find(g => g.key === 'ops')!.items.map(i => i.key)
     expect(adminOps).toContain('refundRequests')
     expect(opsOps).toContain('refundRequests')
     expect(expertOps).not.toContain('refundRequests')
   })
 
   it('hides expertBookingProduct nav for expert; keeps it for ops／admin', () => {
-    const adminCatalog = visibleNavGroups('consultant_admin', 'admin').find(g => g.key === 'catalog')!.items.map(i => i.key)
-    const opsCatalog = visibleNavGroups('consultant_ops', 'ops').find(g => g.key === 'catalog')!.items.map(i => i.key)
-    const expertCatalog = visibleNavGroups('consultant_ops', 'expert').find(g => g.key === 'catalog')!.items.map(i => i.key)
+    const adminCatalog = visibleNavGroups('consultant_admin', ['admin']).find(g => g.key === 'catalog')!.items.map(i => i.key)
+    const opsCatalog = visibleNavGroups('consultant_ops', ['ops']).find(g => g.key === 'catalog')!.items.map(i => i.key)
+    const expertCatalog = visibleNavGroups('consultant_ops', ['expert']).find(g => g.key === 'catalog')!.items.map(i => i.key)
     expect(adminCatalog).toContain('expertBookingProduct')
     expect(opsCatalog).toContain('expertBookingProduct')
     expect(expertCatalog).not.toContain('expertBookingProduct')

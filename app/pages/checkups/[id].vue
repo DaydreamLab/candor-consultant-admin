@@ -2,6 +2,7 @@
 import { LAB_SERVICE_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { normalizeAdminPath } from '~/utils/nav'
 import type { LabServiceMock, LabServiceWrite } from '~/utils/lab-service-mock'
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -12,7 +13,7 @@ const { set } = bindNavbarActions()
 
 const serviceId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || serviceId.value)
-const canEdit = computed(() => session.operator?.role !== 'expert')
+const canEdit = computed(() => hasOpsAdminRole(operatorRoles(session.operator)))
 
 const labService = ref<LabServiceMock | null>(null)
 const pending = ref(true)

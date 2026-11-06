@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 import {
   AdminApiError,
   adminGetBiomarkerInterpretationSettings,
@@ -34,14 +35,14 @@ const localePath = useLocalePath()
 
 const org = computed(() => currentOrg())
 const canEditPayment = computed(() => {
-  const role = session.operator?.role
-  return role === 'ops' || role === 'admin'
+  const roles = operatorRoles(session.operator)
+  return hasOpsAdminRole(roles)
 })
 
-const anchorItems = computed(() => visibleSettingsAnchors(session.operator?.role))
+const anchorItems = computed(() => visibleSettingsAnchors(operatorRoles(session.operator)))
 const activeAnchor = computed<SettingsAnchorId>({
   get() {
-    return resolveSettingsAnchor(route.hash, session.operator?.role)
+    return resolveSettingsAnchor(route.hash, operatorRoles(session.operator))
   },
   set(id) {
     void router.replace({ hash: `#${id}` })
@@ -49,14 +50,14 @@ const activeAnchor = computed<SettingsAnchorId>({
 })
 
 watch(
-  () => [route.hash, session.operator?.role] as const,
+  () => [route.hash, operatorRoles(session.operator)] as const,
   () => {
     const split = parseSettingsSplitHash(route.hash)
     if (split) {
       void navigateTo(localePath(SETTINGS_SPLIT_HASH_REDIRECTS[split]))
       return
     }
-    const target = settingsHashReplaceTarget(route.hash, session.operator?.role)
+    const target = settingsHashReplaceTarget(route.hash, operatorRoles(session.operator))
     if (target) {
       void router.replace({ hash: `#${target}` })
     }

@@ -2,6 +2,7 @@
 import { AdminApiError, adminListSellableItems, adminUpdateSellableItem } from '~/utils/admin-api'
 import { thumbLetter, thumbTone } from '~/utils/thumb'
 import { readOperatorToken } from '~/utils/operator-session'
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 
 const VIEW_STORAGE_KEY = 'candor.products.view'
 const CATEGORY_ALL = 'all'
@@ -25,7 +26,7 @@ const coreFilter = ref(CORE_ALL)
 const view = ref<'card' | 'list'>('card')
 const togglingIds = ref<Set<string>>(new Set())
 
-const canToggleSale = computed(() => session.operator?.role !== 'expert')
+const canToggleSale = computed(() => hasOpsAdminRole(operatorRoles(session.operator)))
 
 const categoryOptions = computed(() => {
   const names = new Set<string>()

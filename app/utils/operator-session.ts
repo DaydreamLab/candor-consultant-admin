@@ -109,43 +109,31 @@ function parseProfile(raw: string | null): StoredOperator | null {
   }
 }
 
-function normalizeOperatorRoles(value: Partial<Operator>): OperatorRole[] {
-  if (Array.isArray(value.roles)) {
-    const unique: OperatorRole[] = []
-    for (const role of value.roles) {
-      if (ROLES.has(role) && !unique.includes(role)) {
-        unique.push(role)
-      }
-    }
-    if (unique.length > 0) {
-      return unique
+function normalizeOperatorRoles(value: Partial<Operator> & { role?: unknown }): OperatorRole[] {
+  if (!Array.isArray(value.roles)) {
+    return []
+  }
+  const unique: OperatorRole[] = []
+  for (const role of value.roles) {
+    if (typeof role === 'string' && ROLES.has(role as OperatorRole) && !unique.includes(role as OperatorRole)) {
+      unique.push(role as OperatorRole)
     }
   }
-  if (value.role && ROLES.has(value.role)) {
-    return [value.role]
-  }
-  return []
+  return unique
 }
 
-function normalizeOperator(value: Partial<Operator>): Operator {
+function normalizeOperator(value: Partial<Operator> & { role?: unknown }): Operator {
   const roles = normalizeOperatorRoles(value)
-  const role = (value.role && ROLES.has(value.role) ? value.role : roles[0]) as OperatorRole | undefined
-  if (!value.id || !value.email || !value.name || !role) {
+  if (!value.id || !value.email || !value.name || roles.length === 0) {
     throw new Error('operator profile is incomplete')
   }
   const status = value.status === 'active' || value.status === 'suspended' ? value.status : null
-  const mergedRoles = roles.includes(role) ? roles : [role, ...roles]
-  const operator: Operator = {
+  return {
     id: value.id,
-    role,
+    roles,
     email: value.email,
     name: value.name,
     status,
     last_login_at: typeof value.last_login_at === 'string' ? value.last_login_at : null
   }
-  // Persist roles[] whenever multi-role or when it differs from primary `role`.
-  if (mergedRoles.length > 1 || mergedRoles[0] !== role) {
-    operator.roles = mergedRoles
-  }
-  return operator
 }

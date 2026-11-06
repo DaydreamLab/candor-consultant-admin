@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { EXPERT_BOOKING_PRODUCT_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { useDirtyLeaveModal } from '~/composables/useDirtyLeaveModal'
+import { operatorRoles } from '~/utils/operator-roles'
 import {
   ExpertBookingProductApiError,
   adminGetExpertBookingProduct,
@@ -24,8 +25,8 @@ const { t, locale } = useI18n()
 const session = useSessionStore()
 const { set } = bindNavbarActions()
 
-const canView = computed(() => canViewExpertBookingProduct(session.operator?.role))
-const canEdit = computed(() => canEditExpertBookingProduct(session.operator?.role))
+const canView = computed(() => canViewExpertBookingProduct(operatorRoles(session.operator)))
+const canEdit = computed(() => canEditExpertBookingProduct(operatorRoles(session.operator)))
 
 const product = ref<ExpertBookingProduct | null>(null)
 const pending = ref(true)

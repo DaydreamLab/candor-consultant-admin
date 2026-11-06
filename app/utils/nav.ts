@@ -4,6 +4,7 @@ import type { OperatorRole } from '~/types/operator'
 import { canViewCtaCatalog } from '~/utils/cta-catalog-access'
 import { canViewExpertBookingProduct } from '~/utils/expert-booking-product-access'
 import { canAccessKnowledge } from '~/utils/knowledge-access'
+import { hasOpsAdminRole } from '~/utils/operator-roles'
 
 export interface NavItem {
   key: string
@@ -189,11 +190,12 @@ export function isDevelopingPath(path: string): boolean {
 
 export function visibleNavGroups(
   role: Role | null,
-  operatorRole: OperatorRole | null = null
+  operatorRolesList: readonly OperatorRole[] | null = null
 ): NavGroup[] {
   if (!role) {
     return []
   }
+  const roles = operatorRolesList ?? []
 
   return NAV_GROUPS
     .map(group => ({
@@ -202,16 +204,16 @@ export function visibleNavGroups(
         if (item.platformOnly && !isPlatformRole(role)) {
           return false
         }
-        if (item.knowledgeOnly && !canAccessKnowledge(operatorRole)) {
+        if (item.knowledgeOnly && !canAccessKnowledge(roles)) {
           return false
         }
-        if (item.guidanceOnly && !canViewCtaCatalog(operatorRole)) {
+        if (item.guidanceOnly && !canViewCtaCatalog(roles)) {
           return false
         }
-        if (item.opsAdminOnly && operatorRole === 'expert') {
+        if (item.opsAdminOnly && !hasOpsAdminRole(roles)) {
           return false
         }
-        if (item.expertBookingProductOnly && !canViewExpertBookingProduct(operatorRole)) {
+        if (item.expertBookingProductOnly && !canViewExpertBookingProduct(roles)) {
           return false
         }
         return true

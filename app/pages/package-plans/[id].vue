@@ -4,6 +4,7 @@ import { PACKAGE_PLAN_FORM_ID, bindNavbarActions } from '~/composables/useNavbar
 import { usePackagePlanLeaveGuard } from '~/composables/usePackagePlanLeaveGuard'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -15,7 +16,7 @@ const { set } = bindNavbarActions()
 
 const packagePlanId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || packagePlanId.value)
-const canEdit = computed(() => session.operator?.role !== 'expert')
+const canEdit = computed(() => hasOpsAdminRole(operatorRoles(session.operator)))
 
 const packagePlan = ref<Record<string, unknown> | null>(null)
 const pending = ref(true)

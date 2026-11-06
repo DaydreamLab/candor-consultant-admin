@@ -250,7 +250,8 @@
 
 **最後更新**：2026-11-06（專家站併入單一 admin build）
 
-- 2026-11-06：多角色（`roles[]` 含 admin／ops＋expert）登入後進 `/choose-panel`；直打網址不強制選面板；前端吃 core `roles[]`、不以 email 判斷
+- 2026-11-06：operator 契約改只回 `roles[]`（刪單一 `role`）；admin 含 expert／ops 能力；登入／guard／權限判斷全改 roles；配對 candor-core 多角色 draft
+- 2026-11-06：多角色登入後進 `/choose-panel`；直打網址不強制選面板；前端不以 email 判斷
 - 2026-11-06：專家站併入單一 build（退役 `NUXT_APP_SURFACE=expert`）；路由 `/expert/*`；登入依角色導向；`data-app-surface` 改依路由判斷
 - 2026-11-06：專人預約、預約商品、專家站與行事曆預設改打 core（`NUXT_PUBLIC_EXPERT_BOOKING_MOCK`／`NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK` 改為 `=1` 才進 mock）。選品清單改 `GET /admin/supplements` 並濾 `on_sale`。`docs/04` 已雙寫
 - 2026-11-06：營運後台新增「預約商品」`/expert-booking-product`（唯一 `personal`；GET／PUT；admin 可編、ops 只讀、expert 隱藏）

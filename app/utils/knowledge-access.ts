@@ -1,13 +1,14 @@
 import type { OperatorRole } from '~/types/operator'
+import { hasOpsAdminRole } from '~/utils/operator-roles'
 
 /** 知識管理入口與 /knowledge/** 路由：僅 ops／admin（Irice 10/21）。 */
-export function canAccessKnowledge(role: OperatorRole | null | undefined): boolean {
-  return role === 'ops' || role === 'admin'
+export function canAccessKnowledge(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return hasOpsAdminRole(roles ?? [])
 }
 
 /** 片段核可／退回：僅 ops／admin（與 candor-core 權限 PR 對齊）。 */
-export function canReviewKnowledgeChunks(role: OperatorRole | null | undefined): boolean {
-  return role === 'ops' || role === 'admin'
+export function canReviewKnowledgeChunks(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return hasOpsAdminRole(roles ?? [])
 }
 
 export function isKnowledgeAdminPath(path: string): boolean {

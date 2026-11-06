@@ -4,6 +4,7 @@ import { AdminApiError, adminGetSellableItem, adminUpdateSellableItem, type Sell
 import { SELLABLE_ITEM_FORM_ID, bindNavbarActions } from '~/composables/useNavbarActions'
 import { normalizeAdminPath } from '~/utils/nav'
 import { readOperatorToken } from '~/utils/operator-session'
+import { hasOpsAdminRole, operatorRoles } from '~/utils/operator-roles'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -14,7 +15,7 @@ const { set } = bindNavbarActions()
 
 const sellableItemId = computed(() => String(route.params.id ?? ''))
 const title = computed(() => crumbLabel.value || sellableItemId.value)
-const canEdit = computed(() => session.operator?.role !== 'expert')
+const canEdit = computed(() => hasOpsAdminRole(operatorRoles(session.operator)))
 
 const toast = useToast()
 const sellableItem = ref<Record<string, unknown> | null>(null)

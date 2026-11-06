@@ -1,4 +1,5 @@
 import { canViewCtaCatalog } from '~/utils/cta-catalog-access'
+import { operatorRoles } from '~/utils/operator-roles'
 
 function isCtaCatalogPath(path: string) {
   const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/'
@@ -12,7 +13,7 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const session = useSessionStore()
   const localePath = useLocalePath()
-  if (!canViewCtaCatalog(session.operator?.role)) {
+  if (!canViewCtaCatalog(operatorRoles(session.operator))) {
     return navigateTo(localePath('/settings'))
   }
 })

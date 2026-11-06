@@ -80,7 +80,8 @@
       "role": "角色",
       "status": "狀態",
       "last_login_at": "上次登入",
-      "id": "ID"
+      "id": "ID",
+      "roles": "角色"
     },
     "status": {
       "active": "使用中",

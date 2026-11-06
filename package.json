@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
-    "test:expert-booking": "vitest run app/utils/expert-booking-api.test.ts app/utils/expert-booking-calendar.test.ts app/utils/nav.test.ts app/utils/expert-booking-product-api.test.ts app/utils/expert-booking-product-form.test.ts app/utils/expert-booking-product-access.test.ts app/utils/operator-roles.test.ts"
+    "test:expert-booking": "vitest run app/utils/expert-booking-api.test.ts app/utils/expert-booking-calendar.test.ts app/utils/nav.test.ts app/utils/expert-booking-product-api.test.ts app/utils/expert-booking-product-form.test.ts app/utils/expert-booking-product-access.test.ts app/utils/operator-roles.test.ts app/utils/cta-catalog-access.test.ts app/utils/knowledge-access.test.ts app/utils/daily-learning-access.test.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.127",

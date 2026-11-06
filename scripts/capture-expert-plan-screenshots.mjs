@@ -351,7 +351,7 @@ async function installMocks(page) {
           id: 'op-1',
           email: `${operatorRole}@example.com`,
           name: operatorRole,
-          role: operatorRole,
+          roles: [operatorRole],
           status: 'active'
         })
       })
@@ -373,7 +373,7 @@ async function seedSession(page, role = 'admin') {
         id: 'op-1',
         email: `${r}@example.com`,
         name: r,
-        role: r,
+        roles: [r],
         status: 'active',
         last_login_at: null
       },

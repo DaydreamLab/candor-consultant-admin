@@ -10,6 +10,17 @@ export const DAILY_LEARNING_PUBLISH_ROLES = ['expert', 'admin'] as const satisfi
 export const DAILY_LEARNING_CONFIRM_ROLES = ['expert', 'ops', 'admin'] as const satisfies readonly OperatorRole[]
 export const WEIGHT_SET_READ_ROLES = ['expert', 'ops', 'admin'] as const satisfies readonly OperatorRole[]
 
+export function rolesAllowed(
+  roles: readonly OperatorRole[] | null | undefined,
+  allowed: readonly OperatorRole[]
+): boolean {
+  if (!roles || roles.length === 0) {
+    return false
+  }
+  return roles.some(role => allowed.includes(role))
+}
+
+/** @deprecated use rolesAllowed */
 export function roleAllowed(
   role: OperatorRole | null | undefined,
   allowed: readonly OperatorRole[]
@@ -17,22 +28,22 @@ export function roleAllowed(
   return role != null && allowed.includes(role)
 }
 
-export function canGenerateDailyLearningDraft(role: OperatorRole | null | undefined): boolean {
-  return roleAllowed(role, DAILY_LEARNING_GENERATE_ROLES)
+export function canGenerateDailyLearningDraft(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return rolesAllowed(roles, DAILY_LEARNING_GENERATE_ROLES)
 }
 
-export function canDryRunWeightSet(role: OperatorRole | null | undefined): boolean {
-  return roleAllowed(role, DAILY_LEARNING_DRY_RUN_ROLES)
+export function canDryRunWeightSet(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return rolesAllowed(roles, DAILY_LEARNING_DRY_RUN_ROLES)
 }
 
-export function canPublishWeightSet(role: OperatorRole | null | undefined): boolean {
-  return roleAllowed(role, DAILY_LEARNING_PUBLISH_ROLES)
+export function canPublishWeightSet(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return rolesAllowed(roles, DAILY_LEARNING_PUBLISH_ROLES)
 }
 
-export function canConfirmDailyLearning(role: OperatorRole | null | undefined): boolean {
-  return roleAllowed(role, DAILY_LEARNING_CONFIRM_ROLES)
+export function canConfirmDailyLearning(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return rolesAllowed(roles, DAILY_LEARNING_CONFIRM_ROLES)
 }
 
-export function canReadWeightSets(role: OperatorRole | null | undefined): boolean {
-  return roleAllowed(role, WEIGHT_SET_READ_ROLES)
+export function canReadWeightSets(roles: readonly OperatorRole[] | null | undefined): boolean {
+  return rolesAllowed(roles, WEIGHT_SET_READ_ROLES)
 }

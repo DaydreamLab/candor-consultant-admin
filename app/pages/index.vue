@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { operatorRoles } from '~/utils/operator-roles'
 import {
   adminListExpertCaseReviews,
   adminListKnowledgeChunks,
@@ -36,7 +37,7 @@ const metrics = ref<Record<WorkbenchMetricKey, { value: number | null, failed: b
   pendingChunks: { value: null, failed: false }
 })
 
-const showKnowledgeTodo = computed(() => canAccessKnowledge(session.operator?.role ?? null))
+const showKnowledgeTodo = computed(() => canAccessKnowledge(operatorRoles(session.operator)))
 
 const todoCards = computed(() => {
   const cards: {

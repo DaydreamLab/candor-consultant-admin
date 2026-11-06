@@ -1,4 +1,5 @@
 import { canViewExpertBookingProduct } from '~/utils/expert-booking-product-access'
+import { operatorRoles } from '~/utils/operator-roles'
 
 function isExpertBookingProductPath(path: string) {
   const stripped = path.replace(/^\/en(?=\/|$)/, '') || '/'
@@ -12,7 +13,7 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const session = useSessionStore()
   const localePath = useLocalePath()
-  if (!canViewExpertBookingProduct(session.operator?.role)) {
+  if (!canViewExpertBookingProduct(operatorRoles(session.operator))) {
     return navigateTo(localePath('/expert-bookings'))
   }
 })
