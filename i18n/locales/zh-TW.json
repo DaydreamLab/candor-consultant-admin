@@ -573,6 +573,7 @@
     "inactiveHint": "下架後前台無法預約",
     "codeHint": "系統固定代碼，不可改",
     "nameEnHint": "選填；前台英文介面沒填時顯示中文名稱",
+    "descriptionEnHint": "選填；前台英文介面沒填時顯示中文說明",
     "leaveTitle": "尚未儲存變更",
     "leaveBody": "離開後這次的修改不會保留。",
     "leaveStay": "繼續編輯",
@@ -585,7 +586,8 @@
       "code": "代碼",
       "name_zh": "中文名稱",
       "name_en": "英文名稱",
-      "description": "說明",
+      "description": "中文說明",
+      "description_en": "英文說明",
       "price": "價格",
       "active": "上下架"
     },

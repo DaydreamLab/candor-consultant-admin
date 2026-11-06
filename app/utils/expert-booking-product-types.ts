@@ -5,6 +5,7 @@ export type ExpertBookingProduct = {
   name_zh: string
   name_en: string | null
   description: string | null
+  description_en: string | null
   /** NT$ 整數 */
   price: number
   active: boolean
@@ -15,6 +16,7 @@ export type ExpertBookingProductWrite = {
   name_zh: string
   name_en?: string | null
   description?: string | null
+  description_en?: string | null
   price: number
   active: boolean
 }
@@ -23,6 +25,7 @@ export type ExpertBookingProductField
   = 'name_zh'
     | 'name_en'
     | 'description'
+    | 'description_en'
     | 'price'
     | 'active'
 

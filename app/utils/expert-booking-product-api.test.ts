@@ -31,6 +31,7 @@ describe('expert-booking-product-api mock', () => {
         name_zh: '新名稱',
         name_en: 'New name',
         description: '說明',
+        description_en: 'Description',
         price: 3200,
         active: false
       }
@@ -39,6 +40,7 @@ describe('expert-booking-product-api mock', () => {
     expect(updated.name_zh).toBe('新名稱')
     expect(updated.name_en).toBe('New name')
     expect(updated.description).toBe('說明')
+    expect(updated.description_en).toBe('Description')
     expect(updated.price).toBe(3200)
     expect(updated.active).toBe(false)
 

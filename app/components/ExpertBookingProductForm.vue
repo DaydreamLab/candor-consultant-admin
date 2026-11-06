@@ -133,7 +133,7 @@ function fieldErrorText(field: ExpertBookingProductField) {
 <template>
   <form
     :id="EXPERT_BOOKING_PRODUCT_FORM_ID"
-    class="flex max-w-2xl flex-col gap-4"
+    class="flex max-w-5xl flex-col gap-4"
     data-testid="expert-booking-product-form"
     @submit.prevent="onSubmit"
   >
@@ -162,46 +162,66 @@ function fieldErrorText(field: ExpertBookingProductField) {
       </template>
     </UFormField>
 
-    <UFormField
-      :label="$t('expertBookingProduct.fields.name_zh')"
-      required
-      :error="fieldErrorText('name_zh')"
-    >
-      <UInput
-        v-model="state.name_zh"
-        :disabled="fieldsLocked"
-        data-testid="expert-booking-product-name-zh"
-        @update:model-value="clearField('name_zh')"
-      />
-    </UFormField>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <UFormField
+        :label="$t('expertBookingProduct.fields.name_zh')"
+        required
+        :error="fieldErrorText('name_zh')"
+      >
+        <UInput
+          v-model="state.name_zh"
+          :disabled="fieldsLocked"
+          data-testid="expert-booking-product-name-zh"
+          @update:model-value="clearField('name_zh')"
+        />
+      </UFormField>
 
-    <UFormField
-      :label="$t('expertBookingProduct.fields.name_en')"
-      :error="fieldErrorText('name_en')"
-    >
-      <UInput
-        v-model="state.name_en"
-        :disabled="fieldsLocked"
-        data-testid="expert-booking-product-name-en"
-        @update:model-value="clearField('name_en')"
-      />
-      <template #hint>
-        {{ $t('expertBookingProduct.nameEnHint') }}
-      </template>
-    </UFormField>
+      <UFormField
+        :label="$t('expertBookingProduct.fields.name_en')"
+        :error="fieldErrorText('name_en')"
+      >
+        <UInput
+          v-model="state.name_en"
+          :disabled="fieldsLocked"
+          data-testid="expert-booking-product-name-en"
+          @update:model-value="clearField('name_en')"
+        />
+        <template #hint>
+          {{ $t('expertBookingProduct.nameEnHint') }}
+        </template>
+      </UFormField>
+    </div>
 
-    <UFormField
-      :label="$t('expertBookingProduct.fields.description')"
-      :error="fieldErrorText('description')"
-    >
-      <UTextarea
-        v-model="state.description"
-        :disabled="fieldsLocked"
-        :rows="4"
-        data-testid="expert-booking-product-description"
-        @update:model-value="clearField('description')"
-      />
-    </UFormField>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <UFormField
+        :label="$t('expertBookingProduct.fields.description')"
+        :error="fieldErrorText('description')"
+      >
+        <UTextarea
+          v-model="state.description"
+          :disabled="fieldsLocked"
+          :rows="4"
+          data-testid="expert-booking-product-description"
+          @update:model-value="clearField('description')"
+        />
+      </UFormField>
+
+      <UFormField
+        :label="$t('expertBookingProduct.fields.description_en')"
+        :error="fieldErrorText('description_en')"
+      >
+        <UTextarea
+          v-model="state.description_en"
+          :disabled="fieldsLocked"
+          :rows="4"
+          data-testid="expert-booking-product-description-en"
+          @update:model-value="clearField('description_en')"
+        />
+        <template #hint>
+          {{ $t('expertBookingProduct.descriptionEnHint') }}
+        </template>
+      </UFormField>
+    </div>
 
     <UFormField
       :label="$t('expertBookingProduct.fields.price')"

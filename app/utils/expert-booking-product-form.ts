@@ -9,6 +9,7 @@ export type ExpertBookingProductFormState = {
   name_zh: string
   name_en: string
   description: string
+  description_en: string
   price: string
   active: boolean
 }
@@ -17,6 +18,7 @@ export type ExpertBookingProductSnapshot = {
   name_zh: string
   name_en: string | null
   description: string | null
+  description_en: string | null
   price: number
   active: boolean
 }
@@ -27,6 +29,7 @@ export function emptyExpertBookingProductFormState(): ExpertBookingProductFormSt
     name_zh: '',
     name_en: '',
     description: '',
+    description_en: '',
     price: '',
     active: true
   }
@@ -40,6 +43,7 @@ export function expertBookingProductFormStateFromProduct(
     name_zh: product.name_zh,
     name_en: product.name_en ?? '',
     description: product.description ?? '',
+    description_en: product.description_en ?? '',
     price: String(product.price),
     active: product.active
   }
@@ -52,6 +56,7 @@ export function snapshotFromExpertBookingProduct(
     name_zh: product.name_zh,
     name_en: product.name_en,
     description: product.description,
+    description_en: product.description_en,
     price: product.price,
     active: product.active
   }
@@ -116,6 +121,7 @@ export function expertBookingProductFormIsDirty(
     textValue(state.name_zh).trim() !== baseline.name_zh
     || normalizeOptionalText(state.name_en) !== baseline.name_en
     || normalizeOptionalText(state.description) !== baseline.description
+    || normalizeOptionalText(state.description_en) !== baseline.description_en
     || price !== baseline.price
     || state.active !== baseline.active
   )
@@ -133,6 +139,7 @@ export function buildExpertBookingProductWrite(
     name_zh: nameZh,
     name_en: normalizeOptionalText(state.name_en),
     description: normalizeOptionalText(state.description),
+    description_en: normalizeOptionalText(state.description_en),
     price,
     active: state.active
   }

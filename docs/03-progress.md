@@ -151,7 +151,7 @@
 | LabService CRUD | `/admin/checkups`、`/admin/lab-service/{id}` | Mock（畫面 `/checkups` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/scheduling`） |
 | ExpertBooking 列表／詳情／取消／選品 | `GET /admin/expert-bookings`、`GET /admin/expert-booking/{id}`、`POST …/cancel`（ops／admin）、`PUT …/product-picks`（路徑對齊 core #155；body schema 待 OpenAPI） | Mock |
-| Expert booking product（唯一 personal） | `GET`／`PUT /admin/expert-booking-product`（body：`name_zh`／`name_en`／`description`／`price`／`active`；不送 code；非 admin PUT → 403；驗證失敗 → 422） | Mock（畫面 `/expert-booking-product`；預設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK` 開；待 core 同步） |
+| Expert booking product（唯一 personal） | `GET`／`PUT /admin/expert-booking-product`（body：`name_zh`／`name_en`／`description`／`description_en`／`price`／`active`；不送 code；非 admin PUT → 403；驗證失敗 → 422） | Mock（畫面 `/expert-booking-product`；預設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK` 開；待 core 同步） |
 | Expert station bookings | `GET /admin/expert-station/bookings`、`GET …/{id}`、`PUT …/pin`、`PUT /admin/expert-station/last-seen`、`GET …/conversations`、`PUT …/confirm-time`、`PUT …/service-record`、`POST …/complete`、`PUT …/product-picks` | Mock |
 | Expert calendar | `GET /admin/expert-calendar`、`PUT …/weekly`、`PUT|DELETE …/day-override` | Mock |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/assistant/site`；設定頁不再編） |

@@ -24,6 +24,7 @@ const PRODUCT_FIELDS: ExpertBookingProductField[] = [
   'name_zh',
   'name_en',
   'description',
+  'description_en',
   'price',
   'active'
 ]
@@ -171,6 +172,11 @@ function parseProduct(row: Record<string, unknown>): ExpertBookingProduct | null
     description: typeof row.description === 'string'
       ? row.description
       : row.description === null
+        ? null
+        : null,
+    description_en: typeof row.description_en === 'string'
+      ? row.description_en
+      : row.description_en === null
         ? null
         : null,
     price,

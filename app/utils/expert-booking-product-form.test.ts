@@ -15,6 +15,7 @@ const product: ExpertBookingProduct = {
   name_zh: '專人預約諮詢',
   name_en: 'Personal',
   description: 'desc',
+  description_en: 'English desc',
   price: 1990,
   active: true,
   updated_at: '2026-11-01T00:00:00Z'
@@ -57,6 +58,7 @@ describe('expert-booking-product-form', () => {
       name_zh: '專人預約諮詢',
       name_en: 'Personal',
       description: 'desc',
+      description_en: 'English desc',
       price: 2500,
       active: true
     })

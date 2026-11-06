@@ -50,13 +50,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'custom', to: '/custom', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
       { key: 'expertBookings', to: '/expert-bookings', icon: 'i-lucide-calendar-heart', developing: false },
-      {
-        key: 'expertBookingProduct',
-        to: '/expert-booking-product',
-        icon: 'i-lucide-ticket',
-        developing: false,
-        expertBookingProductOnly: true
-      },
       { key: 'refundRequests', to: '/refund-requests', icon: 'i-lucide-wallet', developing: false, opsAdminOnly: true },
       // shipping：物流（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck', developing: false },
@@ -75,6 +68,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'plans', to: '/package-plans', icon: 'i-lucide-layers', developing: false },
       { key: 'expertPlans', to: '/expert-plans', icon: 'i-lucide-sparkles', developing: false },
+      {
+        key: 'expertBookingProduct',
+        to: '/expert-booking-product',
+        icon: 'i-lucide-ticket',
+        developing: false,
+        expertBookingProductOnly: true
+      },
       { key: 'supplements', to: '/supplements', icon: 'i-lucide-package', developing: false },
       // checkups：健檢主檔（語意 in-scope；local mock、未接 API）→ badge 即將上線
       // 勿與開發中「排程」/scheduling 或「預約」/lab-appointments 混淆

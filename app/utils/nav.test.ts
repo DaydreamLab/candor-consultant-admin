@@ -35,7 +35,6 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       'custom',
       'orders',
       'expertBookings',
-      'expertBookingProduct',
       'refundRequests',
       'shipping',
       'users'
@@ -44,14 +43,11 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       '/custom',
       '/orders',
       '/expert-bookings',
-      '/expert-booking-product',
       '/refund-requests',
       '/shipping',
       '/users'
     ])
     expect(ops.items.find(i => i.key === 'expertBookings')?.developing).toBe(false)
-    expect(ops.items.find(i => i.key === 'expertBookingProduct')?.developing).toBe(false)
-    expect(ops.items.find(i => i.key === 'expertBookingProduct')?.expertBookingProductOnly).toBe(true)
     expect(ops.items.find(i => i.key === 'shipping')?.developing).toBe(false)
     expect(ops.items.find(i => i.key === 'refundRequests')?.developing).toBe(false)
     expect(developing.items.map(i => i.key)).toContain('fulfillment')
@@ -65,16 +61,20 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(catalog.items.map(i => i.key)).toEqual([
       'plans',
       'expertPlans',
+      'expertBookingProduct',
       'supplements',
       'checkups'
     ])
     expect(catalog.items.map(i => i.to)).toEqual([
       '/package-plans',
       '/expert-plans',
+      '/expert-booking-product',
       '/supplements',
       '/checkups'
     ])
     expect(catalog.items.find(i => i.key === 'expertPlans')?.developing).toBe(false)
+    expect(catalog.items.find(i => i.key === 'expertBookingProduct')?.developing).toBe(false)
+    expect(catalog.items.find(i => i.key === 'expertBookingProduct')?.expertBookingProductOnly).toBe(true)
     expect(catalog.items.find(i => i.key === 'checkups')?.developing).not.toBe(false)
     expect(developing.items.map(i => i.key)).toEqual([
       'cases',
@@ -132,12 +132,12 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
   })
 
   it('hides expertBookingProduct nav for expert; keeps it for ops／admin', () => {
-    const adminOps = visibleNavGroups('consultant_admin', 'admin').find(g => g.key === 'ops')!.items.map(i => i.key)
-    const opsOps = visibleNavGroups('consultant_ops', 'ops').find(g => g.key === 'ops')!.items.map(i => i.key)
-    const expertOps = visibleNavGroups('consultant_ops', 'expert').find(g => g.key === 'ops')!.items.map(i => i.key)
-    expect(adminOps).toContain('expertBookingProduct')
-    expect(opsOps).toContain('expertBookingProduct')
-    expect(expertOps).not.toContain('expertBookingProduct')
+    const adminCatalog = visibleNavGroups('consultant_admin', 'admin').find(g => g.key === 'catalog')!.items.map(i => i.key)
+    const opsCatalog = visibleNavGroups('consultant_ops', 'ops').find(g => g.key === 'catalog')!.items.map(i => i.key)
+    const expertCatalog = visibleNavGroups('consultant_ops', 'expert').find(g => g.key === 'catalog')!.items.map(i => i.key)
+    expect(adminCatalog).toContain('expertBookingProduct')
+    expect(opsCatalog).toContain('expertBookingProduct')
+    expect(expertCatalog).not.toContain('expertBookingProduct')
   })
 
   it('marks live official pages as not developing', () => {
