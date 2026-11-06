@@ -157,7 +157,6 @@ async function markComplete() {
     completing.value = false
   }
 }
-
 </script>
 
 <template>
