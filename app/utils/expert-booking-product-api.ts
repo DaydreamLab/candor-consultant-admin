@@ -29,12 +29,12 @@ const PRODUCT_FIELDS: ExpertBookingProductField[] = [
   'active'
 ]
 
-/** Default ON locally; set `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=0` for live core. */
+/** Opt-in local fixture. Live catalog calls core unless `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=1`. */
 export function isExpertBookingProductMockEnabled(): boolean {
   try {
     return Boolean(useRuntimeConfig().public.expertBookingProductMock)
   } catch {
-    return process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK !== '0'
+    return process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK === '1'
   }
 }
 

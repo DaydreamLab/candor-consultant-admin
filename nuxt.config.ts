@@ -45,13 +45,13 @@ export default defineNuxtConfig({
       /** 定稿對話文案本機 mock；正式／Pages 勿開。預設打 core finalize-copy/generate。 */
       expertFinalizeCopyMock: process.env.NUXT_PUBLIC_EXPERT_FINALIZE_COPY_MOCK === '1',
       /**
-       * 專人預約 mock：本機／專家站預設開啟；core API 合併後可設 `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=0`。
+       * 專人預約 mock：預設打 candor-core Admin API。本機截圖可設 `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=1`。
        */
-      expertBookingMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_MOCK !== '0',
+      expertBookingMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_MOCK === '1',
       /**
-       * 專人預約商品設定 mock：本機預設開啟；core API 合併後可設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=0`。
+       * 專人預約商品設定 mock：預設打 candor-core。本機截圖可設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=1`。
        */
-      expertBookingProductMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK !== '0'
+      expertBookingProductMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK === '1'
     }
   },
 

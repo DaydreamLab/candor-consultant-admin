@@ -27,10 +27,10 @@
 
 | 區域 | 缺口 |
 |------|------|
-| 選品清單 | OpenAPI 無專用 catalog；FE 暫复用 `GET /sellable-items`。core 若另有路徑需改。 |
+| 選品清單 | 無專用 catalog。FE 讀 `GET /admin/supplements` 的 `sellable_items`，只留 `sale_status=on_sale`。 |
 | 專家色碼 | calendar `experts[]` 無 `color`；FE 本地 palette 著色。 |
 | 列表 last-seen 展示 | API 只回 `last_seen_booking_id`；專家站列表另 GET 詳情補 order_no／姓名（非契約欄位）。 |
 | live 錯誤碼 | 409／422 等文案與前端對應尚未對真 API 驗收（mock 僅覆蓋常見路徑）。 |
 | 前台會員 API | 不在本後台範圍（`/expert-booking-product`、會員下單等）。 |
 
-Mock 預設仍開（`NUXT_PUBLIC_EXPERT_BOOKING_MOCK`）；接真 API 時關 mock 並以 core 環境驗證。
+預設打 candor-core Admin API。本機截圖設 `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=1`（商品設定另設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=1`）。

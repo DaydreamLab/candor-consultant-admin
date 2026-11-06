@@ -52,12 +52,12 @@ import type {
  * - DELETE /api/v1/admin/expert-calendar/day-override  body: { expert_operator_id, override_date }
  */
 
-/** Default ON locally until core expert-booking API merges. */
+/** Opt-in local fixtures. Live admin／expert-station calls core unless `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=1`. */
 export function isExpertBookingMockEnabled(): boolean {
   try {
     return Boolean(useRuntimeConfig().public.expertBookingMock)
   } catch {
-    return process.env.NUXT_PUBLIC_EXPERT_BOOKING_MOCK !== '0'
+    return process.env.NUXT_PUBLIC_EXPERT_BOOKING_MOCK === '1'
   }
 }
 
@@ -632,14 +632,17 @@ export async function listExpertBookingSellableOptions(
   if (isExpertBookingMockEnabled()) {
     return EXPERT_BOOKING_SELLABLE_OPTIONS.map(o => ({ ...o }))
   }
-  const data = await adminFetch<{ items?: unknown[] } | unknown[]>(
+  const data = await adminFetch<{ sellable_items?: unknown[] }>(
     apiBase,
     token,
-    '/sellable-items?sale_status=on_sale&page_size=100'
+    '/supplements'
   )
-  const rows = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : [])
+  const rows = Array.isArray(data.sellable_items) ? data.sellable_items : []
   return rows.flatMap((row) => {
     if (!isRecord(row) || typeof row.id !== 'string') {
+      return []
+    }
+    if (row.sale_status !== 'on_sale') {
       return []
     }
     return [{

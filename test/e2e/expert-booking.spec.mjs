@@ -1,6 +1,6 @@
 /**
  * Related e2e for 專人預約 admin list (mock).
- * Requires: NUXT_PUBLIC_EXPERT_BOOKING_MOCK≠0 and a running `pnpm dev`.
+ * Requires: NUXT_PUBLIC_EXPERT_BOOKING_MOCK=1 and a running `pnpm dev`.
  *
  * Usage:
  *   PLAYWRIGHT_CHROMIUM_PATH=... node test/e2e/expert-booking.spec.mjs [baseUrl]

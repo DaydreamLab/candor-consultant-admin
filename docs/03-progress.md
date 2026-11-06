@@ -80,9 +80,9 @@
 | 物流進度擋理貨 | `/shipping/{id}`：退款中 disabled＋原因；`POST /admin/order/{id}/shipment` 遇 `refund_request_pending`；判斷用 order `refund_status`（B-17／C19） | 可用 | 接線中（讀取已接；開始理貨寫入對齊 #143） | M2 Beta |
 | 採檢服務（LabService） | `/checkups`、`/checkups/new`、`/checkups/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
-| 專人預約 | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections`（列表／詳情／取消二次確認／選品理由；預設 mock） | 可用 | Mock | M2 Beta |
-| 專人預約商品設定 | `/expert-booking-product`（唯一 code=personal；GET／PUT；無新增／刪除；admin 可編、ops 只讀、expert 隱藏；預設 mock） | 可用 | Mock | M2 Beta |
-| 專家站（獨立 build） | `NUXT_APP_SURFACE=expert`：`/` 列表、`/bookings/{id}`、確認時間／服務紀錄／選品、`/calendar` 週日視圖與可服務時段；僅 expert 可登入 | 可用 | Mock | M2 Beta |
+| 專人預約 | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections`（列表／詳情／取消二次確認／選品理由） | 可用 | 已接 | M2 Beta |
+| 專人預約商品設定 | `/expert-booking-product`（唯一 code=personal；GET／PUT；無新增／刪除；admin 可編、ops 只讀、expert 隱藏） | 可用 | 已接 | M2 Beta |
+| 專家站（獨立 build） | `NUXT_APP_SURFACE=expert`：`/` 列表、`/bookings/{id}`、確認時間／服務紀錄／選品、`/calendar` 週日視圖與可服務時段；僅 expert 可登入 | 可用 | 已接 | M2 Beta |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/weights`、`/weights/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
 | 專家訓練／每日學習確認 | `/weights/daily-learning`（載入待確認草案／clone→confirm→confirm-safety→dry-run→publish；對齊 core #76 `79ed13b`；ops 可確認） | 可用 | 接線中（待 core #76 合併部署） | M4 |
@@ -150,10 +150,10 @@
 | PackagePlan 建立 | `POST /admin/plans`（不送 code；預設下架；收 name_en／original_price／description*／home_*／sort_order） | 接線中（畫面 `/package-plans/new` 已做） |
 | LabService CRUD | `/admin/checkups`、`/admin/lab-service/{id}` | Mock（畫面 `/checkups` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/scheduling`） |
-| ExpertBooking 列表／詳情／取消／選品 | `GET /admin/expert-bookings`、`GET /admin/expert-booking/{id}`、`POST …/cancel`（ops／admin）、`PUT …/product-picks`（路徑對齊 core #155；body schema 待 OpenAPI） | Mock |
-| Expert booking product（唯一 personal） | `GET`／`PUT /admin/expert-booking-product`（body：`name_zh`／`name_en`／`description`／`description_en`／`price`／`active`；不送 code；非 admin PUT → 403；驗證失敗 → 422） | Mock（畫面 `/expert-booking-product`；預設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK` 開；待 core 同步） |
-| Expert station bookings | `GET /admin/expert-station/bookings`、`GET …/{id}`、`PUT …/pin`、`PUT /admin/expert-station/last-seen`、`GET …/conversations`、`PUT …/confirm-time`、`PUT …/service-record`、`POST …/complete`、`PUT …/product-picks` | Mock |
-| Expert calendar | `GET /admin/expert-calendar`、`PUT …/weekly`、`PUT|DELETE …/day-override` | Mock |
+| ExpertBooking 列表／詳情／取消／選品 | `GET /admin/expert-bookings`、`GET /admin/expert-booking/{id}`、`POST …/cancel`（ops／admin）、`PUT …/product-picks` | 已接（選品清單讀 `GET /admin/supplements`，只留 `sale_status=on_sale`；本機截圖 `NUXT_PUBLIC_EXPERT_BOOKING_MOCK=1`） |
+| Expert booking product（唯一 personal） | `GET`／`PUT /admin/expert-booking-product`（body：`name_zh`／`name_en`／`description`／`description_en`／`price`／`active`；不送 code；非 admin PUT → 403；驗證失敗 → 422） | 已接（畫面 `/expert-booking-product`；本機截圖 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=1`） |
+| Expert station bookings | `GET /admin/expert-station/bookings`、`GET …/{id}`、`PUT …/pin`、`PUT /admin/expert-station/last-seen`、`GET …/conversations`、`PUT …/confirm-time`、`PUT …/service-record`、`POST …/attachments`、`POST …/complete`、`PUT …/product-picks` | 已接 |
+| Expert calendar | `GET /admin/expert-calendar`、`PUT …/weekly`、`PUT|DELETE …/day-override` | 已接 |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/assistant/site`；設定頁不再編） |
 | Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/assistant`） |
 | Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/assistant/claim-terms`） |
@@ -248,9 +248,10 @@
 
 ---
 
-**最後更新**：2026-11-06（專人預約商品設定頁／mock）
+**最後更新**：2026-11-06（專人預約／商品設定／專家站改打 core Admin API）
 
-- 2026-11-06：營運後台新增「預約商品」`/expert-booking-product`（唯一 `personal`；GET／PUT；admin 可編、ops 只讀、expert 隱藏）。狀態 Mock；待 core `GET`／`PUT /admin/expert-booking-product` 合併後關 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK`；`docs/04` 請雙寫
+- 2026-11-06：專人預約、預約商品、專家站與行事曆預設改打 core（`NUXT_PUBLIC_EXPERT_BOOKING_MOCK`／`NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK` 改為 `=1` 才進 mock）。選品清單改 `GET /admin/supplements` 並濾 `on_sale`。`docs/04` 已雙寫
+- 2026-11-06：營運後台新增「預約商品」`/expert-booking-product`（唯一 `personal`；GET／PUT；admin 可編、ops 只讀、expert 隱藏）
 - 2026-11-05：引導設定 CTA 目錄 mock 新增 `offer_full_test`（報告指標不足時的完整檢測建議）；可編 core 欄位 `threshold`（預設 136）與 `url`（預設 Body Decode）。狀態仍 Mock；core seed／Admin API 合併後關 mock；`docs/04` 請雙寫
 - 2026-10-28：專家案件詳情缺報告／缺目標 soft chip（頂欄＋goals／report 標題＋定稿卡；不挡 generate／submit；由 member-data 推導）。core 若日後提供顯式旗標可改消費；`docs/04` 請雙寫
 - 2026-10-28：專家案件詳情「定稿對話文案」獨立卡（四態；generate／submit 帶兩段 MD；cache_hit soft chip；dirty 覆蓋確認）。接線待 core #103；`docs/04` 請雙寫
