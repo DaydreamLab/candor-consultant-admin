@@ -2,6 +2,7 @@ export const SELLABLE_ITEM_FORM_ID = 'sellable-item-form'
 export const PACKAGE_PLAN_FORM_ID = 'package-plan-form'
 export const EXPERT_PLAN_FORM_ID = 'expert-plan-form'
 export const LAB_SERVICE_FORM_ID = 'lab-service-form'
+export const EXPERT_BOOKING_PRODUCT_FORM_ID = 'expert-booking-product-form'
 
 export type NavbarActions = {
   showDelete: boolean
