@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {
-  deleteExpertStationDayOverride,
-  getExpertStationCalendar,
-  putExpertStationDayOverride,
-  putExpertStationWeeklyRules
+  deleteExpertCalendarDayOverride,
+  getExpertCalendar,
+  putExpertCalendarDayOverride,
+  putExpertCalendarWeekly
 } from '~/utils/expert-booking-api'
 import {
   dragSelectSlotsSameDay,
@@ -90,7 +90,7 @@ async function load() {
     if (!token) {
       throw new Error('no_token')
     }
-    const data = await getExpertStationCalendar(config.public.apiBase, token)
+    const data = await getExpertCalendar(config.public.apiBase, token)
     snapshot.value = data
     if (!expertId.value) {
       expertId.value = session.operator?.id && data.experts.some(e => e.id === session.operator?.id)
@@ -173,7 +173,7 @@ async function onPointerUp() {
         start_time: r.start_time,
         end_time: r.end_time
       }))
-      snapshot.value = await putExpertStationWeeklyRules(
+      snapshot.value = await putExpertCalendarWeekly(
         config.public.apiBase,
         token,
         expertId.value,
@@ -181,7 +181,7 @@ async function onPointerUp() {
         [...kept.filter(r => r.expert_id === expertId.value), ...added]
       )
     } else {
-      snapshot.value = await putExpertStationDayOverride(
+      snapshot.value = await putExpertCalendarDayOverride(
         config.public.apiBase,
         token,
         {
@@ -213,7 +213,7 @@ async function restoreWeekly() {
   }
   saving.value = true
   try {
-    snapshot.value = await deleteExpertStationDayOverride(
+    snapshot.value = await deleteExpertCalendarDayOverride(
       config.public.apiBase,
       token,
       expertId.value,

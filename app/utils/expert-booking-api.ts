@@ -19,30 +19,33 @@ import type {
 } from '~/utils/expert-booking-types'
 
 /**
- * Assumed Admin / Expert-station API shape (pending candor-core expert-booking PR).
- * Paths are centralized here so core merge only needs client path tweaks.
+ * Expert-booking Admin／Expert-station API client.
+ * Paths aligned to candor-core PR #155 (branch cursor/expert-booking-station-fee2)
+ * as listed by product; request／response **field names** still pending OpenAPI
+ * verification (this environment cannot read DaydreamLab/candor-core — see PR gaps).
  *
- * Admin (ops／admin／expert read; cancel／selections write for ops／admin):
- * - GET    /api/v1/admin/expert-bookings?page&page_size
+ * Admin:
+ * - GET    /api/v1/admin/expert-bookings
  * - GET    /api/v1/admin/expert-booking/{id}
- * - POST   /api/v1/admin/expert-booking/{id}/cancel
- * - PUT    /api/v1/admin/expert-booking/{id}/product-reasons
+ * - POST   /api/v1/admin/expert-booking/{id}/cancel（僅 ops／admin）
+ * - PUT    /api/v1/admin/expert-booking/{id}/product-picks
  *
- * Expert station (expert role only; same operator JWT):
- * - GET    /api/v1/admin/expert-station/bookings?page&page_size
- * - POST   /api/v1/admin/expert-station/bookings/{id}/pin { pinned }
- * - POST   /api/v1/admin/expert-station/bookings/{id}/seen
+ * Expert station:
+ * - GET    /api/v1/admin/expert-station/bookings
  * - GET    /api/v1/admin/expert-station/bookings/{id}
- * - GET    /api/v1/admin/expert-station/bookings/{id}/conversations?before&limit
- * - PUT    /api/v1/admin/expert-station/bookings/{id}/confirm { confirmed_at }
+ * - PUT    /api/v1/admin/expert-station/bookings/{id}/pin
+ * - PUT    /api/v1/admin/expert-station/last-seen
+ * - GET    /api/v1/admin/expert-station/bookings/{id}/conversations
+ * - PUT    /api/v1/admin/expert-station/bookings/{id}/confirm-time
  * - PUT    /api/v1/admin/expert-station/bookings/{id}/service-record
- * - PUT    /api/v1/admin/expert-station/bookings/{id}/product-reasons
  * - POST   /api/v1/admin/expert-station/bookings/{id}/complete
- * - GET    /api/v1/admin/expert-station/calendar?from&to
- * - PUT    /api/v1/admin/expert-station/calendar/weekly-rules
- * - PUT    /api/v1/admin/expert-station/calendar/day-override
- * - DELETE /api/v1/admin/expert-station/calendar/day-override?expert_id&date
- * - GET    /api/v1/admin/sellable-items?sale_status=on_sale（選品清單複用既有）
+ * - PUT    /api/v1/admin/expert-station/bookings/{id}/product-picks
+ *
+ * Calendar:
+ * - GET    /api/v1/admin/expert-calendar
+ * - PUT    /api/v1/admin/expert-calendar/weekly
+ * - PUT    /api/v1/admin/expert-calendar/day-override
+ * - DELETE /api/v1/admin/expert-calendar/day-override
  */
 
 /** Default ON locally until core expert-booking API merges. */
@@ -240,7 +243,7 @@ export async function cancelAdminExpertBooking(
   })
 }
 
-export async function putAdminExpertBookingProductReasons(
+export async function putAdminExpertBookingProductPicks(
   apiBase: string,
   token: string,
   id: string,
@@ -254,11 +257,15 @@ export async function putAdminExpertBookingProductReasons(
     row.product_reasons = productReasons.map(p => ({ ...p }))
     return structuredClone(row)
   }
-  return adminFetch(apiBase, token, `/expert-booking/${encodeURIComponent(id)}/product-reasons`, {
+  // GAP: request body property names not verified against core OpenAPI.
+  return adminFetch(apiBase, token, `/expert-booking/${encodeURIComponent(id)}/product-picks`, {
     method: 'PUT',
     body: { product_reasons: productReasons }
   })
 }
+
+/** @deprecated Use putAdminExpertBookingProductPicks */
+export const putAdminExpertBookingProductReasons = putAdminExpertBookingProductPicks
 
 export async function listExpertStationBookings(
   apiBase: string,
@@ -291,13 +298,14 @@ export async function pinExpertStationBooking(
     store().togglePin(expertId, id, pinned)
     return
   }
+  // GAP: pin body schema not verified (still sending { pinned }).
   await adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/pin`, {
-    method: 'POST',
+    method: 'PUT',
     body: { pinned }
   })
 }
 
-export async function markExpertStationBookingSeen(
+export async function putExpertStationLastSeen(
   apiBase: string,
   token: string,
   expertId: string,
@@ -310,11 +318,15 @@ export async function markExpertStationBookingSeen(
     store().setLastSeen(expertId, id)
     return
   }
-  await adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/seen`, {
-    method: 'POST',
-    body: {}
+  // GAP: last-seen request body schema not verified (sending { booking_id } tentatively).
+  await adminFetch(apiBase, token, '/expert-station/last-seen', {
+    method: 'PUT',
+    body: { booking_id: id }
   })
 }
+
+/** @deprecated Use putExpertStationLastSeen */
+export const markExpertStationBookingSeen = putExpertStationLastSeen
 
 export async function getExpertStationBooking(
   apiBase: string,
@@ -333,10 +345,44 @@ export async function getExpertStationBooking(
       pinned: store().isPinned(expertId, id)
     })
   }
-  return adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}`)
+  const detail = await adminFetch<ExpertBookingDetail>(
+    apiBase,
+    token,
+    `/expert-station/bookings/${encodeURIComponent(id)}`
+  )
+  // Opening a case updates per-expert last-seen (C9); body schema still GAP.
+  try {
+    await putExpertStationLastSeen(apiBase, token, expertId, id)
+  } catch {
+    // non-fatal: detail still usable if last-seen write fails
+  }
+  return detail
 }
 
-export async function confirmExpertStationBooking(
+export async function listExpertStationBookingConversations(
+  apiBase: string,
+  token: string,
+  expertId: string,
+  id: string,
+  _opts: { before?: string, limit?: number } = {}
+): Promise<ExpertBookingDetail['conversations']> {
+  if (isExpertBookingMockEnabled()) {
+    const row = store().details.get(id)
+    if (!row) {
+      throw new AdminApiError(404, 'not_found')
+    }
+    store().setLastSeen(expertId, id)
+    return structuredClone(row.conversations)
+  }
+  // GAP: query／response envelope for conversations not verified.
+  return adminFetch(
+    apiBase,
+    token,
+    `/expert-station/bookings/${encodeURIComponent(id)}/conversations`
+  )
+}
+
+export async function putExpertStationConfirmTime(
   apiBase: string,
   token: string,
   expertId: string,
@@ -357,11 +403,15 @@ export async function confirmExpertStationBooking(
     row.annotated_expert_name = expert?.name ?? row.annotated_expert_name
     return structuredClone(row)
   }
-  return adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/confirm`, {
+  // GAP: confirm-time body field name not verified (still sending confirmed_at).
+  return adminFetch(apiBase, token, `/expert-station/bookings/${encodeURIComponent(id)}/confirm-time`, {
     method: 'PUT',
     body: { confirmed_at: confirmedAt }
   })
 }
+
+/** @deprecated Use putExpertStationConfirmTime */
+export const confirmExpertStationBooking = putExpertStationConfirmTime
 
 export async function putExpertStationServiceRecord(
   apiBase: string,
@@ -392,7 +442,7 @@ export async function putExpertStationServiceRecord(
   )
 }
 
-export async function putExpertStationProductReasons(
+export async function putExpertStationProductPicks(
   apiBase: string,
   token: string,
   id: string,
@@ -406,13 +456,17 @@ export async function putExpertStationProductReasons(
     row.product_reasons = productReasons.map(p => ({ ...p }))
     return structuredClone(row)
   }
+  // GAP: product-picks request body property names not verified.
   return adminFetch(
     apiBase,
     token,
-    `/expert-station/bookings/${encodeURIComponent(id)}/product-reasons`,
+    `/expert-station/bookings/${encodeURIComponent(id)}/product-picks`,
     { method: 'PUT', body: { product_reasons: productReasons } }
   )
 }
+
+/** @deprecated Use putExpertStationProductPicks */
+export const putExpertStationProductReasons = putExpertStationProductPicks
 
 export async function completeExpertStationBooking(
   apiBase: string,
@@ -436,7 +490,7 @@ export async function completeExpertStationBooking(
   })
 }
 
-export async function getExpertStationCalendar(
+export async function getExpertCalendar(
   apiBase: string,
   token: string,
   _range?: { from: string, to: string }
@@ -452,10 +506,14 @@ export async function getExpertStationCalendar(
     q.set('to', _range.to)
   }
   const suffix = q.toString() ? `?${q}` : ''
-  return adminFetch(apiBase, token, `/expert-station/calendar${suffix}`)
+  // GAP: calendar query／response schema not verified.
+  return adminFetch(apiBase, token, `/expert-calendar${suffix}`)
 }
 
-export async function putExpertStationWeeklyRules(
+/** @deprecated Use getExpertCalendar */
+export const getExpertStationCalendar = getExpertCalendar
+
+export async function putExpertCalendarWeekly(
   apiBase: string,
   token: string,
   expertId: string,
@@ -472,13 +530,17 @@ export async function putExpertStationWeeklyRules(
     cal.last_modified_at = new Date().toISOString()
     return structuredClone(cal)
   }
-  return adminFetch(apiBase, token, '/expert-station/calendar/weekly-rules', {
+  // GAP: weekly PUT body schema not verified.
+  return adminFetch(apiBase, token, '/expert-calendar/weekly', {
     method: 'PUT',
     body: { expert_id: expertId, rules }
   })
 }
 
-export async function putExpertStationDayOverride(
+/** @deprecated Use putExpertCalendarWeekly */
+export const putExpertStationWeeklyRules = putExpertCalendarWeekly
+
+export async function putExpertCalendarDayOverride(
   apiBase: string,
   token: string,
   override: ExpertDayAvailabilityOverride
@@ -495,13 +557,17 @@ export async function putExpertStationDayOverride(
     cal.last_modified_at = override.updated_at
     return structuredClone(cal)
   }
-  return adminFetch(apiBase, token, '/expert-station/calendar/day-override', {
+  // GAP: day-override body schema not verified.
+  return adminFetch(apiBase, token, '/expert-calendar/day-override', {
     method: 'PUT',
     body: override
   })
 }
 
-export async function deleteExpertStationDayOverride(
+/** @deprecated Use putExpertCalendarDayOverride */
+export const putExpertStationDayOverride = putExpertCalendarDayOverride
+
+export async function deleteExpertCalendarDayOverride(
   apiBase: string,
   token: string,
   expertId: string,
@@ -517,11 +583,15 @@ export async function deleteExpertStationDayOverride(
     cal.last_modified_at = new Date().toISOString()
     return structuredClone(cal)
   }
+  // GAP: DELETE query params not verified (still expert_id + date).
   const q = new URLSearchParams({ expert_id: expertId, date })
-  return adminFetch(apiBase, token, `/expert-station/calendar/day-override?${q}`, {
+  return adminFetch(apiBase, token, `/expert-calendar/day-override?${q}`, {
     method: 'DELETE'
   })
 }
+
+/** @deprecated Use deleteExpertCalendarDayOverride */
+export const deleteExpertStationDayOverride = deleteExpertCalendarDayOverride
 
 export async function listExpertBookingSellableOptions(
   apiBase: string,

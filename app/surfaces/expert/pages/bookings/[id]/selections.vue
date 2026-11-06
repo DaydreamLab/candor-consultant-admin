@@ -2,7 +2,7 @@
 import {
   getExpertStationBooking,
   listExpertBookingSellableOptions,
-  putExpertStationProductReasons
+  putExpertStationProductPicks
 } from '~/utils/expert-booking-api'
 import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -62,7 +62,7 @@ async function onSave() {
     if (!token) {
       throw new Error('no_token')
     }
-    await putExpertStationProductReasons(
+    await putExpertStationProductPicks(
       config.public.apiBase,
       token,
       bookingId.value,

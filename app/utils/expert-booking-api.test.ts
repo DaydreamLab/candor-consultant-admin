@@ -2,13 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   cancelAdminExpertBooking,
   completeExpertStationBooking,
-  confirmExpertStationBooking,
-  deleteExpertStationDayOverride,
+  putExpertStationConfirmTime,
+  deleteExpertCalendarDayOverride,
   getExpertStationBooking,
   listAdminExpertBookings,
   listExpertStationBookings,
   pinExpertStationBooking,
-  putAdminExpertBookingProductReasons,
+  putAdminExpertBookingProductPicks,
   resetExpertBookingMockStore
 } from './expert-booking-api'
 
@@ -50,7 +50,7 @@ describe('expert-booking-api mock', () => {
   })
 
   it('confirm keeps scheduled on reschedule; complete marks done', async () => {
-    const confirmed = await confirmExpertStationBooking(
+    const confirmed = await putExpertStationConfirmTime(
       'https://example.test/api/v1',
       't',
       'op-expert-wang',
@@ -60,7 +60,7 @@ describe('expert-booking-api mock', () => {
     expect(confirmed.status).toBe('scheduled')
     expect(confirmed.confirmed_at).toContain('2026-11-12')
 
-    const again = await confirmExpertStationBooking(
+    const again = await putExpertStationConfirmTime(
       'https://example.test/api/v1',
       't',
       'op-expert-wang',
@@ -74,7 +74,7 @@ describe('expert-booking-api mock', () => {
   })
 
   it('saves product reasons without creating an order (C6)', async () => {
-    const row = await putAdminExpertBookingProductReasons(
+    const row = await putAdminExpertBookingProductPicks(
       'https://example.test/api/v1',
       't',
       'eb-0021',
@@ -90,7 +90,7 @@ describe('expert-booking-api mock', () => {
   })
 
   it('restores day override to weekly template', async () => {
-    const cal = await deleteExpertStationDayOverride(
+    const cal = await deleteExpertCalendarDayOverride(
       'https://example.test/api/v1',
       't',
       'op-expert-wang',

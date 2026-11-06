@@ -149,8 +149,9 @@
 | PackagePlan 建立 | `POST /admin/plans`（不送 code；預設下架；收 name_en／original_price／description*／home_*／sort_order） | 接線中（畫面 `/package-plans/new` 已做） |
 | LabService CRUD | `/admin/checkups`、`/admin/lab-service/{id}` | Mock（畫面 `/checkups` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/scheduling`） |
-| ExpertBooking 列表／詳情／取消／選品理由 | `GET /admin/expert-bookings`、`GET`／`POST …/expert-booking/{id}`／`cancel`、`PUT …/product-reasons`（推定；client 已備） | Mock |
-| Expert station bookings／calendar | `/admin/expert-station/bookings/**`、`/admin/expert-station/calendar/**`（推定；含 pin／seen／confirm／service-record／complete／weekly-rules／day-override） | Mock |
+| ExpertBooking 列表／詳情／取消／選品 | `GET /admin/expert-bookings`、`GET /admin/expert-booking/{id}`、`POST …/cancel`（ops／admin）、`PUT …/product-picks`（路徑對齊 core #155；body schema 待 OpenAPI） | Mock |
+| Expert station bookings | `GET /admin/expert-station/bookings`、`GET …/{id}`、`PUT …/pin`、`PUT /admin/expert-station/last-seen`、`GET …/conversations`、`PUT …/confirm-time`、`PUT …/service-record`、`POST …/complete`、`PUT …/product-picks` | Mock |
+| Expert calendar | `GET /admin/expert-calendar`、`PUT …/weekly`、`PUT|DELETE …/day-override` | Mock |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/assistant/site`；設定頁不再編） |
 | Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/assistant`） |
 | Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/assistant/claim-terms`） |

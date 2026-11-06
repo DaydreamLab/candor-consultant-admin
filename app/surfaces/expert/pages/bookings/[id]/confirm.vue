@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { confirmExpertStationBooking, getExpertStationBooking } from '~/utils/expert-booking-api'
+import { putExpertStationConfirmTime, getExpertStationBooking } from '~/utils/expert-booking-api'
 import { shortOrderCode } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
 
@@ -68,7 +68,7 @@ async function onSave() {
     if (!token) {
       throw new Error('no_token')
     }
-    await confirmExpertStationBooking(
+    await putExpertStationConfirmTime(
       config.public.apiBase,
       token,
       expertId.value,

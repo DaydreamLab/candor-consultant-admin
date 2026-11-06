@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getExpertStationCalendar } from '~/utils/expert-booking-api'
+import { getExpertCalendar } from '~/utils/expert-booking-api'
 import {
   expertAddDaysToDateString,
   expertWeekDates,
@@ -52,7 +52,7 @@ async function load() {
     if (!token) {
       throw new Error('no_token')
     }
-    const data = await getExpertStationCalendar(config.public.apiBase, token, {
+    const data = await getExpertCalendar(config.public.apiBase, token, {
       from: dates.value[0]!,
       to: dates.value[dates.value.length - 1]!
     })
