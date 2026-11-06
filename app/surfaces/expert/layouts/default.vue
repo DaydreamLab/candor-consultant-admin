@@ -34,7 +34,10 @@ function logout() {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-muted/30 text-default">
+  <div
+    class="flex min-h-screen flex-col bg-muted/30 text-default"
+    data-surface="expert"
+  >
     <header class="border-b border-default bg-default text-default">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
         <NuxtLink
