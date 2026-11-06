@@ -15,7 +15,7 @@
     "typecheck": "nuxt typecheck",
     "typecheck:expert": "NUXT_APP_SURFACE=expert nuxt typecheck",
     "test": "vitest run",
-    "test:expert-booking": "vitest run app/utils/expert-booking-api.test.ts app/utils/expert-booking-calendar.test.ts app/utils/nav.test.ts"
+    "test:expert-booking": "vitest run app/utils/expert-booking-api.test.ts app/utils/expert-booking-calendar.test.ts app/utils/nav.test.ts app/utils/expert-booking-product-api.test.ts app/utils/expert-booking-product-form.test.ts app/utils/expert-booking-product-access.test.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.127",

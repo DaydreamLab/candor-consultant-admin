@@ -45,7 +45,8 @@
     "warehouse": "Warehouse",
     "finance": "Billing & reports",
     "platform": "Platform",
-    "expertBookings": "Expert bookings"
+    "expertBookings": "Expert bookings",
+    "expertBookingProduct": "Booking product"
   },
   "colorMode": {
     "label": "Appearance",
@@ -555,6 +556,42 @@
     "status": {
       "booked": "Booked",
       "cancelled": "Cancelled"
+    }
+  },
+  "expertBookingProduct": {
+    "description": "Configure the single expert-booking product (code=personal). No create or delete.",
+    "loading": "Loading…",
+    "failed": "Could not load. Please refresh.",
+    "saveFailed": "Save failed. Try again later.",
+    "saveOk": "Saved",
+    "noChanges": "No changes.",
+    "saveForbidden": "Only admins can edit the booking product.",
+    "validationFailed": "Fix the highlighted fields and save again.",
+    "readOnlyHint": "Read-only. Only admins can save changes.",
+    "hintsTitle": "Please note",
+    "priceHint": "Price changes apply only to new orders",
+    "inactiveHint": "When inactive, the storefront cannot book",
+    "codeHint": "Fixed system code; not editable",
+    "nameEnHint": "Optional; Chinese name is shown when English is empty",
+    "leaveTitle": "Unsaved changes",
+    "leaveBody": "Leaving discards your edits.",
+    "leaveStay": "Keep editing",
+    "leaveDiscard": "Discard and leave",
+    "validation": {
+      "nameRequired": "Chinese name is required",
+      "priceInvalid": "Enter an integer price greater than 0"
+    },
+    "fields": {
+      "code": "Code",
+      "name_zh": "Chinese name",
+      "name_en": "English name",
+      "description": "Description",
+      "price": "Price",
+      "active": "Availability"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
     }
   },
   "expertBookings": {

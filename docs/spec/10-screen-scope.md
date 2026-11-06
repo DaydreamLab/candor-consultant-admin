@@ -24,6 +24,7 @@
 | shipping | `/shipping` | **in-scope（語意）** | 側欄標籤「物流進度」；列表／詳情讀取接 core #88（空／不可用回落 mock）；推進寫入仍 Mock。列表已接 → **無**「即將上線」badge。→ 訂單 shipment；勿另立 selection 出貨 API。勿與開發中「履約進度」`progress` 混淆 |
 | users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
 | expertBookings | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections` | **in-scope** | 專人預約營運列表／詳情／取消（不自動退）／選品理由。預設 mock（`NUXT_PUBLIC_EXPERT_BOOKING_MOCK`）；推定 API 見 `expert-booking-api.ts` |
+| expertBookingProduct | `/expert-booking-product` | **in-scope** | 專人預約商品設定（唯一 `code=personal`）。GET／PUT；無新增／刪除；code 唯讀。admin 可編、ops 只讀、expert 隱藏側欄。預設 mock（`NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK`） |
 
 ### 知識（組 key: `learning`）
 

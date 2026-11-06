@@ -13,10 +13,10 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     ])
   })
 
-  it('lists each nav key exactly once (25 items)', () => {
+  it('lists each nav key exactly once (26 items)', () => {
     const keys = NAV_GROUPS.flatMap(g => g.items.map(i => i.key))
-    expect(keys).toHaveLength(25)
-    expect(new Set(keys).size).toBe(25)
+    expect(keys).toHaveLength(26)
+    expect(new Set(keys).size).toBe(26)
   })
 
   it('places workbench as top-level without badge or group label', () => {
@@ -35,6 +35,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       'custom',
       'orders',
       'expertBookings',
+      'expertBookingProduct',
       'refundRequests',
       'shipping',
       'users'
@@ -43,11 +44,14 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       '/custom',
       '/orders',
       '/expert-bookings',
+      '/expert-booking-product',
       '/refund-requests',
       '/shipping',
       '/users'
     ])
     expect(ops.items.find(i => i.key === 'expertBookings')?.developing).toBe(false)
+    expect(ops.items.find(i => i.key === 'expertBookingProduct')?.developing).toBe(false)
+    expect(ops.items.find(i => i.key === 'expertBookingProduct')?.expertBookingProductOnly).toBe(true)
     expect(ops.items.find(i => i.key === 'shipping')?.developing).toBe(false)
     expect(ops.items.find(i => i.key === 'refundRequests')?.developing).toBe(false)
     expect(developing.items.map(i => i.key)).toContain('fulfillment')
@@ -127,12 +131,22 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(expertOps).not.toContain('refundRequests')
   })
 
+  it('hides expertBookingProduct nav for expert; keeps it for ops／admin', () => {
+    const adminOps = visibleNavGroups('consultant_admin', 'admin').find(g => g.key === 'ops')!.items.map(i => i.key)
+    const opsOps = visibleNavGroups('consultant_ops', 'ops').find(g => g.key === 'ops')!.items.map(i => i.key)
+    const expertOps = visibleNavGroups('consultant_ops', 'expert').find(g => g.key === 'ops')!.items.map(i => i.key)
+    expect(adminOps).toContain('expertBookingProduct')
+    expect(opsOps).toContain('expertBookingProduct')
+    expect(expertOps).not.toContain('expertBookingProduct')
+  })
+
   it('marks live official pages as not developing', () => {
     const live = [
       'workbench',
       'custom',
       'orders',
       'expertBookings',
+      'expertBookingProduct',
       'refundRequests',
       'shipping',
       'users',
@@ -167,6 +181,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(isDevelopingPath('/refund-requests')).toBe(false)
     expect(isDevelopingPath('/expert-bookings')).toBe(false)
     expect(isDevelopingPath('/expert-bookings/eb-1')).toBe(false)
+    expect(isDevelopingPath('/expert-booking-product')).toBe(false)
     expect(isDevelopingPath('/checkups')).toBe(true)
     expect(isDevelopingPath('/fulfillment')).toBe(true)
     expect(isDevelopingPath('/scheduling')).toBe(true)

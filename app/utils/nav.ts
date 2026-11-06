@@ -2,6 +2,7 @@ import type { Role } from '~/types/admin'
 import { isPlatformRole } from '~/types/admin'
 import type { OperatorRole } from '~/types/operator'
 import { canViewCtaCatalog } from '~/utils/cta-catalog-access'
+import { canViewExpertBookingProduct } from '~/utils/expert-booking-product-access'
 import { canAccessKnowledge } from '~/utils/knowledge-access'
 
 export interface NavItem {
@@ -15,6 +16,8 @@ export interface NavItem {
   guidanceOnly?: boolean
   /** 僅 ops／admin 可見（退款申請；expert 隱藏，Irice 11/4）。 */
   opsAdminOnly?: boolean
+  /** 僅 ops／admin 可見（專人預約商品；admin 可編、ops 只讀）。 */
+  expertBookingProductOnly?: boolean
   /** RouterLink exact：設定總頁勿與 /settings/privacy 等子路徑同時亮起。 */
   exact?: boolean
   /** false：側欄不加「即將上線」。未設視為開發中／未上線。 */
@@ -31,7 +34,7 @@ export interface NavGroup {
 /**
  * 側欄 IA（短物件名 2026-11-04）：
  * 總覽（最上、無組標）→ 營運 → 學習 → 商品 → 系統 → 開發中。
- * 每項只出現一次（25；expert 看不到引導／退款申請則更少）。組 key 與 item key 共用 `nav.*`。
+ * 每項只出現一次（26；expert 看不到引導／退款申請／預約商品則更少）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -47,6 +50,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'custom', to: '/custom', icon: 'i-lucide-badge-check', developing: false },
       { key: 'orders', to: '/orders', icon: 'i-lucide-shopping-bag', developing: false },
       { key: 'expertBookings', to: '/expert-bookings', icon: 'i-lucide-calendar-heart', developing: false },
+      {
+        key: 'expertBookingProduct',
+        to: '/expert-booking-product',
+        icon: 'i-lucide-ticket',
+        developing: false,
+        expertBookingProductOnly: true
+      },
       { key: 'refundRequests', to: '/refund-requests', icon: 'i-lucide-wallet', developing: false, opsAdminOnly: true },
       // shipping：物流（列表／詳情讀取已接；寫入仍 mock）→ 無即將上線 badge
       { key: 'shipping', to: '/shipping', icon: 'i-lucide-truck', developing: false },
@@ -147,6 +157,9 @@ export function isDevelopingPath(path: string): boolean {
   if (current === '/expert-bookings' || current.startsWith('/expert-bookings/')) {
     return false
   }
+  if (current === '/expert-booking-product' || current.startsWith('/expert-booking-product/')) {
+    return false
+  }
   if (current === '/knowledge/datasets' || current.startsWith('/knowledge/datasets/')) {
     return false
   }
@@ -196,6 +209,9 @@ export function visibleNavGroups(
           return false
         }
         if (item.opsAdminOnly && operatorRole === 'expert') {
+          return false
+        }
+        if (item.expertBookingProductOnly && !canViewExpertBookingProduct(operatorRole)) {
           return false
         }
         return true
