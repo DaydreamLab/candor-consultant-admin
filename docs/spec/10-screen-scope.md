@@ -23,6 +23,7 @@
 | refundRequests | `/refund-requests` | **in-scope** | 退款申請列表；確認退款／拒絕（spec 33；待 core #143） |
 | shipping | `/shipping` | **in-scope（語意）** | 側欄標籤「物流進度」；列表／詳情讀取接 core #88（空／不可用回落 mock）；推進寫入仍 Mock。列表已接 → **無**「即將上線」badge。→ 訂單 shipment；勿另立 selection 出貨 API。勿與開發中「履約進度」`progress` 混淆 |
 | users | `/users`、`/users/{id}` | **in-scope** | 僅 `role=member`。列表／詳情已接；子資源：訂單、對話列表／訊息、報告列表／判讀。點訂單進 `/orders/{id}`；對話與報告同頁展開 |
+| expertBookings | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections` | **in-scope** | 專人預約營運列表／詳情／取消（不自動退）／選品理由。預設 mock（`NUXT_PUBLIC_EXPERT_BOOKING_MOCK`）；推定 API 見 `expert-booking-api.ts` |
 
 ### 知識（組 key: `learning`）
 
@@ -59,7 +60,7 @@
 |---------|------|------|----------|
 | cases | `/cases` | **不做** | 履約單 → 改用訂單頁（`/admin/orders`）。勿與側欄組名「案件」或「專家檢視」混淆 |
 | scheduling | `/scheduling` | **不做** | 案件式檢驗排程不採用（與下方 `labAppointments` 不同） |
-| appointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 血檢／健檢預約記錄。本地 mock（列表／詳情／取消；列表含 7 天行事曆 modal）；無 HTTP。不是不做的 `labs` |
+| appointments | `/lab-appointments`、`/lab-appointments/{id}` | **in-scope（語意）** | 側欄文案「血檢預約」。本地 mock（列表／詳情／取消；列表含 7 天行事曆 modal）；無 HTTP。不是不做的 `labs` |
 | fulfillment | `/fulfillment` | **不做**（範例頁） | 示範履約階段看板；產品保留討論用殼。勿改名為「物流進度」（正式物流見案件組 `shipping`） |
 | selections | `/selections` | **不做** | keyin／手改組成不採用 |
 | invoices | `/invoices` | **不做** | 顧問請款單不採用 |
@@ -93,3 +94,19 @@
 - Session／角色：[11-operator-session.md](11-operator-session.md)
 - 知識管理：[12-knowledge-management.md](12-knowledge-management.md)
 - 進度：[../03-progress.md](../03-progress.md)
+
+
+## 專家站（獨立 surface build）
+
+同 repo、`NUXT_APP_SURFACE=expert` 另產物（`pnpm run build:expert`／`dev:expert`）。自己的 layout／middleware；頁面僅專家站路由；登入限 `operator.role === expert`。部署網域（暫定 expert.my-candor.com）不在本 PR 範圍。
+
+| 路徑 | 說明 |
+|------|------|
+| `/login` | E-01 專家站登入 |
+| `/` | E-02 已付款預約列表（pin、上次看到） |
+| `/bookings/{id}` | E-03／E-07 案件詳情／標記完成 |
+| `/bookings/{id}/confirm` | E-04 確認時間／改期 |
+| `/bookings/{id}/service-record` | E-05 服務紀錄（選填時長分鐘） |
+| `/bookings/{id}/selections` | E-06 選品與理由 |
+| `/calendar` | K-01／K-02／K-05 共用行事曆週／日視圖 |
+| `/calendar/availability` | K-03／K-04 可服務時段（每週重複、單日覆寫／還原、拖曳不跨日） |

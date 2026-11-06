@@ -14,7 +14,7 @@
     "orders": "訂單",
     "cases": "案件",
     "scheduling": "排程",
-    "appointments": "預約",
+    "appointments": "血檢預約",
     "fulfillment": "履約",
     "supplements": "保健品",
     "plans": "方案",
@@ -44,7 +44,8 @@
     "system": "系統",
     "warehouse": "倉儲出貨",
     "finance": "請款與報表",
-    "platform": "平台"
+    "platform": "平台",
+    "expertBookings": "專人預約"
   },
   "colorMode": {
     "label": "外觀",
@@ -554,6 +555,71 @@
     "status": {
       "booked": "已預約",
       "cancelled": "已取消"
+    }
+  },
+  "expertBookings": {
+    "description": "僅顯示已付款預約；取消與退款可在此操作（取消不自動退）。",
+    "detailTitle": "預約詳情 {code}",
+    "detailDescription": "可查看需求、希望時段、確認時間、標註專家與服務狀態。",
+    "loading": "讀取中…",
+    "failed": "無法讀取專人預約。",
+    "notFound": "找不到這筆專人預約。",
+    "empty": "尚無已付款專人預約",
+    "details": "詳情",
+    "columns": {
+      "order": "訂單",
+      "member": "客人",
+      "status": "狀態",
+      "confirmedAt": "確認時間",
+      "contact": "聯絡",
+      "expert": "標註專家"
+    },
+    "fields": {
+      "preferredSlots": "希望時段",
+      "need": "需求",
+      "confirmedAt": "確認時間",
+      "contact": "聯絡資料",
+      "attachments": "附件",
+      "productPicks": "選品與理由",
+      "memberProfile": "會員 profile",
+      "serviceRecord": "服務紀錄",
+      "cancelReason": "取消原因",
+      "cancelReasonOptional": "取消原因（選填）",
+      "expert": "標註專家",
+      "payment": "付款",
+      "notConfirmed": "尚未確認",
+      "expertHint": "系統不指派；顯示專家站／行事曆標註者"
+    },
+    "status": {
+      "awaiting_schedule": "待安排",
+      "scheduled": "已安排",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "payment": {
+      "paid": "已付款",
+      "refunded": "已退款",
+      "unpaid": "未付款"
+    },
+    "actions": {
+      "editSelections": "編輯選品與理由",
+      "cancel": "取消預約",
+      "openOrder": "開啟關聯訂單",
+      "confirmCancelTitle": "確定取消這筆預約？",
+      "confirmCancelBody": "取消後服務狀態會變為「已取消」。不會自動退款；若需退款請另走現有退款流程。",
+      "confirmCancelBack": "返回",
+      "confirmCancelOk": "確定取消",
+      "cancelFailed": "無法取消預約。",
+      "cancelHint": "退款走現有退款流程，取消不自動退。訂單與預約互相連結。"
+    },
+    "selections": {
+      "title": "選品與理由（後台）",
+      "crumb": "選品與理由",
+      "hint": "與專家站相同：多選保健品＋每項理由；只作紀錄不建單。",
+      "reasonPlaceholder": "寫下選品理由…",
+      "save": "儲存",
+      "saved": "已儲存選品與理由",
+      "saveFailed": "無法儲存選品與理由。"
     }
   },
   "weights": {
@@ -2266,5 +2332,147 @@
     "title": "操作紀錄",
     "empty": "尚無平台協助操作。",
     "hint": "坦見協助若修改資料，會留在這裡。顧問營運的日常勾選不列入。"
+  },
+  "expertStation": {
+    "brand": "Candor 專家站",
+    "host": "expert.my-candor.com",
+    "nav": {
+      "bookings": "預約列表",
+      "calendar": "行事曆",
+      "logout": "登出"
+    },
+    "login": {
+      "title": "Candor 專家站",
+      "account": "帳號",
+      "accountPlaceholder": "沿用後台 expert Email",
+      "password": "密碼",
+      "submit": "登入",
+      "hint": "使用顧問後台同一組 expert 帳號（接 core）。",
+      "expertOnly": "僅 expert 帳號可登入專家站。",
+      "invalid": "帳號或密碼不正確。",
+      "failed": "登入失敗，請稍後再試。",
+      "rateLimited": "嘗試過於頻繁，請稍後再試。"
+    },
+    "bookings": {
+      "crumb": "專家站 / 預約列表",
+      "title": "已付款預約",
+      "description": "所有專家皆可見；pin 為個人標記",
+      "lastSeen": "上次看到：{label} 休息後可回到同一案件",
+      "page": "第 {page} / {pages} 頁 · 共 {total} 筆",
+      "prev": "上一頁",
+      "next": "下一頁",
+      "pin": "Pin",
+      "unpin": "取消 Pin",
+      "columns": {
+        "order": "訂單",
+        "member": "客人",
+        "preferred": "希望時段",
+        "status": "狀態",
+        "confirmed": "確認時間"
+      }
+    },
+    "detail": {
+      "needTitle": "客人需求",
+      "profileTitle": "Profile",
+      "preferred": "希望時段",
+      "need": "需求說明",
+      "contact": "聯絡",
+      "goals": "Goals",
+      "conversations": "AI 健康諮詢對話",
+      "conversationsHint": "全部列出；最新預設展開",
+      "latestExpanded": "最新 · 已展開",
+      "expand": "點擊展開",
+      "collapse": "收合",
+      "loadEarlier": "載入更早的對話",
+      "confirmTitle": "確認時間",
+      "confirmCurrent": "目前",
+      "confirmAction": "填寫確認時間",
+      "serviceRecord": "服務紀錄",
+      "selections": "選品與理由",
+      "complete": "標記完成",
+      "completedBanner": "已標記完成",
+      "noCancel": "專家站不能取消預約；取消請由後台營運處理。",
+      "paidLine": "付款 {paid} · NT${amount}",
+      "paidAt": "付款 {paid}",
+      "conditions": "狀況"
+    },
+    "confirm": {
+      "title": "確認 / 改期",
+      "field": "確認服務時間",
+      "fieldStart": "確認開始時間",
+      "fieldEnd": "確認結束時間（選填）",
+      "hint": "改期只更新確認時間，狀態維持「已安排」。",
+      "save": "儲存",
+      "cancel": "取消"
+    },
+    "serviceRecord": {
+      "title": "服務紀錄（不給客人看）",
+      "servedAt": "實際服務時間",
+      "actualTime": "實際服務時間",
+      "method": "服務方式",
+      "methodHint": "電話、線上會議等；客人表單不填",
+      "content": "服務內容",
+      "salesContent": "銷售內容",
+      "salesContentPlaceholder": "建議產品；空則送「無」",
+      "duration": "時長",
+      "durationHint": "單位：分鐘",
+      "salesResult": "銷售結果",
+      "dealAmount": "成交金額",
+      "dealHint": "與 NT$6,000 服務費分開；回填不自動產新單",
+      "followUp": "後續追蹤",
+      "attachment": "附件",
+      "removeAttachment": "移除",
+      "uploadFailed": "附件上傳失敗",
+      "required": "請填實際服務時間、服務方式與服務內容",
+      "optional": "選填",
+      "save": "儲存服務紀錄",
+      "meta": "系統記錄 filled_by_operator_id／filled_at",
+      "methods": {
+        "phone": "電話",
+        "online_meeting": "線上會議",
+        "in_person": "面談",
+        "other": "其他"
+      }
+    },
+    "selections": {
+      "title": "選品與理由",
+      "forCustomer": "（給客人看）",
+      "hint": "從現有保健品清單多選；每項寫理由。只作紀錄，不自動建單。",
+      "save": "儲存選品與理由"
+    },
+    "calendar": {
+      "crumb": "專家站 / 行事曆",
+      "crumbDay": "專家站 / 行事曆 - 日",
+      "title": "共用行事曆",
+      "prevWeek": "上週",
+      "today": "今天",
+      "nextWeek": "下週",
+      "prevDay": "前日",
+      "nextDay": "翌日",
+      "week": "週",
+      "day": "日",
+      "setAvailability": "設定可服務時段",
+      "experts": "專家（可多選）",
+      "available": "可服務時段",
+      "noGoogle": "第一版不串 Google 日曆；客人仍填希望時段",
+      "availabilityTitle": "設定可服務時段",
+      "availabilityCrumb": "行事曆 / 可服務時段",
+      "expert": "專家",
+      "weeklyRepeat": "每週重複",
+      "weeklyRepeatHint": "開啟 = 設一次套用每週",
+      "dragHint": "拖曳不跨日；在格子上拖曳或點選 30 分鐘格",
+      "save": "儲存",
+      "cancel": "取消",
+      "weeklyLegend": "每週可服務（重複）",
+      "overrideLegend": "本日已單獨調整",
+      "draggingLegend": "拖曳選取中",
+      "lastModified": "系統紀錄最後修改人：{name}，{at}",
+      "overrideBanner": "{date} 本日已單獨調整。此日不跟隨每週模板；只影響當日。",
+      "restoreWeekly": "還原為每週設定",
+      "overridePanelTitle": "單日覆寫",
+      "weeklyTemplate": "每週模板",
+      "actualToday": "本日實際",
+      "overrideStatus": "已單獨調整"
+    }
   }
 }

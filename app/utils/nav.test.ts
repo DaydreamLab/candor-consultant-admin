@@ -13,10 +13,10 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     ])
   })
 
-  it('lists each nav key exactly once (24 items)', () => {
+  it('lists each nav key exactly once (25 items)', () => {
     const keys = NAV_GROUPS.flatMap(g => g.items.map(i => i.key))
-    expect(keys).toHaveLength(24)
-    expect(new Set(keys).size).toBe(24)
+    expect(keys).toHaveLength(25)
+    expect(new Set(keys).size).toBe(25)
   })
 
   it('places workbench as top-level without badge or group label', () => {
@@ -34,6 +34,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(ops.items.map(i => i.key)).toEqual([
       'custom',
       'orders',
+      'expertBookings',
       'refundRequests',
       'shipping',
       'users'
@@ -41,10 +42,12 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(ops.items.map(i => i.to)).toEqual([
       '/custom',
       '/orders',
+      '/expert-bookings',
       '/refund-requests',
       '/shipping',
       '/users'
     ])
+    expect(ops.items.find(i => i.key === 'expertBookings')?.developing).toBe(false)
     expect(ops.items.find(i => i.key === 'shipping')?.developing).toBe(false)
     expect(ops.items.find(i => i.key === 'refundRequests')?.developing).toBe(false)
     expect(developing.items.map(i => i.key)).toContain('fulfillment')
@@ -129,6 +132,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       'workbench',
       'custom',
       'orders',
+      'expertBookings',
       'refundRequests',
       'shipping',
       'users',
@@ -161,6 +165,8 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(isDevelopingPath('/shipping')).toBe(false)
     expect(isDevelopingPath('/expert-plans')).toBe(false)
     expect(isDevelopingPath('/refund-requests')).toBe(false)
+    expect(isDevelopingPath('/expert-bookings')).toBe(false)
+    expect(isDevelopingPath('/expert-bookings/eb-1')).toBe(false)
     expect(isDevelopingPath('/checkups')).toBe(true)
     expect(isDevelopingPath('/fulfillment')).toBe(true)
     expect(isDevelopingPath('/scheduling')).toBe(true)

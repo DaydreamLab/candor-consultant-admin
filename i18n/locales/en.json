@@ -14,7 +14,7 @@
     "orders": "Orders",
     "cases": "Cases",
     "scheduling": "Scheduling",
-    "appointments": "Appointments",
+    "appointments": "Blood test bookings",
     "fulfillment": "Fulfillment",
     "supplements": "Supplements",
     "plans": "Plans",
@@ -44,7 +44,8 @@
     "system": "System",
     "warehouse": "Warehouse",
     "finance": "Billing & reports",
-    "platform": "Platform"
+    "platform": "Platform",
+    "expertBookings": "Expert bookings"
   },
   "colorMode": {
     "label": "Appearance",
@@ -554,6 +555,71 @@
     "status": {
       "booked": "Booked",
       "cancelled": "Cancelled"
+    }
+  },
+  "expertBookings": {
+    "description": "Paid bookings only. Cancel here; refunds use the existing flow (not automatic).",
+    "detailTitle": "Booking {code}",
+    "detailDescription": "Needs, preferred slots, confirmed time, annotated expert, and service status.",
+    "loading": "Loading…",
+    "failed": "Could not load expert bookings.",
+    "notFound": "Expert booking not found.",
+    "empty": "No paid expert bookings yet",
+    "details": "Details",
+    "columns": {
+      "order": "Order",
+      "member": "Member",
+      "status": "Status",
+      "confirmedAt": "Confirmed",
+      "contact": "Contact",
+      "expert": "Expert"
+    },
+    "fields": {
+      "preferredSlots": "Preferred slots",
+      "need": "Needs",
+      "confirmedAt": "Confirmed time",
+      "contact": "Contact",
+      "attachments": "Attachments",
+      "productPicks": "Product picks",
+      "memberProfile": "Member profile",
+      "serviceRecord": "Service record",
+      "cancelReason": "Cancel reason",
+      "cancelReasonOptional": "Cancel reason (optional)",
+      "expert": "Annotated expert",
+      "payment": "Payment",
+      "notConfirmed": "Not confirmed",
+      "expertHint": "No auto-assignment; shows expert-station / calendar annotation"
+    },
+    "status": {
+      "awaiting_schedule": "Awaiting schedule",
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment": {
+      "paid": "Paid",
+      "refunded": "Refunded",
+      "unpaid": "Unpaid"
+    },
+    "actions": {
+      "editSelections": "Edit product reasons",
+      "cancel": "Cancel booking",
+      "openOrder": "Open related order",
+      "confirmCancelTitle": "Cancel this booking?",
+      "confirmCancelBody": "Status becomes Cancelled. No automatic refund — use the existing refund flow if needed.",
+      "confirmCancelBack": "Back",
+      "confirmCancelOk": "Confirm cancel",
+      "cancelFailed": "Could not cancel booking.",
+      "cancelHint": "Refunds use the existing flow; cancel does not refund automatically. Order and booking are linked."
+    },
+    "selections": {
+      "title": "Product reasons (admin)",
+      "crumb": "Product reasons",
+      "hint": "Same as expert station: multi-select supplements + per-item reason; record only, no order.",
+      "reasonPlaceholder": "Reason for this item…",
+      "save": "Save",
+      "saved": "Product reasons saved",
+      "saveFailed": "Could not save product reasons."
     }
   },
   "weights": {
@@ -2266,5 +2332,147 @@
     "title": "Audit log",
     "empty": "No Candor-assist edits yet.",
     "hint": "Candor assist edits are recorded here. Day-to-day ticks by firm ops are not."
+  },
+  "expertStation": {
+    "brand": "Candor Expert Station",
+    "host": "expert.my-candor.com",
+    "nav": {
+      "bookings": "Bookings",
+      "calendar": "Calendar",
+      "logout": "Log out"
+    },
+    "login": {
+      "title": "Candor Expert Station",
+      "account": "Account",
+      "accountPlaceholder": "Same expert email as admin",
+      "password": "Password",
+      "submit": "Sign in",
+      "hint": "Use the same expert operator account (via core).",
+      "expertOnly": "Only expert operators can sign in here.",
+      "invalid": "Invalid email or password.",
+      "failed": "Sign-in failed. Try again later.",
+      "rateLimited": "Too many attempts. Try again later."
+    },
+    "bookings": {
+      "crumb": "Expert station / Bookings",
+      "title": "Paid bookings",
+      "description": "Visible to all experts; pin is personal",
+      "lastSeen": "Last seen: {label} — return to the same case after a break",
+      "page": "Page {page} / {pages} · {total} total",
+      "prev": "Previous",
+      "next": "Next",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "columns": {
+        "order": "Order",
+        "member": "Member",
+        "preferred": "Preferred",
+        "status": "Status",
+        "confirmed": "Confirmed"
+      }
+    },
+    "detail": {
+      "needTitle": "Member needs",
+      "profileTitle": "Profile",
+      "preferred": "Preferred slots",
+      "need": "Needs",
+      "contact": "Contact",
+      "goals": "Goals",
+      "conversations": "AI health consultations",
+      "conversationsHint": "All conversations; latest expanded",
+      "latestExpanded": "Latest · expanded",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "loadEarlier": "Load earlier conversations",
+      "confirmTitle": "Confirmed time",
+      "confirmCurrent": "Current",
+      "confirmAction": "Set confirmed time",
+      "serviceRecord": "Service record",
+      "selections": "Product reasons",
+      "complete": "Mark complete",
+      "completedBanner": "Marked complete",
+      "noCancel": "Experts cannot cancel; ops cancel in admin.",
+      "paidLine": "Paid {paid} · NT${amount}",
+      "paidAt": "Paid {paid}",
+      "conditions": "Conditions"
+    },
+    "confirm": {
+      "title": "Confirm / reschedule",
+      "field": "Confirmed service time",
+      "fieldStart": "Confirmed start",
+      "fieldEnd": "Confirmed end (optional)",
+      "hint": "Reschedule only updates confirmed time; status stays Scheduled.",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "serviceRecord": {
+      "title": "Service record (hidden from member)",
+      "servedAt": "Actual service time",
+      "actualTime": "Actual service time",
+      "method": "Service method",
+      "methodHint": "Phone, online meeting, etc.",
+      "content": "Content",
+      "salesContent": "Sales notes",
+      "salesContentPlaceholder": "Suggested products; empty sends「無」",
+      "duration": "Duration",
+      "durationHint": "Minutes",
+      "salesResult": "Sales result",
+      "dealAmount": "Deal amount",
+      "dealHint": "Separate from NT$6,000 fee; does not create an order",
+      "followUp": "Follow-up",
+      "attachment": "Attachment",
+      "removeAttachment": "Remove",
+      "uploadFailed": "Attachment upload failed",
+      "required": "served_at, service_method, and content are required",
+      "optional": "Optional",
+      "save": "Save service record",
+      "meta": "System records filled_by_operator_id / filled_at",
+      "methods": {
+        "phone": "Phone",
+        "online_meeting": "Online meeting",
+        "in_person": "In person",
+        "other": "Other"
+      }
+    },
+    "selections": {
+      "title": "Product reasons",
+      "forCustomer": "(visible to member)",
+      "hint": "Multi-select supplements with reasons. Record only — no order.",
+      "save": "Save product reasons"
+    },
+    "calendar": {
+      "crumb": "Expert station / Calendar",
+      "crumbDay": "Expert station / Calendar — day",
+      "title": "Shared calendar",
+      "prevWeek": "Previous week",
+      "today": "Today",
+      "nextWeek": "Next week",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "week": "Week",
+      "day": "Day",
+      "setAvailability": "Set availability",
+      "experts": "Experts (multi)",
+      "available": "Available",
+      "noGoogle": "No Google Calendar sync in v1; members still submit preferred slots",
+      "availabilityTitle": "Set availability",
+      "availabilityCrumb": "Calendar / Availability",
+      "expert": "Expert",
+      "weeklyRepeat": "Weekly repeat",
+      "weeklyRepeatHint": "On = apply every week",
+      "dragHint": "Drag stays on one day; 30-minute cells",
+      "save": "Save",
+      "cancel": "Cancel",
+      "weeklyLegend": "Weekly availability",
+      "overrideLegend": "Day override",
+      "draggingLegend": "Selecting",
+      "lastModified": "Last modified by {name}, {at}",
+      "overrideBanner": "{date} has a day override and does not follow the weekly template.",
+      "restoreWeekly": "Restore weekly template",
+      "overridePanelTitle": "Day override",
+      "weeklyTemplate": "Weekly template",
+      "actualToday": "Actual today",
+      "overrideStatus": "Overridden"
+    }
   }
 }

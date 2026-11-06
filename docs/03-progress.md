@@ -80,6 +80,8 @@
 | 物流進度擋理貨 | `/shipping/{id}`：退款中 disabled＋原因；`POST /admin/order/{id}/shipment` 遇 `refund_request_pending`；判斷用 order `refund_status`（B-17／C19） | 可用 | 接線中（讀取已接；開始理貨寫入對齊 #143） | M2 Beta |
 | 採檢服務（LabService） | `/checkups`、`/checkups/new`、`/checkups/{id}`（項目／必選／時段名額；本地 mock） | 可用 | Mock | M3 |
 | 預約記錄 | `/lab-appointments`、`/lab-appointments/{id}`（列表／詳情／取消；列表有 7 天行事曆 modal；本地 mock） | 可用 | Mock | M3 |
+| 專人預約 | `/expert-bookings`、`/expert-bookings/{id}`、`/expert-bookings/{id}/selections`（列表／詳情／取消二次確認／選品理由；預設 mock） | 可用 | Mock | M2 Beta |
+| 專家站（獨立 build） | `NUXT_APP_SURFACE=expert`：`/` 列表、`/bookings/{id}`、確認時間／服務紀錄／選品、`/calendar` 週日視圖與可服務時段；僅 expert 可登入 | 可用 | Mock | M2 Beta |
 | 報告校正／重試 | —（可掛設定） | 無 | Mock | M4 |
 | 專家訓練／權重 | `/weights`、`/weights/weights/{id}`（側欄「平台」；列表點進詳情） | 殼 | Mock | M4 |
 | 專家訓練／每日學習確認 | `/weights/daily-learning`（載入待確認草案／clone→confirm→confirm-safety→dry-run→publish；對齊 core #76 `79ed13b`；ops 可確認） | 可用 | 接線中（待 core #76 合併部署） | M4 |
@@ -147,6 +149,9 @@
 | PackagePlan 建立 | `POST /admin/plans`（不送 code；預設下架；收 name_en／original_price／description*／home_*／sort_order） | 接線中（畫面 `/package-plans/new` 已做） |
 | LabService CRUD | `/admin/checkups`、`/admin/lab-service/{id}` | Mock（畫面 `/checkups` 已做本地 mock；不打 API；目標欄位見 core ADR 0022） |
 | LabAppointment 列表／詳情／取消 | —（無 HTTP） | Mock（畫面 `/lab-appointments` 含 7 天行事曆 modal；不是不做的 `/scheduling`） |
+| ExpertBooking 列表／詳情／取消／選品 | `GET /admin/expert-bookings`、`GET /admin/expert-booking/{id}`、`POST …/cancel`（ops／admin）、`PUT …/product-picks`（路徑對齊 core #155；body schema 待 OpenAPI） | Mock |
+| Expert station bookings | `GET /admin/expert-station/bookings`、`GET …/{id}`、`PUT …/pin`、`PUT /admin/expert-station/last-seen`、`GET …/conversations`、`PUT …/confirm-time`、`PUT …/service-record`、`POST …/complete`、`PUT …/product-picks` | Mock |
+| Expert calendar | `GET /admin/expert-calendar`、`PUT …/weekly`、`PUT|DELETE …/day-override` | Mock |
 | Client config | `GET`／`PATCH /admin/client-config` | 已接（`/assistant/site`；設定頁不再編） |
 | Conversation copies | `GET /admin/conversation-copies`、`PATCH /admin/conversation-copy/{code}` | 已接（`/assistant`） |
 | Claim guard terms | `GET`／`POST /admin/claim-guard-terms`、`PATCH /admin/claim-guard-term/{id}` | 已接（`/assistant/claim-terms`） |
