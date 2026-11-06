@@ -2,7 +2,6 @@
 import {
   expertHhmmToMinute,
   expertMinuteToHhmm,
-  halfHourSlots,
   isSlotAvailable,
   scheduledBookingsForDate
 } from '~/utils/expert-booking-calendar'
@@ -20,14 +19,13 @@ const props = defineProps<{
   weekly: ExpertCalendarWeeklySlot[]
   dayOverrides: ExpertCalendarDayOverride[]
   scheduledBookings: ExpertCalendarScheduledBooking[]
+  timeSlots: string[]
   highlightOverrides?: boolean
 }>()
 
 const emit = defineEmits<{
   selectBooking: [booking: ExpertCalendarScheduledBooking]
 }>()
-
-const slots = halfHourSlots(9, 18)
 
 const expertColorMap = computed(() => {
   const palette = ['#0f766e', '#0369a1', '#a16207', '#be123c', '#7c3aed']
@@ -121,7 +119,7 @@ function dayLabel(date: string) {
       </div>
 
       <template
-        v-for="slot in slots"
+        v-for="slot in timeSlots"
         :key="slot"
       >
         <div class="border-t border-default px-2 py-3 text-xs text-muted">

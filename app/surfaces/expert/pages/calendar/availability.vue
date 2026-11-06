@@ -12,7 +12,8 @@ import {
   expertMinuteToHhmm,
   expertWeekDates,
   expertWeekStartMonday,
-  halfHourSlots,
+  paintSlotMinutes,
+  planExpertCalendarWrites,
   weekdayOfDate
 } from '~/utils/expert-booking-calendar'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -23,10 +24,11 @@ const { t } = useI18n()
 const config = useRuntimeConfig()
 const session = useSessionStore()
 
+const { start: windowStart, end: windowEnd, slots, startItems, endItems } = useExpertWorkWindow()
 const weekStart = ref(expertWeekStartMonday('2026-04-10'))
 const dates = computed(() => expertWeekDates(weekStart.value))
-const slots = halfHourSlots(9, 18)
 const snapshot = ref<ExpertCalendarSnapshot | null>(null)
+const draft = ref<ExpertCalendarSnapshot | null>(null)
 const expertId = ref('')
 const weeklyRepeat = ref(true)
 const pending = ref(true)
@@ -37,6 +39,15 @@ const selectedOverrideDate = ref<string | null>('2026-04-10')
 const dragDay = ref<string | null>(null)
 const dragMinutes = ref<number[]>([])
 const dragStart = ref<string | null>(null)
+const dragMode = ref<'add' | 'remove'>('add')
+
+const dirty = computed(() => {
+  if (!snapshot.value || !draft.value) {
+    return false
+  }
+  const plan = planExpertCalendarWrites(snapshot.value, draft.value)
+  return plan.weekly.length + plan.overrides.length + plan.clearedOverrides.length > 0
+})
 
 const expertItems = computed(() =>
   (snapshot.value?.experts || []).map(e => ({
@@ -46,20 +57,20 @@ const expertItems = computed(() =>
 )
 
 const override = computed(() => {
-  if (!snapshot.value || !selectedOverrideDate.value || !expertId.value) {
+  if (!draft.value || !selectedOverrideDate.value || !expertId.value) {
     return null
   }
-  return snapshot.value.day_overrides.find(
+  return draft.value.day_overrides.find(
     o => o.expert_operator_id === expertId.value && o.override_date === selectedOverrideDate.value
   ) || null
 })
 
 const weeklyTemplateLabel = computed(() => {
-  if (!selectedOverrideDate.value || !snapshot.value || !expertId.value) {
+  if (!selectedOverrideDate.value || !draft.value || !expertId.value) {
     return '—'
   }
   const weekday = weekdayOfDate(selectedOverrideDate.value)
-  const minutes = snapshot.value.weekly
+  const minutes = draft.value.weekly
     .filter(r => r.expert_operator_id === expertId.value && r.weekday === weekday)
     .map(r => r.slot_start_minute)
     .sort((a, b) => a - b)
@@ -92,7 +103,7 @@ async function load() {
       from: dates.value[0]!,
       to: dates.value[dates.value.length - 1]!
     })
-    snapshot.value = data
+    adopt(data)
     if (!expertId.value) {
       expertId.value = session.operator?.id && data.experts.some(e => e.id === session.operator?.id)
         ? session.operator.id
@@ -105,8 +116,25 @@ async function load() {
   }
 }
 
+function cloneCalendar(source: ExpertCalendarSnapshot): ExpertCalendarSnapshot {
+  return {
+    experts: source.experts.map(expert => ({ ...expert })),
+    weekly: source.weekly.map(row => ({ ...row })),
+    day_overrides: source.day_overrides.map(row => ({
+      ...row,
+      slots: [...row.slots]
+    })),
+    scheduled_bookings: source.scheduled_bookings.map(row => ({ ...row }))
+  }
+}
+
+function adopt(data: ExpertCalendarSnapshot) {
+  snapshot.value = cloneCalendar(data)
+  draft.value = cloneCalendar(data)
+}
+
 function cellActive(date: string, slot: string) {
-  if (!snapshot.value || !expertId.value) {
+  if (!draft.value || !expertId.value) {
     return false
   }
   const minute = expertHhmmToMinute(slot)
@@ -116,24 +144,45 @@ function cellActive(date: string, slot: string) {
   return effectiveSlotsForDate(
     expertId.value,
     date,
-    snapshot.value.weekly,
-    snapshot.value.day_overrides
+    draft.value.weekly,
+    draft.value.day_overrides
   ).slots.includes(minute)
 }
 
 function cellIsOverride(date: string) {
   return Boolean(
-    snapshot.value?.day_overrides.some(
+    draft.value?.day_overrides.some(
       o => o.expert_operator_id === expertId.value && o.override_date === date
     )
   )
 }
 
+function slotsBeingEdited(date: string): number[] {
+  if (!draft.value || !expertId.value) {
+    return []
+  }
+  if (weeklyRepeat.value) {
+    const weekday = weekdayOfDate(date)
+    return draft.value.weekly
+      .filter(r => r.expert_operator_id === expertId.value && r.weekday === weekday)
+      .map(r => r.slot_start_minute)
+      .sort((a, b) => a - b)
+  }
+  return effectiveSlotsForDate(
+    expertId.value,
+    date,
+    draft.value.weekly,
+    draft.value.day_overrides
+  ).slots
+}
+
 function onPointerDown(date: string, slot: string, event: PointerEvent) {
   event.preventDefault()
+  const minute = expertHhmmToMinute(slot)
   dragDay.value = date
   dragStart.value = slot
-  dragMinutes.value = [expertHhmmToMinute(slot)]
+  dragMinutes.value = [minute]
+  dragMode.value = slotsBeingEdited(date).includes(minute) ? 'remove' : 'add'
   selectedOverrideDate.value = date
 }
 
@@ -147,66 +196,82 @@ function onPointerEnter(date: string, slot: string) {
   dragMinutes.value = dragSelectSlotMinutes(dragStart.value, slot)
 }
 
-async function refreshSnapshot() {
+async function reloadFromServer() {
   const token = readOperatorToken()
   if (!token) {
     return
   }
-  snapshot.value = await getExpertCalendar(config.public.apiBase, token, {
+  adopt(await getExpertCalendar(config.public.apiBase, token, {
     from: dates.value[0]!,
     to: dates.value[dates.value.length - 1]!,
     expert_operator_id: expertId.value || null
-  })
+  }))
 }
 
-async function onPointerUp() {
-  if (!dragDay.value || !dragMinutes.value.length || !snapshot.value || !expertId.value) {
-    dragDay.value = null
-    dragStart.value = null
-    dragMinutes.value = []
+function applyEditedSlots(date: string, nextDaySlots: number[]) {
+  if (!draft.value || !expertId.value) {
     return
   }
-  const date = dragDay.value
-  const token = readOperatorToken()
-  if (!token) {
-    return
-  }
-
-  try {
-    if (weeklyRepeat.value) {
-      const weekday = weekdayOfDate(date)
-      const kept = snapshot.value.weekly.filter(
-        r => !(r.expert_operator_id === expertId.value && r.weekday === weekday)
-      )
-      const nextSlots = [
-        ...kept
-          .filter(r => r.expert_operator_id === expertId.value)
-          .map(r => ({ weekday: r.weekday, slot_start_minute: r.slot_start_minute })),
-        ...dragMinutes.value.map(slot_start_minute => ({ weekday, slot_start_minute }))
+  if (weeklyRepeat.value) {
+    const weekday = weekdayOfDate(date)
+    const kept = draft.value.weekly.filter(
+      r => !(r.expert_operator_id === expertId.value && r.weekday === weekday)
+    )
+    draft.value = {
+      ...draft.value,
+      weekly: [
+        ...kept,
+        ...nextDaySlots.map(slot_start_minute => ({
+          expert_operator_id: expertId.value,
+          weekday,
+          slot_start_minute
+        }))
       ]
-      await putExpertCalendarWeekly(config.public.apiBase, token, {
-        expert_operator_id: expertId.value,
-        slots: nextSlots
-      })
-    } else {
-      await putExpertCalendarDayOverride(config.public.apiBase, token, {
+    }
+    return
+  }
+  const kept = draft.value.day_overrides.filter(
+    o => !(o.expert_operator_id === expertId.value && o.override_date === date)
+  )
+  draft.value = {
+    ...draft.value,
+    day_overrides: [
+      ...kept,
+      {
         expert_operator_id: expertId.value,
         override_date: date,
-        slots: [...dragMinutes.value]
-      })
-    }
-    await refreshSnapshot()
-  } catch {
-    errorMessage.value = t('expertBookings.failed')
-  } finally {
-    dragDay.value = null
-    dragStart.value = null
-    dragMinutes.value = []
+        slots: nextDaySlots
+      }
+    ]
   }
 }
 
-async function restoreWeekly() {
-  if (!selectedOverrideDate.value || !expertId.value) {
+function onPointerUp() {
+  const date = dragDay.value
+  const painted = [...dragMinutes.value]
+  const mode = dragMode.value
+  dragDay.value = null
+  dragStart.value = null
+  dragMinutes.value = []
+  if (!date || !painted.length || !draft.value || !expertId.value) {
+    return
+  }
+  applyEditedSlots(date, paintSlotMinutes(slotsBeingEdited(date), painted, mode))
+}
+
+function revertDraft() {
+  if (!snapshot.value || saving.value) {
+    return
+  }
+  draft.value = cloneCalendar(snapshot.value)
+}
+
+async function saveDraft() {
+  if (!snapshot.value || !draft.value || saving.value) {
+    return
+  }
+  const plan = planExpertCalendarWrites(snapshot.value, draft.value)
+  if (!plan.weekly.length && !plan.overrides.length && !plan.clearedOverrides.length) {
     return
   }
   const token = readOperatorToken()
@@ -214,16 +279,34 @@ async function restoreWeekly() {
     return
   }
   saving.value = true
+  errorMessage.value = ''
   try {
-    await deleteExpertCalendarDayOverride(config.public.apiBase, token, {
-      expert_operator_id: expertId.value,
-      override_date: selectedOverrideDate.value
-    })
-    await refreshSnapshot()
+    for (const weekly of plan.weekly) {
+      await putExpertCalendarWeekly(config.public.apiBase, token, weekly)
+    }
+    for (const overrideRow of plan.overrides) {
+      await putExpertCalendarDayOverride(config.public.apiBase, token, overrideRow)
+    }
+    for (const cleared of plan.clearedOverrides) {
+      await deleteExpertCalendarDayOverride(config.public.apiBase, token, cleared)
+    }
+    await reloadFromServer()
   } catch {
     errorMessage.value = t('expertBookings.failed')
   } finally {
     saving.value = false
+  }
+}
+
+function restoreWeekly() {
+  if (!draft.value || !selectedOverrideDate.value || !expertId.value || saving.value) {
+    return
+  }
+  draft.value = {
+    ...draft.value,
+    day_overrides: draft.value.day_overrides.filter(
+      o => !(o.expert_operator_id === expertId.value && o.override_date === selectedOverrideDate.value)
+    )
   }
 }
 
@@ -260,10 +343,44 @@ function dayLabel(date: string) {
           </span>
         </span>
       </label>
+      <UFormField :label="$t('expertStation.calendar.windowStart')">
+        <USelect
+          v-model="windowStart"
+          :items="startItems"
+          class="w-28"
+        />
+      </UFormField>
+      <UFormField :label="$t('expertStation.calendar.windowEnd')">
+        <USelect
+          v-model="windowEnd"
+          :items="endItems"
+          class="w-28"
+        />
+      </UFormField>
       <span class="text-xs text-muted">
         {{ $t('expertStation.calendar.dragHint') }}
       </span>
-      <div class="ml-auto flex gap-2">
+      <div class="ml-auto flex items-center gap-2">
+        <span
+          v-if="dirty"
+          class="text-xs text-muted"
+        >
+          {{ $t('expertStation.calendar.dirtyHint') }}
+        </span>
+        <UButton
+          variant="outline"
+          :disabled="!dirty || saving"
+          @click="revertDraft"
+        >
+          {{ $t('expertStation.calendar.revertChanges') }}
+        </UButton>
+        <UButton
+          :disabled="!dirty"
+          :loading="saving"
+          @click="saveDraft"
+        >
+          {{ $t('expertStation.calendar.save') }}
+        </UButton>
         <UButton
           variant="outline"
           :to="localePath('/calendar')"
@@ -288,7 +405,7 @@ function dayLabel(date: string) {
         size="sm"
         color="warning"
         variant="soft"
-        :loading="saving"
+        :disabled="saving"
         @click="restoreWeekly"
       >
         {{ $t('expertStation.calendar.restoreWeekly') }}
@@ -403,7 +520,7 @@ function dayLabel(date: string) {
           block
           color="warning"
           variant="soft"
-          :loading="saving"
+          :disabled="saving"
           @click="restoreWeekly"
         >
           {{ $t('expertStation.calendar.restoreWeekly') }}

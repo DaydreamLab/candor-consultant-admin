@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import {
   dragSelectSlotsSameDay,
   effectiveAvailabilityForDate,
+  paintSlotMinutes,
   expertAddDaysToDateString,
   expertHhmmToMinute,
   expertMinuteToHhmm,
   expertWeekStartMonday,
   halfHourSlots,
+  halfHourSlotsBetween,
   mergeHalfHourStarts,
+  planExpertCalendarWrites,
   preferredSlotsLabel,
   shortOrderCode,
   weekdayOfDate
@@ -18,12 +21,12 @@ import type {
 } from './expert-booking-types'
 
 describe('expert-booking-calendar', () => {
-  it('builds 30-minute slots 09:00–17:30', () => {
-    const slots = halfHourSlots(9, 18)
-    expect(slots[0]).toBe('09:00')
-    expect(slots[1]).toBe('09:30')
-    expect(slots.at(-1)).toBe('17:30')
-    expect(slots).toHaveLength(18)
+  it('builds 30-minute slots 06:00–19:30', () => {
+    const slots = halfHourSlots(6, 20)
+    expect(slots[0]).toBe('06:00')
+    expect(slots[1]).toBe('06:30')
+    expect(slots.at(-1)).toBe('19:30')
+    expect(slots).toHaveLength(28)
   })
 
   it('computes Monday week start and OpenAPI weekday 0=Sun', () => {
@@ -60,6 +63,68 @@ describe('expert-booking-calendar', () => {
     expect(result.slots).toEqual([
       { start_time: '10:00', end_time: '11:00' }
     ])
+  })
+
+  it('paints a later range without erasing an earlier gap', () => {
+    const morning = dragSelectSlotsSameDay('2026-04-10', '09:00', '10:00').slots
+      .map(expertHhmmToMinute)
+    const afternoon = dragSelectSlotsSameDay('2026-04-10', '14:00', '14:30').slots
+      .map(expertHhmmToMinute)
+    const added = paintSlotMinutes(morning, afternoon, 'add')
+    expect(added.map(expertMinuteToHhmm)).toEqual([
+      '09:00', '09:30', '10:00', '14:00', '14:30'
+    ])
+    const cleared = paintSlotMinutes(added, [expertHhmmToMinute('09:30')], 'remove')
+    expect(cleared.map(expertMinuteToHhmm)).toEqual([
+      '09:00', '10:00', '14:00', '14:30'
+    ])
+  })
+
+  it('plans weekly and day-override writes without touching unchanged rows', () => {
+    const saved = {
+      weekly: [
+        { weekday: 1, slot_start_minute: 540, expert_operator_id: 'e1' },
+        { weekday: 2, slot_start_minute: 600, expert_operator_id: 'e2' }
+      ],
+      day_overrides: [
+        { expert_operator_id: 'e1', override_date: '2026-04-10', slots: [600] }
+      ]
+    }
+    const draft = {
+      weekly: [
+        { weekday: 1, slot_start_minute: 540, expert_operator_id: 'e1' },
+        { weekday: 1, slot_start_minute: 840, expert_operator_id: 'e1' },
+        { weekday: 2, slot_start_minute: 600, expert_operator_id: 'e2' }
+      ],
+      day_overrides: [
+        { expert_operator_id: 'e1', override_date: '2026-04-11', slots: [660, 960] }
+      ]
+    }
+    expect(planExpertCalendarWrites(saved, draft)).toEqual({
+      weekly: [{
+        expert_operator_id: 'e1',
+        slots: [
+          { weekday: 1, slot_start_minute: 540 },
+          { weekday: 1, slot_start_minute: 840 }
+        ]
+      }],
+      overrides: [{
+        expert_operator_id: 'e1',
+        override_date: '2026-04-11',
+        slots: [660, 960]
+      }],
+      clearedOverrides: [{
+        expert_operator_id: 'e1',
+        override_date: '2026-04-10'
+      }]
+    })
+    expect(planExpertCalendarWrites(saved, saved)).toEqual({
+      weekly: [],
+      overrides: [],
+      clearedOverrides: []
+    })
+    expect(halfHourSlotsBetween('06:00', '20:00')).toHaveLength(28)
+    expect(halfHourSlotsBetween('06:00', '20:00').at(-1)).toBe('19:30')
   })
 
   it('formats preferred slots and short order code', () => {

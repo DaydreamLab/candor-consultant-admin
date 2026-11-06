@@ -14,6 +14,7 @@ import type {
 const localePath = useLocalePath()
 const { t } = useI18n()
 const config = useRuntimeConfig()
+const { start: windowStart, end: windowEnd, slots, startItems, endItems } = useExpertWorkWindow()
 
 const view = ref<'week' | 'day'>('week')
 const anchor = ref(expertWeekStartMonday('2026-04-10'))
@@ -138,6 +139,20 @@ function toggleExpert(id: string, checked: boolean | 'indeterminate') {
         <span class="text-sm text-muted">
           {{ rangeLabel }}
         </span>
+        <UFormField :label="$t('expertStation.calendar.windowStart')">
+          <USelect
+            v-model="windowStart"
+            :items="startItems"
+            class="w-28"
+          />
+        </UFormField>
+        <UFormField :label="$t('expertStation.calendar.windowEnd')">
+          <USelect
+            v-model="windowEnd"
+            :items="endItems"
+            class="w-28"
+          />
+        </UFormField>
         <div class="inline-flex rounded-lg border border-default p-0.5">
           <UButton
             size="xs"
@@ -219,6 +234,7 @@ function toggleExpert(id: string, checked: boolean | 'indeterminate') {
         :weekly="snapshot.weekly"
         :day-overrides="snapshot.day_overrides"
         :scheduled-bookings="snapshot.scheduled_bookings"
+        :time-slots="slots"
         highlight-overrides
         @select-booking="selectedBooking = $event"
       />
