@@ -12,6 +12,11 @@ import { money } from '~/utils/format'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { normalizeAdminPath } from '~/utils/nav'
 import {
+  bottleAddonAmountOf,
+  bottleAddonsOf,
+  packageAmountOf
+} from '~/utils/order-bottle-addon'
+import {
   isOrderShipmentRefundable,
   orderHasRefundableCardPayment
 } from '~/utils/order-refund-gate'
@@ -108,6 +113,7 @@ const summaryFields = computed(() => summaryOf(order.value))
 const recipientFields = computed(() => recipientOf(order.value))
 const packageInfo = computed(() => packageOf(order.value))
 const packageComponents = computed(() => packageInfo.value?.components ?? [])
+const bottleAddonLines = computed(() => bottleAddonsOf(order.value))
 const labLines = computed(() => labLinesOf(order.value))
 const expertPlanLines = computed(() => expertPlanLinesOf(order.value))
 const refundRequestStatus = computed(() => {
@@ -299,6 +305,12 @@ function summaryOf(data: Record<string, unknown> | null): FieldRow[] {
   pushMapped(rows, 'status', data.status, value => mappedLabel('orderStatus', value), 'order_status')
   pushMapped(rows, 'payment_status', data.payment_status, value => mappedLabel('paymentStatus', value))
   pushMoney(rows, 'amount_total', data.amount_total)
+  const packageAmount = packageAmountOf(data)
+  const addonAmount = bottleAddonAmountOf(data)
+  if (addonAmount != null && addonAmount > 0) {
+    pushMoney(rows, 'package_amount', packageAmount)
+    pushMoney(rows, 'addon_amount', addonAmount)
+  }
   pushText(rows, 'package_plan_name', data.package_plan_name)
   pushTime(rows, 'created_at', data.created_at)
   const period = periodText(data.period_start, data.period_end)
@@ -584,6 +596,10 @@ function componentKey(row: Record<string, unknown>, index: number) {
 
 function labKey(row: Record<string, unknown>, index: number) {
   return scalarId(row.id) || `lab-${index}`
+}
+
+function bottleAddonKey(row: { sellable_item_id: string, sellable_item_sku: string }, index: number) {
+  return row.sellable_item_id || row.sellable_item_sku || `bottle-addon-${index}`
 }
 
 function daySupplyKey(row: Record<string, unknown>, index: number) {
@@ -1124,6 +1140,82 @@ function isRecord(value: unknown): value is Record<string, unknown> {
                       </td>
                       <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
                         {{ amountText(row.monthly_cost) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+
+            <details
+              v-if="bottleAddonLines.length"
+              open
+              class="group shrink-0 overflow-hidden rounded-xl border border-default bg-elevated"
+              data-testid="order-bottle-addons-section"
+            >
+              <summary class="cursor-pointer list-none px-4 py-3 group-open:border-b group-open:border-default [&::-webkit-details-marker]:hidden">
+                <span class="flex items-center justify-between gap-3">
+                  <span class="flex items-center gap-2 text-base font-semibold text-highlighted">
+                    {{ $t('orders.sections.bottleAddons') }}
+                    <UBadge
+                      size="sm"
+                      color="info"
+                      variant="soft"
+                    >
+                      {{ $t('orders.bottleAddonBadge') }}
+                    </UBadge>
+                  </span>
+                  <UIcon
+                    name="i-lucide-chevron-right"
+                    class="size-4 shrink-0 text-muted transition-transform group-open:rotate-90"
+                  />
+                </span>
+              </summary>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                  <thead class="border-b border-default bg-muted/40 text-muted">
+                    <tr>
+                      <th class="px-4 py-3 font-medium">
+                        {{ $t('orders.lineColumns.bottleAddonName') }}
+                      </th>
+                      <th class="px-4 py-3 text-center font-medium">
+                        {{ $t('orders.lineColumns.bottles') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.unitPrice') }}
+                      </th>
+                      <th class="px-4 py-3 text-right font-medium">
+                        {{ $t('orders.lineColumns.price') }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(row, index) in bottleAddonLines"
+                      :key="bottleAddonKey(row, index)"
+                      class="border-b border-default last:border-0"
+                      data-testid="order-bottle-addon-line"
+                    >
+                      <td class="px-4 py-3 text-highlighted">
+                        <span class="inline-flex flex-wrap items-center gap-2">
+                          {{ row.sellable_item_name || $t('status.na') }}
+                          <UBadge
+                            size="sm"
+                            color="neutral"
+                            variant="outline"
+                          >
+                            {{ $t('orders.bottleAddonBadge') }}
+                          </UBadge>
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center text-highlighted tabular-nums">
+                        {{ row.qty }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.unit_price) }}
+                      </td>
+                      <td class="tabular-money px-4 py-3 text-right font-medium text-highlighted">
+                        {{ amountText(row.amount) }}
                       </td>
                     </tr>
                   </tbody>

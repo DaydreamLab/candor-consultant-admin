@@ -336,6 +336,23 @@ export type AdminOrderListQuery = {
   offset?: number
 }
 
+/**
+ * List row from `GET /admin/orders`（core AdminOrderSummary / #177）.
+ * Detail payloads use richer fields; list badge relies on `has_bottle_addon` only.
+ */
+export type AdminOrderSummary = {
+  id?: string
+  order_no?: string
+  status?: string
+  payment_status?: string
+  amount_total?: number
+  package_plan_name?: string
+  recipient_name?: string
+  created_at?: string
+  /** true when order has any order_lines.kind=bottle_addon */
+  has_bottle_addon: boolean
+}
+
 export type AdminExpertCaseReviewListQuery = {
   status?: string
   /** `expert_plan`＝付費專家方案案；`legacy`＝舊免費案。省略＝全部。 */

@@ -175,6 +175,7 @@
       "summary": "Summary",
       "recipient": "Recipient & invoice",
       "package": "Package composition",
+      "bottleAddons": "Whole-bottle add-ons",
       "expertPlan": "專家方案",
       "labLines": "Other lines",
       "payments": "Payments",
@@ -185,6 +186,8 @@
       "messages": "Conversation",
       "reportReading": "Report reading"
     },
+    "bottleAddonBadge": "Bottle add-on",
+    "hasBottleAddon": "Has add-on",
     "reportReading": {
       "loading": "Loading report…",
       "failed": "Could not load report reading",
@@ -217,6 +220,8 @@
     "lineColumns": {
       "name": "Sales plan",
       "expertPlan": "專家方案",
+      "bottleAddonName": "Product",
+      "bottles": "Bottles",
       "dailyDose": "Daily servings (floor)",
       "unitPrice": "Unit price",
       "monthlyCost": "Period cost",
@@ -232,6 +237,8 @@
       "status": "Status",
       "created_at": "Created",
       "amount_total": "Order amount",
+      "package_amount": "Package amount",
+      "addon_amount": "Add-on amount",
       "recipient_name": "Recipient",
       "recipient_phone": "Phone",
       "recipient_address": "Address",
@@ -1954,6 +1961,7 @@
       "active": "Active",
       "isCore": "Core item",
       "canCoPack": "Can co-pack",
+      "addonEligible": "Add-on eligible",
       "saleStatus": "Sale status",
       "audience": "Audience",
       "summary": "Summary",
@@ -2384,11 +2392,18 @@
     },
     "sections": {
       "package": "Package composition",
-      "packageHint": "Pick quantities from daily dose."
+      "packageHint": "Pick quantities from daily dose.",
+      "bottleAddons": "Whole-bottle add-ons",
+      "bottleAddonsHint": "Whole bottles to pick by count (not daily dose)."
     },
     "packageColumns": {
       "name": "Item",
       "dose": "Pick qty"
+    },
+    "bottleAddonColumns": {
+      "name": "Item",
+      "sku": "SKU",
+      "bottles": "Bottles"
     },
     "expandHint": "Expand a row for the shipping timeline and items; use the side panel to create or edit.",
     "add": "Add shipment",

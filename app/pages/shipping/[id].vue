@@ -15,6 +15,7 @@ import {
 import { readOperatorToken } from '~/utils/operator-session'
 import { adminListShipments } from '~/utils/shipment-api'
 import { displayOrderNo } from '~/utils/shipment-map'
+import { bottleAddonsOf } from '~/utils/order-bottle-addon'
 import {
   resolveShippingPhase,
   shippingPhaseSteps,
@@ -64,6 +65,7 @@ const components = computed(() => {
   const pkg = recordOf(order.value?.package)
   return recordsOf(pkg?.components)
 })
+const bottleAddons = computed(() => bottleAddonsOf(order.value))
 const phase = computed(() => resolveShippingPhase(order.value, shipment.value))
 const apiStatus = computed(() => {
   if (phase.value === 'picking' || phase.value === 'in_transit' || phase.value === 'arrived') {
@@ -249,6 +251,10 @@ function componentName(row: Record<string, unknown>) {
 
 function doseOf(row: Record<string, unknown>) {
   return optionalText(row.daily_dose) || t('status.na')
+}
+
+function bottleAddonKey(row: { sellable_item_id: string, sellable_item_sku: string }, index: number) {
+  return row.sellable_item_id || row.sellable_item_sku || `bottle-addon-${index}`
 }
 
 function recordOf(value: unknown): Record<string, unknown> | null {
@@ -507,6 +513,56 @@ async function advanceToPicking() {
               <td>{{ componentName(row) }}</td>
               <td class="text-right tabular-nums">
                 {{ doseOf(row) }}
+              </td>
+            </tr>
+          </AdminTable>
+        </section>
+
+        <section
+          v-if="bottleAddons.length"
+          class="overflow-hidden rounded-xl border border-default bg-elevated"
+          data-testid="shipping-bottle-addons"
+        >
+          <div class="border-b border-default px-4 py-3">
+            <h2 class="text-base font-semibold text-highlighted">
+              {{ $t('shipping.sections.bottleAddons') }}
+            </h2>
+            <p class="mt-1 text-sm text-muted">
+              {{ $t('shipping.sections.bottleAddonsHint') }}
+            </p>
+          </div>
+          <AdminTable compact>
+            <template #head>
+              <tr>
+                <th>{{ $t('shipping.bottleAddonColumns.name') }}</th>
+                <th>{{ $t('shipping.bottleAddonColumns.sku') }}</th>
+                <th class="text-right">
+                  {{ $t('shipping.bottleAddonColumns.bottles') }}
+                </th>
+              </tr>
+            </template>
+            <tr
+              v-for="(row, index) in bottleAddons"
+              :key="bottleAddonKey(row, index)"
+              data-testid="shipping-bottle-addon-line"
+            >
+              <td>
+                <span class="inline-flex flex-wrap items-center gap-2">
+                  {{ row.sellable_item_name || $t('status.na') }}
+                  <UBadge
+                    size="sm"
+                    color="info"
+                    variant="soft"
+                  >
+                    {{ $t('orders.bottleAddonBadge') }}
+                  </UBadge>
+                </span>
+              </td>
+              <td class="font-mono text-sm text-muted">
+                {{ row.sellable_item_sku || $t('status.na') }}
+              </td>
+              <td class="text-right tabular-nums font-medium text-highlighted">
+                {{ row.qty }}
               </td>
             </tr>
           </AdminTable>

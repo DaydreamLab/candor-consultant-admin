@@ -179,6 +179,7 @@
       "summary": "摘要",
       "recipient": "收件與發票",
       "package": "方案組成",
+      "bottleAddons": "整瓶加購",
       "expertPlan": "專家方案",
       "labLines": "其他明細",
       "payments": "付款",
@@ -189,6 +190,8 @@
       "messages": "對話紀錄",
       "reportReading": "報告判讀"
     },
+    "bottleAddonBadge": "整瓶加購",
+    "hasBottleAddon": "含加購",
     "reportReading": {
       "loading": "載入報告中…",
       "failed": "無法載入報告判讀",
@@ -221,6 +224,8 @@
     "lineColumns": {
       "name": "銷售方案",
       "expertPlan": "專家方案",
+      "bottleAddonName": "商品",
+      "bottles": "瓶數",
       "dailyDose": "每日份數（下限）",
       "unitPrice": "單價",
       "monthlyCost": "期間費用",
@@ -236,6 +241,8 @@
       "status": "狀態",
       "created_at": "建立時間",
       "amount_total": "訂單金額",
+      "package_amount": "方案金額",
+      "addon_amount": "加購金額",
       "recipient_name": "收件人",
       "recipient_phone": "電話",
       "recipient_address": "地址",
@@ -1954,6 +1961,7 @@
       "active": "上架",
       "isCore": "核心品",
       "canCoPack": "可共同封裝",
+      "addonEligible": "可加購",
       "saleStatus": "販售狀態",
       "audience": "適用對象",
       "summary": "簡介",
@@ -2384,11 +2392,18 @@
     },
     "sections": {
       "package": "方案組成",
-      "packageHint": "撿包時依每日份數備料。"
+      "packageHint": "撿包時依每日份數備料。",
+      "bottleAddons": "整瓶加購",
+      "bottleAddonsHint": "整瓶加購品，依瓶數備料（不佔方案日劑量）。"
     },
     "packageColumns": {
       "name": "品項",
       "dose": "撿包份數"
+    },
+    "bottleAddonColumns": {
+      "name": "品項",
+      "sku": "SKU",
+      "bottles": "瓶數"
     },
     "expandHint": "點開列可看出貨時間軸與品項；右側面板用於新增／編輯。",
     "add": "新增出貨",
