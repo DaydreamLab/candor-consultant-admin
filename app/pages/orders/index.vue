@@ -2,6 +2,7 @@
 import { AdminApiError, adminListOrders } from '~/utils/admin-api'
 import { money } from '~/utils/format'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
+import { orderHasBottleAddon } from '~/utils/order-bottle-addon'
 import { readOperatorToken } from '~/utils/operator-session'
 
 type OrderColumn = 'number' | 'createdAt' | 'recipient' | 'status' | 'item' | 'amount'
@@ -456,6 +457,22 @@ function amountOf(value: unknown) {
                   v-bind="paymentBadgeOf(row)"
                 />
                 {{ amountOf(row.amount_total) }}
+              </span>
+              <span
+                v-else-if="column.key === 'item'"
+                class="inline-flex max-w-full items-center gap-2"
+              >
+                <span class="truncate">{{ cellText(row, column.key) }}</span>
+                <UBadge
+                  v-if="orderHasBottleAddon(row)"
+                  size="sm"
+                  color="info"
+                  variant="soft"
+                  class="shrink-0"
+                  data-testid="order-list-bottle-addon-badge"
+                >
+                  {{ $t('orders.hasBottleAddon') }}
+                </UBadge>
               </span>
               <template v-else>
                 {{ cellText(row, column.key) }}

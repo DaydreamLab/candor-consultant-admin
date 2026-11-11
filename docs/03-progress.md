@@ -61,11 +61,11 @@
 |------|------------|------|------|--------|
 | Operator 登入／目前身份 | `/login`（可用）；`/account` 唯讀可用（`GET /admin/me`） | 可用 | 已接 | M2 |
 | 總覽 | `/`（側欄最上；stats-first 待辦／狀態；舊履約 `<details>` 收合） | 可用 | 已接（Wave-1：既有 list 長度累加；無新 overview／count API） | M3 |
-| 商品與庫存 | `/supplements`、`/supplements/new`、`/supplements/{id}`（列表／新增／更新已接；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
-| 出貨推進 | `/shipping`、`/shipping/{id}`（列表直連 `GET /admin/shipments`；內頁讀出貨列＋訂單方案組成／撿包份數，無對話；建立／推進仍 Mock） | 可用 | 接線中 | M3 |
+| 商品與庫存 | `/supplements`、`/supplements/new`、`/supplements/{id}`（列表／新增／更新已接；表單含 `addon_eligible` 可加購開關；刪除打到 core 未提供的 `DELETE`；庫存讀寫與 alerts 仍 Mock） | 可用 | 接線中 | M3 |
+| 出貨推進 | `/shipping`、`/shipping/{id}`（列表直連 `GET /admin/shipments`；內頁讀出貨列＋訂單方案組成／撿包份數，另列整瓶加購瓶數；無對話；建立／推進仍 Mock） | 可用 | 接線中 | M3 |
 | 會員列表／詳情／訂單／對話／報告上傳 | `/users`、`/users/{id}`（列表與詳情已接；點訂單進 `/orders/{id}`；對話與報告同頁展開） | 可用 | 已接 | M3 |
-| 訂單 | `/orders` | 可用 | 已接 | M3 |
-| 訂單詳情／取消／讀對話／報告判讀／退款／發票 | `/orders/{id}`（詳情、對話與報告判讀可讀；整筆退款與發票重試已接；「在物流進度查看」深連結已接；取消仍 Mock） | 可用 | 接線中 | M3 |
+| 訂單 | `/orders`（含整瓶加購「含加購」標記；core `bottle_addons`／`kind=bottle_addon`） | 可用 | 已接 | M3 |
+| 訂單詳情／取消／讀對話／報告判讀／退款／發票 | `/orders/{id}`（詳情、對話與報告判讀可讀；整瓶加購區塊＋方案／加購金額拆分；整筆退款與發票重試已接；「在物流進度查看」深連結已接；取消仍 Mock） | 可用 | 接線中 | M3 |
 | 金流設定 | `/settings`（radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 電子發票設定 | `/settings`（radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 報告判讀 LLM 上限 | `/settings`（每次讀取最多 LLM 次數；留空＝不限制；按儲存） | 可用 | 接線中（待 [candor-core #81](https://github.com/DaydreamLab/candor-core/pull/81) 合併部署） | M4 |

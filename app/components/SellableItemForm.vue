@@ -49,6 +49,7 @@ type FormState = {
   active: boolean
   is_core: boolean
   can_co_pack: boolean
+  addon_eligible: boolean
   sale_status: string
   audience: string
   summary: string
@@ -273,6 +274,7 @@ function writeBody() {
     active: state.active,
     is_core: state.is_core,
     can_co_pack: state.can_co_pack,
+    addon_eligible: state.addon_eligible,
     sale_status: state.sale_status.trim() || 'on_sale',
     nutrition: nutritionBody()
   }
@@ -449,6 +451,7 @@ function applyItem(item: Record<string, unknown> | null) {
     next.active = typeof item.active === 'boolean' ? item.active : true
     next.is_core = item.is_core === true
     next.can_co_pack = item.can_co_pack !== false
+    next.addon_eligible = item.addon_eligible === true
     next.sale_status = scalarText(item.sale_status).trim() || 'on_sale'
     next.audience = fieldText(item.audience)
     next.summary = scalarText(item.summary).trim()
@@ -486,6 +489,7 @@ function emptyState(): FormState {
     active: true,
     is_core: false,
     can_co_pack: true,
+    addon_eligible: false,
     sale_status: 'on_sale',
     audience: '',
     summary: '',
@@ -702,7 +706,7 @@ function scalarText(value: unknown) {
           </div>
         </div>
 
-        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <UFormField :label="$t('supplements.fields.active')">
             <USwitch v-model="state.active" />
           </UFormField>
@@ -711,6 +715,12 @@ function scalarText(value: unknown) {
           </UFormField>
           <UFormField :label="$t('supplements.fields.canCoPack')">
             <USwitch v-model="state.can_co_pack" />
+          </UFormField>
+          <UFormField :label="$t('supplements.fields.addonEligible')">
+            <USwitch
+              v-model="state.addon_eligible"
+              data-testid="sellable-addon-eligible"
+            />
           </UFormField>
           <UFormField :label="$t('supplements.fields.saleStatus')">
             <USwitch v-model="onSale" />

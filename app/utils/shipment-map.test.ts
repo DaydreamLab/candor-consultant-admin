@@ -85,6 +85,32 @@ describe('mapAdminShipmentToRow', () => {
     expect(row?.status).toBe('delivered')
     expect(row?.apiStatus).toBe('arrived')
   })
+
+  it('appends bottle_addons pick items alongside package components', () => {
+    const row = mapAdminShipmentToRow({
+      id: 'shp_3',
+      order_id: 'ord_3',
+      order_no: 'ORD-3003',
+      status: 'picking',
+      package_plan_name: '基礎方案'
+    }, {
+      id: 'ord_3',
+      package: {
+        components: [{ sku: 'SKU-A', qty: 2 }]
+      },
+      bottle_addons: [
+        {
+          sellable_item_sku: 'OMG-BTL',
+          sellable_item_name: 'Omega 整瓶',
+          qty: 2
+        }
+      ]
+    })
+    expect(row?.items).toEqual([
+      { sku: 'SKU-A', qty: 2 },
+      { sku: 'OMG-BTL', qty: 2 }
+    ])
+  })
 })
 
 describe('displayOrderNo / search', () => {

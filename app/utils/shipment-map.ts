@@ -1,6 +1,7 @@
 import type { ApiShipStatus, ShipStatus, ShipmentEvent, ShipmentRow } from '~/types/admin'
 import { SHIP_FLOW } from '~/utils/demo'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
+import { bottleAddonPickItemsOf } from '~/utils/order-bottle-addon'
 
 /** Map core shipment.status onto API filter / badge values. */
 export function mapApiShipStatus(raw: unknown): ApiShipStatus | null {
@@ -123,21 +124,24 @@ function itemsFromOrder(order: Record<string, unknown> | null | undefined): { sk
     }
     items.push({ sku, qty: Number.isFinite(qty) && qty > 0 ? qty : 1 })
   }
-  if (items.length) {
-    return items
+  if (!items.length) {
+    const daySupplies = Array.isArray(order.day_supplies) ? order.day_supplies : []
+    for (const raw of daySupplies) {
+      if (!isRecord(raw)) {
+        continue
+      }
+      const sku = scalarText(raw.sku) || scalarText(raw.name)
+      const qtyRaw = raw.qty ?? raw.quantity
+      const qty = typeof qtyRaw === 'number' && Number.isFinite(qtyRaw) ? qtyRaw : Number(qtyRaw)
+      if (!sku) {
+        continue
+      }
+      items.push({ sku, qty: Number.isFinite(qty) && qty > 0 ? qty : 1 })
+    }
   }
-  const daySupplies = Array.isArray(order.day_supplies) ? order.day_supplies : []
-  for (const raw of daySupplies) {
-    if (!isRecord(raw)) {
-      continue
-    }
-    const sku = scalarText(raw.sku) || scalarText(raw.name)
-    const qtyRaw = raw.qty ?? raw.quantity
-    const qty = typeof qtyRaw === 'number' && Number.isFinite(qtyRaw) ? qtyRaw : Number(qtyRaw)
-    if (!sku) {
-      continue
-    }
-    items.push({ sku, qty: Number.isFinite(qty) && qty > 0 ? qty : 1 })
+  // 整瓶加購：獨立 SKU／瓶數，必併入（勿被方案組成 early-return 漏掉）
+  for (const addon of bottleAddonPickItemsOf(order)) {
+    items.push({ sku: addon.sku, qty: addon.qty })
   }
   return items
 }
