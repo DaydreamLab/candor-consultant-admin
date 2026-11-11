@@ -31,6 +31,31 @@ const sellableItem = {
   spec_text: '1000mg'
 }
 
+/** List summary rows（AdminOrderSummary）— badge 只看 has_bottle_addon. */
+const orderListWithAddon = {
+  id: 'ord-addon-1',
+  order_no: 'ORD-ADDON-1',
+  status: 'confirmed',
+  payment_status: 'paid',
+  amount_total: 4500,
+  package_plan_name: '進階方案',
+  recipient_name: '加購測試',
+  created_at: now,
+  has_bottle_addon: true
+}
+
+const orderListWithoutAddon = {
+  id: 'ord-plain-1',
+  order_no: 'ORD-PLAIN-1',
+  status: 'confirmed',
+  payment_status: 'paid',
+  amount_total: 3980,
+  package_plan_name: '進階方案',
+  recipient_name: '無加購',
+  created_at: now,
+  has_bottle_addon: false
+}
+
 const orderWithAddon = {
   id: 'ord-addon-1',
   order_no: 'ORD-ADDON-1',
@@ -39,6 +64,7 @@ const orderWithAddon = {
   amount_total: 4500,
   package_amount: 3980,
   addon_amount: 520,
+  has_bottle_addon: true,
   package_plan_name: '進階方案',
   recipient_name: '加購測試',
   created_at: now,
@@ -130,7 +156,7 @@ async function installRoutes(page) {
       contentType: 'application/json',
       body: JSON.stringify({
         status: 'success',
-        data: { orders: [orderWithAddon] }
+        data: { orders: [orderListWithAddon, orderListWithoutAddon] }
       })
     })
   })
@@ -229,8 +255,15 @@ await page.addInitScript((payload) => {
 }, sessionPayload())
 
 await page.goto(`${base}/orders`, { waitUntil: 'networkidle' })
-await page.waitForSelector('[data-testid="order-list-bottle-addon-badge"]', { timeout: 30_000 })
-const listBadge = await page.getByTestId('order-list-bottle-addon-badge').textContent()
+await page.waitForSelector('[data-testid="order-list-row-ord-addon-1"]', { timeout: 30_000 })
+await page.waitForSelector('[data-testid="order-list-row-ord-plain-1"]', { timeout: 30_000 })
+const withRow = page.getByTestId('order-list-row-ord-addon-1')
+const withoutRow = page.getByTestId('order-list-row-ord-plain-1')
+assert.equal(await withRow.getAttribute('data-has-bottle-addon'), 'true')
+assert.equal(await withoutRow.getAttribute('data-has-bottle-addon'), 'false')
+assert.equal(await withRow.getByTestId('order-list-bottle-addon-badge').count(), 1)
+assert.equal(await withoutRow.getByTestId('order-list-bottle-addon-badge').count(), 0)
+const listBadge = await withRow.getByTestId('order-list-bottle-addon-badge').textContent()
 assert.ok(listBadge && /含加購|Has add-on/i.test(listBadge), `list badge: ${listBadge}`)
 
 await page.goto(`${base}/orders/ord-addon-1`, { waitUntil: 'networkidle' })

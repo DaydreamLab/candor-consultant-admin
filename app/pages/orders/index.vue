@@ -435,6 +435,8 @@ function amountOf(value: unknown) {
             :key="rowKey(row, index)"
             class="border-b border-default last:border-0"
             :class="orderId(row) ? 'cursor-pointer hover:bg-muted/40' : ''"
+            :data-testid="orderId(row) ? `order-list-row-${orderId(row)}` : undefined"
+            :data-has-bottle-addon="orderHasBottleAddon(row) ? 'true' : 'false'"
             @click="openOrder(row)"
           >
             <td

@@ -59,11 +59,17 @@ describe('order-bottle-addon', () => {
     expect(rows[0]?.amount).toBe(390)
   })
 
-  it('detects has addon from snapshot / amounts / flag', () => {
-    expect(orderHasBottleAddon(orderWithSnapshot)).toBe(true)
+  it('list badge uses only has_bottle_addon (not addon_amount / snapshot)', () => {
     expect(orderHasBottleAddon({ has_bottle_addon: true })).toBe(true)
-    expect(orderHasBottleAddon({ addon_amount: 100 })).toBe(true)
-    expect(orderHasBottleAddon({ amount_total: 1000 })).toBe(false)
+    expect(orderHasBottleAddon({ has_bottle_addon: false })).toBe(false)
+    expect(orderHasBottleAddon({
+      has_bottle_addon: false,
+      addon_amount: 100,
+      bottle_addons: [{ amount: 100, qty: 1 }]
+    })).toBe(false)
+    expect(orderHasBottleAddon({ addon_amount: 100 })).toBe(false)
+    expect(orderHasBottleAddon(orderWithSnapshot)).toBe(false)
+    expect(orderHasBottleAddon(null)).toBe(false)
   })
 
   it('splits package vs addon amounts', () => {

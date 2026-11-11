@@ -1,8 +1,12 @@
 /**
  * Whole-bottle add-on (整瓶加購) helpers.
- * Contract (candor-core PR① / openapi-admin): order_lines kind=bottle_addon,
- * order.bottle_addons snapshot, sellable_items.addon_eligible / bottle_only.
+ * Contract (candor-core #177 / openapi AdminOrderSummary):
+ * - list: required boolean `has_bottle_addon`
+ * - detail: order_lines kind=bottle_addon, bottle_addons snapshot
+ * - sellable_items.addon_eligible / bottle_only
  */
+
+import type { AdminOrderSummary } from '~/utils/admin-api'
 
 export type BottleAddonLine = {
   sellable_item_id: string
@@ -86,18 +90,17 @@ export function bottleAddonsOf(order: Record<string, unknown> | null | undefined
     .map(mapAddonRow)
 }
 
-export function orderHasBottleAddon(order: Record<string, unknown> | null | undefined): boolean {
+/**
+ * List badge gate: only `AdminOrderSummary.has_bottle_addon`.
+ * Do not infer from addon_amount / bottle_addons — those are detail-only.
+ */
+export function orderHasBottleAddon(
+  order: Pick<AdminOrderSummary, 'has_bottle_addon'> | Record<string, unknown> | null | undefined
+): boolean {
   if (!order) {
     return false
   }
-  if (order.has_bottle_addon === true) {
-    return true
-  }
-  const flagged = numberOf(order.addon_amount ?? order.bottle_addon_amount)
-  if (flagged != null && flagged > 0) {
-    return true
-  }
-  return bottleAddonsOf(order).length > 0
+  return order.has_bottle_addon === true
 }
 
 export function bottleAddonAmountOf(order: Record<string, unknown> | null | undefined): number | null {
