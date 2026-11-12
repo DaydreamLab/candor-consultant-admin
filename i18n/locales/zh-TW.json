@@ -621,7 +621,6 @@
     }
   },
   "expertBookingProduct": {
-    "description": "設定唯一的專人預約商品（code=personal）；無新增／刪除。",
     "loading": "讀取中…",
     "failed": "載入失敗，請重新整理",
     "saveFailed": "儲存失敗，請稍後再試",
@@ -629,33 +628,42 @@
     "noChanges": "沒有任何變更。",
     "saveForbidden": "只有管理員可以修改預約商品。",
     "validationFailed": "請修正標示的欄位後再儲存。",
-    "readOnlyHint": "目前為唯讀；只有管理員可以儲存變更。",
-    "hintsTitle": "請注意",
+    "restore": "還原",
     "priceHint": "改價只影響新訂單",
     "inactiveHint": "下架後前台無法預約",
-    "codeHint": "系統固定代碼，不可改",
-    "nameEnHint": "選填；前台英文介面沒填時顯示中文名稱",
-    "descriptionEnHint": "選填；前台英文介面沒填時顯示中文說明",
+    "columnZh": "中文",
+    "columnEn": "英文",
+    "enFallbackHint": "未填時，前台顯示對應中文",
+    "updatedAt": "上次更新 {time}",
+    "previewLabel": "前台預覽",
+    "previewBookable": "可預約",
+    "previewInactive": "已下架",
     "leaveTitle": "尚未儲存變更",
     "leaveBody": "離開後這次的修改不會保留。",
     "leaveStay": "繼續編輯",
     "leaveDiscard": "放棄變更並離開",
+    "confirm": {
+      "back": "返回",
+      "priceTitle": "確定更改價格？",
+      "priceBody": "新價格 {price} 只會套用到之後的新訂單；已成立的訂單金額不變。",
+      "priceOk": "確定改價",
+      "inactiveTitle": "確定下架？",
+      "inactiveBody": "下架後，前台將無法再預約此服務。已成立的預約不受影響。",
+      "inactiveOk": "確定下架",
+      "bothTitle": "確定更改價格並下架？",
+      "bothOk": "確定儲存"
+    },
     "validation": {
       "nameRequired": "請輸入中文名稱",
       "priceInvalid": "請輸入大於 0 的整數金額"
     },
     "fields": {
-      "code": "代碼",
-      "name_zh": "中文名稱",
-      "name_en": "英文名稱",
-      "description": "中文說明",
-      "description_en": "英文說明",
+      "name_zh": "名稱",
+      "name_en": "名稱",
+      "description": "說明",
+      "description_en": "說明",
       "price": "價格",
       "active": "上下架"
-    },
-    "status": {
-      "active": "上架中",
-      "inactive": "已下架"
     }
   },
   "expertBookings": {

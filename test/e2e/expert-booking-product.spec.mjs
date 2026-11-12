@@ -1,5 +1,5 @@
 /**
- * Related e2e for 專人預約商品設定（mock）。
+ * Related e2e for 專人預約商品設定 B v2（mock）。
  * Requires: NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=1 and a running `pnpm dev`.
  *
  * Usage:
@@ -34,8 +34,8 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage']
 })
 
-async function openAs(role) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+async function openAs(role, viewport = { width: 1440, height: 900 }) {
+  const page = await browser.newPage({ viewport })
   await page.addInitScript((payload) => {
     localStorage.setItem('candor.operator.token', payload.token)
     localStorage.setItem('candor.operator.profile', JSON.stringify(payload.profile))
@@ -45,29 +45,99 @@ async function openAs(role) {
   return page
 }
 
+/** Mock 路徑不打真實 HTTP；用「已儲存」提示判定是否完成儲存。 */
+async function assertNotSaved(page) {
+  assert.equal(await page.getByTestId('expert-booking-product-save-ok').count(), 0)
+}
+
+// --- default layout ---
 const adminPage = await openAs('admin')
-const title = await adminPage.locator('h1, [class*="title"]').first().textContent()
-assert.ok(title && /預約商品|Booking product/i.test(title), `unexpected title: ${title}`)
 
-const code = await adminPage.getByTestId('expert-booking-product-code').inputValue()
-assert.equal(code, 'personal')
-assert.ok(await adminPage.getByTestId('expert-booking-product-code').isDisabled())
+assert.equal(await adminPage.getByTestId('expert-booking-product-hints').count(), 0)
+assert.equal(await adminPage.getByTestId('expert-booking-product-code').count(), 0)
+assert.ok(await adminPage.getByTestId('expert-booking-product-section-names').isVisible())
+assert.ok(await adminPage.getByTestId('expert-booking-product-section-sale').isVisible())
+assert.ok(await adminPage.getByTestId('expert-booking-product-preview').isVisible())
 
-await adminPage.getByTestId('expert-booking-product-hints').waitFor({ state: 'visible' })
-const hints = await adminPage.getByTestId('expert-booking-product-hints').textContent()
-assert.ok(hints && /改價只影響新訂單|Price changes apply only to new orders/i.test(hints))
-assert.ok(hints && /下架後前台無法預約|When inactive, the storefront cannot book/i.test(hints))
+const priceValue = await adminPage.getByTestId('expert-booking-product-price').inputValue()
+assert.ok(/1,?990/.test(priceValue), `price display: ${priceValue}`)
 
-await adminPage.getByTestId('expert-booking-product-name-zh').fill('E2E 專人預約')
-await adminPage.getByTestId('expert-booking-product-price').fill('2880')
-await adminPage.getByTestId('expert-booking-product-save').click()
+const updatedAt = await adminPage.getByTestId('expert-booking-product-updated-at').textContent()
+assert.ok(updatedAt && /2026\/11\/01 08:00/.test(updatedAt), `updatedAt: ${updatedAt}`)
+
+const previewPrice = await adminPage.getByTestId('expert-booking-product-preview-price').textContent()
+assert.ok(previewPrice && /NT\$1,?990/.test(previewPrice), `previewPrice: ${previewPrice}`)
+
+const previewStatus = await adminPage.getByTestId('expert-booking-product-preview-status').textContent()
+assert.ok(previewStatus && /可預約|Bookable/i.test(previewStatus), `previewStatus: ${previewStatus}`)
+
+assert.ok(await adminPage.getByTestId('navbar-secondary').isDisabled())
+assert.ok(await adminPage.getByTestId('navbar-primary').isEnabled())
+
+// --- restore ---
+await adminPage.getByTestId('expert-booking-product-name-zh').fill('暫時改名')
+assert.ok(!(await adminPage.getByTestId('navbar-secondary').isDisabled()))
+await adminPage.getByTestId('navbar-secondary').click()
+const restoredName = await adminPage.getByTestId('expert-booking-product-name-zh').inputValue()
+assert.equal(restoredName, '專人預約諮詢')
+assert.ok(await adminPage.getByTestId('navbar-secondary').isDisabled())
+
+// --- price-only confirm ---
+await adminPage.getByTestId('expert-booking-product-price').fill('2,880')
+await adminPage.getByTestId('navbar-primary').click()
+await adminPage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { timeout: 10_000 })
+const priceDialogText = await adminPage.getByRole('dialog').textContent()
+assert.ok(priceDialogText && /確定更改價格|Change the price/i.test(priceDialogText), `priceTitle: ${priceDialogText}`)
+assert.ok(!/確定更改價格並下架|Change price and take offline/i.test(priceDialogText || ''))
+await assertNotSaved(adminPage)
+await adminPage.getByTestId('expert-booking-product-confirm-back').click()
+await adminPage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { state: 'detached', timeout: 10_000 })
+await assertNotSaved(adminPage)
+
+await adminPage.getByTestId('navbar-primary').click()
+await adminPage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { timeout: 10_000 })
+await adminPage.getByTestId('expert-booking-product-confirm-ok').click()
 await adminPage.waitForSelector('[data-testid="expert-booking-product-save-ok"]', { timeout: 10_000 })
 await adminPage.close()
 
+// --- inactive-only confirm ---
+const inactivePage = await openAs('admin')
+await inactivePage.getByTestId('expert-booking-product-active').click()
+await inactivePage.getByTestId('navbar-primary').click()
+await inactivePage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { timeout: 10_000 })
+const inactiveDialogText = await inactivePage.getByRole('dialog').textContent()
+assert.ok(inactiveDialogText && /確定下架|Take offline/i.test(inactiveDialogText), `inactiveTitle: ${inactiveDialogText}`)
+assert.ok(!/確定更改價格並下架|Change price and take offline/i.test(inactiveDialogText || ''))
+await assertNotSaved(inactivePage)
+await inactivePage.getByTestId('expert-booking-product-confirm-back').click()
+await inactivePage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { state: 'detached', timeout: 10_000 })
+await assertNotSaved(inactivePage)
+await inactivePage.close()
+
+// --- price + inactive single modal ---
+const bothPage = await openAs('admin')
+await bothPage.getByTestId('expert-booking-product-price').fill('3,500')
+await bothPage.getByTestId('expert-booking-product-active').click()
+await bothPage.getByTestId('navbar-primary').click()
+await bothPage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { timeout: 10_000 })
+const bothDialogText = await bothPage.getByRole('dialog').textContent()
+assert.ok(bothDialogText && /確定更改價格並下架|Change price and take offline/i.test(bothDialogText), `bothTitle: ${bothDialogText}`)
+assert.equal(await bothPage.getByTestId('expert-booking-product-confirm-modal').count(), 1)
+await assertNotSaved(bothPage)
+await bothPage.getByTestId('expert-booking-product-confirm-back').click()
+await bothPage.waitForSelector('[data-testid="expert-booking-product-confirm-ok"]', { state: 'detached', timeout: 10_000 })
+await assertNotSaved(bothPage)
+await bothPage.close()
+
+// --- ops readonly ---
 const opsPage = await openAs('ops')
-await opsPage.waitForSelector('[data-testid="expert-booking-product-readonly"]', { timeout: 10_000 })
+assert.equal(await opsPage.getByTestId('expert-booking-product-readonly').count(), 0)
 assert.ok(await opsPage.getByTestId('expert-booking-product-name-zh').isDisabled())
-assert.ok(await opsPage.getByTestId('expert-booking-product-save').isDisabled())
+assert.ok(await opsPage.getByTestId('expert-booking-product-price').isDisabled())
+assert.ok(await opsPage.getByTestId('expert-booking-product-active').isDisabled())
+assert.equal(await opsPage.getByTestId('navbar-primary').count(), 0)
+assert.equal(await opsPage.getByTestId('navbar-secondary').count(), 0)
+assert.ok(await opsPage.getByTestId('expert-booking-product-preview').isVisible())
 await opsPage.close()
 
 console.log('expert-booking-product e2e ok')

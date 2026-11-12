@@ -10,6 +10,10 @@ export type NavbarActions = {
   deleting: boolean
   busy: boolean
   onDelete: () => void
+  /** Optional outline action before primary（e.g. restore）. */
+  secondaryLabel?: string | null
+  secondaryDisabled?: boolean
+  onSecondary?: (() => void) | null
   primaryLabel: string
   primaryLoading: boolean
   primaryForm: string | null

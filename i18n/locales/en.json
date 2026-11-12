@@ -621,7 +621,6 @@
     }
   },
   "expertBookingProduct": {
-    "description": "Configure the single expert-booking product (code=personal). No create or delete.",
     "loading": "Loading…",
     "failed": "Could not load. Please refresh.",
     "saveFailed": "Save failed. Try again later.",
@@ -629,33 +628,42 @@
     "noChanges": "No changes.",
     "saveForbidden": "Only admins can edit the booking product.",
     "validationFailed": "Fix the highlighted fields and save again.",
-    "readOnlyHint": "Read-only. Only admins can save changes.",
-    "hintsTitle": "Please note",
+    "restore": "Restore",
     "priceHint": "Price changes apply only to new orders",
     "inactiveHint": "When inactive, the storefront cannot book",
-    "codeHint": "Fixed system code; not editable",
-    "nameEnHint": "Optional. The Chinese name is shown when this is empty.",
-    "descriptionEnHint": "Optional. The Chinese description is shown when this is empty.",
+    "columnZh": "Chinese",
+    "columnEn": "English",
+    "enFallbackHint": "If empty, the storefront shows the Chinese text",
+    "updatedAt": "Last updated {time}",
+    "previewLabel": "Storefront preview",
+    "previewBookable": "Bookable",
+    "previewInactive": "Unavailable",
     "leaveTitle": "Unsaved changes",
     "leaveBody": "Leaving discards your edits.",
     "leaveStay": "Keep editing",
     "leaveDiscard": "Discard and leave",
+    "confirm": {
+      "back": "Back",
+      "priceTitle": "Change the price?",
+      "priceBody": "The new price {price} applies only to future orders; existing orders keep their amount.",
+      "priceOk": "Confirm price",
+      "inactiveTitle": "Take offline?",
+      "inactiveBody": "When offline, the storefront cannot book this service. Existing bookings are unchanged.",
+      "inactiveOk": "Confirm offline",
+      "bothTitle": "Change price and take offline?",
+      "bothOk": "Confirm save"
+    },
     "validation": {
       "nameRequired": "Chinese name is required",
       "priceInvalid": "Enter an integer price greater than 0"
     },
     "fields": {
-      "code": "Code",
-      "name_zh": "Chinese name",
-      "name_en": "English name",
-      "description": "Chinese description",
-      "description_en": "English description",
+      "name_zh": "Name",
+      "name_en": "Name",
+      "description": "Description",
+      "description_en": "Description",
       "price": "Price",
       "active": "Availability"
-    },
-    "status": {
-      "active": "Active",
-      "inactive": "Inactive"
     }
   },
   "expertBookings": {

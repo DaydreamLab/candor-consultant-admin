@@ -369,10 +369,22 @@ onUnmounted(() => {
                 {{ $t('actions.delete') }}
               </UButton>
               <UButton
+                v-if="navbarActions.secondaryLabel"
+                type="button"
+                color="neutral"
+                variant="outline"
+                :disabled="navbarActions.busy || Boolean(navbarActions.secondaryDisabled)"
+                data-testid="navbar-secondary"
+                @click="navbarActions.onSecondary?.()"
+              >
+                {{ navbarActions.secondaryLabel }}
+              </UButton>
+              <UButton
                 :type="navbarActions.primaryForm ? 'submit' : 'button'"
                 :form="navbarActions.primaryForm || undefined"
                 :loading="navbarActions.primaryLoading"
                 :disabled="navbarActions.busy"
+                data-testid="navbar-primary"
                 @click="onNavbarPrimary"
               >
                 {{ navbarActions.primaryLabel }}

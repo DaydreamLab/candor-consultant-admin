@@ -144,3 +144,88 @@ export function buildExpertBookingProductWrite(
     active: state.active
   }
 }
+
+/** Digits-only price string for form state / PUT. */
+export function digitsOnlyPrice(raw: string | number | null | undefined): string {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return Number.isInteger(raw) && raw > 0 ? String(raw) : ''
+  }
+  if (typeof raw !== 'string') {
+    return ''
+  }
+  return raw.replace(/\D/g, '')
+}
+
+/** Display price with thousand separators（e.g. 1,990）. */
+export function formatPriceWithComma(raw: string | number | null | undefined): string {
+  const digits = digitsOnlyPrice(raw)
+  if (!digits) {
+    return ''
+  }
+  return Number(digits).toLocaleString('en-US')
+}
+
+/** NT$1,990 style label for preview / confirm copy. */
+export function formatPriceNtLabel(raw: string | number | null | undefined): string {
+  const formatted = formatPriceWithComma(raw)
+  return formatted ? `NT$${formatted}` : ''
+}
+
+/**
+ * Format API `updated_at` as YYYY/MM/DD HH:mm in Asia/Taipei.
+ * Empty / unparsable → ''.
+ */
+export function formatExpertBookingProductUpdatedAt(value: unknown): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    return ''
+  }
+  let normalized = value.trim()
+  normalized = normalized.replace(/^(\d{4}-\d{2}-\d{2}) (\d)/, '$1T$2')
+  normalized = normalized.replace(/([+-]\d{2})$/, '$1:00')
+  normalized = normalized.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')
+  const ms = Date.parse(normalized)
+  if (Number.isNaN(ms)) {
+    return ''
+  }
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(new Date(ms))
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find(part => part.type === type)?.value ?? '00'
+  return `${pick('year')}/${pick('month')}/${pick('day')} ${pick('hour')}:${pick('minute')}`
+}
+
+export type ExpertBookingProductSaveConfirmKind
+  = 'price'
+    | 'inactive'
+    | 'price_and_inactive'
+    | null
+
+/** Confirm dialog only when price changed and/or became inactive. */
+export function expertBookingProductSaveConfirmKind(
+  baseline: ExpertBookingProductSnapshot | null,
+  state: ExpertBookingProductFormState
+): ExpertBookingProductSaveConfirmKind {
+  if (!baseline) {
+    return null
+  }
+  const price = parsePositiveIntPrice(state.price)
+  const priceChanged = price !== null && price !== baseline.price
+  const becameInactive = baseline.active && !state.active
+  if (priceChanged && becameInactive) {
+    return 'price_and_inactive'
+  }
+  if (priceChanged) {
+    return 'price'
+  }
+  if (becameInactive) {
+    return 'inactive'
+  }
+  return null
+}
