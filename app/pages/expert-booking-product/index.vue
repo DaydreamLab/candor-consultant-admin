@@ -36,16 +36,15 @@ const fieldErrors = ref<ExpertBookingProductFieldErrors>({})
 const formDirty = ref(false)
 const saveNotice = ref<'success' | 'noChanges' | null>(null)
 const forbiddenSave = ref(false)
+const formRef = ref<{ restore: () => void } | null>(null)
 
 const {
   leaveOpen,
-  requestLeave,
   stay,
-  discardAndLeave,
-  allowNavigationWithoutConfirm
+  discardAndLeave
 } = useDirtyLeaveModal(formDirty)
 
-watch([saving, pending, product, locale, canEdit], () => {
+watch([saving, pending, product, locale, canEdit, formDirty], () => {
   if (pending.value || !product.value || !canEdit.value) {
     set(null)
     return
@@ -56,6 +55,11 @@ watch([saving, pending, product, locale, canEdit], () => {
     deleting: false,
     busy: saving.value,
     onDelete: () => {},
+    secondaryLabel: t('expertBookingProduct.restore'),
+    secondaryDisabled: !formDirty.value || saving.value,
+    onSecondary: () => {
+      formRef.value?.restore()
+    },
     primaryLabel: t('actions.save'),
     primaryLoading: saving.value,
     primaryForm: EXPERT_BOOKING_PRODUCT_FORM_ID,
@@ -141,15 +145,6 @@ function onNoChanges() {
   forbiddenSave.value = false
 }
 
-async function onCancel() {
-  const ok = await requestLeave()
-  if (!ok) {
-    return
-  }
-  allowNavigationWithoutConfirm()
-  void navigateTo(localePath('/expert-bookings'))
-}
-
 function onClearFieldError(field: ExpertBookingProductField) {
   if (!fieldErrors.value[field]) {
     return
@@ -179,7 +174,6 @@ function failText(error: unknown, fallback: string) {
 <template>
   <PageHeader
     :title="$t('nav.expertBookingProduct')"
-    :description="$t('expertBookingProduct.description')"
     plain
   >
     <UAlert
@@ -213,13 +207,6 @@ function failText(error: unknown, fallback: string) {
       {{ errorMessage }}
     </p>
     <p
-      v-if="!canEdit && product && !pending"
-      class="mb-4 text-sm text-muted"
-      data-testid="expert-booking-product-readonly"
-    >
-      {{ $t('expertBookingProduct.readOnlyHint') }}
-    </p>
-    <p
       v-if="pending"
       class="text-sm text-muted"
     >
@@ -227,13 +214,13 @@ function failText(error: unknown, fallback: string) {
     </p>
     <ExpertBookingProductForm
       v-else-if="product && canView"
+      ref="formRef"
       :product="product"
       :disabled="!canEdit"
       :saving="saving"
       :save-error="forbiddenSave ? '' : errorMessage"
       :field-errors="fieldErrors"
       @dirty-change="formDirty = $event"
-      @cancel="onCancel"
       @no-changes="onNoChanges"
       @save="onSave"
       @clear-field-error="onClearFieldError"

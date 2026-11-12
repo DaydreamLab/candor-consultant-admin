@@ -2,12 +2,18 @@
 import { EXPERT_BOOKING_PRODUCT_FORM_ID } from '~/composables/useNavbarActions'
 import {
   buildExpertBookingProductWrite,
+  digitsOnlyPrice,
   emptyExpertBookingProductFormState,
   expertBookingProductFormIsDirty,
   expertBookingProductFormStateFromProduct,
+  expertBookingProductSaveConfirmKind,
+  formatExpertBookingProductUpdatedAt,
+  formatPriceNtLabel,
+  formatPriceWithComma,
   snapshotFromExpertBookingProduct,
   validateExpertBookingProductForm,
   type ExpertBookingProductFormState,
+  type ExpertBookingProductSaveConfirmKind,
   type ExpertBookingProductSnapshot
 } from '~/utils/expert-booking-product-form'
 import type {
@@ -33,7 +39,6 @@ const emit = defineEmits<{
   'save': [payload: ExpertBookingProductWrite]
   'no-changes': []
   'dirty-change': [dirty: boolean]
-  'cancel': []
   'clear-field-error': [field: ExpertBookingProductField]
 }>()
 
@@ -42,8 +47,12 @@ const { t } = useI18n()
 const state = reactive<ExpertBookingProductFormState>(emptyExpertBookingProductFormState())
 const baseline = ref<ExpertBookingProductSnapshot | null>(null)
 const localFieldErrors = ref<Partial<Record<ExpertBookingProductField, true>>>({})
+const confirmOpen = ref(false)
+const confirmKind = ref<ExpertBookingProductSaveConfirmKind>(null)
+const pendingPayload = ref<ExpertBookingProductWrite | null>(null)
 
 const fieldsLocked = computed(() => props.disabled || props.saving)
+const dirty = computed(() => expertBookingProductFormIsDirty(baseline.value, state))
 const priceChanged = computed(() => {
   if (!baseline.value || fieldsLocked.value) {
     return false
@@ -57,6 +66,16 @@ const becameInactive = computed(() => {
   }
   return baseline.value.active && !state.active
 })
+const priceDisplay = computed({
+  get: () => formatPriceWithComma(state.price),
+  set: (value: string | number) => {
+    state.price = digitsOnlyPrice(value)
+    clearField('price')
+  }
+})
+const updatedAtText = computed(() => formatExpertBookingProductUpdatedAt(props.product?.updated_at))
+const previewPrice = computed(() => formatPriceNtLabel(state.price) || formatPriceNtLabel(0))
+const confirmPriceLabel = computed(() => formatPriceNtLabel(pendingPayload.value?.price ?? state.price))
 
 watch(() => props.product, (product) => {
   if (!product) {
@@ -65,18 +84,14 @@ watch(() => props.product, (product) => {
   Object.assign(state, expertBookingProductFormStateFromProduct(product))
   baseline.value = snapshotFromExpertBookingProduct(product)
   localFieldErrors.value = {}
+  confirmOpen.value = false
+  confirmKind.value = null
+  pendingPayload.value = null
 }, { immediate: true })
 
-watch(() => expertBookingProductFormIsDirty(baseline.value, state), (dirty) => {
-  emit('dirty-change', dirty)
+watch(dirty, (value) => {
+  emit('dirty-change', value)
 }, { immediate: true })
-
-function onCancel() {
-  if (fieldsLocked.value) {
-    return
-  }
-  emit('cancel')
-}
 
 function clearField(field: ExpertBookingProductField) {
   if (localFieldErrors.value[field]) {
@@ -85,6 +100,18 @@ function clearField(field: ExpertBookingProductField) {
     )
   }
   emit('clear-field-error', field)
+}
+
+function restore() {
+  if (fieldsLocked.value || !props.product) {
+    return
+  }
+  Object.assign(state, expertBookingProductFormStateFromProduct(props.product))
+  baseline.value = snapshotFromExpertBookingProduct(props.product)
+  localFieldErrors.value = {}
+  confirmOpen.value = false
+  confirmKind.value = null
+  pendingPayload.value = null
 }
 
 function onSubmit() {
@@ -109,6 +136,28 @@ function onSubmit() {
     localFieldErrors.value = { price: true }
     return
   }
+  const kind = expertBookingProductSaveConfirmKind(baseline.value, state)
+  if (kind) {
+    pendingPayload.value = payload
+    confirmKind.value = kind
+    confirmOpen.value = true
+    return
+  }
+  emit('save', payload)
+}
+
+function closeConfirm() {
+  confirmOpen.value = false
+  confirmKind.value = null
+  pendingPayload.value = null
+}
+
+function confirmSave() {
+  const payload = pendingPayload.value
+  closeConfirm()
+  if (!payload) {
+    return
+  }
   emit('save', payload)
 }
 
@@ -128,151 +177,235 @@ function fieldErrorText(field: ExpertBookingProductField) {
   }
   return t('expertBookingProduct.saveFailed')
 }
+
+const confirmTitle = computed(() => {
+  if (confirmKind.value === 'price') {
+    return t('expertBookingProduct.confirm.priceTitle')
+  }
+  if (confirmKind.value === 'inactive') {
+    return t('expertBookingProduct.confirm.inactiveTitle')
+  }
+  if (confirmKind.value === 'price_and_inactive') {
+    return t('expertBookingProduct.confirm.bothTitle')
+  }
+  return ''
+})
+
+const confirmPrimaryLabel = computed(() => {
+  if (confirmKind.value === 'price') {
+    return t('expertBookingProduct.confirm.priceOk')
+  }
+  if (confirmKind.value === 'inactive') {
+    return t('expertBookingProduct.confirm.inactiveOk')
+  }
+  return t('expertBookingProduct.confirm.bothOk')
+})
+
+const confirmPrimaryColor = computed(() => {
+  return confirmKind.value === 'price' ? 'primary' : 'error'
+})
+
+defineExpose({ restore, dirty })
 </script>
 
 <template>
   <form
     :id="EXPERT_BOOKING_PRODUCT_FORM_ID"
-    class="flex max-w-5xl flex-col gap-4"
+    class="mx-auto flex w-full max-w-6xl flex-col gap-8"
     data-testid="expert-booking-product-form"
     @submit.prevent="onSubmit"
   >
-    <UAlert
-      color="neutral"
-      variant="subtle"
-      :title="$t('expertBookingProduct.hintsTitle')"
-      data-testid="expert-booking-product-hints"
-    >
-      <template #description>
-        <ul class="mt-1 list-disc space-y-1 pl-4 text-sm">
-          <li>{{ $t('expertBookingProduct.priceHint') }}</li>
-          <li>{{ $t('expertBookingProduct.inactiveHint') }}</li>
-        </ul>
-      </template>
-    </UAlert>
-
-    <UFormField :label="$t('expertBookingProduct.fields.code')">
-      <UInput
-        :model-value="state.code"
-        disabled
-        data-testid="expert-booking-product-code"
-      />
-      <template #hint>
-        {{ $t('expertBookingProduct.codeHint') }}
-      </template>
-    </UFormField>
-
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <UFormField
-        :label="$t('expertBookingProduct.fields.name_zh')"
-        required
-        :error="fieldErrorText('name_zh')"
+    <section data-testid="expert-booking-product-section-names">
+      <h2
+        class="text-base font-semibold text-highlighted"
+        data-testid="expert-booking-product-section-names-title"
       >
-        <UInput
-          v-model="state.name_zh"
-          :disabled="fieldsLocked"
-          data-testid="expert-booking-product-name-zh"
-          @update:model-value="clearField('name_zh')"
-        />
-      </UFormField>
+        {{ $t('expertBookingProduct.sectionNames') }}
+      </h2>
+      <div class="mt-4 grid grid-cols-2 gap-6">
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-muted">
+            {{ $t('expertBookingProduct.columnZh') }}
+          </p>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-muted">
+            {{ $t('expertBookingProduct.columnEn') }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            {{ $t('expertBookingProduct.enFallbackHint') }}
+          </p>
+        </div>
 
-      <UFormField
-        :label="$t('expertBookingProduct.fields.name_en')"
-        :error="fieldErrorText('name_en')"
-      >
-        <UInput
-          v-model="state.name_en"
-          :disabled="fieldsLocked"
-          data-testid="expert-booking-product-name-en"
-          @update:model-value="clearField('name_en')"
-        />
-        <template #hint>
-          {{ $t('expertBookingProduct.nameEnHint') }}
-        </template>
-      </UFormField>
-    </div>
-
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <UFormField
-        :label="$t('expertBookingProduct.fields.description')"
-        :error="fieldErrorText('description')"
-      >
-        <UTextarea
-          v-model="state.description"
-          :disabled="fieldsLocked"
-          :rows="4"
-          data-testid="expert-booking-product-description"
-          @update:model-value="clearField('description')"
-        />
-      </UFormField>
-
-      <UFormField
-        :label="$t('expertBookingProduct.fields.description_en')"
-        :error="fieldErrorText('description_en')"
-      >
-        <UTextarea
-          v-model="state.description_en"
-          :disabled="fieldsLocked"
-          :rows="4"
-          data-testid="expert-booking-product-description-en"
-          @update:model-value="clearField('description_en')"
-        />
-        <template #hint>
-          {{ $t('expertBookingProduct.descriptionEnHint') }}
-        </template>
-      </UFormField>
-    </div>
-
-    <UFormField
-      :label="$t('expertBookingProduct.fields.price')"
-      required
-      :error="fieldErrorText('price')"
-    >
-      <UInput
-        v-model="state.price"
-        type="number"
-        inputmode="numeric"
-        :disabled="fieldsLocked"
-        data-testid="expert-booking-product-price"
-        @update:model-value="clearField('price')"
-      >
-        <template #leading>
-          <span class="text-sm text-muted">NT$</span>
-        </template>
-      </UInput>
-      <template
-        v-if="priceChanged && !fieldErrorText('price')"
-        #hint
-      >
-        <span data-testid="expert-booking-product-price-changed">{{ $t('expertBookingProduct.priceHint') }}</span>
-      </template>
-    </UFormField>
-
-    <UFormField
-      :label="$t('expertBookingProduct.fields.active')"
-      :error="fieldErrorText('active')"
-    >
-      <div class="flex items-center gap-3">
-        <USwitch
-          v-model="state.active"
-          :disabled="fieldsLocked"
-          data-testid="expert-booking-product-active"
-          @update:model-value="clearField('active')"
-        />
-        <UBadge
-          :color="state.active ? 'success' : 'neutral'"
-          variant="subtle"
+        <UFormField
+          :label="$t('expertBookingProduct.fields.name_zh')"
+          required
+          :error="fieldErrorText('name_zh')"
+          :ui="{ label: 'text-xs font-semibold text-muted' }"
         >
-          {{ state.active ? $t('expertBookingProduct.status.active') : $t('expertBookingProduct.status.inactive') }}
-        </UBadge>
+          <UInput
+            v-model="state.name_zh"
+            class="w-full"
+            :disabled="fieldsLocked"
+            data-testid="expert-booking-product-name-zh"
+            @update:model-value="clearField('name_zh')"
+          />
+        </UFormField>
+
+        <UFormField
+          :label="$t('expertBookingProduct.fields.name_en')"
+          :error="fieldErrorText('name_en')"
+          :ui="{ label: 'text-xs font-semibold text-muted' }"
+        >
+          <UInput
+            v-model="state.name_en"
+            class="w-full"
+            :disabled="fieldsLocked"
+            data-testid="expert-booking-product-name-en"
+            @update:model-value="clearField('name_en')"
+          />
+        </UFormField>
+
+        <UFormField
+          :label="$t('expertBookingProduct.fields.description')"
+          :error="fieldErrorText('description')"
+          :ui="{ label: 'text-xs font-semibold text-muted' }"
+        >
+          <UTextarea
+            v-model="state.description"
+            class="w-full"
+            :disabled="fieldsLocked"
+            :rows="5"
+            data-testid="expert-booking-product-description"
+            @update:model-value="clearField('description')"
+          />
+        </UFormField>
+
+        <UFormField
+          :label="$t('expertBookingProduct.fields.description_en')"
+          :error="fieldErrorText('description_en')"
+          :ui="{ label: 'text-xs font-semibold text-muted' }"
+        >
+          <UTextarea
+            v-model="state.description_en"
+            class="w-full"
+            :disabled="fieldsLocked"
+            :rows="5"
+            data-testid="expert-booking-product-description-en"
+            @update:model-value="clearField('description_en')"
+          />
+        </UFormField>
       </div>
-      <template
-        v-if="becameInactive && !fieldErrorText('active')"
-        #hint
+    </section>
+
+    <section data-testid="expert-booking-product-section-sale">
+      <h2
+        class="text-base font-semibold text-highlighted"
+        data-testid="expert-booking-product-section-sale-title"
       >
-        <span data-testid="expert-booking-product-inactive-changed">{{ $t('expertBookingProduct.inactiveHint') }}</span>
-      </template>
-    </UFormField>
+        {{ $t('expertBookingProduct.sectionSale') }}
+      </h2>
+      <div class="mt-4 grid grid-cols-2 gap-6">
+        <div class="flex min-w-0 flex-col gap-4">
+          <UFormField
+            :label="$t('expertBookingProduct.fields.price')"
+            required
+            :error="fieldErrorText('price')"
+            :ui="{ label: 'text-xs font-semibold text-muted' }"
+          >
+            <UInput
+              v-model="priceDisplay"
+              inputmode="numeric"
+              class="w-full tabular-nums"
+              :disabled="fieldsLocked"
+              data-testid="expert-booking-product-price"
+            >
+              <template #leading>
+                <span class="text-sm text-muted">NT$</span>
+              </template>
+            </UInput>
+            <template
+              v-if="priceChanged && !fieldErrorText('price')"
+              #hint
+            >
+              <span data-testid="expert-booking-product-price-changed">
+                {{ $t('expertBookingProduct.priceHint') }}
+              </span>
+            </template>
+          </UFormField>
+
+          <UFormField
+            :label="$t('expertBookingProduct.fields.active')"
+            :error="fieldErrorText('active')"
+            :ui="{ label: 'text-xs font-semibold text-muted' }"
+          >
+            <USwitch
+              v-model="state.active"
+              class="w-full"
+              :disabled="fieldsLocked"
+              data-testid="expert-booking-product-active"
+              @update:model-value="clearField('active')"
+            />
+            <template
+              v-if="becameInactive && !fieldErrorText('active')"
+              #hint
+            >
+              <span data-testid="expert-booking-product-inactive-changed">
+                {{ $t('expertBookingProduct.inactiveHint') }}
+              </span>
+            </template>
+          </UFormField>
+
+          <p
+            v-if="updatedAtText"
+            class="text-xs tabular-nums text-muted"
+            data-testid="expert-booking-product-updated-at"
+          >
+            {{ $t('expertBookingProduct.updatedAt', { time: updatedAtText }) }}
+          </p>
+        </div>
+
+        <div
+          class="flex w-full min-w-0 flex-col gap-3 rounded-xl border border-default bg-elevated p-5"
+          data-testid="expert-booking-product-preview"
+        >
+          <p class="text-xs font-semibold text-muted">
+            {{ $t('expertBookingProduct.previewLabel') }}
+          </p>
+          <span
+            class="inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-medium"
+            :class="state.active
+              ? 'bg-success/15 text-success'
+              : 'bg-muted text-muted'"
+            data-testid="expert-booking-product-preview-status"
+          >
+            {{
+              state.active
+                ? $t('expertBookingProduct.previewBookable')
+                : $t('expertBookingProduct.previewInactive')
+            }}
+          </span>
+          <p
+            class="text-lg font-semibold text-highlighted"
+            data-testid="expert-booking-product-preview-name"
+          >
+            {{ state.name_zh.trim() || $t('status.na') }}
+          </p>
+          <p
+            class="text-2xl font-semibold tabular-nums text-primary"
+            data-testid="expert-booking-product-preview-price"
+          >
+            {{ previewPrice }}
+          </p>
+          <p
+            class="whitespace-pre-wrap text-sm text-muted"
+            data-testid="expert-booking-product-preview-description"
+          >
+            {{ state.description.trim() || $t('status.na') }}
+          </p>
+        </div>
+      </div>
+    </section>
 
     <p
       v-if="saveError"
@@ -282,25 +415,42 @@ function fieldErrorText(field: ExpertBookingProductField) {
       {{ saveError }}
     </p>
 
-    <div class="flex flex-wrap gap-2">
-      <UButton
-        type="submit"
-        :loading="saving"
-        :disabled="fieldsLocked"
-        data-testid="expert-booking-product-save"
-      >
-        {{ $t('actions.save') }}
-      </UButton>
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        :disabled="fieldsLocked"
-        data-testid="expert-booking-product-cancel"
-        @click="onCancel"
-      >
-        {{ $t('actions.cancel') }}
-      </UButton>
-    </div>
+    <UModal
+      v-model:open="confirmOpen"
+      :title="confirmTitle"
+      :ui="{ footer: 'justify-end gap-2' }"
+      @update:open="(open: boolean) => { if (!open) closeConfirm() }"
+    >
+      <template #body>
+        <div
+          class="space-y-3 text-sm text-toned"
+          data-testid="expert-booking-product-confirm-modal"
+        >
+          <p v-if="confirmKind === 'price' || confirmKind === 'price_and_inactive'">
+            {{ $t('expertBookingProduct.confirm.priceBody', { price: confirmPriceLabel }) }}
+          </p>
+          <p v-if="confirmKind === 'inactive' || confirmKind === 'price_and_inactive'">
+            {{ $t('expertBookingProduct.confirm.inactiveBody') }}
+          </p>
+        </div>
+      </template>
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="outline"
+          data-testid="expert-booking-product-confirm-back"
+          @click="closeConfirm"
+        >
+          {{ $t('expertBookingProduct.confirm.back') }}
+        </UButton>
+        <UButton
+          :color="confirmPrimaryColor"
+          data-testid="expert-booking-product-confirm-ok"
+          @click="confirmSave"
+        >
+          {{ confirmPrimaryLabel }}
+        </UButton>
+      </template>
+    </UModal>
   </form>
 </template>
