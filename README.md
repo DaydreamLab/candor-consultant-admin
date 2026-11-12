@@ -43,6 +43,7 @@ git push origin beta
 | [docs/spec/11-operator-session.md](docs/spec/11-operator-session.md) | 示範角色 vs expert／ops／admin |
 | [docs/spec/12-knowledge-management.md](docs/spec/12-knowledge-management.md) | 知識管理頁面、API 與 KM1–KM3 |
 | [AGENTS.md](AGENTS.md) | AI／貢獻者硬規則 |
+| [.cursor/rules/ui-principles.mdc](.cursor/rules/ui-principles.mdc) | UI 原則（避免多餘次級標籤／描述） |
 
 Core 側：[docs/04](https://github.com/DaydreamLab/candor-core/blob/main/docs/04-integration-progress.md)、[docs/05](https://github.com/DaydreamLab/candor-core/blob/main/docs/05-integration-architecture.md)、[spec 29](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/29-admin-api.md)、[spec 31](https://github.com/DaydreamLab/candor-core/blob/main/docs/spec/31-client-integration.md)。
 

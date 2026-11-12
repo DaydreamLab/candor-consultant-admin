@@ -43,6 +43,10 @@ candor-consultant-admin/
 └── nuxt.config.ts
 ```
 
+## UI 原則
+
+避免不必要的次級標籤與描述，用排版本身說明介面。細節與例子見 [.cursor/rules/ui-principles.mdc](.cursor/rules/ui-principles.mdc)（套用前端檔）。
+
 ## 測試與 CI
 
 - `pnpm run lint`、`pnpm run typecheck` 必須通過後再 commit／push。
