@@ -215,185 +215,195 @@ defineExpose({ restore, dirty })
     data-testid="expert-booking-product-form"
     @submit.prevent="onSubmit"
   >
-    <section
-      class="grid grid-cols-2 gap-6"
-      data-testid="expert-booking-product-section-names"
-    >
-      <div class="min-w-0">
-        <p class="text-xs font-semibold text-muted">
-          {{ $t('expertBookingProduct.columnZh') }}
-        </p>
-      </div>
-      <div class="min-w-0">
-        <p class="text-xs font-semibold text-muted">
-          {{ $t('expertBookingProduct.columnEn') }}
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          {{ $t('expertBookingProduct.enFallbackHint') }}
-        </p>
-      </div>
-
-      <UFormField
-        :label="$t('expertBookingProduct.fields.name_zh')"
-        required
-        :error="fieldErrorText('name_zh')"
-        :ui="{ label: 'text-xs font-semibold text-muted' }"
+    <section data-testid="expert-booking-product-section-names">
+      <h2
+        class="text-base font-semibold text-highlighted"
+        data-testid="expert-booking-product-section-names-title"
       >
-        <UInput
-          v-model="state.name_zh"
-          class="w-full"
-          :disabled="fieldsLocked"
-          data-testid="expert-booking-product-name-zh"
-          @update:model-value="clearField('name_zh')"
-        />
-      </UFormField>
+        {{ $t('expertBookingProduct.sectionNames') }}
+      </h2>
+      <div class="mt-4 grid grid-cols-2 gap-6">
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-muted">
+            {{ $t('expertBookingProduct.columnZh') }}
+          </p>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-muted">
+            {{ $t('expertBookingProduct.columnEn') }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            {{ $t('expertBookingProduct.enFallbackHint') }}
+          </p>
+        </div>
 
-      <UFormField
-        :label="$t('expertBookingProduct.fields.name_en')"
-        :error="fieldErrorText('name_en')"
-        :ui="{ label: 'text-xs font-semibold text-muted' }"
-      >
-        <UInput
-          v-model="state.name_en"
-          class="w-full"
-          :disabled="fieldsLocked"
-          data-testid="expert-booking-product-name-en"
-          @update:model-value="clearField('name_en')"
-        />
-      </UFormField>
-
-      <UFormField
-        :label="$t('expertBookingProduct.fields.description')"
-        :error="fieldErrorText('description')"
-        :ui="{ label: 'text-xs font-semibold text-muted' }"
-      >
-        <UTextarea
-          v-model="state.description"
-          class="w-full"
-          :disabled="fieldsLocked"
-          :rows="5"
-          data-testid="expert-booking-product-description"
-          @update:model-value="clearField('description')"
-        />
-      </UFormField>
-
-      <UFormField
-        :label="$t('expertBookingProduct.fields.description_en')"
-        :error="fieldErrorText('description_en')"
-        :ui="{ label: 'text-xs font-semibold text-muted' }"
-      >
-        <UTextarea
-          v-model="state.description_en"
-          class="w-full"
-          :disabled="fieldsLocked"
-          :rows="5"
-          data-testid="expert-booking-product-description-en"
-          @update:model-value="clearField('description_en')"
-        />
-      </UFormField>
-    </section>
-
-    <section
-      class="grid grid-cols-2 gap-6"
-      data-testid="expert-booking-product-section-sale"
-    >
-      <div class="flex min-w-0 flex-col gap-4">
         <UFormField
-          :label="$t('expertBookingProduct.fields.price')"
+          :label="$t('expertBookingProduct.fields.name_zh')"
           required
-          :error="fieldErrorText('price')"
+          :error="fieldErrorText('name_zh')"
           :ui="{ label: 'text-xs font-semibold text-muted' }"
         >
           <UInput
-            v-model="priceDisplay"
-            inputmode="numeric"
-            class="w-full tabular-nums"
+            v-model="state.name_zh"
+            class="w-full"
             :disabled="fieldsLocked"
-            data-testid="expert-booking-product-price"
-          >
-            <template #leading>
-              <span class="text-sm text-muted">NT$</span>
-            </template>
-          </UInput>
-          <template
-            v-if="priceChanged && !fieldErrorText('price')"
-            #hint
-          >
-            <span data-testid="expert-booking-product-price-changed">
-              {{ $t('expertBookingProduct.priceHint') }}
-            </span>
-          </template>
+            data-testid="expert-booking-product-name-zh"
+            @update:model-value="clearField('name_zh')"
+          />
         </UFormField>
 
         <UFormField
-          :label="$t('expertBookingProduct.fields.active')"
-          :error="fieldErrorText('active')"
+          :label="$t('expertBookingProduct.fields.name_en')"
+          :error="fieldErrorText('name_en')"
           :ui="{ label: 'text-xs font-semibold text-muted' }"
         >
-          <USwitch
-            v-model="state.active"
+          <UInput
+            v-model="state.name_en"
             class="w-full"
             :disabled="fieldsLocked"
-            data-testid="expert-booking-product-active"
-            @update:model-value="clearField('active')"
+            data-testid="expert-booking-product-name-en"
+            @update:model-value="clearField('name_en')"
           />
-          <template
-            v-if="becameInactive && !fieldErrorText('active')"
-            #hint
-          >
-            <span data-testid="expert-booking-product-inactive-changed">
-              {{ $t('expertBookingProduct.inactiveHint') }}
-            </span>
-          </template>
         </UFormField>
 
-        <p
-          v-if="updatedAtText"
-          class="text-xs tabular-nums text-muted"
-          data-testid="expert-booking-product-updated-at"
+        <UFormField
+          :label="$t('expertBookingProduct.fields.description')"
+          :error="fieldErrorText('description')"
+          :ui="{ label: 'text-xs font-semibold text-muted' }"
         >
-          {{ $t('expertBookingProduct.updatedAt', { time: updatedAtText }) }}
-        </p>
-      </div>
+          <UTextarea
+            v-model="state.description"
+            class="w-full"
+            :disabled="fieldsLocked"
+            :rows="5"
+            data-testid="expert-booking-product-description"
+            @update:model-value="clearField('description')"
+          />
+        </UFormField>
 
-      <div
-        class="flex w-full min-w-0 flex-col gap-3 rounded-xl border border-default bg-elevated p-5"
-        data-testid="expert-booking-product-preview"
+        <UFormField
+          :label="$t('expertBookingProduct.fields.description_en')"
+          :error="fieldErrorText('description_en')"
+          :ui="{ label: 'text-xs font-semibold text-muted' }"
+        >
+          <UTextarea
+            v-model="state.description_en"
+            class="w-full"
+            :disabled="fieldsLocked"
+            :rows="5"
+            data-testid="expert-booking-product-description-en"
+            @update:model-value="clearField('description_en')"
+          />
+        </UFormField>
+      </div>
+    </section>
+
+    <section data-testid="expert-booking-product-section-sale">
+      <h2
+        class="text-base font-semibold text-highlighted"
+        data-testid="expert-booking-product-section-sale-title"
       >
-        <p class="text-xs font-semibold text-muted">
-          {{ $t('expertBookingProduct.previewLabel') }}
-        </p>
-        <span
-          class="inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-medium"
-          :class="state.active
-            ? 'bg-success/15 text-success'
-            : 'bg-muted text-muted'"
-          data-testid="expert-booking-product-preview-status"
+        {{ $t('expertBookingProduct.sectionSale') }}
+      </h2>
+      <div class="mt-4 grid grid-cols-2 gap-6">
+        <div class="flex min-w-0 flex-col gap-4">
+          <UFormField
+            :label="$t('expertBookingProduct.fields.price')"
+            required
+            :error="fieldErrorText('price')"
+            :ui="{ label: 'text-xs font-semibold text-muted' }"
+          >
+            <UInput
+              v-model="priceDisplay"
+              inputmode="numeric"
+              class="w-full tabular-nums"
+              :disabled="fieldsLocked"
+              data-testid="expert-booking-product-price"
+            >
+              <template #leading>
+                <span class="text-sm text-muted">NT$</span>
+              </template>
+            </UInput>
+            <template
+              v-if="priceChanged && !fieldErrorText('price')"
+              #hint
+            >
+              <span data-testid="expert-booking-product-price-changed">
+                {{ $t('expertBookingProduct.priceHint') }}
+              </span>
+            </template>
+          </UFormField>
+
+          <UFormField
+            :label="$t('expertBookingProduct.fields.active')"
+            :error="fieldErrorText('active')"
+            :ui="{ label: 'text-xs font-semibold text-muted' }"
+          >
+            <USwitch
+              v-model="state.active"
+              class="w-full"
+              :disabled="fieldsLocked"
+              data-testid="expert-booking-product-active"
+              @update:model-value="clearField('active')"
+            />
+            <template
+              v-if="becameInactive && !fieldErrorText('active')"
+              #hint
+            >
+              <span data-testid="expert-booking-product-inactive-changed">
+                {{ $t('expertBookingProduct.inactiveHint') }}
+              </span>
+            </template>
+          </UFormField>
+
+          <p
+            v-if="updatedAtText"
+            class="text-xs tabular-nums text-muted"
+            data-testid="expert-booking-product-updated-at"
+          >
+            {{ $t('expertBookingProduct.updatedAt', { time: updatedAtText }) }}
+          </p>
+        </div>
+
+        <div
+          class="flex w-full min-w-0 flex-col gap-3 rounded-xl border border-default bg-elevated p-5"
+          data-testid="expert-booking-product-preview"
         >
-          {{
-            state.active
-              ? $t('expertBookingProduct.previewBookable')
-              : $t('expertBookingProduct.previewInactive')
-          }}
-        </span>
-        <p
-          class="text-lg font-semibold text-highlighted"
-          data-testid="expert-booking-product-preview-name"
-        >
-          {{ state.name_zh.trim() || $t('status.na') }}
-        </p>
-        <p
-          class="text-2xl font-semibold tabular-nums text-primary"
-          data-testid="expert-booking-product-preview-price"
-        >
-          {{ previewPrice }}
-        </p>
-        <p
-          class="whitespace-pre-wrap text-sm text-muted"
-          data-testid="expert-booking-product-preview-description"
-        >
-          {{ state.description.trim() || $t('status.na') }}
-        </p>
+          <p class="text-xs font-semibold text-muted">
+            {{ $t('expertBookingProduct.previewLabel') }}
+          </p>
+          <span
+            class="inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs font-medium"
+            :class="state.active
+              ? 'bg-success/15 text-success'
+              : 'bg-muted text-muted'"
+            data-testid="expert-booking-product-preview-status"
+          >
+            {{
+              state.active
+                ? $t('expertBookingProduct.previewBookable')
+                : $t('expertBookingProduct.previewInactive')
+            }}
+          </span>
+          <p
+            class="text-lg font-semibold text-highlighted"
+            data-testid="expert-booking-product-preview-name"
+          >
+            {{ state.name_zh.trim() || $t('status.na') }}
+          </p>
+          <p
+            class="text-2xl font-semibold tabular-nums text-primary"
+            data-testid="expert-booking-product-preview-price"
+          >
+            {{ previewPrice }}
+          </p>
+          <p
+            class="whitespace-pre-wrap text-sm text-muted"
+            data-testid="expert-booking-product-preview-description"
+          >
+            {{ state.description.trim() || $t('status.na') }}
+          </p>
+        </div>
       </div>
     </section>
 

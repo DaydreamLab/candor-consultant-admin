@@ -629,6 +629,8 @@
     "saveForbidden": "只有管理員可以修改預約商品。",
     "validationFailed": "請修正標示的欄位後再儲存。",
     "restore": "還原",
+    "sectionNames": "名稱與說明",
+    "sectionSale": "販售",
     "priceHint": "改價只影響新訂單",
     "inactiveHint": "下架後前台無法預約",
     "columnZh": "中文",

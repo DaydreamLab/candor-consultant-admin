@@ -629,6 +629,8 @@
     "saveForbidden": "Only admins can edit the booking product.",
     "validationFailed": "Fix the highlighted fields and save again.",
     "restore": "Restore",
+    "sectionNames": "Name & description",
+    "sectionSale": "Sales",
     "priceHint": "Price changes apply only to new orders",
     "inactiveHint": "When inactive, the storefront cannot book",
     "columnZh": "Chinese",
