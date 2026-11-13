@@ -54,9 +54,18 @@ assert.equal(await page.locator('[data-testid="chat-cta-vitals"]').getAttribute(
 assert.equal(await page.locator('[data-testid="chat-cta-vitals"]').getAttribute('data-has-stored-value'), '1')
 assert.match(await page.locator('[data-testid="chat-cta-vitals"]').textContent() || '', /36/)
 assert.equal(await page.locator('[data-testid="chat-reply-actions-readonly"] button').count(), 0)
+await page.waitForSelector('[data-testid="chat-cta-whole-ask_report"]', { timeout: 30_000 })
+assert.equal((await page.locator('[data-testid="chat-cta-whole-ask_report"]').textContent() || '').trim(), '上傳報告')
+assert.equal((await page.locator('[data-testid="chat-cta-whole-offer_checkup"]').textContent() || '').trim(), '我想做檢查，確認各項指標')
 
 await page.locator('[data-testid="expert-station-conversation"]').screenshot({
   path: join(shotDir, 'cta-readonly-selected.png')
+})
+await page.locator('[data-testid="chat-cta-whole-ask_report"]').screenshot({
+  path: join(shotDir, 'cta-readonly-expert-ask-report-after.png')
+})
+await page.locator('[data-testid="chat-cta-whole-offer_checkup"]').screenshot({
+  path: join(shotDir, 'cta-readonly-expert-offer-checkup-after.png')
 })
 
 await page.goto(`${base}/expert/bookings/eb-sched-1`, { waitUntil: 'networkidle' })
@@ -176,6 +185,19 @@ await adminPage.route('**/api/v1/admin/**', async (route) => {
               role: 'user',
               content: '36',
               created_at: '2026-03-28T08:01:30.000Z'
+            },
+            {
+              id: 'a3',
+              role: 'assistant',
+              content: '若想確認是否缺維生素 D，最準確的方式是抽血檢測。有報告可上傳一起看；還沒檢查也可討論是否安排。',
+              created_at: '2026-03-28T08:02:00.000Z',
+              reply_actions: {
+                interaction: { round_status: 'historical', outcome: null },
+                actions: [
+                  { type: 'ask_report', payload: { status: 'disabled' } },
+                  { type: 'offer_checkup', payload: { status: 'disabled', url: 'https://example.com/checkup' } }
+                ]
+              }
             }
           ]
         }
@@ -242,8 +264,21 @@ await adminPage.waitForSelector('[data-testid="user-conversation-messages"]', { 
 await adminPage.waitForSelector('[data-testid="chat-cta-chip-plan"]', { timeout: 30_000 })
 assert.equal(await adminPage.locator('[data-testid="chat-cta-chip-plan"]').getAttribute('data-status'), 'selected')
 assert.equal(await adminPage.locator('[data-testid="chat-cta-vitals"]').getAttribute('data-has-stored-value'), '1')
+await adminPage.waitForSelector('[data-testid="chat-cta-whole-ask_report"]', { timeout: 30_000 })
+const askReportText = (await adminPage.locator('[data-testid="chat-cta-whole-ask_report"]').textContent() || '').trim()
+const offerCheckupText = (await adminPage.locator('[data-testid="chat-cta-whole-offer_checkup"]').textContent() || '').trim()
+assert.equal(askReportText, '上傳報告')
+assert.equal(offerCheckupText, '我想做檢查，確認各項指標')
+assert.notEqual(askReportText, 'ask_report')
+assert.notEqual(offerCheckupText, 'offer_checkup')
 await adminPage.locator('[data-testid="user-conversation-messages"]').screenshot({
   path: join(shotDir, 'cta-readonly-admin-selected.png')
+})
+await adminPage.locator('[data-testid="chat-cta-whole-ask_report"]').screenshot({
+  path: join(shotDir, 'cta-readonly-admin-ask-report-after.png')
+})
+await adminPage.locator('[data-testid="chat-cta-whole-offer_checkup"]').screenshot({
+  path: join(shotDir, 'cta-readonly-admin-offer-checkup-after.png')
 })
 
 console.log('chat-cta-readonly e2e ok')

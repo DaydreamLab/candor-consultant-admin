@@ -162,13 +162,54 @@ function parseVitalsPayload(raw: Record<string, unknown>): AskVitalsPayloadView 
   }
 }
 
-function wholeLabel(type: string, raw: Record<string, unknown>): string {
-  for (const key of ['label', 'button_label', 'title', 'copy']) {
+/**
+ * Whole-button CTA types → i18n keys (mirrors health-client-chat-younger
+ * `chat.upload` / `chat.checkupLink` / `chat.viewRecommend` / …).
+ * Aliases cover catalog／maps_to variants that may appear as `type`.
+ */
+export const WHOLE_ACTION_LABEL_KEYS: Readonly<Record<string, string>> = {
+  ask_report: 'chatCta.askReport',
+  upload: 'chatCta.askReport',
+  ask_upload: 'chatCta.askReport',
+  offer_checkup: 'chatCta.offerCheckup',
+  go_checkup: 'chatCta.offerCheckup',
+  checkup: 'chatCta.offerCheckup',
+  offer_recommend: 'chatCta.offerRecommend',
+  offer_full_test: 'chatCta.offerFullTest',
+  offer_expert_booking: 'chatCta.offerExpertBooking',
+  continue_chat: 'chatCta.continueConsult',
+  continue_consultation: 'chatCta.continueConsult',
+  continue_health_consultation: 'chatCta.continueConsult'
+}
+
+/** Payload button copy only — not `copy` (offer_full_test hint text). */
+export function payloadWholeLabel(raw: Record<string, unknown>): string {
+  for (const key of ['label', 'button_label', 'title'] as const) {
     if (typeof raw[key] === 'string' && raw[key].trim()) {
       return String(raw[key]).trim()
     }
   }
-  return type
+  return ''
+}
+
+/** i18n key for a whole action type; unknown → generic neutral. */
+export function wholeActionLabelKey(actionType: string): string {
+  return WHOLE_ACTION_LABEL_KEYS[actionType] ?? 'chatCta.unknown'
+}
+
+/**
+ * Prefer core payload label; else type mapping; never return raw snake_case.
+ */
+export function resolveWholeActionLabel(
+  actionType: string,
+  payloadLabel: string | null | undefined,
+  translate: (key: string) => string
+): string {
+  const fromPayload = String(payloadLabel ?? '').trim()
+  if (fromPayload) {
+    return fromPayload
+  }
+  return translate(wholeActionLabelKey(actionType))
 }
 
 function parseAction(raw: unknown): ReplyActionView | null {
@@ -198,7 +239,8 @@ function parseAction(raw: unknown): ReplyActionView | null {
     actionType: type,
     payload: {
       status: asCtaControlStatus(payload.status),
-      label: wholeLabel(type, payload)
+      // Keep payload label (may be ''); UI resolves via resolveWholeActionLabel.
+      label: payloadWholeLabel(payload)
     }
   }
 }

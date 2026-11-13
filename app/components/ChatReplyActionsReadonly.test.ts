@@ -3,22 +3,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ChatReplyActionsReadonly from './ChatReplyActionsReadonly.vue'
 
 function translate(key: string, params?: Record<string, unknown>) {
-  if (key === 'chatCta.confirm') {
-    return '確認'
-  }
-  if (key === 'chatCta.vitalsAgeUnit') {
-    return '歲'
-  }
-  if (key === 'chatCta.vitalsHeightUnit') {
-    return 'cm'
-  }
-  if (key === 'chatCta.vitalsWeightUnit') {
-    return 'kg'
+  const fixed: Record<string, string> = {
+    'chatCta.confirm': '確認',
+    'chatCta.askReport': '上傳報告',
+    'chatCta.offerCheckup': '我想做檢查，確認各項指標',
+    'chatCta.offerRecommend': '查看推薦方案',
+    'chatCta.offerFullTest': '了解完整 136 項檢測',
+    'chatCta.offerExpertBooking': '預約專家諮詢',
+    'chatCta.continueConsult': '繼續健康諮詢',
+    'chatCta.unknown': '操作',
+    'chatCta.vitalsAgeUnit': '歲',
+    'chatCta.vitalsHeightUnit': 'cm',
+    'chatCta.vitalsWeightUnit': 'kg'
   }
   if (key === 'chatCta.vitalsValue' && params) {
     return `${params.value} ${params.unit}`
   }
-  return key
+  return fixed[key] ?? key
 }
 
 beforeEach(() => {
@@ -108,5 +109,34 @@ describe('ChatReplyActionsReadonly', () => {
     })
     expect(wrapper.find('button').exists()).toBe(false)
     expect(wrapper.find('a').exists()).toBe(false)
+  })
+
+  it('renders human labels for ask_report / offer_checkup without payload label', () => {
+    const wrapper = mountCta({
+      interaction: { round_status: 'historical', outcome: null },
+      actions: [
+        { type: 'ask_report', payload: { status: 'disabled' } },
+        { type: 'offer_checkup', payload: { status: 'disabled', url: 'https://example.com/checkup' } }
+      ]
+    })
+    const ask = wrapper.find('[data-testid="chat-cta-whole-ask_report"]')
+    const checkup = wrapper.find('[data-testid="chat-cta-whole-offer_checkup"]')
+    expect(ask.exists()).toBe(true)
+    expect(checkup.exists()).toBe(true)
+    expect(ask.text()).toBe('上傳報告')
+    expect(checkup.text()).toBe('我想做檢查，確認各項指標')
+    expect(ask.text()).not.toBe('ask_report')
+    expect(checkup.text()).not.toBe('offer_checkup')
+  })
+
+  it('prefers payload label for whole actions and uses neutral for unknown', () => {
+    const wrapper = mountCta({
+      actions: [
+        { type: 'offer_full_test', payload: { status: 'disabled', label: '客製完整檢測' } },
+        { type: 'weird_future_cta', payload: { status: 'disabled' } }
+      ]
+    })
+    expect(wrapper.find('[data-testid="chat-cta-whole-offer_full_test"]').text()).toBe('客製完整檢測')
+    expect(wrapper.find('[data-testid="chat-cta-whole-weird_future_cta"]').text()).toBe('操作')
   })
 })

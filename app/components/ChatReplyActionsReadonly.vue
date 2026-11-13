@@ -2,6 +2,7 @@
 import {
   ctaStatusClass,
   parseReplyActionsView,
+  resolveWholeActionLabel,
   vitalsDisplayField,
   type AskVitalsPayloadView,
   type CtaControlStatus,
@@ -29,6 +30,10 @@ function confirmStatus(action: Extract<ReplyActionView, { type: 'choose_option' 
 
 function showConfirm(action: Extract<ReplyActionView, { type: 'choose_option' | 'ask_goal' }>): boolean {
   return action.payload.confirm || action.payload.confirm_status != null
+}
+
+function wholeButtonLabel(action: Extract<ReplyActionView, { type: 'whole' }>): string {
+  return resolveWholeActionLabel(action.actionType, action.payload.label, t)
 }
 
 function vitalsText(payload: AskVitalsPayloadView): string {
@@ -118,7 +123,7 @@ function vitalsUnitKey(field: VitalsField): string {
           :class="ctaStatusClass(action.payload.status)"
           :data-status="action.payload.status"
           :data-testid="`chat-cta-whole-${action.actionType}`"
-        >{{ action.payload.label }}</span>
+        >{{ wholeButtonLabel(action) }}</span>
       </div>
     </template>
   </div>

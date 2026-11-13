@@ -2674,6 +2674,13 @@
   },
   "chatCta": {
     "confirm": "確認",
+    "askReport": "上傳報告",
+    "offerCheckup": "我想做檢查，確認各項指標",
+    "offerRecommend": "查看推薦方案",
+    "offerFullTest": "了解完整 136 項檢測",
+    "offerExpertBooking": "預約專家諮詢",
+    "continueConsult": "繼續健康諮詢",
+    "unknown": "操作",
     "vitalsValue": "{value} {unit}",
     "vitalsAgeUnit": "歲",
     "vitalsHeightUnit": "cm",
