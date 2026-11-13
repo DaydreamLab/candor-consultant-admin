@@ -214,6 +214,7 @@ await adminPage.route('**/api/v1/admin/**', async (route) => {
         data: {
           conversations: [{
             id: 'conv-cta-1',
+            goals: ['sleep', 'gastrointestinal'],
             created_at: '2026-03-28T08:00:00.000Z',
             updated_at: '2026-03-28T09:00:00.000Z'
           }]
@@ -259,7 +260,12 @@ await adminPage.route('**/api/v1/admin/**', async (route) => {
 
 await adminPage.goto(`${base}/users/user-cta-1`, { waitUntil: 'networkidle' })
 await adminPage.waitForSelector('text=conv-cta', { timeout: 30_000 })
-await adminPage.locator('tr', { hasText: 'conv-cta' }).click()
+const goalsCell = adminPage.locator('tr', { hasText: 'conv-cta' })
+const goalsText = (await goalsCell.textContent() || '')
+assert.ok(goalsText.includes('睡眠'), `expected Chinese sleep label, got: ${goalsText}`)
+assert.ok(goalsText.includes('腸胃道'), `expected Chinese gastrointestinal label, got: ${goalsText}`)
+assert.ok(!goalsText.includes('gastrointestinal'), `raw gastrointestinal code should not show: ${goalsText}`)
+await goalsCell.click()
 await adminPage.waitForSelector('[data-testid="user-conversation-messages"]', { timeout: 30_000 })
 await adminPage.waitForSelector('[data-testid="chat-cta-chip-plan"]', { timeout: 30_000 })
 assert.equal(await adminPage.locator('[data-testid="chat-cta-chip-plan"]').getAttribute('data-status'), 'selected')

@@ -12,6 +12,7 @@ import { extractReplyActions } from '~/utils/chat-reply-actions'
 import { money } from '~/utils/format'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
+import { formatConsultationGoals } from '~/utils/consultation-goal-labels'
 import {
   displayResultName,
   displayResultOriginalName,
@@ -401,10 +402,7 @@ function shortId(value: unknown) {
 }
 
 function goalsOf(row: Record<string, unknown>) {
-  if (!Array.isArray(row.goals) || row.goals.length === 0) {
-    return t('status.na')
-  }
-  return row.goals.map(item => String(item)).join(', ')
+  return formatConsultationGoals(row.goals, t, t('status.na'))
 }
 
 function amountOf(value: unknown) {
