@@ -125,6 +125,8 @@ export interface ExpertBookingConversationMessage {
   role: string
   content: string
   created_at: string | null
+  /** Hydrated reply_actions (core CTA grey-retain); optional for legacy payloads. */
+  reply_actions?: unknown
 }
 
 export interface ExpertBookingConversation {

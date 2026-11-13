@@ -8,6 +8,7 @@ import {
   adminListUserHealthReports,
   adminListUserOrders
 } from '~/utils/admin-api'
+import { extractReplyActions } from '~/utils/chat-reply-actions'
 import { money } from '~/utils/format'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
 import { readOperatorToken } from '~/utils/operator-session'
@@ -456,8 +457,19 @@ function toChatMessage(row: Record<string, unknown>, index: number) {
     id: scalarId(row.id) || `message-${index}`,
     role: isCustomerRole(row.role) ? 'user' : 'assistant',
     parts: [{ type: 'text', text: messageText(row) }],
-    metadata: { time: messageTimeText(row) }
+    metadata: {
+      time: messageTimeText(row),
+      replyActions: extractReplyActions(row)
+    }
   }
+}
+
+function chatMessageText(message: { parts?: Array<{ type?: string, text?: string }> }) {
+  const parts = Array.isArray(message.parts) ? message.parts : []
+  return parts
+    .filter(part => part?.type === 'text' && typeof part.text === 'string')
+    .map(part => part.text)
+    .join('\n')
 }
 
 function isCustomerRole(value: unknown) {
@@ -703,7 +715,10 @@ function messageTimeText(row: Record<string, unknown>) {
               :usage="conversationUsage"
             />
           </div>
-          <div class="min-h-0 flex-1 overflow-y-auto">
+          <div
+            class="min-h-0 flex-1 overflow-y-auto"
+            data-testid="user-conversation-messages"
+          >
             <p
               v-if="!selectedConversationId"
               class="px-4 py-10 text-center text-base text-muted"
@@ -744,6 +759,17 @@ function messageTimeText(row: Record<string, unknown>) {
                 >
                   {{ metadata.time }}
                 </time>
+              </template>
+              <template #content="{ message }">
+                <div class="min-w-0">
+                  <div class="whitespace-pre-wrap">
+                    {{ chatMessageText(message) }}
+                  </div>
+                  <ChatReplyActionsReadonly
+                    v-if="message.role === 'assistant' && message.metadata?.replyActions"
+                    :reply-actions="message.metadata.replyActions"
+                  />
+                </div>
               </template>
             </UChatMessages>
           </div>

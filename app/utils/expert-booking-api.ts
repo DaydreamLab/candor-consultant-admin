@@ -379,7 +379,7 @@ export async function listExpertStationBookingConversations(
     if (!store().details.has(id)) {
       throw new AdminApiError(404, 'not_found')
     }
-    const conversations = store().conversations()
+    const conversations = store().conversations(id)
     return { conversations, total: conversations.length }
   }
   const q = new URLSearchParams()

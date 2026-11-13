@@ -2671,5 +2671,12 @@
       "title": "專家站",
       "description": "行事曆、預約案件與服務紀錄"
     }
+  },
+  "chatCta": {
+    "confirm": "確認",
+    "vitalsValue": "{value} {unit}",
+    "vitalsAgeUnit": "歲",
+    "vitalsHeightUnit": "cm",
+    "vitalsWeightUnit": "kg"
   }
 }
