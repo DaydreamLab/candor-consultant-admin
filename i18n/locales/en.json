@@ -2674,6 +2674,13 @@
   },
   "chatCta": {
     "confirm": "Confirm",
+    "askReport": "Upload report",
+    "offerCheckup": "I'd like a checkup to confirm my markers",
+    "offerRecommend": "See recommended plan",
+    "offerFullTest": "Explore the full 136-marker test",
+    "offerExpertBooking": "Book expert consultation",
+    "continueConsult": "Continue health consultation",
+    "unknown": "Action",
     "vitalsValue": "{value} {unit}",
     "vitalsAgeUnit": "yrs",
     "vitalsHeightUnit": "cm",

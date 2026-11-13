@@ -290,6 +290,20 @@ export const EXPERT_BOOKING_FIXTURE_CONVERSATIONS: ExpertBookingConversation[] =
         role: 'user',
         content: '36',
         created_at: '2026-03-28T08:02:30.000Z'
+      },
+      {
+        id: 'msg-upload-prompt',
+        role: 'assistant',
+        content: '若想確認是否缺維生素 D，最準確的方式是抽血檢測。有報告可上傳一起看；還沒檢查也可討論是否安排。',
+        created_at: '2026-03-28T08:03:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: null },
+          actions: [
+            { type: 'ask_report', payload: { status: 'disabled' } },
+            { type: 'offer_checkup', payload: { status: 'disabled', url: 'https://example.com/checkup' } }
+          ]
+        }
       }
     ]
   }
