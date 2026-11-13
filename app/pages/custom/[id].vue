@@ -11,6 +11,7 @@ import {
   adminSubmitExpertCaseReview,
   isExpertCaseAlreadyFinalizedError
 } from '~/utils/admin-api'
+import { extractReplyActions } from '~/utils/chat-reply-actions'
 import { money } from '~/utils/format'
 import { readFinalizeCopyFromDetail } from '~/utils/expert-finalize-copy'
 import { formatLocalDateTime } from '~/utils/format-local-datetime'
@@ -1257,7 +1258,8 @@ function toChatMessage(row: Record<string, unknown>, index: number) {
     role: isCustomerRole(row.role) ? 'user' : 'assistant',
     parts: [{ type: 'text', text: typeof row.content === 'string' ? row.content : '' }],
     metadata: {
-      time: typeof row.seq === 'number' ? `#${row.seq}` : undefined
+      time: typeof row.seq === 'number' ? `#${row.seq}` : undefined,
+      replyActions: extractReplyActions(row)
     }
   }
 }
@@ -1596,10 +1598,16 @@ function itemUnitPriceText(item: Record<string, unknown>) {
                       class="py-4"
                     >
                       <template #content="slotProps">
-                        <MarkdownPreview
-                          class="expert-case-chat-md"
-                          :source="chatMessageMarkdown(slotProps)"
-                        />
+                        <div class="min-w-0">
+                          <MarkdownPreview
+                            class="expert-case-chat-md"
+                            :source="chatMessageMarkdown(slotProps)"
+                          />
+                          <ChatReplyActionsReadonly
+                            v-if="slotProps.message?.role === 'assistant' && slotProps.message?.metadata?.replyActions"
+                            :reply-actions="slotProps.message.metadata.replyActions"
+                          />
+                        </div>
                       </template>
                     </UChatMessages>
                   </div>

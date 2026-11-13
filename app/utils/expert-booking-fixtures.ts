@@ -196,25 +196,193 @@ export const EXPERT_BOOKING_SELLABLE_OPTIONS: ExpertBookingSellableOption[] = [
   { id: 'si-gamma', name_zh: '睡眠評估', name_en: 'Sleep assess', sku: 'PKG-C', code: 'PKG-C' }
 ]
 
+/** Design B v3 sample: selected chips + confirm + vitals with stored value. */
 export const EXPERT_BOOKING_FIXTURE_CONVERSATIONS: ExpertBookingConversation[] = [
   {
     id: 'conv-1',
     entry_path: '/chat',
-    goals: ['改善睡眠'],
+    goals: ['睡眠', '精神元氣'],
     created_at: '2026-03-28T08:00:00.000Z',
     updated_at: '2026-03-28T09:00:00.000Z',
     messages: [
       {
-        id: 'msg-1',
-        role: 'user',
-        content: '最近很難入睡。',
-        created_at: '2026-03-28T08:00:00.000Z'
+        id: 'msg-path',
+        role: 'assistant',
+        content: '你想先從哪裡開始？',
+        created_at: '2026-03-28T08:00:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: 'option_selected' },
+          actions: [{
+            type: 'choose_option',
+            payload: {
+              kind: 'path',
+              mode: 'single',
+              options: [
+                { code: 'chat', label: '我想聊聊', status: 'disabled' },
+                { code: 'plan', label: '我想諮詢健康方案', status: 'selected' },
+                { code: 'report', label: '幫我看報告', status: 'disabled' }
+              ]
+            }
+          }]
+        }
       },
       {
-        id: 'msg-2',
+        id: 'msg-path-user',
+        role: 'user',
+        content: '我想諮詢健康方案',
+        created_at: '2026-03-28T08:00:30.000Z'
+      },
+      {
+        id: 'msg-goals',
         role: 'assistant',
-        content: '可以先記錄就寢時間與咖啡因攝取。',
-        created_at: '2026-03-28T08:01:00.000Z'
+        content: '這次最想改善的是？',
+        created_at: '2026-03-28T08:01:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: 'option_selected' },
+          actions: [{
+            type: 'choose_option',
+            payload: {
+              kind: 'consultation_goals',
+              mode: 'multi',
+              confirm: true,
+              confirm_status: 'selected',
+              options: [
+                { code: 'sleep', label: '睡眠', status: 'selected' },
+                { code: 'energy', label: '精神元氣', status: 'selected' },
+                { code: 'gi', label: '腸胃道', status: 'disabled' },
+                { code: 'weight', label: '減重', status: 'disabled' },
+                { code: 'skin', label: '皮膚氣色', status: 'disabled' }
+              ]
+            }
+          }]
+        }
+      },
+      {
+        id: 'msg-goals-user',
+        role: 'user',
+        content: '睡眠、精神元氣',
+        created_at: '2026-03-28T08:01:30.000Z'
+      },
+      {
+        id: 'msg-age',
+        role: 'assistant',
+        content: '請問你的年紀是？',
+        created_at: '2026-03-28T08:02:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: 'option_selected' },
+          actions: [{
+            type: 'ask_vitals',
+            payload: {
+              fields: ['age'],
+              gap_code: 'age',
+              status: 'selected',
+              has_stored_value: true,
+              stored_value: 36
+            }
+          }]
+        }
+      },
+      {
+        id: 'msg-age-user',
+        role: 'user',
+        content: '36',
+        created_at: '2026-03-28T08:02:30.000Z'
+      }
+    ]
+  }
+]
+
+/** Design B v3 grey sample: free_text chips + vitals stored／unstored. */
+export const EXPERT_BOOKING_FIXTURE_CONVERSATIONS_GREY: ExpertBookingConversation[] = [
+  {
+    id: 'conv-grey',
+    entry_path: '/chat',
+    goals: [],
+    created_at: '2026-03-28T08:00:00.000Z',
+    updated_at: '2026-03-28T09:00:00.000Z',
+    messages: [
+      {
+        id: 'msg-grey-path',
+        role: 'assistant',
+        content: '你想先從哪裡開始？',
+        created_at: '2026-03-28T08:00:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: 'free_text' },
+          actions: [{
+            type: 'choose_option',
+            payload: {
+              kind: 'path',
+              mode: 'single',
+              options: [
+                { code: 'chat', label: '我想聊聊', status: 'disabled' },
+                { code: 'plan', label: '我想諮詢健康方案', status: 'disabled' },
+                { code: 'report', label: '幫我看報告', status: 'disabled' }
+              ]
+            }
+          }]
+        }
+      },
+      {
+        id: 'msg-grey-path-user',
+        role: 'user',
+        content: '想先了解可以怎麼調理，再決定要不要看報告。',
+        created_at: '2026-03-28T08:00:30.000Z'
+      },
+      {
+        id: 'msg-grey-age-stored',
+        role: 'assistant',
+        content: '請問你的年紀是？',
+        created_at: '2026-03-28T08:01:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: 'free_text' },
+          actions: [{
+            type: 'ask_vitals',
+            payload: {
+              fields: ['age'],
+              gap_code: 'age',
+              status: 'disabled',
+              has_stored_value: true,
+              stored_value: 36
+            }
+          }]
+        }
+      },
+      {
+        id: 'msg-grey-age-stored-user',
+        role: 'user',
+        content: '我今年 36 歲。',
+        created_at: '2026-03-28T08:01:30.000Z'
+      },
+      {
+        id: 'msg-grey-age-empty',
+        role: 'assistant',
+        content: '請問你的年紀是？',
+        created_at: '2026-03-28T08:02:00.000Z',
+        reply_actions: {
+          schema_version: '0.1',
+          interaction: { round_status: 'historical', outcome: 'free_text' },
+          actions: [{
+            type: 'ask_vitals',
+            payload: {
+              fields: ['age'],
+              gap_code: 'age',
+              status: 'disabled',
+              has_stored_value: false,
+              stored_value: null
+            }
+          }]
+        }
+      },
+      {
+        id: 'msg-grey-age-empty-user',
+        role: 'user',
+        content: '我不太確定。',
+        created_at: '2026-03-28T08:02:30.000Z'
       }
     ]
   }
@@ -442,7 +610,11 @@ export function createExpertBookingFixtureStore() {
     },
     applyProductPicks,
     uploadAttachment,
-    conversations: () => structuredClone(EXPERT_BOOKING_FIXTURE_CONVERSATIONS)
+    conversations: (bookingId?: string) => structuredClone(
+      bookingId === 'eb-sched-1' || bookingId === 'eb-done-1'
+        ? EXPERT_BOOKING_FIXTURE_CONVERSATIONS_GREY
+        : EXPERT_BOOKING_FIXTURE_CONVERSATIONS
+    )
   }
 }
 

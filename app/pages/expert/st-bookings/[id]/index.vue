@@ -46,10 +46,19 @@ const chatMessages = computed(() => {
     metadata: {
       time: message.created_at
         ? formatLocalDateTime(message.created_at, { style: 'list' as const })
-        : ''
+        : '',
+      replyActions: message.reply_actions ?? null
     }
   }))
 })
+
+function chatMessageText(message: { parts?: Array<{ type?: string, text?: string }> }) {
+  const parts = Array.isArray(message.parts) ? message.parts : []
+  return parts
+    .filter(part => part?.type === 'text' && typeof part.text === 'string')
+    .map(part => part.text)
+    .join('\n')
+}
 const assistantMessage = {
   side: 'left' as const,
   variant: 'outline' as const,
@@ -360,7 +369,10 @@ async function markComplete() {
             {{ $t('expertStation.detail.conversationsHint') }}
           </p>
         </div>
-        <div class="min-h-0 flex-1 overflow-y-auto">
+        <div
+          class="min-h-0 flex-1 overflow-y-auto"
+          data-testid="expert-station-conversation"
+        >
           <p
             v-if="!boundConversation"
             class="px-4 py-10 text-center text-base text-muted"
@@ -389,6 +401,17 @@ async function markComplete() {
               >
                 {{ metadata.time }}
               </time>
+            </template>
+            <template #content="{ message }">
+              <div class="min-w-0">
+                <div class="whitespace-pre-wrap">
+                  {{ chatMessageText(message) }}
+                </div>
+                <ChatReplyActionsReadonly
+                  v-if="message.role === 'assistant' && message.metadata?.replyActions"
+                  :reply-actions="message.metadata.replyActions"
+                />
+              </div>
             </template>
           </UChatMessages>
         </div>

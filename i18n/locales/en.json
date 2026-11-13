@@ -2671,5 +2671,12 @@
       "title": "Expert station",
       "description": "Calendar, bookings, and service records"
     }
+  },
+  "chatCta": {
+    "confirm": "Confirm",
+    "vitalsValue": "{value} {unit}",
+    "vitalsAgeUnit": "yrs",
+    "vitalsHeightUnit": "cm",
+    "vitalsWeightUnit": "kg"
   }
 }
