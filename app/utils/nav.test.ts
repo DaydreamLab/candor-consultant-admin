@@ -13,10 +13,10 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     ])
   })
 
-  it('lists each nav key exactly once (27 items)', () => {
+  it('lists each nav key exactly once (28 items)', () => {
     const keys = NAV_GROUPS.flatMap(g => g.items.map(i => i.key))
-    expect(keys).toHaveLength(27)
-    expect(new Set(keys).size).toBe(27)
+    expect(keys).toHaveLength(28)
+    expect(new Set(keys).size).toBe(28)
   })
 
   it('places workbench as top-level without badge or group label', () => {
@@ -90,12 +90,13 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(developing.items.map(i => i.key)).not.toContain('checkups')
   })
 
-  it('settings group order: settings → privacy → guidance → operators → assistant', () => {
+  it('settings group order: settings → privacy → guidance → paymentTest → operators → assistant', () => {
     const system = NAV_GROUPS.find(g => g.key === 'system')!
     expect(system.items.map(i => i.key)).toEqual([
       'settings',
       'privacy',
       'guidance',
+      'paymentTest',
       'operators',
       'assistant'
     ])
@@ -103,11 +104,13 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       '/settings#payment',
       '/settings/privacy',
       '/settings/guidance',
+      '/payment-test',
       '/operators',
       '/assistant'
     ])
     expect(system.items.find(i => i.key === 'settings')?.exact).toBe(true)
     expect(system.items.find(i => i.key === 'guidance')?.guidanceOnly).toBe(true)
+    expect(system.items.find(i => i.key === 'paymentTest')?.adminOnly).toBe(true)
     expect(system.items.find(i => i.key === 'operators')?.adminOnly).toBe(true)
   })
 
@@ -124,7 +127,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       .find(g => g.key === 'system')!
       .items
       .map(i => i.key)
-    expect(adminKeys).toEqual(['settings', 'privacy', 'guidance', 'operators', 'assistant'])
+    expect(adminKeys).toEqual(['settings', 'privacy', 'guidance', 'paymentTest', 'operators', 'assistant'])
     expect(expertKeys).toEqual(['settings', 'privacy', 'assistant'])
     expect(opsKeys).toEqual(['settings', 'privacy', 'guidance', 'assistant'])
   })
@@ -166,6 +169,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
       'settings',
       'privacy',
       'guidance',
+      'paymentTest',
       'operators',
       'assistant'
     ]
@@ -187,6 +191,7 @@ describe('sidebar IA (short object names 2026-11-04)', () => {
     expect(isDevelopingPath('/assistant')).toBe(false)
     expect(isDevelopingPath('/operators')).toBe(false)
     expect(isDevelopingPath('/operators/new')).toBe(false)
+    expect(isDevelopingPath('/payment-test')).toBe(false)
     expect(isDevelopingPath('/shipping')).toBe(false)
     expect(isDevelopingPath('/expert-plans')).toBe(false)
     expect(isDevelopingPath('/refund-requests')).toBe(false)

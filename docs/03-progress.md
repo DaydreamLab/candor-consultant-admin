@@ -67,6 +67,7 @@
 | 訂單 | `/orders`（「含加購」依 AdminOrderSummary.`has_bottle_addon`；core #177） | 可用 | 已接 | M3 |
 | 訂單詳情／取消／讀對話／報告判讀／退款／發票 | `/orders/{id}`（詳情、對話與報告判讀可讀；整瓶加購區塊＋方案／加購金額拆分；整筆退款與發票重試已接；「在物流進度查看」深連結已接；取消仍 Mock） | 可用 | 接線中 | M3 |
 | 金流設定 | `/settings`（radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存） | 可用 | 已接 | Beta-a |
+| 金流測試 | `/payment-test`（僅 admin；每 run 金額＋sandbox｜production；藍新 MPG／退款／ezPay 開票作廢；不改 payment／invoice settings） | 可用 | 接線中（待 [candor-core #201](https://github.com/DaydreamLab/candor-core/pull/201)；本機截圖 `NUXT_PUBLIC_PAYMENT_TEST_MOCK=1`） | Beta-a |
 | 電子發票設定 | `/settings`（radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存） | 可用 | 已接 | Beta-a |
 | 報告判讀 LLM 上限 | `/settings`（每次讀取最多 LLM 次數；留空＝不限制；按儲存） | 可用 | 接線中（待 [candor-core #81](https://github.com/DaydreamLab/candor-core/pull/81) 合併部署） | M4 |
 | 隱私權政策 CMS | `/settings/privacy`（Markdown 編輯／儲存；左右版本 diff；自設定總頁錨點拆出）；公開頁 `/privacy-policy`；Cookie 同意依 version | 可用 | 接線中（待 [candor-core #87](https://github.com/DaydreamLab/candor-core/pull/87) 合併部署） | M2 Beta |
@@ -187,6 +188,7 @@
 | 整筆退款 | `POST /admin/order/{id}/refund` | 已接（訂單詳情） |
 | 發票重試 | `POST /admin/order/{id}/invoice/retry` | 已接（訂單詳情） |
 | 金流設定 | `GET`／`PATCH /admin/payment-settings` | 已接（設定頁 radio：模擬金流 (sandbox)／藍新金流 (newebpay)；按儲存才寫入） |
+| 金流測試 | `GET`／`POST /admin/payment-tests`、`GET /admin/payment-tests/audit-logs`、`GET`／`POST /admin/payment-test/{id}`、`…/refund`、`…/invoice`、`…/invoice/void`（公開測試 Notify／Return／checkout 走 `/payments/newebpay/test/*`；畫面僅 admin） | 接線中（待 [candor-core #201](https://github.com/DaydreamLab/candor-core/pull/201)；本機截圖 `NUXT_PUBLIC_PAYMENT_TEST_MOCK=1`） |
 | 電子發票設定 | `GET`／`PATCH /admin/invoice-settings` | 已接（設定頁 radio：模擬發票 (sandbox)／ezPay (ezpay)；按儲存才寫入） |
 | 報告判讀 LLM 上限 | `GET`／`PATCH /admin/biomarker-interpretation-settings`（`max_llm_calls_per_read`；`null`／空／0＝不限制） | 接線中（待 core #81） |
 | 隱私權政策 | `GET /legal/privacy-policy`（公開）；`GET`／`PATCH /admin/legal/privacy-policy`；`GET …/versions`、`GET …/versions/{version}`（PATCH 僅 ops／admin；expert 403） | 接線中（待 core #87；設定頁左右並排 client-side diff；本機截圖可用 `NUXT_PUBLIC_PRIVACY_POLICY_MOCK=1`） |
@@ -248,8 +250,9 @@
 
 ---
 
-**最後更新**：2026-11-06（Operators CRUD 接 core #157）
+**最後更新**：2026-11-16（金流測試頁接 core #201 draft）
 
+- 2026-11-16：新增 `/payment-test` 金流測試（僅 admin；amount／environment per-run；藍新 MPG＋退款＋ezPay 開票／作廢；顯示 provider Status／Message、測試單與稽核；`scope_note`；不碰 settings）。接線待 [candor-core #201](https://github.com/DaydreamLab/candor-core/pull/201)；本機截圖 `NUXT_PUBLIC_PAYMENT_TEST_MOCK=1`；`docs/04` 請雙寫
 - 2026-11-06：Operators CRUD 接線（`/operators`；僅 admin；`roles[]` 多選；409／422 中文）；JWT 舊 `role`→重登；配對 [candor-core #157](https://github.com/DaydreamLab/candor-core/pull/157)
 - 2026-11-06：operator 契約改只回 `roles[]`（刪單一 `role`）；admin 含 expert／ops 能力；登入／guard／權限判斷全改 roles；配對 candor-core 多角色 draft
 - 2026-11-06：多角色登入後進 `/choose-panel`；直打網址不強制選面板；前端不以 email 判斷
