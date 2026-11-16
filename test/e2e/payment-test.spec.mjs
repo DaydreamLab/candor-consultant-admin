@@ -307,10 +307,32 @@ await page.goto(`${base}/payment-test`, { waitUntil: 'networkidle' })
 await page.waitForSelector('[data-testid="payment-test-page"]', { timeout: 30_000 })
 
 const scopeText = await page.getByTestId('payment-test-scope-note').innerText()
-assert.ok(/does not exercise the member front-end checkout/i.test(scopeText), 'missing scope_note')
+assert.ok(
+  /不涵蓋會員前台結帳/.test(scopeText),
+  `zh-TW scope note from i18n expected, got: ${scopeText}`
+)
+assert.ok(
+  !/conversation-bound orders/.test(scopeText),
+  'must not display core English scope_note string'
+)
+
+const keyHint = await page.getByTestId('payment-test-sandbox-key-hint').innerText()
+assert.ok(
+  /NEWEBPAY_\*/.test(keyHint) && /EZPAY_\*/.test(keyHint),
+  `missing sandbox key hint: ${keyHint}`
+)
 
 await page.waitForSelector('[data-testid="payment-test-orders"]', { timeout: 15_000 })
 assert.ok(/ptst_e2e_succeeded_001/.test(await page.getByTestId('payment-test-orders').innerText()))
+
+// Auto-selected first order should surface raw Status / Message on load.
+const providerOnLoad = await page.getByTestId('payment-test-provider').innerText()
+assert.ok(/Status:\s*SUCCESS/i.test(providerOnLoad), `expected Status on load, got: ${providerOnLoad}`)
+assert.ok(/Message:\s*paid/i.test(providerOnLoad), `expected Message on load, got: ${providerOnLoad}`)
+
+const auditOnLoad = await page.getByTestId('payment-test-audit-logs').innerText()
+assert.ok(/sandbox/i.test(auditOnLoad), 'audit table missing environment')
+assert.ok(/op-admin-1|00000000|…/.test(auditOnLoad), 'audit table missing operator')
 
 await page.getByTestId('payment-test-amount').fill('25')
 await page.getByTestId('payment-test-pay').click()

@@ -34,6 +34,7 @@ jobs:
           NUXT_PUBLIC_CTA_CATALOG_MOCK: '0'
           NUXT_PUBLIC_EXPERT_BOOKING_MOCK: '0'
           NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK: '0'
+          NUXT_PUBLIC_PAYMENT_TEST_MOCK: '0'
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./.output/public

@@ -129,6 +129,7 @@
     "loading": "讀取中…",
     "failed": "無法載入金流測試資料。",
     "actionFailed": "操作失敗。",
+    "scopeNote": "此金流測試不涵蓋會員前台結帳（對話綁定訂單、個資檢查，或更新真實訂單的回呼）。",
     "run": "本次測試",
     "selected": "選取測試單",
     "noneSelected": "尚未選取測試單。",
@@ -138,6 +139,7 @@
     "auditLogs": "稽核",
     "emptyOrders": "尚無測試單。",
     "emptyAudit": "尚無稽核紀錄。",
+    "sandboxKeyHint": "sandbox 仍用本環境 NEWEBPAY_*／EZPAY_*，打藍新／ezPay 測試主機。",
     "productionWarning": "production＝真實金流／真實金額。",
     "actions": {
       "pay": "藍新刷卡",
@@ -174,6 +176,7 @@
       "merchantOrderNo": "MerchantOrderNo",
       "amount": "金額",
       "environment": "環境",
+      "operator": "operator",
       "payment": "付款",
       "invoice": "發票",
       "createdAt": "時間",

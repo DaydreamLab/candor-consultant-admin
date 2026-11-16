@@ -106,6 +106,16 @@ describe('payment-test-api', () => {
       query: expect.objectContaining({ payment_test_order_id: sampleOrder.id })
     })
     expect(result.audit_logs[0]?.action).toBe('pay')
+    expect(result.audit_logs[0]?.operator_id).toBe(sampleOrder.created_by_operator_id)
+    expect(result.audit_logs[0]?.environment).toBe('sandbox')
+  })
+
+  it('fixture audit logs include operator_id and environment', async () => {
+    process.env.NUXT_PUBLIC_PAYMENT_TEST_MOCK = '1'
+    const audits = await adminListPaymentTestAuditLogs('https://example.test/api/v1', 'tok')
+    expect(audits.audit_logs.length).toBeGreaterThan(0)
+    expect(audits.audit_logs[0]?.operator_id).toBeTruthy()
+    expect(audits.audit_logs[0]?.environment).toBe('sandbox')
   })
 
   it('creates payment test and returns mpg + provider', async () => {

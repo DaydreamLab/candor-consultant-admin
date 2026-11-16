@@ -129,6 +129,7 @@
     "loading": "Loading…",
     "failed": "Could not load payment tests.",
     "actionFailed": "Action failed.",
+    "scopeNote": "This admin payment test does not exercise the member front-end checkout flow (conversation-bound orders, profile checks, or callbacks that update real orders).",
     "run": "This run",
     "selected": "Selected test order",
     "noneSelected": "No test order selected.",
@@ -138,6 +139,7 @@
     "auditLogs": "Audit logs",
     "emptyOrders": "No test orders yet.",
     "emptyAudit": "No audit logs yet.",
+    "sandboxKeyHint": "sandbox still uses this environment's NEWEBPAY_*/EZPAY_* keys against the provider test host.",
     "productionWarning": "production = real money / live gateway.",
     "actions": {
       "pay": "NewebPay card",
@@ -174,6 +176,7 @@
       "merchantOrderNo": "MerchantOrderNo",
       "amount": "Amount",
       "environment": "Environment",
+      "operator": "operator",
       "payment": "Payment",
       "invoice": "Invoice",
       "createdAt": "Time",

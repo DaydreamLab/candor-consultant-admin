@@ -33,7 +33,6 @@ const canManage = computed(() => hasAdminRole(operatorRoles(session.operator)))
 const amount = ref(10)
 const environment = ref<PaymentTestEnvironment>('sandbox')
 const selectedId = ref('')
-const scopeNote = ref('')
 const orders = ref<PaymentTestOrder[]>([])
 const auditLogs = ref<PaymentTestAuditLog[]>([])
 const credentials = ref<{ newebpay: boolean, ezpay: boolean } | null>(null)
@@ -41,6 +40,8 @@ const lastProvider = ref<PaymentTestProviderResult | null>(null)
 const pending = ref(true)
 const actionPending = ref(false)
 const errorMessage = ref('')
+
+const scopeNote = computed(() => t('paymentTest.scopeNote'))
 
 const environmentItems = computed(() => [
   { label: t('paymentTest.environment.sandbox'), value: 'sandbox' },
@@ -59,11 +60,30 @@ if (import.meta.client) {
   void load()
 }
 
+function providerFromOrder(row: PaymentTestOrder | null | undefined): PaymentTestProviderResult | null {
+  if (!row) {
+    return null
+  }
+  if (!row.last_provider_status && !row.last_provider_message) {
+    return null
+  }
+  return {
+    status: row.last_provider_status || '',
+    message: row.last_provider_message || '',
+    payload: row.last_provider_payload || {}
+  }
+}
+
+function syncProviderFromSelected() {
+  lastProvider.value = providerFromOrder(selectedOrder.value)
+}
+
 async function load() {
   const token = readOperatorToken()
   if (!token || !canManage.value) {
     orders.value = []
     auditLogs.value = []
+    lastProvider.value = null
     errorMessage.value = canManage.value
       ? t('paymentTest.failed')
       : t('paymentTest.errors.forbidden')
@@ -78,7 +98,6 @@ async function load() {
       adminListPaymentTests(config.public.apiBase, token, { limit: 20, offset: 0 }),
       adminListPaymentTestAuditLogs(config.public.apiBase, token, { limit: 20, offset: 0 })
     ])
-    scopeNote.value = list.scope_note || audits.scope_note
     orders.value = list.payment_test_orders
     auditLogs.value = audits.audit_logs
     credentials.value = list.credentials_configured
@@ -87,12 +106,14 @@ async function load() {
     } else if (selectedId.value && !orders.value.some(row => row.id === selectedId.value)) {
       selectedId.value = orders.value[0]?.id || ''
     }
+    syncProviderFromSelected()
   } catch (error) {
     if (await redirectToLoginOnAuthFailure(error)) {
       return
     }
     orders.value = []
     auditLogs.value = []
+    lastProvider.value = null
     errorMessage.value = describeOperatorApiError(error, t)
       || (error instanceof AdminApiError && error.message.trim())
       || t('paymentTest.failed')
@@ -139,7 +160,6 @@ async function startPay() {
     })
     selectedId.value = result.payment_test_order.id
     rememberProvider(result.provider)
-    scopeNote.value = result.scope_note
     if (!isPaymentTestMockEnabled()) {
       openPaymentTestCheckout(result)
     }
@@ -183,14 +203,18 @@ async function voidInvoiceSelected() {
 
 function selectOrder(id: string) {
   selectedId.value = id
-  const row = orders.value.find(item => item.id === id)
-  if (row?.last_provider_status || row?.last_provider_message) {
-    lastProvider.value = {
-      status: row.last_provider_status || '',
-      message: row.last_provider_message || '',
-      payload: row.last_provider_payload || {}
-    }
+  syncProviderFromSelected()
+}
+
+function operatorLabel(operatorId: string | null) {
+  if (!operatorId) {
+    return '—'
   }
+  return operatorId.length > 12 ? `${operatorId.slice(0, 8)}…` : operatorId
+}
+
+function auditEnvLabel(env: PaymentTestEnvironment | null) {
+  return env ? envLabel(env) : '—'
 }
 
 function paymentStatusLabel(status: PaymentTestOrder['payment_status']) {
@@ -255,6 +279,12 @@ function envLabel(env: PaymentTestEnvironment) {
             orientation="vertical"
             data-testid="payment-test-environment"
           />
+          <p
+            class="text-sm text-muted"
+            data-testid="payment-test-sandbox-key-hint"
+          >
+            {{ $t('paymentTest.sandboxKeyHint') }}
+          </p>
           <p
             v-if="environment === 'production'"
             class="text-sm text-warning"
@@ -462,6 +492,12 @@ function envLabel(env: PaymentTestEnvironment) {
                   {{ $t('paymentTest.columns.action') }}
                 </th>
                 <th class="py-2 pr-3 font-medium">
+                  {{ $t('paymentTest.columns.operator') }}
+                </th>
+                <th class="py-2 pr-3 font-medium">
+                  {{ $t('paymentTest.columns.environment') }}
+                </th>
+                <th class="py-2 pr-3 font-medium">
                   {{ $t('paymentTest.columns.amount') }}
                 </th>
                 <th class="py-2 pr-3 font-medium">
@@ -483,6 +519,18 @@ function envLabel(env: PaymentTestEnvironment) {
               >
                 <td class="py-2 pr-3">
                   {{ auditActionLabel(row.action) }}
+                </td>
+                <td
+                  class="py-2 pr-3 font-mono"
+                  data-testid="payment-test-audit-operator"
+                >
+                  {{ operatorLabel(row.operator_id) }}
+                </td>
+                <td
+                  class="py-2 pr-3"
+                  data-testid="payment-test-audit-environment"
+                >
+                  {{ auditEnvLabel(row.environment) }}
                 </td>
                 <td class="py-2 pr-3">
                   {{ row.amount ?? '—' }}
