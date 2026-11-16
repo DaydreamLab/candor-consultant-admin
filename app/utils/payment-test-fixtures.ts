@@ -19,6 +19,11 @@ const CREDENTIALS: PaymentTestCredentialsConfigured = {
 }
 
 const OPERATOR_ID = '00000000-0000-4000-8000-0000000000ad'
+const MOCK_OPERATOR = {
+  id: OPERATOR_ID,
+  name: 'Mock admin',
+  email: 'admin-mock@candor.local'
+}
 
 let orders: PaymentTestOrder[] = []
 let auditLogs: PaymentTestAuditLog[] = []
@@ -45,6 +50,7 @@ function cloneOrder(row: PaymentTestOrder): PaymentTestOrder {
 function cloneAudit(row: PaymentTestAuditLog): PaymentTestAuditLog {
   return {
     ...row,
+    operator: row.operator ? { ...row.operator } : null,
     result_payload: row.result_payload ? { ...row.result_payload } : null
   }
 }
@@ -90,6 +96,7 @@ function seedIfEmpty() {
       id: '22222222-0000-4000-8000-000000000001',
       payment_test_order_id: succeeded.id,
       operator_id: OPERATOR_ID,
+      operator: { ...MOCK_OPERATOR },
       action: 'pay',
       amount: 10,
       environment: 'sandbox',
@@ -99,9 +106,23 @@ function seedIfEmpty() {
       created_at: createdAt
     },
     {
+      id: '22222222-0000-4000-8000-000000000003',
+      payment_test_order_id: succeeded.id,
+      operator_id: null,
+      operator: null,
+      action: 'callback',
+      amount: 10,
+      environment: null,
+      result_status: 'SUCCESS',
+      result_message: 'Notify OK',
+      result_payload: { Status: 'SUCCESS' },
+      created_at: '2026-11-16T02:05:00.000Z'
+    },
+    {
       id: '22222222-0000-4000-8000-000000000002',
       payment_test_order_id: pending.id,
       operator_id: OPERATOR_ID,
+      operator: { ...MOCK_OPERATOR },
       action: 'pay',
       amount: 50,
       environment: 'sandbox',
@@ -196,6 +217,7 @@ export function fixtureCreatePaymentTest(
     id: uuid('bbbbbbbb-'),
     payment_test_order_id: id,
     operator_id: OPERATOR_ID,
+    operator: { ...MOCK_OPERATOR },
     action: 'pay',
     amount,
     environment,
@@ -255,6 +277,7 @@ function updateOrder(
     id: uuid('cccccccc-'),
     payment_test_order_id: id,
     operator_id: OPERATOR_ID,
+    operator: { ...MOCK_OPERATOR },
     action,
     amount: updated.amount,
     environment: updated.environment,

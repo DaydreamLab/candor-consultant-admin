@@ -20,6 +20,7 @@ import {
   adminListPaymentTests,
   adminRefundPaymentTest,
   adminVoidPaymentTestInvoice,
+  formatPaymentTestAuditOperator,
   isPaymentTestMockEnabled,
   openPaymentTestCheckout
 } from '~/utils/payment-test-api'
@@ -114,12 +115,19 @@ async function load() {
     orders.value = []
     auditLogs.value = []
     lastProvider.value = null
-    errorMessage.value = describeOperatorApiError(error, t)
-      || (error instanceof AdminApiError && error.message.trim())
-      || t('paymentTest.failed')
+    errorMessage.value = describePaymentTestError(error)
   } finally {
     pending.value = false
   }
+}
+
+function describePaymentTestError(error: unknown) {
+  if (error instanceof AdminApiError && error.statusCode === 403) {
+    return t('paymentTest.errors.forbidden')
+  }
+  return describeOperatorApiError(error, t)
+    || (error instanceof AdminApiError && error.message.trim())
+    || t('paymentTest.failed')
 }
 
 function rememberProvider(provider: PaymentTestProviderResult) {
@@ -140,8 +148,7 @@ async function runAction(fn: (token: string) => Promise<void>) {
     if (await redirectToLoginOnAuthFailure(error)) {
       return
     }
-    errorMessage.value = describeOperatorApiError(error, t)
-      || (error instanceof AdminApiError && error.message.trim())
+    errorMessage.value = describePaymentTestError(error)
       || t('paymentTest.actionFailed')
   } finally {
     actionPending.value = false
@@ -206,11 +213,8 @@ function selectOrder(id: string) {
   syncProviderFromSelected()
 }
 
-function operatorLabel(operatorId: string | null) {
-  if (!operatorId) {
-    return '—'
-  }
-  return operatorId.length > 12 ? `${operatorId.slice(0, 8)}…` : operatorId
+function auditOperatorLabel(row: PaymentTestAuditLog) {
+  return formatPaymentTestAuditOperator(row)
 }
 
 function auditEnvLabel(env: PaymentTestEnvironment | null) {
@@ -524,7 +528,7 @@ function envLabel(env: PaymentTestEnvironment) {
                   class="py-2 pr-3 font-mono"
                   data-testid="payment-test-audit-operator"
                 >
-                  {{ operatorLabel(row.operator_id) }}
+                  {{ auditOperatorLabel(row) }}
                 </td>
                 <td
                   class="py-2 pr-3"

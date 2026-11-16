@@ -7,6 +7,7 @@ import {
   adminListPaymentTests,
   adminRefundPaymentTest,
   adminVoidPaymentTestInvoice,
+  formatPaymentTestAuditOperator,
   isPaymentTestMockEnabled,
   submitPaymentTestMpgForm
 } from './payment-test-api'
@@ -47,6 +48,11 @@ const sampleAudit = {
   id: '22222222-0000-4000-8000-000000000099',
   payment_test_order_id: sampleOrder.id,
   operator_id: sampleOrder.created_by_operator_id,
+  operator: {
+    id: sampleOrder.created_by_operator_id,
+    name: '系統管理員',
+    email: 'admin@example.com'
+  },
   action: 'pay',
   amount: 10,
   environment: 'sandbox',
@@ -107,15 +113,87 @@ describe('payment-test-api', () => {
     })
     expect(result.audit_logs[0]?.action).toBe('pay')
     expect(result.audit_logs[0]?.operator_id).toBe(sampleOrder.created_by_operator_id)
+    expect(result.audit_logs[0]?.operator).toEqual(sampleAudit.operator)
     expect(result.audit_logs[0]?.environment).toBe('sandbox')
   })
 
-  it('fixture audit logs include operator_id and environment', async () => {
+  it('parses callback audit with null operator and null environment', async () => {
+    fetchMock.mockResolvedValue({
+      status: 'success',
+      data: {
+        scope_note: 'scope',
+        audit_logs: [{
+          id: '22222222-0000-4000-8000-000000000098',
+          payment_test_order_id: sampleOrder.id,
+          operator_id: null,
+          operator: null,
+          action: 'callback',
+          amount: 10,
+          environment: null,
+          result_status: 'SUCCESS',
+          result_message: 'Notify OK',
+          result_payload: { Status: 'SUCCESS' },
+          created_at: '2026-11-16T03:05:00.000Z'
+        }],
+        total: 1,
+        limit: 20,
+        offset: 0
+      }
+    })
+    const result = await adminListPaymentTestAuditLogs('https://example.test/api/v1', 'tok')
+    expect(result.audit_logs[0]?.operator).toBeNull()
+    expect(result.audit_logs[0]?.environment).toBeNull()
+    expect(formatPaymentTestAuditOperator(result.audit_logs[0]!)).toBe('—')
+  })
+
+  it('formatPaymentTestAuditOperator prefers name → email → id → dash', () => {
+    expect(formatPaymentTestAuditOperator({
+      operator: { id: 'op-1', name: 'Alice', email: 'a@b.c' },
+      operator_id: 'op-1'
+    })).toBe('Alice')
+    expect(formatPaymentTestAuditOperator({
+      operator: { id: 'op-1', name: null, email: 'a@b.c' },
+      operator_id: 'op-1'
+    })).toBe('a@b.c')
+    expect(formatPaymentTestAuditOperator({
+      operator: { id: 'op-short', name: null, email: null },
+      operator_id: null
+    })).toBe('op-short')
+    expect(formatPaymentTestAuditOperator({
+      operator: null,
+      operator_id: '11111111-0000-4000-8000-000000000001'
+    })).toBe('11111111…')
+    expect(formatPaymentTestAuditOperator({ operator: null, operator_id: null })).toBe('—')
+  })
+
+  it('maps 403 forbidden for admin-only payment-test API', async () => {
+    fetchMock.mockRejectedValue({
+      statusCode: 403,
+      data: {
+        status: 'failed',
+        error_message: 'Admin role required.',
+        error_code: 'forbidden'
+      }
+    })
+    await expect(
+      adminListPaymentTests('https://example.test/api/v1', 'tok')
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'forbidden',
+      message: 'Admin role required.'
+    })
+  })
+
+  it('fixture audit logs include operator object and callback nulls', async () => {
     process.env.NUXT_PUBLIC_PAYMENT_TEST_MOCK = '1'
     const audits = await adminListPaymentTestAuditLogs('https://example.test/api/v1', 'tok')
     expect(audits.audit_logs.length).toBeGreaterThan(0)
-    expect(audits.audit_logs[0]?.operator_id).toBeTruthy()
-    expect(audits.audit_logs[0]?.environment).toBe('sandbox')
+    const pay = audits.audit_logs.find(row => row.action === 'pay')
+    const callback = audits.audit_logs.find(row => row.action === 'callback')
+    expect(pay?.operator?.name).toBe('Mock admin')
+    expect(pay?.environment).toBe('sandbox')
+    expect(callback?.operator).toBeNull()
+    expect(callback?.environment).toBeNull()
   })
 
   it('creates payment test and returns mpg + provider', async () => {

@@ -38,11 +38,25 @@ let auditLogs = [
     id: '22222222-0000-4000-8000-000000000001',
     payment_test_order_id: orders[0].id,
     operator_id: 'op-admin-1',
+    operator: { id: 'op-admin-1', name: 'Mock admin', email: 'admin-mock@candor.local' },
     action: 'pay',
     amount: 10,
     environment: 'sandbox',
     result_status: 'SUCCESS',
     result_message: 'paid',
+    result_payload: { Status: 'SUCCESS' },
+    created_at: now
+  },
+  {
+    id: '22222222-0000-4000-8000-000000000099',
+    payment_test_order_id: orders[0].id,
+    operator_id: null,
+    operator: null,
+    action: 'callback',
+    amount: 10,
+    environment: null,
+    result_status: 'SUCCESS',
+    result_message: 'Notify OK',
     result_payload: { Status: 'SUCCESS' },
     created_at: now
   }
@@ -150,6 +164,7 @@ async function installRoutes(page) {
         id: `22222222-0000-4000-8000-${String(Date.now()).slice(-12)}`,
         payment_test_order_id: created.id,
         operator_id: 'op-admin-1',
+        operator: { id: 'op-admin-1', name: 'Mock admin', email: 'admin-mock@candor.local' },
         action: 'pay',
         amount: body.amount,
         environment: body.environment,
@@ -252,6 +267,7 @@ async function installRoutes(page) {
       id: `22222222-0000-4000-8000-${String(Date.now()).slice(-12)}`,
       payment_test_order_id: id,
       operator_id: 'op-admin-1',
+      operator: { id: 'op-admin-1', name: 'Mock admin', email: 'admin-mock@candor.local' },
       action: auditAction,
       amount: current.amount,
       environment: current.environment,
@@ -332,7 +348,9 @@ assert.ok(/Message:\s*paid/i.test(providerOnLoad), `expected Message on load, go
 
 const auditOnLoad = await page.getByTestId('payment-test-audit-logs').innerText()
 assert.ok(/sandbox/i.test(auditOnLoad), 'audit table missing environment')
-assert.ok(/op-admin-1|00000000|…/.test(auditOnLoad), 'audit table missing operator')
+assert.ok(/Mock admin/.test(auditOnLoad), 'audit table should show operator.name')
+assert.ok(/callback/i.test(auditOnLoad), 'audit table missing callback row')
+assert.ok(/—/.test(auditOnLoad), 'callback row should show dash for null operator/environment')
 
 await page.getByTestId('payment-test-amount').fill('25')
 await page.getByTestId('payment-test-pay').click()
@@ -361,6 +379,50 @@ if (await productionRadio.count()) {
   await productionRadio.click()
   await page.waitForSelector('[data-testid="payment-test-production-warning"]', { timeout: 5_000 })
 }
+await page.close()
+
+// API 403（admin-only）應顯示金流測試專用 forbidden 文案，不崩潰。
+const forbiddenPage = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+await forbiddenPage.addInitScript((payload) => {
+  localStorage.setItem('candor.operator.token', payload.token)
+  localStorage.setItem('candor.operator.profile', JSON.stringify(payload.profile))
+}, sessionFor('admin'))
+await forbiddenPage.route('**/api/v1/admin/me', async (route) => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      status: 'success',
+      data: {
+        id: 'op-admin-1',
+        email: 'admin-mock@candor.local',
+        name: 'Mock admin',
+        roles: ['admin'],
+        status: 'active',
+        last_login_at: now
+      }
+    })
+  })
+})
+await forbiddenPage.route('**/api/v1/admin/payment-tests**', async (route) => {
+  await route.fulfill({
+    status: 403,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      status: 'failed',
+      error_message: 'Admin role required.',
+      error_code: 'forbidden'
+    })
+  })
+})
+await forbiddenPage.goto(`${base}/payment-test`, { waitUntil: 'networkidle' })
+await forbiddenPage.waitForSelector('[data-testid="payment-test-error"]', { timeout: 15_000 })
+const forbiddenText = await forbiddenPage.getByTestId('payment-test-error').innerText()
+assert.ok(
+  /沒有權限使用金流測試|Only admins can use payment test/i.test(forbiddenText),
+  `expected payment-test forbidden copy, got: ${forbiddenText}`
+)
+await forbiddenPage.close()
 
 console.log('payment-test e2e ok')
 await browser.close()

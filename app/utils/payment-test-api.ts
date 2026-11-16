@@ -3,6 +3,7 @@ import type {
   PaymentTestActionResult,
   PaymentTestAuditLog,
   PaymentTestAuditLogListResult,
+  PaymentTestAuditOperator,
   PaymentTestCreateRequest,
   PaymentTestCreateResult,
   PaymentTestCredentialsConfigured,
@@ -177,6 +178,44 @@ function parseOrder(row: unknown): PaymentTestOrder | null {
   }
 }
 
+function parseAuditOperator(value: unknown): PaymentTestAuditOperator | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (!isRecord(value)) {
+    return null
+  }
+  const id = typeof value.id === 'string' ? value.id.trim() : ''
+  if (!id) {
+    return null
+  }
+  return {
+    id,
+    name: typeof value.name === 'string' ? value.name : null,
+    email: typeof value.email === 'string' ? value.email : null
+  }
+}
+
+/** 顯示優先：operator.name → email → operator_id → —（callback／null）。 */
+export function formatPaymentTestAuditOperator(row: {
+  operator?: PaymentTestAuditOperator | null
+  operator_id?: string | null
+}): string {
+  const name = row.operator?.name?.trim()
+  if (name) {
+    return name
+  }
+  const email = row.operator?.email?.trim()
+  if (email) {
+    return email
+  }
+  const id = row.operator?.id?.trim() || row.operator_id?.trim() || ''
+  if (id) {
+    return id.length > 12 ? `${id.slice(0, 8)}…` : id
+  }
+  return '—'
+}
+
 function parseAuditLog(row: unknown): PaymentTestAuditLog | null {
   if (!isRecord(row)) {
     return null
@@ -187,10 +226,15 @@ function parseAuditLog(row: unknown): PaymentTestAuditLog | null {
   if (!id || !action || !createdAt) {
     return null
   }
+  // `operator` is required in OpenAPI (nullable). Missing key → treat as null for older mocks.
+  const operator = Object.prototype.hasOwnProperty.call(row, 'operator')
+    ? parseAuditOperator(row.operator)
+    : null
   return {
     id,
     payment_test_order_id: typeof row.payment_test_order_id === 'string' ? row.payment_test_order_id : null,
     operator_id: typeof row.operator_id === 'string' ? row.operator_id : null,
+    operator,
     action,
     amount: typeof row.amount === 'number' && Number.isFinite(row.amount) ? row.amount : null,
     environment: parseEnvironment(row.environment),

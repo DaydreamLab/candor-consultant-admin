@@ -45,10 +45,19 @@ export type PaymentTestOrder = {
   updated_at: string
 }
 
+/** 稽核列上的操作者；provider callback 為 null。 */
+export type PaymentTestAuditOperator = {
+  id: string
+  name: string | null
+  email: string | null
+}
+
 export type PaymentTestAuditLog = {
   id: string
   payment_test_order_id: string | null
   operator_id: string | null
+  /** callback 列為 null；其餘為 `{ id, name, email }`（name／email 可空）。 */
+  operator: PaymentTestAuditOperator | null
   action: PaymentTestAuditAction
   amount: number | null
   environment: PaymentTestEnvironment | null
