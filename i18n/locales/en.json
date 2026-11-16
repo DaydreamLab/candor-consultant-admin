@@ -34,6 +34,7 @@
     "settings": "Settings",
     "privacy": "Privacy",
     "guidance": "Guidance",
+    "paymentTest": "Payment test",
     "operators": "Operators",
     "account": "Account",
     "developing": "In development",
@@ -122,6 +123,65 @@
       "nameRequired": "Name is required.",
       "emailRequired": "Email is required.",
       "passwordRequired": "Password is required."
+    }
+  },
+  "paymentTest": {
+    "loading": "Loading…",
+    "failed": "Could not load payment tests.",
+    "actionFailed": "Action failed.",
+    "run": "This run",
+    "selected": "Selected test order",
+    "noneSelected": "No test order selected.",
+    "provider": "Provider response",
+    "providerEmpty": "No Status / Message yet.",
+    "orders": "Test orders",
+    "auditLogs": "Audit logs",
+    "emptyOrders": "No test orders yet.",
+    "emptyAudit": "No audit logs yet.",
+    "productionWarning": "production = real money / live gateway.",
+    "actions": {
+      "pay": "NewebPay card",
+      "refund": "Refund / cancel",
+      "invoice": "ezPay invoice",
+      "invoiceVoid": "ezPay void"
+    },
+    "environment": {
+      "sandbox": "sandbox",
+      "production": "production (real money)"
+    },
+    "paymentStatus": {
+      "created": "created",
+      "pending": "pending",
+      "succeeded": "succeeded",
+      "failed": "failed",
+      "refunded": "refunded"
+    },
+    "invoiceStatus": {
+      "none": "none",
+      "issued": "issued",
+      "voided": "voided",
+      "allowanced": "allowanced",
+      "failed": "failed"
+    },
+    "auditAction": {
+      "pay": "pay",
+      "refund": "refund",
+      "issue_invoice": "issue_invoice",
+      "void_invoice": "void_invoice",
+      "callback": "callback"
+    },
+    "columns": {
+      "merchantOrderNo": "MerchantOrderNo",
+      "amount": "Amount",
+      "environment": "Environment",
+      "payment": "Payment",
+      "invoice": "Invoice",
+      "createdAt": "Time",
+      "action": "Action"
+    },
+    "errors": {
+      "forbidden": "Only admins can use payment test.",
+      "amount": "Amount must be an integer from 1 to 100000."
     }
   },
   "operatorMe": {

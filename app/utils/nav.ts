@@ -37,7 +37,7 @@ export interface NavGroup {
 /**
  * 側欄 IA（短物件名 2026-11-04）：
  * 總覽（最上、無組標）→ 營運 → 學習 → 商品 → 系統 → 開發中。
- * 每項只出現一次（27；expert 看不到引導／退款申請／預約商品／帳號管理則更少）。組 key 與 item key 共用 `nav.*`。
+ * 每項只出現一次（28；expert 看不到引導／退款申請／預約商品／帳號管理／金流測試則更少）。組 key 與 item key 共用 `nav.*`。
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -91,6 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'settings', to: '/settings#payment', icon: 'i-lucide-settings', developing: false, exact: true },
       { key: 'privacy', to: '/settings/privacy', icon: 'i-lucide-shield', developing: false },
       { key: 'guidance', to: '/settings/guidance', icon: 'i-lucide-mouse-pointer-click', developing: false, guidanceOnly: true },
+      { key: 'paymentTest', to: '/payment-test', icon: 'i-lucide-banknote', developing: false, adminOnly: true },
       { key: 'operators', to: '/operators', icon: 'i-lucide-user-cog', developing: false, adminOnly: true },
       { key: 'assistant', to: '/assistant', icon: 'i-lucide-bot', developing: false }
     ]
@@ -147,6 +148,9 @@ export function isDevelopingPath(path: string): boolean {
     return false
   }
   if (current === '/operators' || current.startsWith('/operators/')) {
+    return false
+  }
+  if (current === '/payment-test' || current.startsWith('/payment-test/')) {
     return false
   }
   if (current === '/assistant' || current.startsWith('/assistant/')) {

@@ -46,7 +46,11 @@ export default defineNuxtConfig({
       /**
        * 專人預約商品設定 mock：預設打 candor-core。本機截圖可設 `NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK=1`。
        */
-      expertBookingProductMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK === '1'
+      expertBookingProductMock: process.env.NUXT_PUBLIC_EXPERT_BOOKING_PRODUCT_MOCK === '1',
+      /**
+       * 金流測試 mock：預設打 candor-core（#201）。本機截圖／e2e 可設 `NUXT_PUBLIC_PAYMENT_TEST_MOCK=1`。
+       */
+      paymentTestMock: process.env.NUXT_PUBLIC_PAYMENT_TEST_MOCK === '1'
     }
   },
 

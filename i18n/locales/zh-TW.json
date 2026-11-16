@@ -34,6 +34,7 @@
     "settings": "設定",
     "privacy": "隱私",
     "guidance": "引導",
+    "paymentTest": "金流測試",
     "operators": "帳號管理",
     "account": "目前帳號",
     "developing": "開發中",
@@ -122,6 +123,65 @@
       "nameRequired": "請填寫名稱。",
       "emailRequired": "請填寫 Email。",
       "passwordRequired": "請填寫密碼。"
+    }
+  },
+  "paymentTest": {
+    "loading": "讀取中…",
+    "failed": "無法載入金流測試資料。",
+    "actionFailed": "操作失敗。",
+    "run": "本次測試",
+    "selected": "選取測試單",
+    "noneSelected": "尚未選取測試單。",
+    "provider": "Provider 回傳",
+    "providerEmpty": "尚無 Status／Message。",
+    "orders": "測試單",
+    "auditLogs": "稽核",
+    "emptyOrders": "尚無測試單。",
+    "emptyAudit": "尚無稽核紀錄。",
+    "productionWarning": "production＝真實金流／真實金額。",
+    "actions": {
+      "pay": "藍新刷卡",
+      "refund": "退款／取消",
+      "invoice": "ezPay 開票",
+      "invoiceVoid": "ezPay 作廢"
+    },
+    "environment": {
+      "sandbox": "sandbox",
+      "production": "production（真實金額）"
+    },
+    "paymentStatus": {
+      "created": "created",
+      "pending": "pending",
+      "succeeded": "succeeded",
+      "failed": "failed",
+      "refunded": "refunded"
+    },
+    "invoiceStatus": {
+      "none": "none",
+      "issued": "issued",
+      "voided": "voided",
+      "allowanced": "allowanced",
+      "failed": "failed"
+    },
+    "auditAction": {
+      "pay": "pay",
+      "refund": "refund",
+      "issue_invoice": "issue_invoice",
+      "void_invoice": "void_invoice",
+      "callback": "callback"
+    },
+    "columns": {
+      "merchantOrderNo": "MerchantOrderNo",
+      "amount": "金額",
+      "environment": "環境",
+      "payment": "付款",
+      "invoice": "發票",
+      "createdAt": "時間",
+      "action": "動作"
+    },
+    "errors": {
+      "forbidden": "沒有權限使用金流測試（僅 admin）。",
+      "amount": "金額須為 1–100000 的整數。"
     }
   },
   "operatorMe": {
